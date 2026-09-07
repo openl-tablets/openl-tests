@@ -1,0 +1,238 @@
+package domain.ui.webstudio.components.admincomponents;
+
+import configuration.core.ui.WebElement;
+import configuration.driver.DriverPool;
+import domain.serviceclasses.constants.User;
+import domain.ui.webstudio.components.BaseComponent;
+import helpers.service.LoginService;
+import helpers.service.UserService;
+import helpers.utils.StringUtil;
+import helpers.utils.WaitUtil;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+public class RepositoriesPageComponent extends BaseComponent {
+
+    private WebElement designRepositoriesTab;
+    private WebElement deploymentRepositoriesTab;
+    private WebElement addRepositoryBtn;
+    private WebElement addDeploymentRepositoryBtn;
+    private List<WebElement> designRepositoryList;
+
+    private WebElement remoteRepositoryNameField;
+    private WebElement remoteRepositoryTypeSelector;
+    private WebElement remoteRepositoryCheckBox;
+    private WebElement remoteRepositoryPathField;
+    private WebElement remoteRepositoryLoginField;
+    private WebElement remoteRepositoryPasswordField;
+    private WebElement remoteRepositoryBranchField;
+    private WebElement remoteRepositoryProtectedBranchesField;
+    private WebElement flatFolderStructureCheckBox;
+    private WebElement secureConnectionCheckbox;
+    private WebElement applyChangesBtn;
+    private WebElement designRepoActiveTab;
+    private WebElement typeOption;
+    private WebElement repositoryTabTemplate;
+    private WebElement deleteRepositoryBtnTemplate;
+    private List<WebElement> repositoryTypeOptions;
+
+    public RepositoriesPageComponent() {
+        super(DriverPool.getPage());
+        initializeElements();
+    }
+
+    public RepositoriesPageComponent(WebElement rootLocator) {
+        super(rootLocator);
+        initializeElements();
+    }
+
+    private void initializeElements() {
+        designRepositoriesTab = createScopedElement("xpath=.//div[contains(@class,'ant-tabs-tab') and contains(text(),'Design Repositories')]", "designRepositoriesTab");
+        deploymentRepositoriesTab = createScopedElement("xpath=.//div[contains(@class,'ant-tabs-tab') and contains(text(),'Deployment Repositories')]", "deploymentRepositoriesTab");
+        addRepositoryBtn = createScopedElement("xpath=.//button[./span[contains(text(),'Add Design Repository')]]", "addRepositoryBtn");
+        addDeploymentRepositoryBtn = createScopedElement("xpath=.//button[./span[contains(text(),'Add Deployment Repository')]]", "addDeploymentRepositoryBtn");
+        designRepositoryList = createScopedElementList("xpath=.//div[contains(@class,'ant-tabs-card')]//div[contains(@class,'ant-tabs-nav-list')]/div[@data-node-key]", "designRepositoryList");
+
+        remoteRepositoryNameField = createScopedElement("xpath=.//div[contains(@class,'ant-tabs-card')]//input[@id='name']", "remoteRepositoryNameField");
+        remoteRepositoryTypeSelector = createScopedElement("xpath=.//div[contains(@class,'ant-tabs-card')]//div[contains(@class,'ant-select') and .//input[@id='type']]//div[contains(@class,'ant-select-content')]", "remoteRepositoryTypeSelector");
+        remoteRepositoryCheckBox = createScopedElement("xpath=.//div[contains(@class,'ant-tabs-card')]//input[@id='settings_remoteRepository']", "remoteRepositoryCheckBox");
+        remoteRepositoryPathField = createScopedElement("xpath=.//div[contains(@class,'ant-tabs-card')]//input[@id='settings_uri']", "remoteRepositoryPathField");
+        remoteRepositoryLoginField = createScopedElement("xpath=.//div[contains(@class,'ant-tabs-card')]//input[@id='settings_login']", "remoteRepositoryLoginField");
+        remoteRepositoryPasswordField = createScopedElement("xpath=.//div[contains(@class,'ant-tabs-card')]//input[@id='settings_password']", "remoteRepositoryPasswordField");
+        remoteRepositoryBranchField = createScopedElement("xpath=.//div[contains(@class,'ant-tabs-card')]//input[@id='settings_branch']", "remoteRepositoryBranchField");
+        remoteRepositoryProtectedBranchesField = createScopedElement("xpath=.//div[contains(@class,'ant-tabs-card')]//input[@id='settings_protectedBranches']", "remoteRepositoryProtectedBranchesField");
+        flatFolderStructureCheckBox = createScopedElement("xpath=.//div[contains(@class,'ant-tabs-card')]//input[@id='settings_flatFolderStructure']", "flatFolderStructureCheckBox");
+        secureConnectionCheckbox = createScopedElement("xpath=.//div[contains(@class,'ant-tabs-card')]//input[@id='settings_secure']", "secureConnectionCheckbox");
+        applyChangesBtn = createScopedElement("xpath=.//button[@type='submit']", "applyChangesBtn");
+        designRepoActiveTab = createScopedElement("xpath=.//div[contains(@class,'ant-tabs-card')]//div[contains(@class,'ant-tabs-tab-active') and .//*[text()='%s']]", "designRepoActiveTab");
+        typeOption = new WebElement(page, "xpath=//div[contains(@class,'ant-select-item-option') and .//div[text()='%s']]", "typeOption");
+        repositoryTabTemplate = new WebElement(page, "xpath=//div[contains(@class,'ant-tabs-card')]//div[contains(@class,'ant-tabs-nav-list')]//div[contains(@class,'ant-tabs-tab') and .//*[text()='%s']]", "repositoryTab");
+        deleteRepositoryBtnTemplate = new WebElement(page, "xpath=//div[contains(@class,'ant-tabs-card')]//div[contains(@class,'ant-tabs-nav-list')]//div[contains(@class,'ant-tabs-tab') and .//*[text()='%s']]//button[contains(@class,'ant-tabs-tab-remove')]", "deleteRepositoryBtn");
+        repositoryTypeOptions = createElementList("xpath=//div[contains(@class,'ant-select-dropdown') and not(contains(@class,'ant-select-dropdown-hidden'))]//div[contains(@class,'ant-select-item') and contains(@class,'ant-select-item-option') and not(contains(@class,'ant-select-item-option-content'))]", "repoTypeOptions");
+    }
+
+    public void deleteRepository(String repositoryName, User user) {
+        repositoryTabTemplate.format(repositoryName).hover();
+        deleteRepositoryBtnTemplate.format(repositoryName).click();
+        getModalOkBtn().waitForVisible().click();
+        relogin(user);
+    }
+
+    public RepositoriesPageComponent clickDesignRepositoriesTab() {
+        designRepositoriesTab.click();
+        return this;
+    }
+
+    public RepositoriesPageComponent clickAddRepository() {
+        addRepositoryBtn.sleep(500).click();
+        return this;
+    }
+
+    public RepositoriesPageComponent setRepositoryPath(String path) {
+        remoteRepositoryPathField.fillSequentially(path);
+        return this;
+    }
+
+    public void addDesignRepository() {
+        addDesignRepository("Design1");
+    }
+
+    public void addDesignRepository(String expectedTabName) {
+        clickDesignRepositoriesTab();
+        clickAddRepository();
+        designRepoActiveTab.format(expectedTabName).waitForVisible(5000);
+    }
+
+    public RepositoriesPageComponent selectDesignRepositoryByName(String name) {
+        designRepositoryList.stream()
+                .filter(tab -> tab.getText().trim().equals(name))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Design repository tab '" + name + "' not found"))
+                .click();
+        return this;
+    }
+
+    public String getDesignRepositoryNameValue() {
+        return remoteRepositoryNameField.getCurrentInputValue();
+    }
+
+    public String getDesignRepositoryType() {
+        return remoteRepositoryTypeSelector.getText();
+    }
+
+    public List<String> getAllRepositoryTypes() {
+        remoteRepositoryTypeSelector.click();
+        List<String> types = repositoryTypeOptions.stream()
+                .map(WebElement::getText)
+                .collect(Collectors.toList());
+        page.keyboard().press("Escape");
+        return types;
+    }
+
+    public boolean isDesignRepositoryRemote() {
+        return remoteRepositoryCheckBox.isChecked();
+    }
+
+    public String getDesignRepositoryLocalPath() {
+        return remoteRepositoryPathField.getCurrentInputValue();
+    }
+
+    public String getDesignRepositoryUrl() {
+        return remoteRepositoryPathField.getCurrentInputValue();
+    }
+
+    public RepositoriesPageComponent setDesignRepositoryType(String type) {
+        remoteRepositoryTypeSelector.click();
+        typeOption.format(type).click();
+        return this;
+    }
+
+    public RepositoriesPageComponent setDesignRepositoryJdbcUrl(String url) {
+        remoteRepositoryPathField.waitForVisible(3000).clear();
+        remoteRepositoryPathField.fillSequentially(url);
+        return this;
+    }
+
+    public RepositoriesPageComponent setDesignRepositoryLogin(String login) {
+        remoteRepositoryLoginField.clear();
+        remoteRepositoryLoginField.fillSequentially(login);
+        return this;
+    }
+
+    public RepositoriesPageComponent setDesignRepositoryPassword(String password) {
+        remoteRepositoryPasswordField.clear();
+        remoteRepositoryPasswordField.fillSequentially(password);
+        return this;
+    }
+
+    public RepositoriesPageComponent setProtectedBranches(String pattern) {
+        remoteRepositoryProtectedBranchesField.clear();
+        remoteRepositoryProtectedBranchesField.fillSequentially(pattern);
+        return this;
+    }
+
+    public String getProtectedBranches() {
+        return remoteRepositoryProtectedBranchesField.getCurrentInputValue();
+    }
+
+    public RepositoriesPageComponent setSecureConnection(boolean enabled) {
+        if (enabled != secureConnectionCheckbox.isChecked()) {
+            secureConnectionCheckbox.click();
+        }
+        return this;
+    }
+
+    public RepositoriesPageComponent setFlatFolderStructure(boolean flat) {
+        if (flat != flatFolderStructureCheckBox.isChecked()) {
+            flatFolderStructureCheckBox.click();
+        }
+        return this;
+    }
+
+    public void createDesignRepository(String repositoryUrl, String login, String password, String branch, User user) {
+        addDesignRepository();
+        remoteRepositoryPathField.waitForVisible(1000).sleep(500).clear();
+        remoteRepositoryPathField.fillSequentially(repositoryUrl);
+        remoteRepositoryLoginField.fillSequentially(login);
+        remoteRepositoryPasswordField.fillSequentially(password);
+        remoteRepositoryBranchField.fillSequentially(branch);
+        applyChangesAndRelogin(user);
+    }
+
+    public void applyChangesAndRelogin(User user) {
+        applyChangesBtn.click();
+        getModalOkBtn().click();
+        WaitUtil.sleep(2000, "Wait for changes to re-login before reloading the page");
+        WaitUtil.retryAction(() -> DriverPool.getPage().reload(), 10000, 1000, "Reload page after applying changes");
+        WaitUtil.sleep(1000, "Wait for changes to re-login after reloading the page");
+        WebElement loginForm = new WebElement(DriverPool.getPage(), "xpath=//input[@id='username']", "loginFormProbe");
+        if (loginForm.isVisible(3000)) {
+            relogin(user);
+        }
+    }
+
+    public void clickDeploymentRepositoriesTab() {
+        deploymentRepositoriesTab.click();
+    }
+
+    public void clickAddDeploymentRepository() {
+        addDeploymentRepositoryBtn.sleep(500).click();
+    }
+
+    public void addDeploymentRepository() {
+        clickDeploymentRepositoriesTab();
+        clickAddDeploymentRepository();
+    }
+
+    public void createH2DeploymentRepository(User user) {
+        String repoUrl = String.format("jdbc:h2:mem:repo%s;DB_CLOSE_DELAY=-1", StringUtil.generateUniqueName(5));
+        addDeploymentRepository();
+        remoteRepositoryPathField.fillSequentially(repoUrl);
+        applyChangesAndRelogin(user);
+    }
+
+    private void relogin(User user) {
+        new LoginService(page).login(UserService.getUser(user));
+    }
+}

@@ -1,0 +1,94 @@
+package domain.ui.webstudio.components.editortabcomponents;
+
+import com.microsoft.playwright.Page;
+import com.microsoft.playwright.options.LoadState;
+import domain.ui.webstudio.components.BaseComponent;
+import configuration.core.ui.WebElement;
+import configuration.driver.DriverPool;
+import helpers.utils.WaitUtil;
+
+public class EditorTableActionsPanelComponent extends BaseComponent {
+
+    private WebElement saveChangesBtn;
+    private WebElement undoChangesBtn;
+    private WebElement redoChangesBtn;
+    private WebElement insertRowBeforeBtn;
+    private WebElement insertRowAfterBtn;
+    private WebElement removeRowBtn;
+    private WebElement insertColumnBeforeBtn;
+    private WebElement removeColumnBtn;
+
+    public EditorTableActionsPanelComponent() {
+        super(DriverPool.getPage());
+        initializeElements();
+    }
+
+    public EditorTableActionsPanelComponent(WebElement rootLocator) {
+        super(rootLocator);
+        initializeElements();
+    }
+
+    private void initializeElements() {
+        saveChangesBtn = createScopedElement("xpath=.//img[@title='Save changes']", "saveChangesBtn");
+        undoChangesBtn = createScopedElement("xpath=.//img[@title='Undo changes']", "undoChangesBtn");
+        redoChangesBtn = createScopedElement("xpath=.//img[@title='Redo changes']", "redoChangesBtn");
+        insertRowBeforeBtn = createScopedElement("xpath=.//img[@id='t_te_insert_row_before']", "insertRowBeforeBtn");
+        insertRowAfterBtn = createScopedElement("xpath=.//img[@title='Insert row after']", "insertRowAfterBtn");
+        removeRowBtn = createScopedElement("xpath=.//img[@title='Remove row']", "removeRowBtn");
+        insertColumnBeforeBtn = createScopedElement("xpath=.//img[@title='Insert column before']", "insertColumnBeforeBtn");
+        removeColumnBtn = createScopedElement("xpath=.//img[@title='Remove column']", "removeColumnBtn");
+    }
+
+    private void waitWhileTablePanelActionExecuted() {
+        WaitUtil.sleep(250, "Waiting for table panel action to complete and UI to update");
+    }
+
+    public void clickSaveChanges() {
+        try {
+            page.waitForResponse(
+                    response -> true,
+                    () -> saveChangesBtn.click()
+            );
+        } catch (RuntimeException e) {
+            LOGGER.debug("No response captured after save click: {}", e.getMessage());
+        }
+        waitWhileTablePanelActionExecuted();
+        waitUntilSpinnerLoaded();
+        page.waitForLoadState(LoadState.NETWORKIDLE, new Page.WaitForLoadStateOptions().setTimeout(5000));
+    }
+
+    public void undoClickChanges() {
+        undoChangesBtn.click();
+        waitWhileTablePanelActionExecuted();
+    }
+
+    public void redoClickChanges() {
+        redoChangesBtn.click();
+        waitWhileTablePanelActionExecuted();
+    }
+
+    public void clickInsertRowAfter() {
+        insertRowAfterBtn.click();
+        waitWhileTablePanelActionExecuted();
+    }
+
+    public void clickInsertRowBefore() {
+        insertRowBeforeBtn.click();
+        waitWhileTablePanelActionExecuted();
+    }
+
+    public void clickRemoveRow() {
+        removeRowBtn.click();
+        waitWhileTablePanelActionExecuted();
+    }
+
+    public void clickInsertColumnBefore() {
+        insertColumnBeforeBtn.click();
+        waitWhileTablePanelActionExecuted();
+    }
+
+    public void clickRemoveColumn() {
+        removeColumnBtn.click();
+        waitWhileTablePanelActionExecuted();
+    }
+}

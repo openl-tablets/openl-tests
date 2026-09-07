@@ -1,0 +1,47 @@
+package configuration.projectconfig;
+
+public enum PropertyNameSpace {
+    BROWSER("browser"),
+    BROWSER_VERSION("browser_version"),
+    RETRY_COUNT("test_retry_count"),
+    PLAYWRIGHT_DEFAULT_TIMEOUT("playwright_default_timeout"),
+    OVERLAY_IDLE_TIMEOUT("overlay_idle_timeout"),
+    APP_CONTAINER_STARTUP_TIMEOUT_MINUTES("app_container_startup_timeout_minutes"),
+    PLAYWRIGHT_SERVER_STARTUP_TIMEOUT_SECONDS("playwright_server_startup_timeout_seconds"),
+    PLAYWRIGHT_NPM_CACHE_DIR("playwright_npm_cache_dir"),
+    DEFAULT_APP_PORT("default_app_port"),
+    DOCKER_IMAGE_NAME("docker_image_name"),
+    DEPLOYED_APP_PATH("deployed_app_path"),
+    HOST_RESOURCE_PATH("host_resource_path"),
+    CONTAINER_RESOURCE_PATH("container_resource_path"),
+    HOST_SCREENSHOTS_PATH("host_screenshot_path"),
+    HOST_APP_LOGS_PATH("host_app_logs_path"),
+    ENABLE_VIDEO_RECORDING("enable_video_recording"),
+    ENABLE_PLAYWRIGHT_TRACING("enable_playwright_tracing"),
+    DEBUG_ARTIFACTS_ON_SUCCESS("debug_artifacts_on_success"),
+    ENABLE_SCREENSHOT_ON_FAILURE("enable_screenshot_on_failure"),
+    PLAYWRIGHT_DOWNLOADS_PATH("playwright_downloads_path"),
+    PLAYWRIGHT_VIDEOS_PATH("playwright_videos_path"),
+    GITLAB_USER("GITLAB_USER"),
+    GITLAB_PASSWORD("GITLAB_PASSWORD"),
+    GITLAB_BRANCH("GITLAB_BRANCH"),
+    DB_CONTAINER_HOST("db.container.host"),
+    DB_POSTGRES_CONTAINER_IMAGE("db.postgres.container.image"),
+    DB_POSTGRES_JAR_MAVEN_PATH("db.postgres.jar.maven.path"),
+    DB_ORACLE_CONTAINER_IMAGE("db.oracle.container.image"),
+    DB_ORACLE_JAR_MAVEN_PATH("db.oracle.jar.maven.path"),
+    DB_MSSQL_CONTAINER_IMAGE("db.mssql.container.image"),
+    DB_MSSQL_JAR_MAVEN_PATH("db.mssql.jar.maven.path"),
+    S3MOCK_DOCKER_IMAGE_NAME("s3mock.docker.image"),
+    WS_DOCKER_IMAGE_NAME("ws_docker_image_name");
+
+    private String value;
+
+    PropertyNameSpace(String value) {
+        this.value = value;
+    }
+
+    public String getValue() {
+        return value;
+    }
+}

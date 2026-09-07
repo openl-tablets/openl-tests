@@ -1,0 +1,154 @@
+package domain.ui.webstudio.components.editortabcomponents;
+
+import com.microsoft.playwright.Locator;
+import domain.ui.webstudio.components.BaseComponent;
+import configuration.core.ui.WebElement;
+import configuration.driver.DriverPool;
+import helpers.utils.WaitUtil;
+
+import java.util.List;
+
+public class EditorMainContentProblemsPanelComponent extends BaseComponent {
+
+    private WebElement problemsPanel;
+    private WebElement errorsTab;
+    private WebElement warningsTab;
+    private WebElement closeBtn;
+
+    private List<WebElement> errorMessages;
+    private List<WebElement> warningMessages;
+    private WebElement hideProblemsBtn;
+    private WebElement showProblemsBtn;
+
+    public EditorMainContentProblemsPanelComponent() {
+        super(DriverPool.getPage());
+        initializeElements();
+    }
+
+    public EditorMainContentProblemsPanelComponent(WebElement rootLocator) {
+        super(rootLocator);
+        initializeElements();
+    }
+
+    private void initializeElements() {
+        problemsPanel = createScopedElement("xpath=.//div[@id='editor-main-content-problems-panel']", "problemsPanel");
+        errorsTab = createScopedElement("xpath=.//div[contains(@class,'tab') and contains(text(),'Errors')]", "errorsTab");
+        warningsTab = createScopedElement("xpath=.//div[contains(@class,'tab') and contains(text(),'Warnings')]", "warningsTab");
+        closeBtn = createScopedElement("xpath=.//button[@title='Close'] | .//span[contains(@class,'close')]", "closeBtn");
+
+        errorMessages = createScopedElementList("xpath=.//div[@class='problem-error']", "errorMessages");
+        warningMessages = createScopedElementList("xpath=.//div[@class='problem-warning']", "warningMessages");
+        hideProblemsBtn = createScopedElement("xpath=.//img[@title='Hide Problems']", "hideProblemsBtn");
+        showProblemsBtn = createScopedElement("xpath=.//img[@title='Show Problems']", "showProblemsBtn");
+    }
+
+    public EditorMainContentProblemsPanelComponent clickErrorsTab() {
+        errorsTab.click();
+        return this;
+    }
+
+    public EditorMainContentProblemsPanelComponent clickWarningsTab() {
+        warningsTab.click();
+        return this;
+    }
+
+    public EditorMainContentProblemsPanelComponent closePanel() {
+        closeBtn.click();
+        return this;
+    }
+
+    public boolean isProblemsPanelVisible() {
+        return problemsPanel.isVisible();
+    }
+
+    public boolean isErrorsTabActive() {
+        return errorsTab.getAttribute("class").contains("active");
+    }
+
+    public boolean isWarningsTabActive() {
+        return warningsTab.getAttribute("class").contains("active");
+    }
+
+    public EditorMainContentProblemsPanelComponent clickHideProblemsBtn() {
+        hideProblemsBtn.click();
+        return this;
+    }
+
+    public EditorMainContentProblemsPanelComponent clickShowProblemsBtn() {
+        showProblemsBtn.click();
+        return this;
+    }
+
+    public EditorMainContentProblemsPanelComponent expandProblemDescription(int elementPosition) {
+        // Click until shown: a concurrent panel reload on table switch can undo a single click
+        WaitUtil.waitForCondition(() -> {
+            try {
+                if (errorMessages.size() <= elementPosition) {
+                    return false;
+                }
+                Locator error = errorMessages.get(elementPosition).getLocator();
+                if (error.locator("xpath=.//span[@class='stacktrace-panels']").isVisible()) {
+                    WaitUtil.sleep(250, "Waiting for expanded problem description to stabilize");
+                    return error.locator("xpath=.//span[@class='stacktrace-panels']").isVisible();
+                }
+                Locator toggle = error.locator("xpath=.//div[@class='stacktrace-hidden']");
+                if (toggle.count() == 0) {
+                    return false;
+                }
+                toggle.first().click();
+                WaitUtil.sleep(250, "Waiting for problem description to expand");
+                return error.locator("xpath=.//span[@class='stacktrace-panels']").isVisible();
+            } catch (Exception e) {
+                return false;
+            }
+        }, 10000, 250, "Waiting for problem description at position " + elementPosition + " to expand");
+        return this;
+    }
+
+    public EditorMainContentProblemsPanelComponent hideProblemDescription(int elementPosition) {
+        WaitUtil.waitForCondition(() -> {
+            try {
+                if (errorMessages.size() <= elementPosition) {
+                    return false;
+                }
+                Locator error = errorMessages.get(elementPosition).getLocator();
+                if (!error.locator("xpath=.//span[@class='stacktrace-panels']").isVisible()) {
+                    return true;
+                }
+                Locator toggle = error.locator("xpath=.//div[@class='arrow-top']//div[@class='stacktrace-showed']");
+                if (toggle.count() == 0) {
+                    return false;
+                }
+                toggle.first().click();
+                return !error.locator("xpath=.//span[@class='stacktrace-panels']").isVisible();
+            } catch (Exception e) {
+                return false;
+            }
+        }, 10000, 250, "Waiting for problem description at position " + elementPosition + " to hide");
+        return this;
+    }
+
+    public boolean isProblemDescriptionVisible(int elementPosition) {
+        return WaitUtil.waitForCondition(() -> errorMessages.get(elementPosition).getLocator().locator("xpath=.//span[@class='stacktrace-panels']").isVisible(), 1000, 100, "Waiting for ProblemDescription to be visible...");
+    }
+
+    public boolean isErrorMessageListPresent() {
+        return WaitUtil.isListNotEmpty(() -> errorMessages, 10000, 250, "Waiting for error messages to appear in problems panel");
+    }
+
+    public List<String> getErrorMessages() {
+        WaitUtil.sleep(500, "Waiting for inline error panel to fully render");
+        WaitUtil.waitForListNotEmpty(() -> errorMessages, 20000, 1000, "Waiting for error messages to load");
+        return errorMessages.stream()
+                .map(e -> e.getText().trim())
+                .toList();
+    }
+
+    public List<String> getWarningMessages() {
+        WaitUtil.sleep(500, "Waiting for inline error panel to fully render");
+        WaitUtil.waitForListNotEmpty(() -> warningMessages, 20000, 1000, "Waiting for error messages to load");
+        return warningMessages.stream()
+                .map(e -> e.getText().trim())
+                .toList();
+    }
+}

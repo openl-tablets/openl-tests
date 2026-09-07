@@ -1,0 +1,243 @@
+name: OpenL Tests
+run-name: "OpenL Tests [${{ inputs.application_version }}]"
+
+on:
+  workflow_dispatch:
+    inputs:
+      application_version:
+        description: "OpenL Docker image tag (ghcr.io/openl-tablets/webstudio:<tag> and ws:<tag>-all); latest = the newest published build"
+        required: true
+        default: "latest"
+      tests_branch:
+        description: "Autotests branch label for reporting"
+        required: true
+        default: "main"
+      tests:
+        description: >-
+          Test CLASS names to run, separated by commas or spaces (TestMethodTable or tests.ui.webstudio.git.TestGitBranchSwitching).
+          Empty runs every test class except @LocalOnly ones; see README "Selective runs".
+        required: false
+        default: ""
+      shards:
+        description: >-
+          Number of parallel jobs. Classes are pulled from one shared queue, so shards finish together; see README.
+        required: false
+        default: "20"
+
+permissions:
+  contents: read
+
+env:
+  SELECTED_TESTS: ${{ inputs.tests }}
+  SHARDS: ${{ inputs.shards }}
+  # Keep the image tag and the npm package in step with PLAYWRIGHT_VERSION / PLAYWRIGHT_NPM_PACKAGE in DockerDriverPool.java
+  PLAYWRIGHT_IMAGE: mcr.microsoft.com/playwright:v1.52.0-noble
+  PLAYWRIGHT_NPM_PACKAGE: playwright@1.52.0
+
+jobs:
+  discover-tests:
+    name: Discover tests
+    runs-on: ubuntu-latest
+    outputs:
+      classes: ${{ steps.discover.outputs.classes }}
+      matrix: ${{ steps.discover.outputs.matrix }}
+      selective: ${{ steps.discover.outputs.selective }}
+
+    steps:
+      - name: Checkout tests
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Check that the application images exist
+        env:
+          APPLICATION_VERSION: ${{ inputs.application_version }}
+        run: |
+          missing=0
+          for image in "ghcr.io/openl-tablets/webstudio:${APPLICATION_VERSION}" "ghcr.io/openl-tablets/ws:${APPLICATION_VERSION}-all"; do
+            if docker manifest inspect "${image}" > /dev/null 2>&1; then
+              echo "Found ${image}"
+            else
+              echo "::error::Image ${image} does not exist in ghcr.io; check the application_version input"
+              missing=1
+            fi
+          done
+          exit "${missing}"
+
+      - name: Discover test classes
+        id: discover
+        run: python3 scripts/github-actions/discover-tests.py --shards "${SHARDS:-20}" --classes="${SELECTED_TESTS}"
+
+  test-shard:
+    name: ${{ matrix.display }}
+    needs: discover-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      max-parallel: 20
+      matrix: ${{ fromJson(needs.discover-tests.outputs.matrix) }}
+
+    steps:
+      - name: Checkout tests
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Warm up the Playwright Server image and its npm cache
+        continue-on-error: true
+        run: |
+          PLAYWRIGHT_NPM_CACHE_DIR="${RUNNER_TEMP}/playwright-npm-cache"
+          mkdir -p "${PLAYWRIGHT_NPM_CACHE_DIR}"
+          docker pull -q "${PLAYWRIGHT_IMAGE}"
+          time docker run --rm -v "${PLAYWRIGHT_NPM_CACHE_DIR}:/root/.npm" "${PLAYWRIGHT_IMAGE}" \
+            sh -c "npx -y ${PLAYWRIGHT_NPM_PACKAGE} --version"
+
+      - name: Compile tests
+        run: mvn --batch-mode --quiet test-compile
+
+      - name: Run the test queue
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          APPLICATION_VERSION: ${{ inputs.application_version }}
+          SELECTIVE_RUN: ${{ needs.discover-tests.outputs.selective }}
+          QUEUED_CLASSES: ${{ needs.discover-tests.outputs.classes }}
+          SHARD_DISPLAY: ${{ matrix.display }}
+          PLAYWRIGHT_JAVA_SRC: src/test/java:src/main/java
+        run: |
+          STUDIO_IMAGE="ghcr.io/openl-tablets/webstudio:${APPLICATION_VERSION}"
+          WS_IMAGE="ghcr.io/openl-tablets/ws:${APPLICATION_VERSION}-all"
+          PLAYWRIGHT_NPM_CACHE_DIR="${RUNNER_TEMP}/playwright-npm-cache"
+          echo "Using docker_image_name=${STUDIO_IMAGE}"
+          echo "Using ws_docker_image_name=${WS_IMAGE}"
+          echo "Selective run: ${SELECTIVE_RUN}"
+          printf '%s' "${QUEUED_CLASSES}" > "${RUNNER_TEMP}/queued-classes.json"
+
+          python3 scripts/github-actions/run-test-queue.py run \
+            --repo "${GITHUB_REPOSITORY}" \
+            --run-key "${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
+            --sha "${GITHUB_SHA}" \
+            --shard "${SHARD_DISPLAY}" \
+            --classes-file "${RUNNER_TEMP}/queued-classes.json" \
+            --suite-dir generated-testng \
+            --report-dir target/queue \
+            -- \
+            -Dexecution.mode=PLAYWRIGHT_DOCKER \
+            -Djava.net.preferIPv4Stack=true \
+            -Ddocker_image_name="${STUDIO_IMAGE}" \
+            -Dws_docker_image_name="${WS_IMAGE}" \
+            -Dplaywright_default_timeout=20000 \
+            -Dapp_container_startup_timeout_minutes=10 \
+            -Dplaywright_server_startup_timeout_seconds=300 \
+            -Dplaywright_npm_cache_dir="${PLAYWRIGHT_NPM_CACHE_DIR}" \
+            -Dtest.export.dir=target/test-export
+
+      - name: Gate on the shard results
+        if: always()
+        env:
+          SHARD_DISPLAY: ${{ matrix.display }}
+        run: |
+          python3 scripts/github-actions/gate-shard-results.py \
+            --export-dir target/test-export \
+            --queue-file "target/queue/${SHARD_DISPLAY}.json"
+
+      - name: Upload test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: openl-tests-${{ matrix.display }}
+          if-no-files-found: ignore
+          retention-days: 14
+          path: |
+            target/test-export/**
+            target/queue/**
+            target/screenshots/**
+            target/videos/**
+            target/logs/**
+            target/downloads/**
+            generated-testng/**
+
+  merge-report:
+    name: Merge test report
+    needs:
+      - discover-tests
+      - test-shard
+    if: always() && needs.discover-tests.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout tests
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Download shard artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: openl-tests-*
+          path: downloaded-artifacts
+          merge-multiple: false
+
+      - name: Build merged test report
+        id: report
+        if: always()
+        env:
+          BUILD_LABEL: ${{ inputs.application_version }}
+          TESTS_BRANCH: ${{ inputs.tests_branch }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          SELECTIVE_RUN: ${{ needs.discover-tests.outputs.selective }}
+        run: |
+          python3 scripts/github-actions/generate-merged-report.py \
+            --input-root downloaded-artifacts \
+            --output-dir merged-report \
+            --title "OpenL Tests [${BUILD_LABEL}]" \
+            --build "${BUILD_LABEL}" \
+            --run-url "${RUN_URL}" \
+            --studio-image "ghcr.io/openl-tablets/webstudio:${BUILD_LABEL}" \
+            --ws-image "ghcr.io/openl-tablets/ws:${BUILD_LABEL}-all" \
+            --tests-branch "${TESTS_BRANCH}" \
+            --playwright-version "${PLAYWRIGHT_NPM_PACKAGE#playwright@}" \
+            --java-version 21 \
+            --selective "${SELECTIVE_RUN}"
+
+      - name: Upload merged test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report-merged
+          if-no-files-found: error
+          retention-days: 14
+          path: merged-report/**
+
+      - name: Publish the report to GitHub Pages
+        if: always() && steps.report.outcome == 'success'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python3 scripts/github-actions/publish-report-pages.py \
+            --repo "${GITHUB_REPOSITORY}" \
+            --run-id "${GITHUB_RUN_ID}" \
+            --report-dir merged-report \
+            --pages-url "https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}" \
+            --keep 15
+
+      - name: Remove the queue refs of this run attempt
+        if: always()
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python3 scripts/github-actions/run-test-queue.py cleanup \
+            --repo "${GITHUB_REPOSITORY}" \
+            --run-key "${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"

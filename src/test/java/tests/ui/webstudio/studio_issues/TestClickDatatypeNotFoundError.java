@@ -1,0 +1,41 @@
+package tests.ui.webstudio.studio_issues;
+
+import configuration.annotations.Description;
+import configuration.annotations.TestCaseId;
+import configuration.annotations.AppContainerConfig;
+import configuration.appcontainer.AppContainerPool;
+import configuration.appcontainer.AppContainerStartParameters;
+import domain.serviceclasses.constants.User;
+import domain.ui.webstudio.pages.mainpages.EditorPage;
+import helpers.service.WorkflowService;
+import helpers.utils.LogsUtil;
+import helpers.utils.WaitUtil;
+import org.testng.annotations.Test;
+import tests.BaseTest;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+public class TestClickDatatypeNotFoundError extends BaseTest {
+
+    @Test
+    @TestCaseId("EPBDS-11609")
+    @Description("Test clicking on datatype not found error and validating tree selection")
+    @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
+    public void testClickDatatypeNotFoundError() {
+        String projectName = WorkflowService.loginCreateProjectFromZip(User.ADMIN, "TestClickDatatypeNotFoundError.zip");
+        EditorPage editorPage = new EditorPage();
+        editorPage.getEditorLeftProjectModuleSelectorComponent()
+                .selectModule(projectName, "module_NJ");
+        
+        // Click on the datatype not found error in the problems panel
+        editorPage.getProblemsPanelComponent().selectProblemByText("is not found.");
+        
+        // Validate that the correct item is selected in the tree
+        WaitUtil.waitForCondition(() -> !editorPage.getEditorLeftRulesTreeComponent().getSelectedItemText().isEmpty(), 5000, 100, "Waiting");
+        assertThat(editorPage.getEditorLeftRulesTreeComponent().getSelectedItemText())
+                .as("Selected tree item should be 'SmartRule2'")
+                .isEqualTo("SmartRule2");
+
+        LogsUtil.inspectLogFile(AppContainerPool.get());
+    }
+}

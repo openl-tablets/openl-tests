@@ -1,0 +1,191 @@
+package tests.ui.webstudio.studio_smoke;
+
+import configuration.annotations.Description;
+import configuration.annotations.TestCaseId;
+import configuration.annotations.AppContainerConfig;
+import configuration.appcontainer.AppContainerStartParameters;
+import configuration.driver.DriverPool;
+import domain.serviceclasses.constants.User;
+import domain.serviceclasses.models.UserData;
+import domain.ui.webstudio.components.admincomponents.UsersPageComponent;
+import domain.ui.webstudio.components.common.CreateNewProjectComponent;
+import domain.ui.webstudio.components.common.TabSwitcherComponent;
+import domain.ui.webstudio.components.editortabcomponents.EditorToolbarPanelComponent;
+import domain.ui.webstudio.pages.mainpages.EditorPage;
+import domain.ui.webstudio.pages.mainpages.RepositoryPage;
+import helpers.service.LoginService;
+import helpers.service.UserService;
+import helpers.utils.StringUtil;
+import helpers.utils.WaitUtil;
+import org.testng.annotations.Test;
+import tests.BaseTest;
+
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
+
+public class TestACLProjectLevelRoles extends BaseTest {
+
+    @Test
+    @TestCaseId("IPBQA-32912")
+    @Description("ACL: project-level role assignment (Manager/Viewer on specific projects) and permission verification without external auth system")
+    @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
+    public void testACLProjectLevelRoles() {
+        LoginService loginService = new LoginService(DriverPool.getPage());
+
+        // ============ Admin Setup: Log in and create two projects ============
+        EditorPage editorPage = loginService.login(UserService.getUser(User.ADMIN));
+        RepositoryPage adminRepoPage = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.REPOSITORY);
+
+        String project1Name = StringUtil.generateUniqueName("ProjectRoleTest1");
+        adminRepoPage.createProject(CreateNewProjectComponent.TabName.TEMPLATE, project1Name, "Example 1 - Bank Rating");
+
+        // Wait for the first project to appear in the table, confirming the refresh is complete
+        WaitUtil.waitForCondition(
+                () -> adminRepoPage.getAllVisibleProjectsInTable().contains(project1Name),
+                15000, // timeout in ms
+                500,   // polling interval in ms
+                "Waiting for project '" + project1Name + "' to appear in the repository table."
+        );
+
+        String project2Name = StringUtil.generateUniqueName("ProjectRoleTest2");
+        adminRepoPage.createProject(CreateNewProjectComponent.TabName.TEMPLATE, project2Name, "Sample Project");
+
+
+        // ============ Start Test: Navigate to users page ============
+        UsersPageComponent usersComponent = editorPage
+                .openUserMenu()
+                .navigateToAdministration()
+                .navigateToUsersPage();
+
+        assertThat(usersComponent.isUserInList("admin")).as("Admin user should be in the users list").isTrue();
+
+        // ============ Steps 4-5: Add new user 'test' ============
+        int initialUserCount = usersComponent.getUsersCount();
+        usersComponent.clickAddUser()
+                .setUsername("test")
+                .setPassword("test")
+                .saveUser();
+
+        assertThat(usersComponent.isUserInList("test")).as("User 'test' should be added to the list").isTrue();
+        assertThat(usersComponent.getUsersCount()).as("User count should increase by 1").isEqualTo(initialUserCount + 1);
+
+        // ============ Step 10: Login as 'test' user and verify no projects/options ============
+        editorPage.openUserMenu().signOut();
+        UserData testUser = new UserData("test", "test");
+        editorPage = loginService.login(testUser);
+        RepositoryPage repositoryPage = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.REPOSITORY);
+        List<String> visibleProjects = repositoryPage.getAllVisibleProjectsInTable();
+        assertThat(visibleProjects).isEmpty();
+        editorPage.openUserMenu().signOut();
+
+        // ============ Step 11: Admin adds Manager role for BOTH projects to 'test' user ============
+        editorPage = loginService.login(UserService.getUser(User.ADMIN));
+        usersComponent = editorPage.openUserMenu()
+                .navigateToAdministration()
+                .navigateToUsersPage();
+
+        usersComponent.clickEditUser("test")
+                .clickProjectsTab()
+                .clickAddRoleBtn()
+                .setProject(0, project1Name)
+                .setProjectRole(0, "Manager")
+                .clickAddRoleBtn()
+                .setProject(1, project2Name)
+                .setProjectRole(1, "Manager")
+                .saveUser();
+
+        assertThat(usersComponent.isUserInList("test")).isTrue();
+
+        // ============ Step 12: Login as 'test' and verify Manager access to BOTH projects ============
+        editorPage.openUserMenu().signOut();
+        editorPage = loginService.login(testUser);
+        repositoryPage = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.REPOSITORY);
+
+        visibleProjects = repositoryPage.getAllVisibleProjectsInTable();
+        assertThat(visibleProjects)
+            .as("User 'test' should see BOTH projects with assigned Manager roles")
+            .contains(project1Name)
+            .contains(project2Name);
+
+        // Verify Project-level Manager row actions. A PROJECT-scoped role (Manager or Contributor) gets only
+        // [Open, Export] in React — Copy/Delete are repo-level actions (create/delete a project), not granted
+        // to a project-scoped role. 6.4.0 does offer Copy/Sync/Compare/Open Revision there, because a
+        // project-scoped role may branch the project and Copy covers branching too. The Manager-vs-Viewer
+        // distinction is the Editor Edit rights, asserted below.
+        List<String> managerActions = repositoryPage.getProjectActionLabels(project1Name);
+        assertThat(managerActions)
+                .as("Project Manager: Export visible, NOT Delete/Deploy (project-scoped). Actual: %s", managerActions)
+                .contains("Export")
+                .doesNotContain("Delete", "Deploy");
+
+        // Verify Project Manager CAN edit tables in Editor tab (open the project first if it is closed)
+        if (repositoryPage.isProjectActionAvailable(project1Name, "Open")) {
+            repositoryPage.openProject(project1Name);
+        }
+        editorPage = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage.getEditorLeftProjectModuleSelectorComponent()
+                .selectModule(project1Name, "Bank Rating");
+        editorPage.getEditorLeftRulesTreeComponent()
+                .expandFolderInTree("Rating Algorithm")
+                .selectItemInFolder("Rating Algorithm", "BankRatingCalculation");
+        EditorToolbarPanelComponent managerToolbar = editorPage.getEditorToolbarPanelComponent();
+        assertThat(managerToolbar.getEditTableBtn().isVisible(2000))
+                .as("Project Manager should see Edit button for tables in Editor")
+                .isTrue();
+
+        editorPage.openUserMenu().signOut();
+
+        // ============ Step 13: Admin changes 'test' role to Viewer for BOTH projects ============
+        editorPage = loginService.login(UserService.getUser(User.ADMIN));
+
+        usersComponent = editorPage.openUserMenu()
+                .navigateToAdministration()
+                .navigateToUsersPage();
+
+        usersComponent.clickEditUser("test")
+                .clickProjectsTab()
+                .setProjectRole(0, "Viewer")
+                .setProjectRole(1, "Viewer")
+                .saveUser();
+
+        // ============ Step 14: Login as 'test' and verify Viewer access to BOTH projects ============
+        editorPage.openUserMenu().signOut();
+        editorPage = loginService.login(testUser);
+        repositoryPage = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.REPOSITORY);
+        visibleProjects = repositoryPage.getAllVisibleProjectsInTable();
+        assertThat(visibleProjects)
+            .as("User 'test' should still see BOTH projects with Viewer roles")
+            .contains(project1Name)
+            .contains(project2Name);
+
+        // Verify Viewer-restricted options are NOT available
+        List<String> viewerActions = repositoryPage.getProjectActionLabels(project1Name);
+        assertThat(viewerActions)
+                .as("Viewer: Export visible, NOT Copy/Delete/Deploy/Save. Actual: %s", viewerActions)
+                .contains("Export")
+                .doesNotContain("Copy", "Delete", "Deploy", "Save");
+
+        // ============ Step 15: Verify Viewer cannot edit tables in Editor tab ============
+        if (repositoryPage.isProjectActionAvailable(project1Name, "Open")) {
+            repositoryPage.openProject(project1Name);
+        }
+        editorPage = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+
+        // Open project and select a module (Example 1 - Bank Rating has "Bank Rating" module)
+        editorPage.getEditorLeftProjectModuleSelectorComponent()
+                .selectModule(project1Name, "Bank Rating");
+
+        // Expand rules tree and select a table to verify Edit button visibility
+        editorPage.getEditorLeftRulesTreeComponent()
+                .expandFolderInTree("Rating Algorithm")
+                .selectItemInFolder("Rating Algorithm", "BankRatingCalculation");
+
+        // Verify Viewer cannot edit tables - Edit button should NOT be visible
+        EditorToolbarPanelComponent toolbarPanel = editorPage.getEditorToolbarPanelComponent();
+        assertThat(toolbarPanel.getEditTableBtn().isVisible(2000))
+                .as("Viewer should NOT see Edit button for tables in Editor")
+                .isFalse();
+    }
+}

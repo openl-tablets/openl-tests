@@ -1,0 +1,176 @@
+package domain.ui.webstudio.components.common;
+
+import domain.ui.webstudio.components.BaseComponent;
+import configuration.core.ui.WebElement;
+import configuration.driver.DriverPool;
+import helpers.utils.WaitUtil;
+
+import java.util.List;
+
+public class TableComponent extends BaseComponent {
+
+    private WebElement editorWrapper;
+    private WebElement inputLocator;
+    private List<PlaywrightTableRowComponent> rows;
+    private WebElement propertyValueTemplate;
+
+    public TableComponent() {
+        super(DriverPool.getPage());
+        initializeElements();
+    }
+
+    public TableComponent(WebElement rootLocator) {
+        super(rootLocator);
+        initializeElements();
+    }
+
+    private void initializeElements() {
+        editorWrapper = new WebElement(page, "xpath=//*[@id='t_te_editorWrapper']", "editorWrapper");
+        inputLocator = new WebElement(page, "xpath=//*[@id='_t_te_editorWrapper']", "inputLocator");
+        rows = createScopedComponentList(PlaywrightTableRowComponent.class, "xpath=.//tbody/tr", "rowSelectorTemplate");
+        propertyValueTemplate = createScopedElement("xpath=//tr/td[text()='%s']/following-sibling::td[1]", "propertyValue");
+    }
+
+    public void clickCell(int rowIndex, int columnIndex) {
+        getCell(rowIndex, columnIndex).click();
+    }
+
+    public WebElement getCell(int rowIndex, int columnIndex) {
+        WaitUtil.waitForListNotEmpty(() -> rows, 3000, 100, "Waiting for table rows to load before getting cell [" + rowIndex + "," + columnIndex + "]");
+        PlaywrightTableRowComponent row = rows.get(rowIndex - 1);
+        List<WebElement> cells = row.getCells();
+        return cells.get(columnIndex - 1);
+    }
+
+    public String getCellText(int rowIndex, int columnIndex) {
+        return getCell(rowIndex, columnIndex).getInnerText().trim();
+    }
+
+    public List<String> getColumn(int columnIndex) {
+        WaitUtil.waitForListNotEmpty(() -> rows, 3000, 250, "Waiting for table rows before getting column " + columnIndex);
+        return rows.stream()
+                .map(PlaywrightTableRowComponent::getCells)
+                .filter(cells -> cells.size() >= columnIndex)
+                .map(cells -> cells.get(columnIndex - 1).getInnerText().trim())
+                .toList();
+    }
+
+    public void doubleClickCell(int rowIndex, int columnIndex) {
+        waitUntilSpinnerLoaded();
+        WebElement cell = getCell(rowIndex, columnIndex);
+        // OpenL keeps a floating keyboard-catcher input (`_t_te_editorWrapper`) over the
+        // currently selected cell. It intercepts pointer events for the underlying <td>,
+        // making a real dblclick on the same cell impossible. A single click on any other
+        // cell moves the overlay away (selection follows the click), restoring dblclick on
+        // the original cell.
+        String cssClass = cell.getLocator().getAttribute("class");
+        if (cssClass != null && cssClass.contains("te_selected")) {
+            int anchorRow = rowIndex == 1 ? 2 : 1;
+            List<WebElement> anchorCells = rows.get(anchorRow - 1).getCells();
+            int anchorCol = anchorCells.size() > 1 && columnIndex == 1 ? 2 : 1;
+            clickCell(anchorRow, anchorCol);
+        }
+        cell.doubleClick();
+    }
+
+    public void editCell(int rowIndex, int columnIndex, String text, boolean pressEnter) {
+        waitUntilSpinnerLoaded();
+        WaitUtil.retryOnException(() -> {
+            try {
+                doubleClickCell(rowIndex, columnIndex);
+            } catch (RuntimeException neverSettles) {
+                // A module that keeps recompiling re-renders the table, so the cell never reaches the
+                // "stable" state a real dblclick requires; dispatch the event instead.
+                getCell(rowIndex, columnIndex).doubleClickWhenSettled();
+            }
+            editorWrapper.waitForVisible(2000);
+            return true;
+        }, 10000, 500, "Activating cell editor for cell [" + rowIndex + "," + columnIndex + "]");
+
+        boolean isSelectEditor = inputLocator.getLocator().locator("xpath=self::select").count() > 0;
+        if (isSelectEditor) {
+            inputLocator.selectByVisibleText(text);
+            if (pressEnter) {
+                inputLocator.press("Enter");
+            }
+        } else {
+            inputLocator.press("Control+A");
+            inputLocator.press("Delete");
+            inputLocator.fill(text);
+            if (pressEnter) {
+                inputLocator.press("Enter");
+            }
+        }
+        WaitUtil.sleep(250, "Waiting for cell edit to be applied");
+    }
+
+    public void editCell(int rowIndex, int columnIndex, String text) {
+        editCell(rowIndex, columnIndex, text, true);
+    }
+
+    public List<PlaywrightTableRowComponent> getRows() {
+        WaitUtil.waitForCondition(() -> !rows.isEmpty(), 3000, 250, "Waiting for table rows to be loaded");
+        return rows;
+    }
+
+    public int getRowsCount() {
+        WaitUtil.waitForListNotEmpty(() -> rows, 3000, 250, "Waiting for table rows before counting");
+        return rows.size();
+    }
+
+    public PlaywrightTableRowComponent getRow(int rowIndex) {
+        WaitUtil.waitForListNotEmpty(() -> rows, 3000, 250, "Waiting for table rows before getting row " + rowIndex);
+        return rows.get(rowIndex - 1);
+    }
+
+    public String getCellHintText(int rowIndex, int columnIndex, String variableName) {
+        WebElement cell = getCell(rowIndex, columnIndex);
+        WebElement variableSpan = new WebElement(cell, String.format("xpath=.//span[contains(text(), '%s')]", variableName), "variableSpan");
+        variableSpan.hover();
+        WaitUtil.sleep(200, "Waiting for hint tooltip to appear after hover");
+
+        WebElement hintElement = new WebElement(variableSpan, "xpath=.//em", "hintElement");
+        return hintElement.getText().trim();
+    }
+
+    public String getPropertyValue(String propertyName) {
+        return propertyValueTemplate.format(propertyName).getText().trim();
+    }
+
+    public boolean isPropertyPresent(String propertyName) {
+        return propertyValueTemplate.format(propertyName).isVisible();
+    }
+
+    public List<String> getHeaders() {
+        WebElement headerRow = createScopedElement("xpath=.//thead/tr", "headerRow");
+        return headerRow.getLocator().locator("xpath=./th").allTextContents();
+    }
+
+    // Inner class for table row operations
+    public static class PlaywrightTableRowComponent extends BaseComponent {
+        List<WebElement> cells;
+
+        public PlaywrightTableRowComponent() {
+            super(DriverPool.getPage());
+            initializeElements();
+        }
+
+        public PlaywrightTableRowComponent(WebElement rootLocator) {
+            super(rootLocator);
+            initializeElements();
+        }
+
+        private void initializeElements() {
+            cells = createScopedElementList("xpath=./td", "cells");
+        }
+
+        public  List<WebElement> getCells() {
+            WaitUtil.waitForListNotEmpty(() -> cells, 250, 50, "Waiting for table row cells to load");
+            return cells;
+        }
+
+        public List<String> getValue() {
+            return cells.stream().map(e -> e.getInnerText().trim()).toList();
+        }
+    }
+}

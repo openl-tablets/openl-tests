@@ -1,0 +1,238 @@
+package tests.ui.webstudio.studio_issues;
+
+import configuration.annotations.Description;
+import configuration.annotations.TestCaseId;
+import configuration.annotations.AppContainerConfig;
+import configuration.appcontainer.AppContainerStartParameters;
+import domain.serviceclasses.constants.User;
+import domain.ui.webstudio.components.common.TabSwitcherComponent;
+import domain.ui.webstudio.components.editortabcomponents.ChangesDialogComponent;
+import domain.ui.webstudio.components.editortabcomponents.CompareExcelFilesDialogComponent;
+import domain.ui.webstudio.components.editortabcomponents.CompareLocalChangesDialogComponent;
+import domain.ui.webstudio.components.editortabcomponents.EditorRevisionsTabComponent;
+import domain.ui.webstudio.components.editortabcomponents.leftmenu.EditorLeftRulesTreeComponent;
+import domain.ui.webstudio.components.repositorytabcomponents.CompareGitRevisionsDialogComponent;
+import domain.ui.webstudio.components.repositorytabcomponents.ResolveConflictsDialogComponent;
+import domain.ui.webstudio.pages.mainpages.EditorPage;
+import domain.ui.webstudio.pages.mainpages.ProjectDetailPage;
+import domain.ui.webstudio.pages.mainpages.RepositoryPage;
+import helpers.service.WorkflowService;
+import helpers.utils.TestDataUtil;
+import org.testng.annotations.Test;
+import tests.BaseTest;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+public class TestDisplayChangedRowsCompareScreens extends BaseTest {
+
+    private static final String BANK_RATING_FILE_1 = "Bank_Rating_1.xlsx";
+    private static final String BANK_RATING_FILE_2 = "Bank_Rating_2.xlsx";
+
+    @Test
+    @TestCaseId("IPBQA-32105")
+    @Description("Display Changed Rows: verify equal rows toggle in Local Changes and Repository Compare screens")
+    @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
+    public void testDisplayChangedRowsLocalChangesAndRepositoryCompareScreens() {
+        String projectName = WorkflowService.loginCreateProjectFromTemplate(User.ADMIN, "Example 1 - Bank Rating");
+        EditorPage editorPage = new EditorPage();
+
+        editorPage.getEditorLeftProjectModuleSelectorComponent()
+                .selectModule(projectName, "Bank Rating");
+        editorPage.getEditorLeftRulesTreeComponent()
+                .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
+                .expandFolderInTree("Decision")
+                .selectItemInFolder("Decision", "BankLimitIndex");
+
+        editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
+        editorPage.getCenterTable().editCell(7, 5, "10");
+        editorPage.getCenterTable().editCell(16, 9, "5");
+        editorPage.getEditorTableActionsPanelComponent().clickSaveChanges();
+
+        ChangesDialogComponent changesDialog = editorPage.getEditorToolbarPanelComponent()
+                .clickMore()
+                .clickChanges();
+
+        changesDialog.setCompareCheckbox(1, true);
+        changesDialog.setCompareCheckbox(2, true);
+        CompareLocalChangesDialogComponent compareDialog = changesDialog.clickCompare();
+        compareDialog.waitForDialogToAppear();
+        compareDialog.setShowEqualRows(true);
+
+        compareDialog.openTreeNode("Limit");
+        compareDialog.clickTreeNode("Rules Double BankLimitIndex (Bank bank, RatingGroup bankRatingGroup)");
+
+        assertThat(compareDialog.getNumberOfRows(1))
+                .as("Left fragment should have more than 4 rows with equal rows shown")
+                .isGreaterThan(4);
+        assertThat(compareDialog.getNumberOfRows(2))
+                .as("Right fragment should have more than 4 rows with equal rows shown")
+                .isGreaterThan(4);
+
+        validateCompareWindowCells(compareDialog);
+
+        compareDialog.setShowEqualRows(false);
+        assertThat(compareDialog.getNumberOfRows(1) == 4)
+                .as("Left fragment should have exactly 4 rows when equal rows hidden")
+                .isTrue();
+        assertThat(compareDialog.getNumberOfRows(2) == 4)
+                .as("Right fragment should have exactly 4 rows when equal rows hidden")
+                .isTrue();
+        validateCompareWindowCells(compareDialog);
+
+        compareDialog.setShowEqualRows(true);
+        assertThat(compareDialog.getNumberOfRows(1))
+                .as("Left fragment should have more than 4 rows after re-enabling equal rows")
+                .isGreaterThan(4);
+        assertThat(compareDialog.getNumberOfRows(2))
+                .as("Right fragment should have more than 4 rows after re-enabling equal rows")
+                .isGreaterThan(4);
+        compareDialog.close();
+
+        // Compare the working copy against the repository BEFORE committing: the repo compare screen always
+        // puts the working copy on the left, so the edited-but-unsaved project is what differs from HEAD.
+        RepositoryPage repositoryPage = editorPage.getTabSwitcherComponent()
+                .selectTab(TabSwitcherComponent.TabName.REPOSITORY);
+        ProjectDetailPage projectDetail = repositoryPage.openProjectDetail(projectName);
+
+        // The repo compare opens in a new browser tab (the legacy showDiff.xhtml). This build always renders the
+        // full table and highlights the changed cells green; unlike the old repo compare, "Show equal elements"
+        // no longer removes equal rows, so the repo half verifies the highlighting and the equal-rows filter
+        // stays covered above through the Local Changes compare.
+        CompareGitRevisionsDialogComponent repoCompareDialog = projectDetail.openRevisionCompare();
+        repoCompareDialog.openTreeNode("Limit");
+        repoCompareDialog.clickTreeNode("Rules Double BankLimitIndex (Bank bank, RatingGroup bankRatingGroup)");
+
+        validateRepositoryCompareWindowCells(repoCompareDialog);
+        assertThat(repoCompareDialog.getNumberOfRows(1))
+                .as("Repo left fragment should render the diff rows").isGreaterThan(0);
+        assertThat(repoCompareDialog.getNumberOfRows(2))
+                .as("Repo right fragment should render the diff rows").isGreaterThan(0);
+
+        // The toggle re-renders the diff without breaking it; the changed cells stay highlighted in both states.
+        repoCompareDialog.setShowEqualRows(true);
+        repoCompareDialog.openTreeNode("Limit");
+        repoCompareDialog.clickTreeNode("Rules Double BankLimitIndex (Bank bank, RatingGroup bankRatingGroup)");
+        validateRepositoryCompareWindowCells(repoCompareDialog);
+        repoCompareDialog.close();
+
+        repositoryPage.openProjectsList().saveProject(projectName, "Edited BankLimitIndex");
+    }
+
+    @Test
+    @TestCaseId("IPBQA-32105")
+    @Description("Display Changed Rows: verify equal rows toggle in uploaded Excel files compare screen")
+    @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
+    public void testDisplayChangedRowsUploadedFilesCompareScreen() {
+        WorkflowService.loginCreateProjectFromTemplate(User.ADMIN, "Sample Project");
+        EditorPage editorPage = new EditorPage();
+
+        CompareExcelFilesDialogComponent compareDialog = editorPage
+                .getEditorToolbarPanelComponent()
+                .clickMore()
+                .clickCompareExcelFiles();
+
+        compareDialog.uploadFile(TestDataUtil.getFilePathFromResources(BANK_RATING_FILE_1));
+        compareDialog.uploadFile(TestDataUtil.getFilePathFromResources(BANK_RATING_FILE_2));
+        compareDialog.clickCompareExcel();
+
+        compareDialog.openTreeNode("Limit");
+        compareDialog.clickTreeNode("Rules Double BankLimitIndex (Bank bank, RatingGroup bankRatingGroup)");
+
+        assertThat(compareDialog.getNumberOfRows(1))
+                .as("Left fragment should have exactly 4 rows by default")
+                .isEqualTo(4);
+        assertThat(compareDialog.getNumberOfRows(2))
+                .as("Right fragment should have exactly 4 rows by default")
+                .isEqualTo(4);
+        validateCompareWindowCells(compareDialog);
+
+        compareDialog.setShowEqualRows(true);
+        assertThat(compareDialog.getNumberOfRows(1))
+                .as("Left fragment should have more than 4 rows when equal rows shown")
+                .isGreaterThan(4);
+        assertThat(compareDialog.getNumberOfRows(2))
+                .as("Right fragment should have more than 4 rows when equal rows shown")
+                .isGreaterThan(4);
+        validateCompareWindowCells(compareDialog);
+
+        compareDialog.close();
+    }
+
+    @Test
+    @TestCaseId("IPBQA-32105")
+    @Description("Display Changed Rows: verify no equal rows checkbox in non-Excel Resolve Conflicts screen")
+    @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
+    public void testNoEqualRowsCheckboxInNonExcelResolveConflicts() {
+        String projectName = WorkflowService.loginCreateProjectFromTemplate(User.ADMIN, "Example 2 - Corporate Rating");
+        EditorPage editorPage = new EditorPage();
+
+        editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName);
+
+        // Save desc1 → revision 2
+        editorPage.openEditProjectDialog(projectName).setDescription("desc1").clickUpdateButton();
+        editorPage.getEditorToolbarPanelComponent().clickSave();
+        editorPage.getSaveChangesComponent().clickSave();
+        editorPage.waitUntilSpinnerLoaded();
+
+        // Save desc2 → revision 3 (HEAD)
+        editorPage.openEditProjectDialog(projectName).setDescription("desc2").clickUpdateButton();
+        editorPage.getEditorToolbarPanelComponent().clickSave();
+        editorPage.getSaveChangesComponent().clickSave();
+        editorPage.waitUntilSpinnerLoaded();
+
+        // Open revision 2 (one behind HEAD=rev3) — editing from here causes a conflict
+        editorPage.getEditorToolbarPanelComponent().clickMore().clickRevisions();
+        EditorRevisionsTabComponent revisionsTab = new EditorRevisionsTabComponent();
+        revisionsTab.waitForTableToLoad();
+        revisionsTab.openRevision(2);
+
+        // Edit description from old revision and save → triggers Resolve Conflicts
+        editorPage.openEditProjectDialog(projectName).setDescription("desc3").clickUpdateButton();
+        editorPage.getEditorToolbarPanelComponent().clickSave();
+        editorPage.getSaveChangesComponent().clickSave();
+        editorPage.waitUntilSpinnerLoaded();
+
+        // Resolve Conflicts dialog must appear because we edited from an old revision
+        ResolveConflictsDialogComponent resolveConflictsDialog = new ResolveConflictsDialogComponent();
+        assertThat(resolveConflictsDialog.isDialogVisible())
+                .as("Resolve Conflicts dialog should appear when saving from an old revision while HEAD has advanced")
+                .isTrue();
+
+        // Open text compare nested modal via Compare link and verify no equal rows checkbox (non-Excel file)
+        CompareLocalChangesDialogComponent compareDialog = resolveConflictsDialog.clickCompareLinkInCurrentPage();
+        compareDialog.waitForTextCompareToAppear();
+        assertThat(compareDialog.isShowEqualRowsCheckboxVisible())
+                .as("Equal rows checkbox must not be visible for non-Excel (text) file diff in Resolve Conflicts")
+                .isFalse();
+    }
+
+    private void validateCompareWindowCells(CompareLocalChangesDialogComponent dialog) {
+        assertThat(dialog.isCellHighlightedGreen(7, 5, "1"))
+                .as("Cell [7,5] in left fragment should be highlighted green")
+                .isTrue();
+        assertThat(dialog.isCellHighlightedGreen(7, 5, "2"))
+                .as("Cell [7,5] in right fragment should be highlighted green")
+                .isTrue();
+        assertThat(dialog.isCellHighlightedGreen(16, 11, "1"))
+                .as("Cell [16,11] in left fragment should be highlighted green")
+                .isTrue();
+        assertThat(dialog.isCellHighlightedGreen(16, 11, "2"))
+                .as("Cell [16,11] in right fragment should be highlighted green")
+                .isTrue();
+    }
+
+    private void validateRepositoryCompareWindowCells(CompareGitRevisionsDialogComponent dialog) {
+        assertThat(dialog.isCellHighlightedGreen(7, 5, "1"))
+                .as("Repo cell [7,5] in left fragment should be highlighted green")
+                .isTrue();
+        assertThat(dialog.isCellHighlightedGreen(7, 5, "2"))
+                .as("Repo cell [7,5] in right fragment should be highlighted green")
+                .isTrue();
+        assertThat(dialog.isCellHighlightedGreen(16, 11, "1"))
+                .as("Repo cell [16,11] in left fragment should be highlighted green")
+                .isTrue();
+        assertThat(dialog.isCellHighlightedGreen(16, 11, "2"))
+                .as("Repo cell [16,11] in right fragment should be highlighted green")
+                .isTrue();
+    }
+}

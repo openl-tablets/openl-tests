@@ -1,0 +1,40 @@
+package tests.ui.webstudio.studio_smoke;
+
+import configuration.annotations.Description;
+import configuration.annotations.AppContainerConfig;
+import configuration.appcontainer.AppContainerStartParameters;
+import configuration.driver.DriverPool;
+import domain.ui.webstudio.pages.mainpages.EditorPage;
+import domain.ui.webstudio.pages.mainpages.LoginPage;
+import org.testng.annotations.Test;
+import tests.BaseTest;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+/**
+ * Single-user mode ({@code user.mode=single}). The app auto-authenticates every request as the
+ * configured {@code security.single.username} with no login step — opening the app lands directly in
+ * the editor, and (being listed in {@code security.administrators}) the single user has admin access.
+ */
+public class TestSingleModeAuthUi extends BaseTest {
+
+    @Test
+    @Description("Single-user mode: opening the app auto-authenticates with no login form, and the "
+            + "configured single user has admin access (Administration menu visible).")
+    @AppContainerConfig(startParams = AppContainerStartParameters.STUDIO_SINGLE_PARAMS)
+    public void testSingleModeAutoAuthentication() {
+        DriverPool.getPage().navigate(DriverPool.getAppUrl());
+        DriverPool.getPage().waitForLoadState();
+        // Single mode signs the user in without a login form, so the 6.4.0 "Complete Your Profile" modal
+        // has to be dealt with here — otherwise it blocks the whole page.
+        new LoginPage().completeProfileIfRequested();
+
+        assertThat(new LoginPage().isLoginFormDisplayed(5000))
+                .as("single mode auto-authenticates — no login form is shown")
+                .isFalse();
+
+        assertThat(new EditorPage().openUserMenu().isAdministrationMenuItemVisible())
+                .as("the single user has admin access (Administration menu visible)")
+                .isTrue();
+    }
+}

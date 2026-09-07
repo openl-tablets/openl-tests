@@ -1,0 +1,172 @@
+package domain.ui.webstudio.components.projectdetail;
+
+import com.microsoft.playwright.Page;
+import configuration.core.ui.WebElement;
+import domain.ui.webstudio.components.BaseComponent;
+import helpers.utils.WaitUtil;
+
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+public class ProjectFilesTabComponent extends BaseComponent {
+
+    private static final int FILE_DIALOG_TIMEOUT_MS = DEFAULT_TIMEOUT_MS * 3;
+    private static final int TREE_LOAD_TIMEOUT_MS = DEFAULT_TIMEOUT_MS * 6;
+    private static final Pattern FILE_PARAM = Pattern.compile("[?&]file=([^&#]*)");
+
+    private final WebElement fileNodeByName;
+    private final WebElement addBtn;
+    private final WebElement searchField;
+    private final WebElement fileActionsBtn;
+    private final WebElement addMenuItem;
+    private final WebElement fileActionsMenuItem;
+    private final WebElement fileDeleteSubmitBtn;
+    private final WebElement updateFileInput;
+    private final WebElement updateFileSubmitBtn;
+    private final WebElement updateFileNameWarning;
+    private final WebElement uploadInput;
+    private final WebElement uploadNameField;
+    private final WebElement uploadPathField;
+    private final WebElement uploadSubmitBtn;
+    private final WebElement folderPathInput;
+    private final WebElement folderSubmitBtn;
+    private final WebElement filePreviewEmpty;
+    private final WebElement filePreviewError;
+    private final WebElement filePaneLoading;
+
+    public ProjectFilesTabComponent(Page page) {
+        this(new WebElement(page, "[data-testid=project-detail]", "projectDetail"));
+    }
+
+    public ProjectFilesTabComponent(WebElement rootLocator) {
+        super(rootLocator);
+        fileNodeByName = createScopedElement("xpath=.//div[@role='treeitem'][.//*[normalize-space()='%s']]", "fileTreeNode");
+        addBtn = createScopedElement("[data-testid=files-add]", "filesAddBtn");
+        searchField = createScopedElement("[data-testid=files-search]", "filesSearchField");
+        fileActionsBtn = createScopedElement("[data-testid=file-actions]", "fileActionsBtn");
+        addMenuItem = new WebElement(page, "xpath=//div[contains(@class,'ant-dropdown')][not(contains(@class,'ant-dropdown-hidden'))]//li[contains(@class,'ant-dropdown-menu-item')][.//span[@data-testid='%s']]", "filesAddMenuItem");
+        fileActionsMenuItem = new WebElement(page, "xpath=//div[contains(@class,'ant-dropdown')][not(contains(@class,'ant-dropdown-hidden'))]//li[contains(@class,'ant-dropdown-menu-item')][normalize-space()='%s']", "fileActionsMenuItem");
+        fileDeleteSubmitBtn = new WebElement(page, "[data-testid=file-delete-submit]", "fileDeleteSubmitBtn");
+        updateFileInput = new WebElement(page, "input[data-testid=update-file-dragger]", "updateFileInput");
+        updateFileSubmitBtn = new WebElement(page, "[data-testid=update-file-submit]", "updateFileSubmitBtn");
+        updateFileNameWarning = new WebElement(page, "[data-testid=update-file-name-warning]", "updateFileNameWarning");
+        uploadInput = new WebElement(page, "input[data-testid=files-upload-dragger]", "filesUploadInput");
+        uploadNameField = new WebElement(page, "[data-testid=files-upload-name]", "filesUploadNameField");
+        uploadPathField = new WebElement(page, "[data-testid=files-upload-path] input", "filesUploadPathField");
+        uploadSubmitBtn = new WebElement(page, "[data-testid=files-upload-submit]", "filesUploadSubmitBtn");
+        folderPathInput = new WebElement(page, "[data-testid=files-folder-path] input", "folderPathInput");
+        folderSubmitBtn = new WebElement(page, "[data-testid=files-folder-submit]", "folderSubmitBtn");
+        filePreviewEmpty = createScopedElement("[data-testid=file-preview-empty]", "filePreviewEmpty");
+        filePreviewError = createScopedElement("[data-testid=file-preview-error]", "filePreviewError");
+        filePaneLoading = createScopedElement("[data-testid=file-pane-loading]", "filePaneLoading");
+    }
+
+    public boolean isOpen(int timeoutInMillis) {
+        return searchField.isVisible(timeoutInMillis);
+    }
+
+    public void waitForOpen(int timeoutInMillis) {
+        searchField.waitForVisible(timeoutInMillis);
+    }
+
+    public void deleteFile(String fileName) {
+        fileNodeByName.format(fileName).click();
+        fileActionsBtn.waitForVisible(DEFAULT_TIMEOUT_MS).click();
+        fileActionsMenuItem.format("Delete").click();
+        fileDeleteSubmitBtn.click();
+        waitUntilSpinnerLoaded();
+        fileNodeByName.format(fileName).waitForHidden(DEFAULT_TIMEOUT_MS);
+    }
+
+    public void selectFile(String fileName) {
+        fileNodeByName.format(fileName).waitForVisible(DEFAULT_TIMEOUT_MS).click();
+    }
+
+    public boolean isResourceNotFoundShown() {
+        return getRootLocator().getLocator()
+                .locator("xpath=.//*[not(*)][contains(normalize-space(.),'The resource is not found')]").count() > 0;
+    }
+
+    public boolean waitForFileSelectionDropped(String fileName) {
+        return WaitUtil.waitForCondition(() -> !selectedFileParam().contains(fileName), DEFAULT_TIMEOUT_MS, 200,
+                "Waiting for the Files tab to drop '" + fileName + "' from the URL selection");
+    }
+
+    public long waitForTreeToList(String fileName) {
+        long started = System.currentTimeMillis();
+        fileNodeByName.format(fileName).waitForVisible(TREE_LOAD_TIMEOUT_MS);
+        long elapsed = System.currentTimeMillis() - started;
+        LOGGER.info("Files tree listed '{}' after {} ms", fileName, elapsed);
+        return elapsed;
+    }
+
+    public String describeFilePaneState(String expectedFileName) {
+        String pane = filePaneLoading.exists() ? "loading"
+                : filePreviewError.exists() ? "error: " + filePreviewError.getText().replaceAll("\\s+", " ").trim()
+                : filePreviewEmpty.exists() ? "empty"
+                : "preview";
+        return "tree lists '" + expectedFileName + "': " + fileNodeByName.format(expectedFileName).exists()
+                + ", file pane: " + pane + ", url file param: '" + selectedFileParam() + "'";
+    }
+
+    public String selectedFileParam() {
+        Matcher matcher = FILE_PARAM.matcher(page.url());
+        return matcher.find() ? URLDecoder.decode(matcher.group(1), StandardCharsets.UTF_8) : "";
+    }
+
+    public boolean isFilePreviewEmptyShown() {
+        return filePreviewEmpty.isVisible(DEFAULT_TIMEOUT_MS);
+    }
+
+    public boolean isNodePresent(String nodeName) {
+        return fileNodeByName.format(nodeName).isVisible(DEFAULT_TIMEOUT_MS);
+    }
+
+    public void uploadFileAs(String filePath, String targetName, String targetFolder) {
+        openAddMenuItem("files-upload");
+        uploadInput.setInputFiles(filePath);
+        if (targetName != null && !targetName.isEmpty()) {
+            uploadNameField.waitForVisible(DEFAULT_TIMEOUT_MS).fill(targetName);
+        }
+        if (targetFolder != null && !targetFolder.isEmpty()) {
+            uploadPathField.waitForVisible(DEFAULT_TIMEOUT_MS).fill(targetFolder);
+        }
+        uploadSubmitBtn.click();
+        waitUntilSpinnerLoaded();
+    }
+
+    public boolean isAddMenuAvailable() {
+        return addBtn.isVisible(DEFAULT_TIMEOUT_MS);
+    }
+
+    public void pickUpdateFile(String fileName, String newFilePath) {
+        fileNodeByName.format(fileName).click();
+        fileActionsBtn.waitForVisible(DEFAULT_TIMEOUT_MS).click();
+        fileActionsMenuItem.format("Update").click();
+        updateFileSubmitBtn.waitForVisible(FILE_DIALOG_TIMEOUT_MS);
+        updateFileInput.setInputFiles(newFilePath);
+    }
+
+    public void confirmUpdateFile() {
+        updateFileSubmitBtn.click();
+        waitUntilSpinnerLoaded();
+    }
+
+    public boolean isUpdateFileNameWarningShown() {
+        return updateFileNameWarning.isVisible(DEFAULT_TIMEOUT_MS / 2);
+    }
+
+    public void createFolder(String folderPath) {
+        openAddMenuItem("files-new-folder");
+        folderPathInput.fill(folderPath);
+        folderSubmitBtn.click();
+        waitUntilSpinnerLoaded();
+    }
+
+    private void openAddMenuItem(String itemTestId) {
+        addBtn.hover();
+        addMenuItem.format(itemTestId).click();
+    }
+}

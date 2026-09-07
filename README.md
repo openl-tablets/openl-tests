@@ -1,3 +1,799 @@
 # OpenL Tests
 
-Automated UI and API tests for OpenL Studio and OpenL Rule Services.
+Automated UI and API tests for OpenL Studio and OpenL Rule Services, built with **Playwright**, **TestNG** and **TestContainers**. Every test runs against its own fresh application container; the tests run locally or in Docker-based execution mode with unified driver management, and the regression runs on GitHub Actions with a merged HTML report.
+
+## Architecture Overview
+
+```
+Components → DriverPool (Unified Interface)
+                    ↓
+            [Automatic Mode Detection]
+                    ↓
+    LOCAL Mode → Direct Playwright → Container App
+    DOCKER Mode → Container Playwright → Container App
+                    ↓
+            [File Operations Support]
+                    ↓
+    Upload: Volume Mapping + TestDataUtil
+    Download: DownloadUtil (mode-aware)
+```
+
+## Key Features
+
+- **Dual Execution Modes**: `PLAYWRIGHT_LOCAL` (default) and `PLAYWRIGHT_DOCKER` with automatic detection
+- **Unified Driver Pool**: Single interface for both execution modes
+- **TestContainers Integration**: Application containers with network isolation
+- **Multi-Container Infrastructure**: `DeployInfrastructureService` for tests requiring DB + WebService containers
+- **Parallel Test Execution**: TestNG parallel execution with configurable thread counts
+- **Merged HTML report**: per-test step logs, Playwright traces, application logs and screenshots for every GitHub Actions run
+- **Comprehensive Configuration**: Property-based configuration with environment override support
+- **Cross-Browser Support**: Chromium, Firefox, and WebKit browsers
+- **File Upload/Download Support**: Mode-aware file operations with volume mapping
+
+## Quick Start
+
+### Prerequisites
+
+- **Java 21** or higher
+- **Maven 3.8+**
+- **Docker** (for Docker execution mode and application containers)
+
+### Setup
+
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd openl-tests
+   ```
+
+2. **Install Playwright browsers** (for local execution)
+   ```bash
+   mvn clean test -Dtest=TestAdminEmail -Dexecution.mode=PLAYWRIGHT_LOCAL
+   ```
+
+3. **Verify Docker setup** (for Docker execution mode)
+   ```bash
+   docker pull ghcr.io/openl-tablets/webstudio:latest
+   ```
+
+## Test Execution Guide
+
+### Execution Modes
+
+The framework supports two execution modes controlled by the `execution.mode` system property:
+
+- **`PLAYWRIGHT_LOCAL`** (default): Playwright runs on host machine, faster startup
+- **`PLAYWRIGHT_DOCKER`**: Playwright runs in Docker containers, better isolation
+
+### Running Test Suites
+
+#### Available Test Suites
+Located in `src/test/resources/testng_suites/`. The regression suites, each run with two parallel threads: `studio_smoke`, `studio_acl`, `studio_git`, `studio_issues`, `studio_open_api`, `studio_rules_editor`, `studio_sso`, `service_smoke`. The three `*_regression` suites (`studio_zip_projects_regression`, `studio_central_projects_regression`, `studio_preconfig_projects_regression`) validate client project sets and run only locally. `studio_smoke` is the default when `-Dsuite` is omitted.
+
+#### Suite Execution Examples
+```bash
+# Run smoke tests in LOCAL mode (default)
+mvn clean test -Dsuite=studio_smoke
+
+# Run smoke tests with explicit mode
+mvn clean test -Dsuite=studio_smoke -Dexecution.mode=PLAYWRIGHT_LOCAL
+mvn clean test -Dsuite=studio_smoke -Dexecution.mode=PLAYWRIGHT_DOCKER
+
+# Run other suites
+mvn clean test -Dsuite=studio_issues -Dexecution.mode=PLAYWRIGHT_LOCAL
+mvn clean test -Dsuite=studio_rules_editor -Dexecution.mode=PLAYWRIGHT_DOCKER
+```
+
+### Running Individual Tests
+
+#### Single Test Class
+```bash
+# Local mode
+mvn clean test -Dtest=TestAdminEmail -Dexecution.mode=PLAYWRIGHT_LOCAL
+
+# Docker mode  
+mvn clean test -Dtest=TestAdminEmail -Dexecution.mode=PLAYWRIGHT_DOCKER
+```
+
+#### Single Test Method
+```bash
+mvn clean test -Dtest=TestAdminEmail#testPlaywrightAdminEmail -Dexecution.mode=PLAYWRIGHT_LOCAL
+```
+
+#### Multiple Test Classes
+```bash
+mvn clean test -Dtest=TestAdminEmail,TestAdminUserSettings -Dexecution.mode=PLAYWRIGHT_LOCAL
+```
+
+### Parallel Execution Verification
+
+Tests support parallel execution with thread-safe driver management:
+- **LOCAL Mode**: Multiple Playwright instances on host machine
+- **DOCKER Mode**: Multiple Docker containers with isolated Playwright instances
+
+Look for log entries indicating parallel execution:
+```
+[TestNG-test-1] [INFO] Initializing test with Playwright: testPlaywrightAdminEmail
+[TestNG-test-2] [INFO] Initializing test with Playwright: testPlaywrightUserSettings
+```
+
+## Container Networking (Docker DNS)
+
+All multi-container tests use **Docker DNS** via a shared `Network` object. No `host.docker.internal` dependency. This works on Linux CI without extra configuration.
+
+### How Containers Join the Same Network
+
+The entire mechanism is built on **one `Network` Java object** passed through `NetworkPool` (a ThreadLocal storage):
+
+```
+Test.beforeMethod()
+│
+├── 1. DeployInfrastructureService.start()
+│       ├── network = Network.newNetwork()         // create Docker network
+│       ├── NetworkPool.setNetwork(network)         // store in ThreadLocal
+│       ├── postgresContainer.withNetwork(network)  // DB joins the network
+│       └── wsContainer.withNetwork(network)        // WS joins the network
+│
+└── 2. super.beforeMethod()  →  BaseTest
+        ├── network = NetworkPool.getNetwork()      // read SAME object from ThreadLocal
+        └── setupAppContainer(result, network)
+                └── AppContainerFactory.createContainer(name, network, ...)
+                        └── container.withNetwork(network)  // App joins the SAME network
+```
+
+All containers call `.withNetwork(network)` with the **same Java object**, so Docker places them in one Docker network. `.withNetworkAliases("postgres")` / `.withNetworkAliases("wscontainer")` sets DNS names by which containers discover each other.
+
+`NetworkPool` is just a **transfer point** between `Test.beforeMethod()` (where network is created) and `BaseTest.beforeMethod()` (where it is read for the app container). Without it, `BaseTest` would not know which network to use.
+
+### How Extra Configuration Reaches the App Container
+
+`BaseTest` exposes two overridable methods a test can implement to feed extra configuration into
+the app container (an explicit, compiler-checked contract — no reflection involved):
+
+| Method | Returns | Purpose |
+|---|---|---|
+| `additionalContainerFiles()` | `Map<String, String>` | Files to copy into container (host path -> container path) |
+| `additionalContainerConfig()` | `Map<String, String>` | Extra env vars to pass to the container |
+
+The test populates its backing maps in `beforeMethod()` **before** calling `super.beforeMethod()`,
+and overrides the methods to expose them:
+
+```java
+// In test class:
+private static final Map<String, String> additionalContainerConfig = new HashMap<>();
+private static final Map<String, String> additionalContainerFiles = new HashMap<>();
+
+@Override
+protected Map<String, String> additionalContainerConfig() {
+    return additionalContainerConfig;
+}
+
+@Override
+protected Map<String, String> additionalContainerFiles() {
+    return additionalContainerFiles;
+}
+
+@Override
+@BeforeMethod
+public void beforeMethod(ITestResult result) {
+    additionalContainerConfig.clear();
+    additionalContainerFiles.clear();
+
+    deployInfra = DeployInfrastructureService.builder()
+            .withPostgresAsSecurityDb()
+            .build();
+    deployInfra.start();
+
+    additionalContainerConfig.putAll(deployInfra.getContainerConfig());
+    additionalContainerFiles.putAll(deployInfra.getFilesToCopy());
+
+    super.beforeMethod(result);  // BaseTest calls both methods while setting up the container
+}
+```
+
+## DeployInfrastructureService
+
+`helpers.service.DeployInfrastructureService` encapsulates all Docker infrastructure setup for multi-container tests. Builder pattern, supports PostgreSQL, Oracle, and WebService containers.
+
+### Why This Service Exists
+
+Multi-container tests (deploy to production, JDBC repositories, security DB) require 20-90 lines of boilerplate: network creation, DB container start, schema creation, JDBC JAR paths, `.properties` file generation, WS container with healthcheck, env vars. This service eliminates duplication.
+
+### Usage Patterns
+
+```java
+// 1. PostgreSQL as production repo + WebService container (TestNewDeployPopup):
+deployInfra = DeployInfrastructureService.builder()
+    .withPostgres().withWsContainer().build();
+
+// 2. Oracle as deployment repo (TestDeploymentConfigurationRepositoryConnection):
+deployInfra = DeployInfrastructureService.builder()
+    .withOracle().build();
+
+// 3. PostgreSQL as security DB (TestMultipleDesignRepositoriesWithPostgres):
+deployInfra = DeployInfrastructureService.builder()
+    .withPostgresAsSecurityDb().build();
+```
+
+### PostgreSQL Modes
+
+| | PRODUCTION_REPO | SECURITY_DB |
+|---|---|---|
+| DB name | `openl` | container default (`test`) |
+| Credentials | `openl/openl` | container defaults |
+| Schema | `CREATE SCHEMA repository` | none |
+| `.properties` file | generated and copied | none |
+| `getFilesToCopy()` | pgJar + `.properties` | pgJar only |
+| `getContainerConfig()` | empty map | `db.url`, `db.user`, `db.password` |
+
+### Why Production Repo Needs a `.properties` File (Not Env Vars)
+
+The production repository configuration uses OpenL's `$$ref` syntax to inherit settings from a predefined template:
+
+```properties
+production-repository-configs = production
+repository.production.name = Deployment
+repository.production.$$ref = repo-jdbc
+repository.production.uri = jdbc:postgresql://postgres:5432/openl?currentSchema=repository
+repository.production.login = openl
+repository.production.password = openl
+```
+
+The `$$ref` key contains `$$` characters that **cannot be passed as Docker env vars** (Docker `-e` does not support `$$` in key names) and **cannot be passed as JVM system properties** via `JAVA_OPTS`. The only way to deliver this configuration to the container is a **file mounted to `/opt/openl/shared/.properties`**.
+
+In contrast, the security DB mode uses simple flat keys (`db.url`, `db.user`, `db.password`) that work fine as env vars through `additionalContainerConfig`.
+
+### Public API
+
+| Method | Returns | Description |
+|---|---|---|
+| `start()` | void | Creates network, starts all configured containers |
+| `cleanup()` | void | Stops all running containers |
+| `getFilesToCopy()` | `Map<String, String>` | Files for `additionalContainerFiles` (JDBC JAR, `.properties`) |
+| `getContainerConfig()` | `Map<String, String>` | Env vars for `additionalContainerConfig` (security DB mode) |
+| `getWsContainer()` | `GenericContainer<?>` | Access WS container (for API calls) |
+| `getPostgresContainer()` | `PostgreSQLContainer<?>` | Access PG container (for DB verification) |
+| `getOracleContainer()` | `OracleContainer` | Access Oracle container (for DB verification) |
+| `getOracleJdbcUrl()` | `String` | In-network Oracle JDBC URL |
+
+## API Layer for WebService Verification
+
+`domain.api.GetWsServicesMethod` calls the WebService container's `/admin/services` endpoint to verify deployed rules.
+
+### Key Discovery: WS REST URL Pattern
+
+The Docker WS image deploys the application to `webapps/ROOT` (root context `/`), not `/webservice` as in the legacy WAR-based approach.
+
+- **Service list**: `GET /admin/services` (returns JSON array)
+- **REST method call**: `GET /{deploymentName}/{projectName}/{method}` (no `/REST/` prefix when only RESTFUL publisher is active, which is the default)
+- **Service names** in the API follow the format `{deploymentName}_{projectName}`
+
+## Client Projects Regressions (zip / central / preconfig)
+
+Three sibling regressions live in `tests/api/webstudio/client` and validate real customer/product
+OpenL content against a fresh WebStudio container per case. All three are API-driven (no UI),
+share the same compile-validation flow (`open → POST /rest/projects/{id}/tests/run` as the compile
+trigger → `GET /rest/projects/{id}/status`, JSESSIONID kept across calls) and appear in the
+report with one test entry per project/group via `@Factory` + `ITest`.
+
+| | Zip regression | Central-studio regression | Preconfig regression |
+|---|---|---|---|
+| Test / suite | `TestZippedProjects` / `studio_zip_projects_regression.xml` | `TestStudioCentralGroup*` / `studio_central_projects_regression.xml` | `TestPreconfigProjects` / `studio_preconfig_projects_regression.xml` |
+| Content | Static ZIP snapshots of customer projects (`client_projects/customers_projects_test_automation_6.x`) | Live Genesis client projects (openl-rating/claim/policy/policy-life/financials) | Live EIS product preconfigurations (benefits/commercial/personal policy, claims) |
+| Source | Local folder tree; `*deployment`-suffixed folders group interdependent zips into one container | EIS GitLab git repos mounted by Studio itself as design repositories (`STUDIO_CENTRAL_GROUP_*_PARAMS`, creds in `.env`) | Local **Mercurial** clones under `Projects/eis/preconfigs` (vno-hg.exigengroup.com; creds in `~/.hgrc`), synced by `hg pull -u` before discovery |
+| Unit of test | ZIP group (deployment folder) or single zip | Studio instance per repo group, projects interdependent (bulk-open first) | Single OpenL project (`<module>/src/main/openl`), all independent |
+| Validation | Upload + compile + run Test tables | Compile + run Test tables (Studio clones repos itself — the test polls until the lazy clone finishes) | Upload + compile + **deploy** (`POST /rest/deployments`) + service served by **ruleservice** (`GET ws:/admin/services`) |
+| Extra infra | — | — | `DeployInfrastructureService` per project: PostgreSQL production repo + ruleservice (WS) container |
+
+### Preconfig regression infrastructure
+
+#### One-time prerequisites (no manual cloning)
+
+The suite is a self-contained harness: on every run it **clones the 4 needed repos itself if they
+are missing** (first run downloads ~1.5 GB), otherwise pulls the latest changes (`hg pull -u`),
+then builds what needs building and runs the validation. Only 4 of the ~190 repos on vno-hg are
+used — the preconfig products that contain OpenL rules; `*-central`/`*-contrib` are byte-identical
+mirrors, `eis-preconfig-commercial-claim` has no OpenL content, `openl-mapper/pub/tests` are
+unrelated, and `vnoeisgrok02.exigengroup.com/source` is just OpenGrok (a code browser over the
+same sources).
+
+What a fresh machine needs before the first run:
+
+```bash
+# 1. Mercurial + auth for vno-hg (~/.hgrc)
+brew install mercurial
+cat >> ~/.hgrc <<'EOF'
+[auth]
+vnohg.prefix = vno-hg.exigengroup.com
+vnohg.username = <your-login>
+vnohg.password = <your-password>
+vnohg.schemes = http https
+EOF
+
+# 2. Corporate Nexus creds in ~/.m2/settings.xml (GENESIS / GENESIS_STAGING servers,
+#    profile genesis-v20 active) — used by the Maven stage for jar-dependent projects.
+```
+
+Manual clone (optional — the suite clones missing repos automatically on the first run; use this
+only if you want to pre-fetch them yourself or debug hg access):
+
+```bash
+mkdir -p ~/Projects/eis/preconfigs && cd ~/Projects/eis/preconfigs
+for r in eis-preconfig-benefits-policy \
+         eis-preconfig-commercial-policy \
+         eis-preconfig-personal-claims \
+         eis-preconfig-personalpolicy; do
+  hg clone "http://vno-hg.exigengroup.com/hg/$r"
+done
+```
+
+Knobs: `-Dpreconfig.repos.root` (clone location, default `~/Projects/eis/preconfigs`),
+`-Dpreconfig.hg.base.url`, `-Dpreconfig.hg.sync=false` (offline — use local copies as-is).
+
+#### Running
+
+```bash
+# Full regression
+mvn -B test -Dsuite=studio_preconfig_projects_regression
+
+# One project only (substring match on repo/module), no hg sync — handy for debugging
+mvn test -Dtest=TestPreconfigProjects -Dpreconfig.module.filter=di-std-openl-rules -Dpreconfig.hg.sync=false
+```
+
+#### Scope: 32 projects, two preparation paths
+
+Discovery finds 32 `src/main/openl` projects across the 4 repos:
+
+- **9 dependency-free** (3 in benefits-policy, 6 in personalpolicy) — zipped straight from the hg
+  sources, no build needed.
+- **23 jar-dependent** (`<classpath>` in rules.xml or `<dependency>` entries in the module pom) —
+  their Java domain types (e.g. `PackageInfo`, `ExtDimension`) live in JARs, so the suite runs a
+  Maven stage per module: `mvn install -pl <module> -am` (the openl-maven-plugin produces the
+  deployable ZIP), then `dependency:copy-dependencies -DincludeScope=provided -DexcludeTransitive=true`
+  and repacks those **direct** provided JARs into the ZIP's `lib/` — the exact shape of the
+  historical preconfig snapshots. (The transitive provided tree is ~400 JARs of the whole EIS
+  platform — neither needed nor wanted; the direct ones are enough for OpenL to compile.)
+
+Requirements for the Maven stage: corporate Nexus access in `~/.m2/settings.xml`
+(GENESIS/GENESIS_STAGING servers, profile `genesis-v20` active) with a valid password — the same
+account as for vno-hg. Disable the jar-dependent half with
+`-Dpreconfig.include.jar.dependent=false` (e.g. no Nexus reachable); those projects are then
+skipped with a log line each — that opt-out is the only case where a project leaves the run
+silently. A Maven stage that *fails* never hides the project: it still reaches the `@Factory` and
+becomes a failed test carrying the Maven output, so a broken build cannot masquerade as a green
+launch.
+
+EIS preconfigs are Maven multi-module Mercurial repositories; the OpenL project lives in
+`<module>/src/main/openl` (`rules.xml`, `rules/*.xlsx`, `rules-deploy.xml` with a RESTFUL
+publisher). Studio cannot mount hg as a design repository, so `PreconfigSourcesService`:
+
+1. runs `hg pull -u` on every clone under `-Dpreconfig.repos.root` (default
+   `~/openl-preconfigs`; a failed pull falls back to the local copy),
+2. discovers every `src/main/openl/rules.xml`, extracts the project name and the
+   `rules-deploy.xml` service name,
+3. zips each project flat (rules.xml at zip root — the shape `PUT /rest/repos/{repo}/projects/{name}` accepts).
+
+Per discovered project, `AbstractPreconfigProjectsApi` starts a **trio** of containers on one
+Docker network: WebStudio (`DEPLOY_STUDIO_PARAMS` + production-repo `.properties` copied into the
+container), PostgreSQL as the `production` repository, and the ruleservice image watching that
+repository. The test then uploads, compiles (fails on any ERROR message), deploys via
+`POST /rest/deployments`, and polls `GET /admin/services` on the ruleservice until the service
+declared in `rules-deploy.xml` is served.
+
+Notes:
+- Jar-dependent projects (23 of 32) get an automatic Maven stage (see "Scope" above): build via
+  openl-maven-plugin + repack with direct provided JARs. Dependency-free ones (9 of 32) are
+  zipped straight from sources.
+- Repos with no OpenL content (eis-preconfig-commercial-claim) are excluded from `HG_REPOS`.
+- The whole suite needs **JDK 25**: the EIS modules compile with `release 25`, so on JDK 21 the
+  Maven stage fails for most jar-dependent projects (`invalid target release: 25`) and they all
+  turn red. The Studio and ruleservice images already run Temurin 25.
+- Discovery logs how the projects split — `Discovered N ...: X ready to validate, Y with a failed
+  Maven build (reported as failed tests), Z skipped by -Dpreconfig.include.jar.dependent=false`.
+  Compare the test count against that line to confirm the run covered everything.
+- Run: `mvn -B test -Dsuite=studio_preconfig_projects_regression`.
+
+## Configuration
+
+### Core Configuration (`src/test/resources/config.properties`)
+
+#### Browser & Execution Settings
+```properties
+# Browser configuration
+browser=chrome                          # chrome, firefox, webkit
+browser_version=latest
+playwright_default_timeout=10000       # Default timeout in ms
+test_retry_count=1                      # Test retry attempts
+```
+
+#### Container & Application Settings  
+```properties
+# Application container
+default_app_port=8080
+docker_image_name=ghcr.io/openl-tablets/webstudio:latest
+deployed_app_path=                      # App context path (empty for root)
+
+# Volume mappings
+host_resource_path=src/test/resources
+container_resource_path=/test_resources
+host_screenshot_path=target/screenshots
+host_app_logs_path=target/logs
+```
+
+#### Media & Reporting
+```properties
+# Playwright media capture
+enable_video_recording=true             # Enable video for failed tests (Docker mode)
+enable_playwright_tracing=true          # Record a Playwright trace (DOM snapshots, network, console) for every test
+debug_artifacts_on_success=false        # Keep the trace and the application log for passed tests too (failed tests always keep them)
+enable_screenshot_on_failure=true      # Screenshot on test failure
+playwright_downloads_path=target/downloads
+playwright_videos_path=target/videos
+```
+
+#### User Test Data
+```properties
+user_pool=admin_user::openl_1_user::openl_2_user::openl_ac_user
+
+admin_user.login=admin
+admin_user.password=admin
+
+openl_1_user.login=openl_1
+openl_1_user.password=h1plaKvaska
+```
+
+### Environment Override
+
+System properties override configuration file values:
+```bash
+mvn test -Dexecution.mode=PLAYWRIGHT_DOCKER -Dbrowser=firefox -Dplaywright_default_timeout=10000
+```
+
+## Project Structure
+
+```
+├── src/
+│   ├── main/java/
+│   │   ├── configuration/
+│   │   │   ├── annotations/           # Custom annotations (@AppContainerConfig)
+│   │   │   ├── appcontainer/          # TestContainers app management  
+│   │   │   ├── core/ui/               # Core UI components (WebElement, CoreComponent)
+│   │   │   ├── driver/                # DriverPool facade + LocalDriverPool/DockerDriverPool implementations
+│   │   │   ├── listeners/             # TestNG listeners and retry analyzers
+│   │   │   ├── network/               # Docker network management (NetworkPool)
+│   │   │   └── projectconfig/         # Configuration management
+│   │   ├── domain/
+│   │   │   ├── api/                   # API test methods (GetWsServicesMethod, etc.)
+│   │   │   ├── serviceclasses/        # Service classes and constants
+│   │   │   └── ui/webstudio/         # Page objects and components
+│   │   │       ├── components/        # UI components by functionality
+│   │   │       └── pages/             # Page objects
+│   │   └── helpers/
+│   │       ├── service/               # Business logic services (DeployInfrastructureService, etc.)
+│   │       └── utils/                 # Utility classes (PrintUtil, WaitUtil, etc.)
+│   └── test/
+│       ├── java/tests/
+│       │   ├── BaseTest.java          # Base test class with setup/teardown
+│       │   └── ui/webstudio/          # Test classes organized by functionality
+│       └── resources/
+│           ├── config.properties       # Main configuration
+│           ├── testng_suites/         # TestNG suite definitions
+│           └── test_data/             # Test data files
+```
+
+## Writing Tests
+
+### Basic Test Class
+
+```java
+@Test
+@TestCaseId("TEST-001")
+@Description("Test admin email configuration")
+@AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
+public void testAdminEmail() {
+    EditorPage editorPage = new LoginService(DriverPool.getPage())
+            .login(UserService.getUser(User.ADMIN));
+
+    AdminPage adminPage = editorPage.navigateToAdmin();
+    EmailPageComponent emailComponent = adminPage.getEmailPageComponent();
+    emailComponent.setEmailUrl("smtp.example.com");
+    emailComponent.applySettings();
+
+    assertThat(emailComponent.isSettingsSaved()).isTrue();
+}
+```
+
+### Container Configuration
+
+```java
+// Use exact field names — BaseTest reads them via reflection
+private static final Map<String, String> additionalContainerConfig = new HashMap<>();
+private static final Map<String, String> additionalContainerFiles = new HashMap<>();
+
+// Use annotation for container setup
+@AppContainerConfig(
+    startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS,
+    copyFileFromPath = "test-data/project.zip", 
+    copyFileToContainerPath = "/opt/project.zip"
+)
+
+// Or use different configurations
+@AppContainerConfig(startParams = AppContainerStartParameters.SAML_STUDIO_PARAMS)
+@AppContainerConfig(startParams = AppContainerStartParameters.OAUTH_STUDIO_PARAMS)
+```
+
+### Multi-Container Test (Deploy Infrastructure)
+
+```java
+public class TestNewDeployPopup extends BaseTest {
+
+    private static final Map<String, String> additionalContainerFiles = new HashMap<>();
+    private DeployInfrastructureService deployInfra;
+
+    @Override
+    @BeforeMethod
+    public void beforeMethod(ITestResult result) {
+        additionalContainerFiles.clear();
+
+        deployInfra = DeployInfrastructureService.builder()
+                .withPostgres().withWsContainer().build();
+        deployInfra.start();
+
+        additionalContainerFiles.putAll(deployInfra.getFilesToCopy());
+
+        super.beforeMethod(result);
+    }
+
+    @Override
+    @AfterMethod
+    public void afterMethod(ITestResult result) {
+        super.afterMethod(result);
+        if (deployInfra != null) {
+            deployInfra.cleanup();
+        }
+    }
+
+    @Test
+    @AppContainerConfig(startParams = AppContainerStartParameters.DEPLOY_STUDIO_PARAMS)
+    public void testNewDeployPopup() {
+        // All containers (postgres, wscontainer, appcontainer) are in the same network
+        // and can reach each other via Docker DNS aliases
+    }
+}
+```
+
+### File Operations
+
+```java
+// File upload (mode-aware)
+String testDataPath = TestDataUtil.getTestDataPath("project-template.zip");
+zipComponent.selectFile(testDataPath);
+
+// File download (mode-aware)
+File downloadedFile = DownloadUtil.downloadFile(downloadButton);
+assertThat(downloadedFile).exists();
+```
+
+### DataProvider Tests with Unique Names
+
+The framework automatically generates **unique test names** for DataProvider iterations in the reports. This ensures each data set appears as a separate test instead of having identical names.
+
+#### Problem Solved
+
+**Before:** All DataProvider iterations appeared with the same name in the report
+```
+The report shows:
+- testLocalZippedProjects
+- testLocalZippedProjects
+- testLocalZippedProjects
+```
+
+**After:** Each iteration has a unique, descriptive name
+```
+The report shows:
+- testLocalZippedProjects[project1, project2]
+- testLocalZippedProjects[claims-home, auto-policy]
+- testLocalZippedProjects[commercial-underwriting]
+```
+
+#### How It Works
+
+1. **BaseTest** implements `ITest` interface for custom test names
+2. Names are generated **before** test execution in `@BeforeMethod`
+3. Parameters are sanitized (filenames extracted, extensions removed, long values truncated)
+4. Thread-safe for parallel execution using `ThreadLocal`
+
+#### Usage Example
+
+Simply extend `BaseTest` - no additional code needed:
+
+```java
+public class TestWithDataProvider extends BaseTest {
+
+    @Test(dataProvider = "ProjectData")
+    public void testMultipleProjects(String path1, String path2, String path3) {
+        // The report will show: testMultipleProjects[project1, project2, project3]
+    }
+
+    @DataProvider(name = "ProjectData")
+    public Object[][] getData() {
+        return new Object[][] {
+            {"/path/to/project1.zip", "/path/to/project2.zip", null},
+            {"project-A.zip", "project-B.zip", "project-C.zip"}
+        };
+    }
+}
+```
+
+#### Parameter Sanitization
+
+| Original Parameter | Report Display |
+|-------------------|---------------------|
+| `/Users/user/Projects/file.zip` | `file` |
+| `very-long-parameter-name-exceeding-50-chars...` | `very-long-parameter-name-exceeding-50-cha...` |
+| `null` | `null` |
+
+#### Compatibility
+
+- Works with **all tests** extending BaseTest
+- Tests **without DataProvider** work unchanged (standard method names)
+- Thread-safe for **parallel execution**
+
+## Driver Management
+
+### Automatic Mode Detection
+
+The `DriverPool` facade provides unified access to Playwright functionality with automatic mode detection
+(`LocalDriverPool` and `DockerDriverPool` hold the per-mode implementations):
+
+```java
+// These methods work in both LOCAL and DOCKER modes
+Page page = DriverPool.getPage();
+BrowserContext context = DriverPool.getBrowserContext();
+
+// Navigation (mode-aware URL handling)
+DriverPool.navigateToApp();               // Uses correct URL for each mode
+
+// Utilities
+byte[] screenshot = DriverPool.takeScreenshot();
+Page newPage = DriverPool.createNewPage();
+```
+
+### Execution Mode Differences
+
+| Feature | LOCAL Mode | DOCKER Mode |
+|---------|------------|-------------|
+| **Playwright Location** | Host machine | Docker container |
+| **Application URL** | `localhost:mappedPort` | `container-network-url` |
+| **File Access** | Direct host filesystem | Volume-mapped paths |
+| **Performance** | Faster startup | Better isolation |
+| **Debugging** | Easier browser inspection | Containerized debugging |
+| **Video Recording** | Not available | Available for failed tests |
+
+## Reporting & Debugging
+
+### Debug artifacts
+
+Every failed test leaves its debug artifacts in the test export directory (`target/test-export`, see below) and in the merged report:
+
+- **Screenshots**: Automatically attached on test failures
+- **Videos**: Recorded for failed tests (Docker mode only)  
+- **Page Content**: HTML of the page at failure, attached only when no Playwright trace was recorded for the test
+- **Application Logs**: Container logs attached to test results
+- **Execution Info**: Debug information about driver state
+
+### Test isolation rule: a fresh application container for every test
+
+Each test starts its own Studio or Rule Services container and stops it afterwards. Reusing an application container between tests, classes or shards is forbidden in the framework and in every CI pipeline; regression speed is gained only through parallelism and shard balancing. The rule is also recorded in `CLAUDE.md`.
+
+### Selective runs
+
+The GitHub Actions workflow `OpenL Tests` accepts an optional list of test class names in the `tests` input, so a fix can be verified in minutes instead of a full regression. Names are separated by commas or spaces and may be simple (`TestMethodTable`) or fully qualified (`tests.ui.webstudio.git.TestGitBranchSwitching`). A whole class runs, single `@Test` methods cannot be selected. The selected classes form the queue described below; a name without a matching class under `src/test/java` fails the "Discover tests" job. The merged report carries the attribute `run:selective`. An empty value runs the full regression.
+
+### Playwright Server container start
+
+In `PLAYWRIGHT_DOCKER` mode every test starts a `mcr.microsoft.com/playwright` container whose entry command downloads the `playwright` npm package before the server listens; a cold download takes about 90 seconds and on a slow runner can exceed the default 120-second startup timeout. Two properties tune this: `playwright_server_startup_timeout_seconds` (default 120) and `playwright_npm_cache_dir`, a host directory mounted as the container's npm cache so only the warm-up, or the first cold start, downloads the package (a cold start with a shared cache is serialized across threads). GitHub Actions sets both and warms the cache once per shard before Maven starts; locally the same warm-up is `docker run --rm -v <cache>:/root/.npm mcr.microsoft.com/playwright:v1.52.0-noble sh -c "npx -y playwright@1.52.0 --version"`. When the container still fails to start, its own output is written to the test log.
+
+### What runs on GitHub Actions and how the shards share the work
+
+The `application_version` input is the ghcr.io tag of the OpenL images (`webstudio:<tag>` and `ws:<tag>-all`); it defaults to `latest`, the newest published build. The "Discover tests" job checks with `docker manifest inspect` that both images exist and fails within seconds when the tag is wrong, so a typo no longer costs a full run of tests that cannot start their container.
+
+GitHub Actions does not read the TestNG suite files. `scripts/github-actions/discover-tests.py` scans `src/test/java` and queues every non-abstract class that has `@Test` methods, except classes annotated `@LocalOnly(reason = "...")` (`configuration.annotations.LocalOnly`), which are meant for local runs only: special infrastructure, manual data, exploratory checks. A new test class is therefore part of the GitHub regression the moment it is committed, and nothing has to be added to a suite for it. A concrete class whose `@Test` methods are all inherited from a base class is found through its `extends` clause. Today the 199 classes of the 8 regression suites are queued; the four classes of the `*_regression` suites (`TestZippedProjects`, `TestPreconfigProjects`, `TestStudioCentralGroupPolicyBundle`, `TestStudioCentralGroupRatingClaim`) carry `@LocalOnly` because they need local project sets, JDK 25 or the Genesis central repositories. Because the queue is keyed by run id and run attempt, a re-run of the workflow starts with a fresh queue.
+
+The `shards` input (default 20) only sets the number of parallel jobs. The classes form one queue: `scripts/github-actions/run-test-queue.py` makes every shard claim the next unclaimed class by creating the git ref `refs/openl-queue/<run id>/<class name>` through the GitHub API (creating a ref is atomic, the second shard gets HTTP 422 and moves on), run it with `mvn surefire:test` on a generated one-class TestNG suite and claim again until the queue is empty. Shards therefore finish within one class duration of each other with no duration bookkeeping; the queue refs are invisible in the GitHub UI and the merge job deletes them. The workflow needs `contents: write` on the default token for the refs. Every shard runs with both images available: Studio from `docker_image_name` and Rule Services from `ws_docker_image_name`; a class that needs Rule Services declares `dockerImageProperty = PropertyNameSpace.WS_DOCKER_IMAGE_NAME` in its `@AppContainerConfig`. Instead of a suite name, the test export and the merged report group tests by the test package: `tests.ui.webstudio.git` becomes `git`, `tests.ui.webservice` becomes `webservice` (`TestGroupUtil` in Java, `testgroups.py` in the scripts).
+
+A shard job fails only through `scripts/github-actions/gate-shard-results.py`, which reads the shard's test export and its queue record (`target/queue/<shard>.json`): any failed test without a known issue, any skipped test (a skipped test means a configuration method failed, usually a container start), a Maven run that exited with an error and a claimed class that exported no result fail the job, everything else passes.
+
+### Known issues: keeping the CI green while a product bug stays open
+
+A test that fails because of an open product bug is annotated with the ticket, on the method or on the whole class:
+
+```java
+@KnownIssue("EPBDS-15705")
+@Test
+public void testAddAndDeleteProperty() { ... }
+```
+
+The test itself is not changed and still asserts the correct behaviour, so it keeps failing in TestNG. The framework records the ticket in the test's `result.json` (`knownIssue` with the ticket, the tracker URL and the outcome), the shard gate ignores such failures, the merged report shows the test with an orange `KNOWN ISSUE` badge and a link to the ticket instead of a red `FAILED`, and the job summary lists the known issues in their own table. When a test with `@KnownIssue` passes, the report shows it in blue as `FIXED?`: verify the fix, then remove the annotation. The tracker URL prefix comes from the system property `issue.tracker.browse.url` (default `https://jira.eisgroup.com/browse/`).
+
+### Merged test report on GitHub Actions
+
+After the shards finish, the `Merge test report` job publishes one artifact, `test-report-merged`, a self-contained report built by `scripts/github-actions/generate-merged-report.py` from every shard's test export directory (the framework's per-test export under `target/test-export`). The header of `index.html` states what exactly was tested: the run start and end (UTC, from the first and the last test), every application image with the OpenL version, build number and build date the tests observed (`/web/public/info/openl.json` on Studio, `/admin/ui/info` on Rule Services; stored as `application.json` in each test's export), the tests branch and commit with a link, the Playwright and Java versions and the workflow run. Below, all tests are listed with status, the package group, shard, duration, `@TestCaseId` and a first error line, and every row opens a tabbed panel: Overview (class with a link to the source at the tested commit, description, timestamps, build, tests revision, execution info), Failure (message and stack trace), Steps (the framework log of that test only, see below), Application log (WARN, ERROR and exception lines of the Studio or Rule Services container with a link to the full log), Trace (the Playwright trace archive) and Media (failure screenshot, downloads). The same run facts, numbers and the list of failed and skipped tests are appended to the workflow job summary; `summary.json` carries them for scripts.
+
+The report is also published to GitHub Pages, so it opens in the browser without downloading the artifact: `scripts/github-actions/publish-report-pages.py` pushes every run to the `gh-pages` branch under `runs/<run id>/` as a single orphan commit (`--force-with-lease`, so pruned reports do not stay in the git history and the branch never grows), keeps the last 15 runs and regenerates the site index at https://openl-tablets.github.io/openl-tests/ with the date, build, results and tests commit of each run; the job summary links to the published report.
+
+The per-test artifacts are produced by the framework itself. `TestExportUtil` attaches a log4j appender that writes every log line of the current test thread (container start, page actions, waits, REST calls, assertions) to `attachments/test-steps.log` of that test in the test export. Both driver pools start Playwright tracing (`enable_playwright_tracing`, default true) on the browser context with DOM snapshots, network and console but without per-action screenshots (they would multiply the archive size by twenty while the snapshots already render every step); in `PLAYWRIGHT_LOCAL` mode the archive also carries the Java sources of the recorded actions when `PLAYWRIGHT_JAVA_SRC` names the source directories (the workflow sets it), while a trace recorded through a remote Playwright Server (`PLAYWRIGHT_DOCKER`) has no Java stack frames, so it holds no sources; `BaseTest` stops it in `@AfterMethod` and keeps the archive as the `Playwright Trace` attachment, next to the application container log, for every failed test, or for every test when `debug_artifacts_on_success=true`; the page HTML at failure is attached only when no trace archive was recorded (tracing off or its start or stop failed), because the last trace snapshot is that page. A passed test with the default settings leaves only its steps log. The merged report does not copy the failure videos (the trace snapshots show the same steps), they stay in the shard artifacts. Open a trace with `npx playwright show-trace trace.zip` or drop it onto https://trace.playwright.dev.
+
+For debugging with an AI assistant the report also writes `debug/<TestClass>.<method>.json` for every failed or skipped test: test identity and source link, run identity (build, workflow URL, tests commit), the result with the full stack trace, the complete steps log as lines, the application log extract and the paths of the trace and every attachment; `debug/index.json` lists all tests and `debug/README.md` explains the bundle and suggests a prompt. Hand the bundle plus the referenced files to the assistant instead of collecting the context by hand.
+
+### Debug Information
+
+```java
+// Get current execution mode and debug info
+ExecutionMode mode = DriverPool.getCurrentExecutionMode();
+String debugInfo = DriverPool.getDebugInfo();
+logger.info("Current mode: {}, Debug: {}", mode, debugInfo);
+```
+
+### Log Analysis
+
+Application logs are automatically collected from containers:
+```bash
+# Logs are saved to configured path
+target/logs/app-container-<timestamp>.log
+```
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Docker connectivity issues**
+   ```bash
+   # Verify Docker is running
+   docker ps
+   
+   # Check Docker image availability
+   docker pull ghcr.io/openl-tablets/webstudio:latest
+   ```
+
+2. **Port conflicts** 
+   - Application containers use random ports to avoid conflicts
+   - Check mapped ports in logs: `"App URL for LOGIN service (LOCAL): http://localhost:32769"`
+
+3. **File upload/download issues**
+   - Verify volume mappings in configuration
+   - Check host resource path permissions
+   - Ensure container resource path is writable
+
+4. **Parallel execution failures**
+   - Each thread gets isolated Playwright instances
+   - Docker mode creates separate containers per thread
+   - Check thread-count in TestNG suite configuration
+
+5. **IPv6/IPv4 connection issues (ECONNREFUSED ::1:port)**
+   - **Symptom**: `WebSocket error: connect ECONNREFUSED ::1:32848` when running in Docker mode
+   - **Cause**: System resolves `localhost` to IPv6 (`::1`) but Docker port mappings are bound to IPv4 only
+   - **Solution**: The project includes `.mvn/jvm.config` with `-Djava.net.preferIPv4Stack=true`
+   - **Manual fix**: Add `-Djava.net.preferIPv4Stack=true` to Maven command:
+     ```bash
+     mvn test -Djava.net.preferIPv4Stack=true -Dexecution.mode=PLAYWRIGHT_DOCKER
+     ```
+
+### Debug Mode
+
+Run with full request and response logging of the REST calls and the waits:
+```bash
+mvn test -Dexecution.mode=PLAYWRIGHT_DOCKER -Dlog.api.level=debug
+```
+
+## Contributing
+
+1. Follow existing code patterns and naming conventions
+2. Add tests for new functionality  
+3. Update configuration documentation
+4. Ensure both execution modes work correctly
+5. Add appropriate logging and error handling
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.

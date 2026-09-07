@@ -1,0 +1,345 @@
+package tests.ui.webstudio.studio_smoke;
+
+import configuration.annotations.Description;
+import configuration.annotations.TestCaseId;
+import configuration.annotations.AppContainerConfig;
+import configuration.appcontainer.AppContainerStartParameters;
+import domain.ui.webstudio.components.common.TableComponent;
+import configuration.driver.DriverPool;
+import domain.serviceclasses.constants.User;
+import domain.serviceclasses.models.UserData;
+import domain.ui.webstudio.components.common.TabSwitcherComponent;
+import domain.ui.webstudio.components.admincomponents.MyProfilePageComponent;
+import domain.ui.webstudio.components.admincomponents.MySettingsPageComponent;
+import domain.ui.webstudio.components.admincomponents.UsersPageComponent;
+import domain.ui.webstudio.components.editortabcomponents.EditorToolbarPanelComponent;
+import domain.ui.webstudio.components.editortabcomponents.leftmenu.EditorLeftRulesTreeComponent;
+import domain.ui.webstudio.pages.mainpages.EditorPage;
+import domain.ui.webstudio.pages.mainpages.LoginPage;
+import domain.ui.webstudio.pages.mainpages.RepositoryPage;
+import helpers.service.LoginService;
+import helpers.service.UserService;
+import helpers.service.WorkflowService;
+import org.testng.annotations.Test;
+import tests.BaseTest;
+
+import java.util.List;
+
+import static domain.serviceclasses.constants.User.ADMIN;
+import static org.assertj.core.api.Assertions.assertThat;
+import domain.ui.webstudio.components.editortabcomponents.toolbar.IRunTestsMenu;
+import domain.ui.webstudio.components.editortabcomponents.toolbar.ITraceWindow;
+
+public class TestAdminUserSettings extends BaseTest {
+
+    @Test
+    @TestCaseId("IPBQA-31293")
+    @Description("User settings and profile management")
+    @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
+    public void testUserSettingsAndDetails() {
+        LoginService loginService = new LoginService(DriverPool.getPage());
+
+        // Scenario 1: Clear profile information (lines 34-44 from original)
+        EditorPage editorPage = loginService.login(UserService.getUser(ADMIN));
+        MyProfilePageComponent myProfileComponent = editorPage
+                .openUserMenu()
+                .navigateToAdministration()
+                .navigateToMyProfilePage();
+
+        myProfileComponent.setFirstName("")
+                .setLastName("")
+                .setEmail("")
+                .setDisplayName("");
+        // 6.4.0 keeps Save clickable and points at the offending fields instead of blocking the button.
+        assertThat(myProfileComponent.getValidationErrors().stream()
+                        .anyMatch(message -> message.contains("Email is required"))).as("Clearing the required profile fields must be reported on the form").isTrue();
+
+        // Scenario 2: leaving the page without saving keeps the stored profile. 6.4.0 asks every user to
+        // complete their profile at first login, so the stored values are filled in, not empty.
+        myProfileComponent = editorPage.openUserMenu()
+                .navigateToAdministration()
+                .navigateToMyProfilePage();
+
+        assertThat(myProfileComponent.getUsername()).as("Username should be admin").isEqualTo("admin");
+        assertThat(myProfileComponent.getEmail().isBlank()).as("Email should keep its stored value").isFalse();
+        assertThat(myProfileComponent.getDisplayName().isBlank()).as("Display name should keep its stored value").isFalse();
+
+        // Scenario 3: Update profile and check users table (lines 58-76 from original)
+        myProfileComponent
+                .setFirstName("Abc")
+                .setLastName("Bcd")
+                .setEmail("admin@admin.com")
+                .setDisplayNamePattern("First Last")
+                .saveProfile();
+
+        myProfileComponent = editorPage.openUserMenu()
+                .navigateToAdministration()
+                .navigateToMyProfilePage();
+
+        assertThat(myProfileComponent.getFirstName()).as("First name should be 'Abc'").isEqualTo("Abc");
+        assertThat(myProfileComponent.getLastName()).as("Last name should be 'Bcd'").isEqualTo("Bcd");
+        assertThat(myProfileComponent.getEmail()).as("Email should be 'admin@admin.com'").isEqualTo("admin@admin.com");
+        assertThat(myProfileComponent.getDisplayName()).as("Display name should be 'Abc Bcd'").isEqualTo("Abc Bcd");
+
+        UsersPageComponent usersComponent = editorPage.openUserMenu()
+                .navigateToAdministration()
+                .navigateToUsersPage();
+
+        // Use new API with row index
+        int adminRow = usersComponent.getUserRow("admin");
+        String adminFullName = usersComponent.getFullNameFromRow(adminRow);
+        String[] nameParts = adminFullName.split(" ");
+
+        assertThat(nameParts[0]).as("Admin first name in Users table should be 'Abc'").isEqualTo("Abc");
+        assertThat(nameParts[1]).as("Admin last name in Users table should be 'Bcd'").isEqualTo("Bcd");
+        assertThat(usersComponent.getEmailFromRow(adminRow)).as("Admin email in Users table should be 'admin@admin.com'").isEqualTo("admin@admin.com");
+        assertThat(adminFullName).as("Admin display name in Users table should be 'Abc Bcd'").isEqualTo("Abc Bcd");
+
+        // Scenario 4: Change password and test authentication (lines 77-95 from original)
+        myProfileComponent = editorPage.openUserMenu()
+                .navigateToAdministration()
+                .navigateToMyProfilePage();
+
+        myProfileComponent.setCurrentPassword("admin").setNewPassword("12345").setConfirmPassword("12345").saveProfile();
+
+        //TODO: Logout and test old password (should fail) - NOW NO ERRORS ON UI
+        editorPage.openUserMenu().signOut();
+        LoginPage loginPage = new LoginPage();
+        UserData oldPasswordData = new UserData("admin", "admin");
+//        loginPage.login(oldPasswordData);
+//        assertThat(loginPage.isLoginErrorDisplayed()).as("Login error should be displayed for old password").isTrue();
+//        String errorMessage = loginPage.getLoginErrorMessage();
+//        assertThat(errorMessage.contains("Wrong username") || errorMessage.contains("Invalid username")).as("Error message should indicate wrong credentials").isTrue();
+
+        // Login with new password
+        UserData newUserData = new UserData("admin", "12345");
+        editorPage = loginService.login(newUserData);
+        myProfileComponent = editorPage.openUserMenu()
+                .navigateToAdministration()
+                .navigateToMyProfilePage();
+
+        // Scenario 5: Create new user (lines 96-131 from original)
+        usersComponent = editorPage.openUserMenu()
+                .navigateToAdministration()
+                .navigateToUsersPage();
+
+        // Create new user1 with full details
+        usersComponent.clickAddUser()
+                .setUsername("user1")
+                .setEmail("user1@example.com")
+                .setFirstName("Aaa")
+                .setLastName("Bbb")
+                .setPassword("user1")
+                .clickAddRoleBtn()
+                .setRoleRepository(0, "Design")
+                .setRole(0, "Manager")
+                .saveUser();
+        
+        // Logout admin and login as user1
+        editorPage.openUserMenu().signOut();
+        UserData user1Data = new UserData("user1", "user1");
+        editorPage = loginService.login(user1Data);
+        
+        // Verify user1 profile details
+        myProfileComponent = editorPage.openUserMenu()
+                .navigateToMyProfile()
+                .navigateToMyProfilePage();
+                
+        assertThat(myProfileComponent.getUsername()).as("Username should be 'user1'").isEqualTo("user1");
+        assertThat(myProfileComponent.getFirstName()).as("First name should be 'Aaa'").isEqualTo("Aaa");
+        assertThat(myProfileComponent.getLastName()).as("Last name should be 'Bbb'").isEqualTo("Bbb");
+        assertThat(myProfileComponent.getEmail()).as("Email should be user1@example.com").isEqualTo("user1@example.com");
+        
+        // Change display name
+        myProfileComponent.setDisplayName("Bbb Aaa").saveProfile();
+        
+        // Verify display name change
+        myProfileComponent = editorPage.openUserMenu()
+                .navigateToMySettings()
+                .navigateToMyProfilePage();
+        assertThat(myProfileComponent.getDisplayName()).as("Display name should be updated").isEqualTo("Bbb Aaa");
+
+        // Scenario 6: Check default settings (lines 133-143 from original)
+        editorPage.openUserMenu().signOut();
+        UserData adminNewPassword = new UserData("admin", "12345");
+        editorPage = loginService.login(adminNewPassword);
+
+        // Verify user1 display name in Users table (requires admin)
+        usersComponent = editorPage.openUserMenu()
+                .navigateToAdministration()
+                .navigateToUsersPage();
+        int user1Row = usersComponent.getUserRow("user1");
+        assertThat(usersComponent.getFullNameFromRow(user1Row)).as("Display name should be updated in users table").isEqualTo("Bbb Aaa");
+
+        MySettingsPageComponent mySettingsComponent = editorPage.openUserMenu()
+                .navigateToAdministration()
+                .navigateToMySettingsPage();
+
+        assertThat(mySettingsComponent.isShowHeaderEnabled()).as("Show Header should be true").isTrue();
+        assertThat(mySettingsComponent.isShowFormulasEnabled()).as("Show Formulas should be false").isFalse();
+        assertThat(mySettingsComponent.getTestsPerPage()).as("Tests per page should be 5").isEqualTo(5);
+        assertThat(mySettingsComponent.isFailuresOnlyEnabled()).as("Failures Only should be false").isFalse();
+        assertThat(mySettingsComponent.isCompoundResultEnabled()).as("Compound Result should be false").isFalse();
+        assertThat(mySettingsComponent.isShowNumbersWithoutFormattingEnabled()).as("Show numbers without formatting should be false").isFalse();
+
+        myProfileComponent = editorPage.openUserMenu()
+                .navigateToAdministration()
+                .navigateToMyProfilePage();
+        myProfileComponent.setCurrentPassword("12345").setNewPassword("admin").setConfirmPassword("admin").saveProfile();
+        editorPage.openUserMenu().signOut();
+
+        // Scenario 7: Verify "View project in Single module mode" (from JIRA scenario 7)
+        // NOTE: This setting will be removed in 5.25 (EPBDS-10660), so test is partially commented out
+        // The "View project in Single module mode" setting has been removed, skipping this part of scenario 7
+        // mySettingsComponent = editorPage.openUserMenu().navigateToAdministration().navigateToMySettingsPage();
+        // mySettingsComponent.setViewProjectInSingleModuleMode(true).saveSettings();
+        // ... (rest of scenario 7 validation is skipped as feature will be removed)
+
+        // Scenario 8: Verify Table Settings (from JIRA scenario 8)
+        String projectNameTest1 = WorkflowService.loginCreateProjectFromExcelFile(ADMIN, "Test1.xlsx");
+        editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectNameTest1, "Test1");
+        editorPage.getEditorLeftRulesTreeComponent()
+                .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
+                .expandFolderInTree("Decision")
+                .selectItemInFolder("Decision", "CapitalAdequacyScore");
+
+        TableComponent tableComponent = editorPage.getCenterTable();
+        assertThat(tableComponent.getCellText(3, 2)).as("Cell content should be '2500'").isEqualTo("2500");
+
+        // Click "arrow" after admin, Click "User settings", Set Show Header: false, Show Formulas: true, Click "Save"
+        mySettingsComponent = editorPage.openUserMenu()
+                .navigateToAdministration()
+                .navigateToMySettingsPage();
+        mySettingsComponent.setShowFormulas(true).setShowHeader(false).saveSettings();
+
+        // Return to table and verify
+        editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectNameTest1, "Test1");
+        editorPage.getEditorLeftRulesTreeComponent()
+                .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
+                .expandFolderInTree("Decision")
+                .selectItemInFolder("Decision", "CapitalAdequacyScore");
+        assertThat(tableComponent.getRowsCount()).as("Table should have 7 rows").isEqualTo(7);
+        assertThat(tableComponent.getCellText(2, 2)).as("Formula should be visible").isEqualTo("=50*45/D8");
+
+        // Scenario 9: Check settings isolation for different users (lines 154-164 from original)
+        editorPage.openUserMenu().signOut();
+        editorPage = loginService.login(user1Data);
+
+        // Navigate to the same project as user1
+        RepositoryPage repositoryPage = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.REPOSITORY);
+        // A project another user created is closed in this user's workspace, so the editor tree is empty
+        // until it is opened. (Locking is gone from the React UI, so unlockAllProjects has nothing to do.)
+        if (repositoryPage.isProjectActionAvailable(projectNameTest1, "Open")) {
+            repositoryPage.openProject(projectNameTest1);
+        }
+        repositoryPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectNameTest1, "Test1"); //User1 is NOT admin
+        editorPage.getEditorLeftRulesTreeComponent()
+                .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
+                .expandFolderInTree("Decision")
+                .selectItemInFolder("Decision", "CapitalAdequacyScore");
+
+        // User1 should see different table format (8 rows instead of 7) due to different settings
+        TableComponent tableComponentUser1 = editorPage.getCenterTable();
+        assertThat(tableComponentUser1.getRowsCount()).as("Table should have 8 rows for user1 (different settings)").isEqualTo(8);
+        // User1 should see different header row content
+        assertThat(tableComponentUser1.getCellText(1, 1)).as("User1 should see different header format").isEqualTo("SimpleRules Double CapitalAdequacyScore (Double capitalAdequacy)");
+
+        // Scenario 9: Change test settings (lines 165-176 from original)
+        editorPage.openUserMenu().signOut();
+        String projectNameTemplate = WorkflowService.loginCreateProjectFromTemplate(ADMIN, "Example 1 - Bank Rating");
+        mySettingsComponent = editorPage.openUserMenu()
+                .navigateToAdministration()
+                .navigateToMySettingsPage();
+
+        mySettingsComponent.setTestsPerPage(20)
+                .setFailuresOnly(true)
+                .setCompoundResult(true)
+                .saveSettings();
+
+        // Scenario 10: Verify settings in TestRunDropDown (lines 177-184 from original)
+        // Reuse already created projectNameTemplate from Scenario 7
+        editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectNameTemplate, "Bank Rating");
+
+        // Verify test execution settings in dropdown
+        IRunTestsMenu testSettings = editorPage.getEditorToolbarPanelComponent().clickTestDropdown();
+        assertThat(testSettings.getTestPerPage()).as("Tests per page should be 20").isEqualTo("20");
+        assertThat(testSettings.isFailuresOnlyChecked()).as("Failures Only should be enabled").isTrue();
+        assertThat(testSettings.isCompoundResultChecked()).as("Compound Result should be enabled").isTrue();
+
+        // Scenario 11: Verify user settings isolation (lines 185-195 from original)
+        editorPage.openUserMenu().signOut();
+        editorPage = loginService.login(user1Data);
+        mySettingsComponent = editorPage.openUserMenu()
+                .navigateToMySettings()
+                .navigateToMySettingsPage();
+
+        // Verify that user1 has default settings (different from admin's modified settings)
+        assertThat(mySettingsComponent.isShowHeaderEnabled()).as("User1 Show Header should still be true").isTrue();
+        assertThat(mySettingsComponent.isShowFormulasEnabled()).as("User1 Show Formulas should still be false").isFalse();
+        assertThat(mySettingsComponent.getTestsPerPage()).as("User1 Tests per page should still be 5").isEqualTo(5);
+        assertThat(mySettingsComponent.isFailuresOnlyEnabled()).as("User1 Failures Only should still be false").isFalse();
+        assertThat(mySettingsComponent.isCompoundResultEnabled()).as("User1 Compound Result should still be false").isFalse();
+
+        // Scenario 12: Test Help functionality (lines 196-201 from original)
+        editorPage.openUserMenu().openHelp();
+        String helpUrl = editorPage.getPage().url();
+        assertThat(helpUrl.contains("help")).as("Help should open OpenL Tablets documentation").isTrue();
+
+        // Scenarios 13-17: Trace functionality with number formatting (lines 202-234 from original)
+        editorPage.openUserMenu().signOut();
+        editorPage = loginService.login(UserService.getUser(User.ADMIN));
+
+        editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectNameTest1, "Test1");
+        editorPage.getEditorLeftRulesTreeComponent()
+                .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
+                .expandFolderInTree("Spreadsheet")
+                .selectItemInFolder("Spreadsheet", "TotalAssets4");
+
+        // Scenarios 13-17: trace-based verification of the showNumbersWithoutFormatting MySetting.
+        // EPBDS-16195 reworked Trace into an interactive step debugger that shows execution state
+        // only while suspended and no longer renders all computed cell values inline, so the old
+        // "read the formatted/unformatted number straight from the trace tree" assertions no longer
+        // apply. We keep the setting toggles and assert the debugger opens and renders the traced
+        // table for the selected spreadsheet; verifying the formatted-vs-unformatted number through
+        // the step debugger needs a dedicated redesign (tracked against EPBDS-16195).
+        ITraceWindow traceWindow =
+                editorPage.getEditorToolbarPanelComponent().clickTraceExpectTraceWindow();
+        assertThat(traceWindow.getCallTreeTitles())
+                .as("trace opens and shows the TotalAssets4 frame")
+                .anyMatch(title -> title.contains("TotalAssets4"));
+        assertThat(traceWindow.getTracedTableText())
+                .as("traced table is rendered for TotalAssets4")
+                .contains("TotalAssets4");
+        traceWindow.close();
+
+        // Enable showNumbersWithoutFormatting (exercises the MySettings save path), trace again
+        mySettingsComponent = editorPage.openUserMenu()
+                .navigateToAdministration()
+                .navigateToMySettingsPage();
+        mySettingsComponent.setShowNumbersWithoutFormatting(true).saveSettings();
+
+        editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectNameTest1, "Test1");
+        editorPage.getEditorLeftRulesTreeComponent()
+                .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
+                .expandFolderInTree("Spreadsheet")
+                .selectItemInFolder("Spreadsheet", "TotalAssets4");
+
+        traceWindow = editorPage.getEditorToolbarPanelComponent().clickTraceExpectTraceWindow();
+        assertThat(traceWindow.getTracedTableText())
+                .as("traced table is rendered after enabling showNumbersWithoutFormatting")
+                .contains("TotalAssets4");
+        traceWindow.close();
+
+        // Disable showNumbersWithoutFormatting again
+        mySettingsComponent = editorPage.openUserMenu()
+                .navigateToAdministration()
+                .navigateToMySettingsPage();
+        mySettingsComponent.setShowNumbersWithoutFormatting(false).saveSettings();
+    }
+}

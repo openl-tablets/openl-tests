@@ -1,0 +1,60 @@
+package tests.ui.webstudio.studio_issues;
+
+import configuration.annotations.Description;
+import configuration.annotations.TestCaseId;
+import configuration.annotations.AppContainerConfig;
+import configuration.appcontainer.AppContainerStartParameters;
+import domain.ui.webstudio.components.common.TableComponent;
+import domain.serviceclasses.constants.User;
+import domain.ui.webstudio.components.editortabcomponents.leftmenu.EditorLeftRulesTreeComponent;
+import domain.ui.webstudio.pages.mainpages.EditorPage;
+import helpers.service.WorkflowService;
+import org.apache.commons.lang3.StringUtils;
+import org.testng.annotations.Test;
+import tests.BaseTest;
+
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+public class TestAddDeleteRowWithoutSaving extends BaseTest {
+
+    @Test
+    @TestCaseId("EPBDS-7474")
+    @Description("BUG: Added row is deleted incorrectly - the value of the next row is changed")
+    @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
+    public void testAddDeleteRowWithoutSaving() {
+        String projectName = WorkflowService.loginCreateProjectFromTemplate(User.ADMIN, "Tutorial 6 - Introduction to Spreadsheet Tables");
+        EditorPage editorPage = new EditorPage();
+        editorPage.getEditorLeftProjectModuleSelectorComponent()
+                .selectModule(projectName, "Tutorial6 - Intro to Spreadsheet Tables");
+        editorPage.getEditorLeftRulesTreeComponent()
+                .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
+                .expandFolderInTree("Decision")
+                .selectItemInFolder("Decision", "LossFreeDiscount");
+
+        editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
+        TableComponent table = editorPage.getCenterTable();
+        table.clickCell(5, 2);
+        editorPage.getEditorTableActionsPanelComponent().clickInsertRowAfter();
+        table.editCell(6, 1, "444", true);
+
+        // Undo — verify the edit is reverted
+        editorPage.getEditorTableActionsPanelComponent().undoClickChanges();
+        assertThat(StringUtils.normalizeSpace(table.getCellText(6, 1)))
+                .as("Cell should be empty after undo")
+                .isEmpty();
+
+        // Redo — verify the edit is restored
+        editorPage.getEditorTableActionsPanelComponent().redoClickChanges();
+        assertThat(table.getCellText(6, 1))
+                .as("Cell should contain '444' after redo")
+                .contains("444");
+
+        editorPage.getEditorTableActionsPanelComponent().clickRemoveRow();
+        assertThat(StringUtils.normalizeSpace(table.getCellText(6, 1))).isEmpty();
+        assertThat(table.getCellText(6, 2)).isEqualTo("0%");
+        editorPage.getEditorTableActionsPanelComponent().clickSaveChanges();
+        assertThat(StringUtils.normalizeSpace(table.getCellText(6, 1))).isEmpty();
+        assertThat(table.getCellText(6, 2)).isEqualTo("0%");
+    }
+}

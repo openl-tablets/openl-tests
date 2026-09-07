@@ -1,0 +1,335 @@
+package domain.ui.webstudio.components.admincomponents;
+
+import domain.ui.webstudio.components.BaseComponent;
+import domain.ui.webstudio.components.common.TableComponent;
+import configuration.core.ui.WebElement;
+import configuration.driver.DriverPool;
+import helpers.utils.WaitUtil;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.NoSuchElementException;
+
+public class UsersPageComponent extends BaseComponent {
+
+    // Column indices for users table (1-based)
+    private static final int COL_USERNAME = 1;
+    private static final int COL_FULLNAME = 2;
+    private static final int COL_EMAIL = 3;
+    private static final int COL_ACTIONS = 4;
+
+    // ==== Table Section ====
+    private TableComponent usersTable;
+    private WebElement addUserBtn;
+
+    // ==== Drawer (Edit Form) Section ====
+    private WebElement drawer;
+    private WebElement drawerCloseBtn;
+    private WebElement usernameField;
+    private WebElement emailField;
+    private WebElement passwordField;
+    private WebElement firstNameField;
+    private WebElement lastNameField;
+    private WebElement displayNamePatternDropdown;
+    private WebElement displayNameField;
+    private WebElement drawerSubmitBtn;
+    private WebElement cancelBtn;
+
+    // ==== Role Management Section ====
+    private WebElement projectsTab;
+    private WebElement deployReposTab;
+    private WebElement addRoleBtn;
+    private WebElement roleRepositoryTemplate;
+    private WebElement roleNameTemplate;
+    private WebElement deployRepoRepositoryTemplate;
+    private WebElement deployRepoRoleTemplate;
+    private WebElement projectSelectorTemplate;
+    private WebElement projectRoleSelectorTemplate;
+    private WebElement removeRoleBtn;
+    private WebElement selectOptionTemplate;
+
+    // ==== Error Handling Section ====
+    private WebElement errorNotification;
+    private WebElement errorDescription;
+
+    public UsersPageComponent() {
+        super(DriverPool.getPage());
+        initializeElements();
+    }
+
+    public UsersPageComponent(WebElement rootLocator) {
+        super(rootLocator);
+        initializeElements();
+    }
+
+    private void initializeElements() {
+        // Initialize table
+        usersTable = createScopedComponent(TableComponent.class, "xpath=.//table", "usersTable");
+        addUserBtn = createScopedElement("xpath=.//button[./span[text()='Add User']]", "addUserBtn");
+
+        // Drawer elements (not scoped to rootLocator as drawer is outside content div)
+        drawer = new WebElement(page, "xpath=//div[contains(@class,'ant-drawer-open')]", "drawer");
+        drawerCloseBtn = new WebElement(page, "xpath=//div[contains(@class,'ant-drawer-open')]//button[contains(@class,'ant-drawer-close')]", "drawerCloseBtn");
+
+        // Form fields
+        usernameField = new WebElement(page, "xpath=//input[@id='username']", "usernameField");
+        emailField = new WebElement(page, "xpath=//input[@id='email']", "emailField");
+        passwordField = new WebElement(page, "xpath=//input[@id='password']", "passwordField");
+        firstNameField = new WebElement(page, "xpath=//input[@id='firstName']", "firstNameField");
+        lastNameField = new WebElement(page, "xpath=//input[@id='lastName']", "lastNameField");
+        displayNamePatternDropdown = new WebElement(page, "xpath=//input[@id='displayNameSelect']", "displayNamePatternDropdown");
+        displayNameField = new WebElement(page, "xpath=//input[@id='displayName']", "displayNameField");
+
+        // Form buttons
+        drawerSubmitBtn = new WebElement(page, "xpath=//div[contains(@class,'ant-drawer-open')]//button[./span[text()='Save']]", "drawerSubmitBtn");
+        cancelBtn = new WebElement(page, "xpath=//div[contains(@class,'ant-drawer-open')]//button[./span[text()='Cancel']]", "cancelBtn");
+
+        // Role management
+        projectsTab = new WebElement(page, "xpath=//div[@data-node-key='projects']", "projectsTab");
+        deployReposTab = new WebElement(page, "xpath=//div[@data-node-key='deployRepos']", "deployReposTab");
+        addRoleBtn = new WebElement(page, "xpath=//div[@role='tabpanel' and @aria-hidden='false']//button[./span[contains(text(),'Add Role')]]", "addRoleBtn");
+        roleRepositoryTemplate = new WebElement(page, "xpath=//input[@id='designRepos_%s_id']", "designRepoSelectorTemplate");
+        roleNameTemplate = new WebElement(page, "xpath=//input[@id='designRepos_%s_role']", "roleSelectorTemplate");
+        deployRepoRepositoryTemplate = new WebElement(page, "xpath=//input[@id='deployRepos_%s_id']", "deployRepoSelectorTemplate");
+        deployRepoRoleTemplate = new WebElement(page, "xpath=//input[@id='deployRepos_%s_role']", "deployRepoRoleTemplate");
+        projectSelectorTemplate = new WebElement(page, "xpath=//input[@id='projects_%s_id']", "projectSelectorTemplate");
+        projectRoleSelectorTemplate = new WebElement(page, "xpath=//input[@id='projects_%s_role']", "projectRoleSelectorTemplate");
+        removeRoleBtn = new WebElement(page, "xpath=//button[./span[contains(@aria-label,'delete')] and ancestor::div[contains(@class,'ant-form-item')]]", "removeRoleBtn");
+        selectOptionTemplate = new WebElement(page, "xpath=//div[@class='rc-virtual-list-holder-inner' and not(ancestor::div[contains(@class,'dropdown-hidden')])]/div[@title='%s' and not(contains(@class,'ant-select-item-option-selected'))]", "selectOptionTemplate");
+
+        // Error handling
+        errorNotification = new WebElement(page, "xpath=//div[contains(@class,'ant-notification-notice-error')]", "errorNotification");
+        errorDescription = new WebElement(page, "xpath=//div[contains(@class,'ant-notification-notice-error')]//div[contains(@class,'ant-notification-notice-description')]", "errorDescription");
+    }
+
+    // Locate an action button (edit/delete) anywhere in the user's row — the Actions column index
+    // shifts between auth modes (oauth2/SAML add a Groups column), so anchor on the row, not a cell.
+    private com.microsoft.playwright.Locator rowActionButton(int row, String icon) {
+        return usersTable.getCell(row, COL_USERNAME).getLocator()
+                .locator("xpath=ancestor::tr[1]")
+                .locator("button:has(svg[data-icon='" + icon + "'])");
+    }
+
+    public int getUserRow(String username) {
+        WaitUtil.waitForCondition(() -> getAllUsernames().contains(username), DEFAULT_TIMEOUT_MS, 100, "Waiting for user '" + username + "' to appear in users table");
+        int rowCount = usersTable.getRowsCount();
+        for (int i = 1; i <= rowCount; i++) {
+            String cellText = usersTable.getCellText(i, COL_USERNAME);
+            if (cellText.contains(username)) {
+                return i;
+            }
+        }
+        throw new NoSuchElementException("User not found in table: " + username);
+    }
+
+    public String getUsernameFromRow(int rowIndex) {
+        return usersTable.getCellText(rowIndex, COL_USERNAME).replaceAll("\\s+", " ").trim();
+    }
+
+    public String getEmailFromRow(int rowIndex) {
+        return usersTable.getCellText(rowIndex, COL_EMAIL);
+    }
+
+    public String getFullNameFromRow(int rowIndex) {
+        return usersTable.getCellText(rowIndex, COL_FULLNAME);
+    }
+
+    public boolean isUserInList(String username) {
+        try {
+            getUserRow(username);
+            return true;
+        } catch (NoSuchElementException e) {
+            return false;
+        }
+    }
+
+    public List<String> getAllUsernames() {
+        List<String> usernames = new ArrayList<>();
+        int rowCount = usersTable.getRowsCount();
+        for (int i = 1; i <= rowCount; i++) {
+            usernames.add(getUsernameFromRow(i));
+        }
+        return usernames;
+    }
+
+    public int getUsersCount() {
+        return usersTable.getRowsCount();
+    }
+
+    public boolean areActionsAvailableForUser(String username) {
+        int row = getUserRow(username);
+        return rowActionButton(row, "edit").isVisible() && rowActionButton(row, "delete").isVisible();
+    }
+
+    public UsersPageComponent clickEditUser(String username) {
+        int row = getUserRow(username);
+        rowActionButton(row, "edit").first().click();
+        drawer.waitForVisible(3000);
+        WaitUtil.sleep(150, "Waiting for user edit drawer to fully open");
+        return this;
+    }
+
+    public void clickDeleteUser(String username) {
+        int usersBefore = usersTable.getRowsCount();
+        int row = getUserRow(username);
+        rowActionButton(row, "delete").first().click();
+        getModalOkBtn().click();
+        WaitUtil.waitForCondition(() -> {
+            int usersAfter = usersTable.getRowsCount();
+            return usersAfter == usersBefore - 1;
+            }, 5000, 100, "Waiting for user deletion to complete");
+
+    }
+
+    // ========================================
+    // Form Methods - Add/Edit User
+    // ========================================
+
+    public UsersPageComponent clickAddUser() {
+        addUserBtn.click();
+        drawer.waitForVisible(3000);
+        return this;
+    }
+
+    public UsersPageComponent setUsername(String username) {
+        usernameField.fill(username);
+        return this;
+    }
+
+    public String getUsername() {
+        return usernameField.getAttribute("value");
+    }
+
+    public UsersPageComponent setEmail(String email) {
+        emailField.fill(email);
+        return this;
+    }
+
+    public String getEmail() {
+        return emailField.getAttribute("value");
+    }
+
+    public UsersPageComponent setFirstName(String firstName) {
+        firstNameField.fill(firstName);
+        return this;
+    }
+
+    public String getFirstName() {
+        return firstNameField.getAttribute("value");
+    }
+
+    public UsersPageComponent setLastName(String lastName) {
+        lastNameField.fill(lastName);
+        return this;
+    }
+
+    public String getLastName() {
+        return lastNameField.getAttribute("value");
+    }
+
+    public UsersPageComponent setPassword(String password) {
+        passwordField.fill(password);
+        return this;
+    }
+
+    public UsersPageComponent clickAddRoleBtn() {
+        addRoleBtn.click();
+        return this;
+    }
+
+    public UsersPageComponent setRoleRepository(int row, String repositoryName) {
+        roleRepositoryTemplate.format(row).child("xpath=/ancestor::div[contains(@class,'ant-select-content')]").click();
+        selectOptionTemplate.format(repositoryName).waitForVisible().click();
+        return this;
+    }
+
+    public UsersPageComponent setRole(int row, String role) {
+        roleNameTemplate.format(row).child("xpath=/ancestor::div[contains(@class,'ant-select-content')]").click();
+        selectOptionTemplate.format(role).waitForVisible().click();
+        return this;
+    }
+
+    public UsersPageComponent clickProjectsTab() {
+        projectsTab.click();
+        return this;
+    }
+
+    public UsersPageComponent clickDeployReposTab() {
+        deployReposTab.click();
+        return this;
+    }
+
+    public UsersPageComponent setDeployRoleRepository(int row, String repositoryName) {
+        deployRepoRepositoryTemplate.format(row).child("xpath=/ancestor::div[contains(@class,'ant-select-content')]").click();
+        selectOptionTemplate.format(repositoryName).waitForVisible().click();
+        return this;
+    }
+
+    public UsersPageComponent setDeployRole(int row, String role) {
+        deployRepoRoleTemplate.format(row).child("xpath=/ancestor::div[contains(@class,'ant-select-content')]").click();
+        selectOptionTemplate.format(role).waitForVisible().click();
+        return this;
+    }
+
+    public UsersPageComponent setProject(int row, String projectName) {
+        projectSelectorTemplate.format(row).child("xpath=/ancestor::div[contains(@class,'ant-select-content')]").click();
+        selectOptionTemplate.format(projectName).waitForVisible().click();
+        return this;
+    }
+
+    public UsersPageComponent setProjectRole(int row, String roleName) {
+        projectRoleSelectorTemplate.format(row).child("xpath=/ancestor::div[contains(@class,'ant-select-content')]").click();
+        selectOptionTemplate.format(roleName).waitForVisible().click();
+        return this;
+    }
+
+    public String getRoleRepository(int row) {
+        return roleRepositoryTemplate.format(row).child("xpath=/..").getAttribute("title");
+    }
+
+    public String getRole(int row) {
+        return roleNameTemplate.format(row).child("xpath=/..").getAttribute("title");
+    }
+
+    public UsersPageComponent clearAllRoles() {
+        while (removeRoleBtn.isVisible(1000)) {
+            removeRoleBtn.click();
+        }
+        return this;
+    }
+
+    public void saveUser() {
+        saveUser(true);
+    }
+
+    public void saveUser(boolean waitForDrawerToGetHidden) {
+        fillRequiredIdentityFields();
+        drawerSubmitBtn.click();
+        if (waitForDrawerToGetHidden)
+            drawer.waitForHidden(3000);
+    }
+
+    /**
+     * Studio 6.4.0 made Email mandatory and defaults the Display Name mode to "Custom", which makes that
+     * field mandatory too, so a save leaving either empty is rejected with "Please fix the errors before
+     * saving". Fills whichever the caller did not set, the way a user filling the form would.
+     */
+    private void fillRequiredIdentityFields() {
+        if (emailField.isEnabled() && emailField.getCurrentInputValue().isBlank()) {
+            emailField.fill(getUsername() + "@test.com");
+        }
+        if (displayNameField.isEnabled() && displayNameField.getCurrentInputValue().isBlank()) {
+            String composed = (getFirstName() + " " + getLastName()).trim();
+            displayNameField.fill(composed.isBlank() ? getUsername() : composed);
+        }
+    }
+
+    public void cancelUser() {
+        // A post-save error notification overlaps the drawer's Cancel button; Escape closes the drawer regardless
+        WaitUtil.retryOnException(() -> {
+            page.keyboard().press("Escape");
+            drawer.waitForHidden(2000);
+            return true;
+        }, 10000, 500, "Closing user drawer via Escape");
+    }
+}

@@ -1,0 +1,119 @@
+package helpers.utils;
+
+import org.apache.commons.lang3.RandomStringUtils;
+import org.json.JSONObject;
+
+import java.io.File;
+import java.util.List;
+import java.util.function.Function;
+
+public class StringUtil {
+
+    public static String generateUniqueName() {
+        return generateUniqueName(15);
+    }
+
+    public static String generateUniqueName(String baseName) {
+        return baseName + "-" + RandomStringUtils.randomNumeric(6);
+    }
+
+    public static String generateUniqueName(int length) {
+        return generateUniqueName(RandomStringUtils.randomAlphanumeric(length));
+    }
+
+    public static String splitStringAndGetNthElement(String string, String splitter, int nthElementFromEnd) {
+        String[] elements = string.split(splitter);
+        if(nthElementFromEnd >= elements.length)
+            throw new RuntimeException(String.format("Required element does not exist! Total elements: %s, wanted element from the end: %s", elements.length, nthElementFromEnd));
+        int n = elements.length - nthElementFromEnd;
+        return elements[n];
+    }
+
+    public static String getPathWithoutFileName(String path) {
+        String fileName = splitStringAndGetNthElement(path, File.separator, 1);
+        return path.replace(File.separator + fileName, "");
+    }
+
+
+    public static String buildPath(boolean startWithFs, String... values) {
+        StringBuilder sb = new StringBuilder();
+        if(startWithFs) {
+            sb.append(File.separator);
+        }
+        for (String value : values) {
+            sb.append(value).append(File.separator);
+        }
+        return sb.deleteCharAt(sb.length()-1).toString();
+    }
+
+    public static String makeUniversalPath(String path) {
+        return path.replace("\\", File.separator).replace("/", File.separator);
+    }
+
+    public static String makeUnixPath(String path) {
+        return path.replace("\\", "/");
+    }
+
+    public static String deleteNewLines(String string) {
+        return string.replace("\n", "");
+    }
+
+    public static String deleteNewLinesAndSpaces(String string) {
+        return string.replace("\n", "").replace(" ", "");
+    }
+
+    public static Function<List<?>, String> prettyPrintJsonObjectList = j -> {
+        if(j == null) return null;
+        StringBuffer sb = new StringBuffer();
+        j.forEach(o -> {
+            sb.append(new JSONObject(o).toString(4));
+            sb.append("\n");
+        });
+        return sb.toString();
+    };
+
+    public static Function<List<?>, String> prettyPrintObjectList = j -> {
+        if(j == null) return null;
+        StringBuffer sb = new StringBuffer();
+        j.forEach(o -> {
+            sb.append(o.toString());
+            sb.append("\n");
+        });
+        return sb.toString();
+    };
+
+    public static String formatJsonResponse(String responseBody) {
+        try {
+            JSONObject jsonObject = new JSONObject(responseBody);
+            return jsonObject.toString(4);
+        } catch (Exception e) {
+            return responseBody;
+        }
+    }
+    
+    /**
+     * Collapses any run of whitespace (spaces, tabs, newlines) into a single space and trims.
+     * If the result exceeds {@code maxLength}, it is truncated and an ellipsis is appended.
+     * Intended for log lines that would otherwise span many lines (e.g. raw textContent of
+     * a multi-line UI block).
+     */
+    public static String oneLine(String value, int maxLength) {
+        if (value == null) return "null";
+        String collapsed = value.replaceAll("\\s+", " ").trim();
+        if (maxLength > 0 && collapsed.length() > maxLength) {
+            return collapsed.substring(0, maxLength - 1) + "…";
+        }
+        return collapsed;
+    }
+
+    public static String oneLine(String value) {
+        return oneLine(value, 300);
+    }
+
+    public static String sanitizeFileName(String fileName) {
+        if (fileName == null || fileName.isEmpty()) {
+            return "unnamed";
+        }
+        return fileName.replaceAll("[^a-zA-Z0-9._-]", "_");
+    }
+}
