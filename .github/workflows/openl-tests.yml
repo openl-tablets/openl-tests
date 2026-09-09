@@ -23,9 +23,21 @@ on:
           Number of parallel jobs. Classes are pulled from one shared queue, so shards finish together; see README.
         required: false
         default: "20"
+      source_sha:
+        description: "OpenL Tablets pull request head SHA to receive the openl-tests commit status"
+        required: false
+        default: ""
+      pr_number:
+        description: "OpenL Tablets pull request number; empty for a standalone run"
+        required: false
+        default: ""
 
 permissions:
   contents: read
+
+concurrency:
+  group: openl-tests-${{ inputs.pr_number || github.run_id }}
+  cancel-in-progress: ${{ inputs.pr_number != '' }}
 
 env:
   SELECTED_TESTS: ${{ inputs.tests }}
@@ -48,6 +60,19 @@ jobs:
         uses: actions/checkout@v4
         with:
           persist-credentials: false
+
+      - name: Validate pull request inputs
+        env:
+          APPLICATION_VERSION: ${{ inputs.application_version }}
+          PR_NUMBER: ${{ inputs.pr_number }}
+          SOURCE_SHA: ${{ inputs.source_sha }}
+        run: |
+          if [ -z "${PR_NUMBER}" ] && [ -z "${SOURCE_SHA}" ]; then
+            exit 0
+          fi
+          [[ "${PR_NUMBER}" =~ ^[1-9][0-9]*$ ]]
+          [[ "${SOURCE_SHA}" =~ ^[0-9a-f]{40}$ ]]
+          test "${APPLICATION_VERSION}" = "pr-${PR_NUMBER}-${SOURCE_SHA}"
 
       - name: Check that the application images exist
         env:
@@ -224,13 +249,19 @@ jobs:
         if: always() && steps.report.outcome == 'success'
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ inputs.pr_number }}
         run: |
+          PUBLISH_ARGS=()
+          if [ -n "${PR_NUMBER}" ]; then
+            PUBLISH_ARGS+=(--pr-number "${PR_NUMBER}")
+          fi
           python3 scripts/github-actions/publish-report-pages.py \
             --repo "${GITHUB_REPOSITORY}" \
             --run-id "${GITHUB_RUN_ID}" \
             --report-dir merged-report \
             --pages-url "https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}" \
-            --keep 15
+            --keep 15 \
+            "${PUBLISH_ARGS[@]}"
 
       - name: Remove the queue refs of this run attempt
         if: always()
@@ -241,3 +272,55 @@ jobs:
           python3 scripts/github-actions/run-test-queue.py cleanup \
             --repo "${GITHUB_REPOSITORY}" \
             --run-key "${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+
+  report-status:
+    name: Report OpenL Tests status
+    needs:
+      - discover-tests
+      - test-shard
+      - merge-report
+    if: always() && inputs.source_sha != '' && inputs.pr_number != ''
+    runs-on: ubuntu-latest
+    permissions: {}
+
+    steps:
+      - name: Create token for OpenL Tablets commit statuses
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ vars.E2E_APP_ID }}
+          private-key: ${{ secrets.E2E_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: openl-tablets
+          permission-statuses: write
+
+      - name: Report final status
+        env:
+          DISCOVER_RESULT: ${{ needs.discover-tests.result }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          MERGE_RESULT: ${{ needs.merge-report.result }}
+          PR_NUMBER: ${{ inputs.pr_number }}
+          SOURCE_SHA: ${{ inputs.source_sha }}
+          TEST_RESULT: ${{ needs.test-shard.result }}
+        run: |
+          set -euo pipefail
+          [[ "${PR_NUMBER}" =~ ^[1-9][0-9]*$ ]]
+          [[ "${SOURCE_SHA}" =~ ^[0-9a-f]{40}$ ]]
+
+          STATE=failure
+          DESCRIPTION='OpenL Tests failed'
+          if [ "${DISCOVER_RESULT}" = success ] && [ "${TEST_RESULT}" = success ] && [ "${MERGE_RESULT}" = success ]; then
+            STATE=success
+            DESCRIPTION='OpenL Tests passed'
+          fi
+
+          TARGET_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          if [ "${MERGE_RESULT}" = success ]; then
+            TARGET_URL="https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}/pr-${PR_NUMBER}/"
+          fi
+
+          gh api --method POST "repos/openl-tablets/openl-tablets/statuses/${SOURCE_SHA}" \
+            -f state="${STATE}" \
+            -f context=openl-tests \
+            -f description="${DESCRIPTION}" \
+            -f target_url="${TARGET_URL}"

@@ -123,6 +123,16 @@ def prune(runs_root: Path, keep: int, current: str) -> list[str]:
     return removed
 
 
+def report_destination(run_id: str, pr_number: str | None) -> Path:
+    return Path(f"pr-{pr_number}") if pr_number else Path(RUNS_DIR) / run_id
+
+
+def positive_pr_number(value: str) -> str:
+    if not value.isdigit() or int(value) < 1:
+        raise argparse.ArgumentTypeError("pull request number must be a positive integer")
+    return value
+
+
 def publish(args: argparse.Namespace) -> str:
     token = os.environ.get("GITHUB_TOKEN", "")
     if not token:
@@ -131,21 +141,24 @@ def publish(args: argparse.Namespace) -> str:
     report = Path(args.report_dir)
     if not (report / "index.html").exists():
         raise SystemExit(f"No index.html under {report}")
-    url = f"{args.pages_url.rstrip('/')}/{RUNS_DIR}/{args.run_id}/"
+    destination = report_destination(args.run_id, args.pr_number)
+    url = f"{args.pages_url.rstrip('/')}/{destination.as_posix()}/"
 
     for attempt in range(1, PUSH_ATTEMPTS + 1):
         workdir = Path(tempfile.mkdtemp(prefix="gh-pages-"))
         try:
             require(git(token, "clone", "--quiet", "--depth", "1", "--branch", PAGES_BRANCH, remote, str(workdir)), "Cloning the pages branch")
             lease = require(git(token, "rev-parse", "HEAD", cwd=workdir), "Reading the pages branch tip").stdout.strip()
-            runs_root = workdir / RUNS_DIR
-            runs_root.mkdir(exist_ok=True)
-            target = runs_root / args.run_id
+            target = workdir / destination
+            target.parent.mkdir(parents=True, exist_ok=True)
             if target.exists():
                 shutil.rmtree(target)
             shutil.copytree(report, target)
-            removed = prune(runs_root, args.keep, args.run_id)
-            (workdir / "index.html").write_text(render_index(runs_root, args.repo), encoding="utf-8")
+            removed = []
+            if not args.pr_number:
+                runs_root = workdir / RUNS_DIR
+                removed = prune(runs_root, args.keep, args.run_id)
+                (workdir / "index.html").write_text(render_index(runs_root, args.repo), encoding="utf-8")
             (workdir / ".nojekyll").touch()
             require(git(token, "checkout", "--quiet", "--orphan", "publish", cwd=workdir), "Starting the single publish commit")
             require(git(token, "add", "-A", cwd=workdir), "Staging the site")
@@ -155,7 +168,10 @@ def publish(args: argparse.Namespace) -> str:
                 return url
             if unchanged.returncode > 1:
                 require(unchanged, "Comparing the site with the published one")
-            message = f"Publish the test report of run {args.run_id}" + (f", prune {len(removed)} old run(s)" if removed else "")
+            if args.pr_number:
+                message = f"Publish pull request {args.pr_number} test report from run {args.run_id}"
+            else:
+                message = f"Publish the test report of run {args.run_id}" + (f", prune {len(removed)} old run(s)" if removed else "")
             require(git(token, "-c", "user.name=github-actions[bot]", "-c", "user.email=41898282+github-actions[bot]@users.noreply.github.com",
                         "commit", "--quiet", "-m", message, cwd=workdir), "Committing the site")
             pushed = git(token, "push", "--quiet", f"--force-with-lease=refs/heads/{PAGES_BRANCH}:{lease}", remote, f"HEAD:refs/heads/{PAGES_BRANCH}", cwd=workdir)
@@ -169,15 +185,17 @@ def publish(args: argparse.Namespace) -> str:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Publish the merged test report to the gh-pages branch under runs/<run id>/, regenerate the index of the last runs "
-                    "and prune older ones. The branch always holds a single commit (orphan commit pushed with --force-with-lease), so "
-                    "pruned reports do not stay in the git history and the site can be opened in a browser without downloading an artifact."
+        description="Publish the merged test report to the gh-pages branch under runs/<run id>/, or under pr-<number>/ for a pull "
+                    "request. Standalone runs regenerate the index and prune older standalone reports. The branch always holds a single "
+                    "commit (orphan commit pushed with --force-with-lease), so pruned reports do not stay in the git history and the site "
+                    "can be opened in a browser without downloading an artifact."
     )
     parser.add_argument("--repo", required=True)
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--report-dir", required=True)
     parser.add_argument("--pages-url", required=True, help="Base URL of the GitHub Pages site, e.g. https://owner.github.io/repo")
     parser.add_argument("--keep", type=int, default=15, help="How many latest runs to keep on the site.")
+    parser.add_argument("--pr-number", type=positive_pr_number, help="Publish to pr-<number>/ without changing the standalone run index.")
     parser.add_argument("--step-summary", default=os.environ.get("GITHUB_STEP_SUMMARY"))
     args = parser.parse_args()
 
