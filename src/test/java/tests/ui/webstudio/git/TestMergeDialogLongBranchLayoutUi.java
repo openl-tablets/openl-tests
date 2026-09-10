@@ -30,7 +30,7 @@ public class TestMergeDialogLongBranchLayoutUi extends BaseTest {
     private static final String LONG_BRANCH = "Example3-AutoPolicyCalculation/openl/20260907";
 
     @Test
-    @TestCaseId("EPBDS-16571")
+    @TestCaseId("EPBDS-16574")
     @Description("EPBDS-16462: a long branch name must not break the Sync updates dialog - the dialog must not "
             + "scroll sideways, the label must stay on one line with the field, and the full branch name must be "
             + "exposed as a title so the truncated text remains readable.")
