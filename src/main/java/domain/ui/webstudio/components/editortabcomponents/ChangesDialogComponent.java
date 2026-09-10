@@ -12,11 +12,13 @@ import java.util.regex.Pattern;
 
 public class ChangesDialogComponent extends BaseComponent {
 
+    private static final String ISLAND = "//*[@data-island='local-changes']";
     private static final String VIEW = "//*[@data-testid='local-changes-view']";
     private static final String ROW = VIEW + "//table//tbody//tr";
     private static final String RESTORE_MODAL = "//div[contains(@class,'ant-modal') and .//div[contains(@class,'ant-modal-title') and normalize-space()='Confirm Restore']]";
     private static final Pattern COUNT = Pattern.compile("(\\d+)\\s+change");
 
+    private WebElement island;
     private WebElement view;
     private WebElement title;
     private WebElement countLabel;
@@ -44,6 +46,7 @@ public class ChangesDialogComponent extends BaseComponent {
     }
 
     private void initializeElements() {
+        island = new WebElement(page, "xpath=" + ISLAND, "localChangesIsland");
         view = new WebElement(page, "xpath=" + VIEW, "localChangesView");
         title = new WebElement(page, "xpath=" + VIEW + "//h1", "changesTitle");
         countLabel = new WebElement(page, "xpath=" + VIEW + "//*[@data-testid='local-changes-count']", "changesCount");
@@ -78,6 +81,14 @@ public class ChangesDialogComponent extends BaseComponent {
 
     public boolean isViewShown(int timeoutInMillis) {
         return view.isVisible(timeoutInMillis);
+    }
+
+    // The island is an empty div until React mounts into it, so it is never "visible" to Playwright.
+    // The attribute is rendered server-side, which makes presence the right precondition.
+    public String getRenderedModuleName() {
+        WaitUtil.waitForCondition(island::exists, DEFAULT_TIMEOUT_MS, 200, "Waiting for the Local Changes island");
+        String rendered = island.getAttribute("data-module-name");
+        return rendered == null ? "" : rendered;
     }
 
     public String getChangesTitle() {

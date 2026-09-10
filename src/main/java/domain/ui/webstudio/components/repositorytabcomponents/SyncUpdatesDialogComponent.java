@@ -39,6 +39,50 @@ public class SyncUpdatesDialogComponent extends BaseComponent {
         return this;
     }
 
+    // A long branch name used to widen the control past the 600px dialog: the label wrapped onto its own
+    // line and the dialog scrolled sideways. These read what the browser computed, since the fix is a
+    // layout one and there is nothing else observable about it.
+    // Anchored on the Receive button rather than on the title: the button is the element the rest of this
+    // component already locates reliably, and walking up from it reaches the box that carries the width.
+    private static final String DIALOG_JS =
+            "const anchor = [...document.querySelectorAll('button')]"
+                    + ".find(node => node.textContent.trim().startsWith('Receive their updates'));"
+                    + "const dialog = anchor ? anchor.closest('.ant-modal-content') || anchor.closest('.ant-modal')"
+                    + " : null;";
+
+    // How far the dialog's content overflows its own box, in pixels. Returns -1 when the dialog cannot be
+    // found, so a missing dialog fails an assertion with a distinguishable value instead of reading as "fits".
+    public long getHorizontalOverflowPx() {
+        Object overflow = DriverPool.getPage().evaluate(
+                "() => {" + DIALOG_JS + " return dialog ? dialog.scrollWidth - dialog.clientWidth : -1; }");
+        return Long.parseLong(String.valueOf(overflow));
+    }
+
+    public long getBodyHorizontalOverflowPx() {
+        Object overflow = DriverPool.getPage().evaluate(
+                "() => {" + DIALOG_JS
+                        + " const body = dialog && dialog.querySelector('.ant-modal-body');"
+                        + " return body ? body.scrollWidth - body.clientWidth : -1; }");
+        return Long.parseLong(String.valueOf(overflow));
+    }
+
+    public String getBranchFieldRowFlexWrap() {
+        return String.valueOf(DriverPool.getPage().evaluate(
+                "() => {" + DIALOG_JS
+                        + " const field = dialog && dialog.querySelector('[data-testid=merge-target-branch-field]');"
+                        + " const row = field && field.closest('.ant-form-item-row');"
+                        + " return row ? getComputedStyle(row).flexWrap : 'field or row not found'; }"));
+    }
+
+    public boolean isFullBranchNameExposedAsTitle(String branchName) {
+        Object found = DriverPool.getPage().evaluate(
+                "branch => {" + DIALOG_JS
+                        + " return !!(dialog && [...dialog.querySelectorAll('[title]')]"
+                        + ".some(node => node.getAttribute('title') === branch)); }",
+                branchName);
+        return Boolean.parseBoolean(String.valueOf(found));
+    }
+
     public String getHeader() {
         return modalTitle.getText().trim();
     }

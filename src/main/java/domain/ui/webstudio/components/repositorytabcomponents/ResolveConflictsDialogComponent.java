@@ -9,6 +9,28 @@ import helpers.utils.WaitUtil;
 
 public class ResolveConflictsDialogComponent extends BaseComponent {
 
+    public enum ConflictSide {
+        YOURS("your version"),
+        THEIRS("their version"),
+        BASE("base version");
+
+        private final String label;
+
+        ConflictSide(String label) {
+            this.label = label;
+        }
+
+        public String downloadLabel() {
+            return "Download " + label;
+        }
+
+        public String deletedLabel() {
+            return "Deleted in " + label;
+        }
+    }
+
+    private static final String FILE_ROW = "//tr[.//*[normalize-space()='%s']]";
+
     private WebElement useYoursRadio;
     private WebElement useTheirsRadio;
     private WebElement useBaseRadio;
@@ -35,6 +57,29 @@ public class ResolveConflictsDialogComponent extends BaseComponent {
         saveButton = createScopedElement("xpath=.//button[contains(@class, 'ant-btn-primary') and contains(., 'Save and Resolve')]", "saveButton");
         cancelButton = createScopedElement("xpath=.//button[contains(@class, 'ant-btn-default') and contains(., 'Cancel')]", "cancelButton");
         compareLink = new WebElement(page, "button:has-text('Compare File Versions')", "compareLink");
+    }
+
+    // Availability is reported per file, not per revision, so every lookup is scoped to the row of that file.
+    public boolean isDownloadOffered(String fileName, ConflictSide side) {
+        return fileRowElement(fileName, "//button[normalize-space()='" + side.downloadLabel() + "']").exists();
+    }
+
+    public boolean isDeletedStatusShown(String fileName, ConflictSide side) {
+        return fileRowElement(fileName, "//*[normalize-space()='" + side.deletedLabel() + "']").exists();
+    }
+
+    // The deleted side must be a plain label. Rendering it as a button is the defect: clicking it opened a 404.
+    public boolean isDeletedStatusRenderedAsButton(String fileName, ConflictSide side) {
+        return fileRowElement(fileName, "//button[normalize-space()='" + side.deletedLabel() + "']").exists();
+    }
+
+    public boolean isCompareOffered(String fileName) {
+        return fileRowElement(fileName, "//button[normalize-space()='Compare File Versions']").exists();
+    }
+
+    private WebElement fileRowElement(String fileName, String relativeXpath) {
+        return new WebElement(page, "xpath=" + String.format(FILE_ROW, fileName) + relativeXpath,
+                "conflictRowElement");
     }
 
     public void waitForDialogToAppear() {

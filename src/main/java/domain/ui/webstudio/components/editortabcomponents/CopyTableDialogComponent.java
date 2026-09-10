@@ -102,6 +102,19 @@ public class CopyTableDialogComponent extends BaseComponent {
         return this;
     }
 
+    // The Module field suggests existing modules but does not restrict the input, so a table can be copied
+    // into a module that does not exist yet. setModule only picks an offered option; this types a new name.
+    public CopyTableDialogComponent typeNewModule(String moduleName) {
+        WebElement input = moduleComboBox.waitForVisible(DEFAULT_TIMEOUT_MS);
+        input.click();
+        input.press("Control+A");
+        input.press("Delete");
+        input.fill(moduleName);
+        WaitUtil.waitForCondition(() -> moduleName.equals(input.getCurrentInputValue()), DEFAULT_TIMEOUT_MS, 100,
+                "Waiting for the Module field to hold the new module name " + moduleName);
+        return this;
+    }
+
     public CopyTableDialogComponent setTextProperty(String propertyLabel, String value) {
         return setProperty(propertyLabel, value);
     }
