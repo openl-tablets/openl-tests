@@ -5,7 +5,6 @@ import configuration.annotations.Description;
 import configuration.annotations.KnownIssue;
 import configuration.annotations.TestCaseId;
 import configuration.appcontainer.AppContainerStartParameters;
-import configuration.driver.DriverPool;
 import domain.serviceclasses.constants.User;
 import domain.ui.webstudio.components.common.TabSwitcherComponent;
 import domain.ui.webstudio.components.common.TableComponent;
@@ -37,11 +36,14 @@ public class TestCopyTableColoursIntoAnotherModuleUi extends BaseTest {
     private static final String TARGET_MODULE = "Limits";
     private static final String TABLE = "BankLimitIndex";
     private static final String COPY = "BankLimitIndexCopy";
-    private static final String TABLE_FOLDER = "Rules";
+    // BankLimitIndex is declared as "Rules Double ...", which the tree groups under Decision, not Rules.
+    private static final String TABLE_FOLDER = "Decision";
     private static final String WILDCARD_RULES_XML = "BankRatingWildcardRules.xml";
 
     private static final String HEADER_BACKGROUND = "rgb(221, 217, 195)";
     private static final String HEADER_FONT = "rgb(74, 69, 42)";
+
+    private boolean moduleOpened;
 
     @Test(enabled = false)
     @TestCaseId("EPBDS-16570")
@@ -75,11 +77,13 @@ public class TestCopyTableColoursIntoAnotherModuleUi extends BaseTest {
 
         editorPage.getEditorToolbarPanelComponent().clickCopy()
                 .waitForDialogToAppear()
-                .selectCopyAs("New Table")
                 .setName(COPY)
                 .typeNewModule(TARGET_MODULE)
                 .clickCopy();
         editorPage.waitUntilSpinnerLoaded();
+        // The wildcard rules.xml exists so that the new module compiles; without this check that premise
+        // is never verified and a colour comparison on a broken module would be meaningless.
+        editorPage.getProblemsPanelComponent().checkNoProblems();
 
         openTable(editorPage, projectName, TARGET_MODULE, COPY);
         assertThat(cellBackground(editorPage.getCenterTable()))
@@ -97,8 +101,15 @@ public class TestCopyTableColoursIntoAnotherModuleUi extends BaseTest {
                 .isEqualTo(sourceHeaderBackground);
     }
 
+    // Before any module is open the breadcrumbs are absent and only the project tree can select a module;
+    // afterwards the tree is replaced by the rules tree and the breadcrumb dropdown is the way across.
     private void openTable(EditorPage editorPage, String projectName, String moduleName, String tableName) {
-        editorPage.getEditorToolbarPanelComponent().selectBreadcrumbModule(projectName, moduleName);
+        if (moduleOpened) {
+            editorPage.getEditorToolbarPanelComponent().selectBreadcrumbModule(projectName, moduleName);
+        } else {
+            editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, moduleName);
+            moduleOpened = true;
+        }
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
                 .expandFolderInTree(TABLE_FOLDER)

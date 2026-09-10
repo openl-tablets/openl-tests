@@ -107,8 +107,6 @@ public class CopyTableDialogComponent extends BaseComponent {
     public CopyTableDialogComponent typeNewModule(String moduleName) {
         WebElement input = moduleComboBox.waitForVisible(DEFAULT_TIMEOUT_MS);
         input.click();
-        input.press("Control+A");
-        input.press("Delete");
         input.fill(moduleName);
         WaitUtil.waitForCondition(() -> moduleName.equals(input.getCurrentInputValue()), DEFAULT_TIMEOUT_MS, 100,
                 "Waiting for the Module field to hold the new module name " + moduleName);

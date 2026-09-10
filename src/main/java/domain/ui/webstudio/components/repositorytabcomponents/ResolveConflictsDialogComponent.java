@@ -77,13 +77,19 @@ public class ResolveConflictsDialogComponent extends BaseComponent {
         return fileRowElement(fileName, "//button[normalize-space()='Compare File Versions']").exists();
     }
 
+    // Scoped to the dialog: the Files tab of the project sits under the modal and holds the same file names.
     private WebElement fileRowElement(String fileName, String relativeXpath) {
-        return new WebElement(page, "xpath=" + String.format(FILE_ROW, fileName) + relativeXpath,
+        return createScopedElement("xpath=." + String.format(FILE_ROW, fileName) + relativeXpath,
                 "conflictRowElement");
     }
 
+    // Throws rather than returning quietly: a dialog that never opened would let negative assertions about
+    // its contents pass as if the expected absence had been observed.
     public void waitForDialogToAppear() {
-        WaitUtil.waitForCondition(() -> useYoursRadio.isVisible(), 10000, 250, "Waiting for Resolve Conflicts dialog to appear");
+        if (!WaitUtil.waitForCondition(() -> useYoursRadio.isVisible(), 10000, 250,
+                "Waiting for Resolve Conflicts dialog to appear")) {
+            throw new IllegalStateException("The Resolve Conflicts dialog did not open within 10000 ms");
+        }
     }
 
     public boolean isDialogVisible() {

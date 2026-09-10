@@ -42,36 +42,36 @@ public class SyncUpdatesDialogComponent extends BaseComponent {
     // A long branch name used to widen the control past the 600px dialog: the label wrapped onto its own
     // line and the dialog scrolled sideways. These read what the browser computed, since the fix is a
     // layout one and there is nothing else observable about it.
-    // Anchored on the Receive button rather than on the title: the button is the element the rest of this
-    // component already locates reliably, and walking up from it reaches the box that carries the width.
+    // Anchored on the branch select, which exists in builds with and without EPBDS-16462 and carries no
+    // translatable text. Anchoring on a button label would tie these checks to the English locale, and
+    // anchoring on merge-target-branch-field would tie them to a test hook the fix itself introduced -
+    // the check would then pass or fail on the presence of that hook rather than on the layout.
     private static final String DIALOG_JS =
-            "const anchor = [...document.querySelectorAll('button')]"
-                    + ".find(node => node.textContent.trim().startsWith('Receive their updates'));"
+            "const anchor = document.querySelector('[data-testid=merge-target-branch]');"
                     + "const dialog = anchor ? anchor.closest('.ant-modal-content') || anchor.closest('.ant-modal')"
                     + " : null;";
 
-    // How far the dialog's content overflows its own box, in pixels. Returns -1 when the dialog cannot be
-    // found, so a missing dialog fails an assertion with a distinguishable value instead of reading as "fits".
-    public long getHorizontalOverflowPx() {
-        Object overflow = DriverPool.getPage().evaluate(
-                "() => {" + DIALOG_JS + " return dialog ? dialog.scrollWidth - dialog.clientWidth : -1; }");
-        return Long.parseLong(String.valueOf(overflow));
-    }
-
+    // How far the dialog body overflows its own box, in pixels. Returns -1 when the dialog cannot be found,
+    // so a missing dialog fails an assertion with a distinguishable value instead of reading as "it fits".
     public long getBodyHorizontalOverflowPx() {
         Object overflow = DriverPool.getPage().evaluate(
                 "() => {" + DIALOG_JS
                         + " const body = dialog && dialog.querySelector('.ant-modal-body');"
                         + " return body ? body.scrollWidth - body.clientWidth : -1; }");
-        return Long.parseLong(String.valueOf(overflow));
+        return ((Number) overflow).longValue();
     }
 
+    // The row that holds the branch select. Without the fix it wraps, putting the label on its own line.
     public String getBranchFieldRowFlexWrap() {
-        return String.valueOf(DriverPool.getPage().evaluate(
+        Object flexWrap = DriverPool.getPage().evaluate(
                 "() => {" + DIALOG_JS
-                        + " const field = dialog && dialog.querySelector('[data-testid=merge-target-branch-field]');"
-                        + " const row = field && field.closest('.ant-form-item-row');"
-                        + " return row ? getComputedStyle(row).flexWrap : 'field or row not found'; }"));
+                        + " const row = anchor && anchor.closest('.ant-form-item-row');"
+                        + " return row ? getComputedStyle(row).flexWrap : null; }");
+        if (flexWrap == null) {
+            throw new IllegalStateException(
+                    "The branch select or its form row was not found in the Sync updates dialog");
+        }
+        return String.valueOf(flexWrap);
     }
 
     public boolean isFullBranchNameExposedAsTitle(String branchName) {
@@ -80,7 +80,7 @@ public class SyncUpdatesDialogComponent extends BaseComponent {
                         + " return !!(dialog && [...dialog.querySelectorAll('[title]')]"
                         + ".some(node => node.getAttribute('title') === branch)); }",
                 branchName);
-        return Boolean.parseBoolean(String.valueOf(found));
+        return (Boolean) found;
     }
 
     public String getHeader() {
