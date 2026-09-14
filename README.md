@@ -68,20 +68,20 @@ The framework supports two execution modes controlled by the `execution.mode` sy
 ### Running Test Suites
 
 #### Available Test Suites
-Located in `src/test/resources/testng_suites/`. The regression suites, each run with two parallel threads: `studio_smoke`, `studio_acl`, `studio_git`, `studio_issues`, `studio_open_api`, `studio_rules_editor`, `studio_sso`, `service_smoke`. The three `*_regression` suites (`studio_zip_projects_regression`, `studio_central_projects_regression`, `studio_preconfig_projects_regression`) validate client project sets and run only locally. `studio_smoke` is the default when `-Dsuite` is omitted.
+Located in `src/test/resources/testng_suites/`. Only the three `*_regression` suites remain: `studio_zip_projects_regression`, `studio_central_projects_regression`, `studio_preconfig_projects_regression`. They validate client project sets, carry `@LocalOnly` classes that GitHub Actions never queues, and run only locally. `default.xml` is an empty placeholder suite: it is what `-Dsuite` resolves to when the property is omitted, so a bare `mvn clean test` compiles the project and runs no tests instead of failing on a missing suite file. Every other test is run by class name with `-Dtest=`; GitHub Actions discovers test classes by scanning `src/test/java`, so no suite file lists them.
 
 #### Suite Execution Examples
 ```bash
-# Run smoke tests in LOCAL mode (default)
-mvn clean test -Dsuite=studio_smoke
+# Run the zipped client projects suite in LOCAL mode (default)
+mvn clean test -Dsuite=studio_zip_projects_regression
 
-# Run smoke tests with explicit mode
-mvn clean test -Dsuite=studio_smoke -Dexecution.mode=PLAYWRIGHT_LOCAL
-mvn clean test -Dsuite=studio_smoke -Dexecution.mode=PLAYWRIGHT_DOCKER
+# Same suite with an explicit mode
+mvn clean test -Dsuite=studio_zip_projects_regression -Dexecution.mode=PLAYWRIGHT_LOCAL
+mvn clean test -Dsuite=studio_zip_projects_regression -Dexecution.mode=PLAYWRIGHT_DOCKER
 
-# Run other suites
-mvn clean test -Dsuite=studio_issues -Dexecution.mode=PLAYWRIGHT_LOCAL
-mvn clean test -Dsuite=studio_rules_editor -Dexecution.mode=PLAYWRIGHT_DOCKER
+# Run the other client project suites
+mvn clean test -Dsuite=studio_central_projects_regression -Dexecution.mode=PLAYWRIGHT_LOCAL
+mvn clean test -Dsuite=studio_preconfig_projects_regression -Dexecution.mode=PLAYWRIGHT_DOCKER
 ```
 
 ### Running Individual Tests
@@ -698,7 +698,7 @@ In `PLAYWRIGHT_DOCKER` mode every test starts a `mcr.microsoft.com/playwright` c
 
 The `application_version` input is the ghcr.io tag of the OpenL images (`webstudio:<tag>` and `ws:<tag>-all`); it defaults to `latest`, the newest published build. The "Discover tests" job checks with `docker manifest inspect` that both images exist and fails within seconds when the tag is wrong, so a typo no longer costs a full run of tests that cannot start their container.
 
-GitHub Actions does not read the TestNG suite files. `scripts/github-actions/discover-tests.py` scans `src/test/java` and queues every non-abstract class that has `@Test` methods, except classes annotated `@LocalOnly(reason = "...")` (`configuration.annotations.LocalOnly`), which are meant for local runs only: special infrastructure, manual data, exploratory checks. A new test class is therefore part of the GitHub regression the moment it is committed, and nothing has to be added to a suite for it. A concrete class whose `@Test` methods are all inherited from a base class is found through its `extends` clause. Today the 199 classes of the 8 regression suites are queued; the four classes of the `*_regression` suites (`TestZippedProjects`, `TestPreconfigProjects`, `TestStudioCentralGroupPolicyBundle`, `TestStudioCentralGroupRatingClaim`) carry `@LocalOnly` because they need local project sets, JDK 25 or the Genesis central repositories. Because the queue is keyed by run id and run attempt, a re-run of the workflow starts with a fresh queue.
+GitHub Actions does not read the TestNG suite files. `scripts/github-actions/discover-tests.py` scans `src/test/java` and queues every non-abstract class that has `@Test` methods, except classes annotated `@LocalOnly(reason = "...")` (`configuration.annotations.LocalOnly`), which are meant for local runs only: special infrastructure, manual data, exploratory checks. A new test class is therefore part of the GitHub regression the moment it is committed, and nothing has to be added to a suite for it. A concrete class whose `@Test` methods are all inherited from a base class is found through its `extends` clause. The four classes of the `*_regression` suites (`TestZippedProjects`, `TestPreconfigProjects`, `TestStudioCentralGroupPolicyBundle`, `TestStudioCentralGroupRatingClaim`) carry `@LocalOnly` because they need local project sets, JDK 25 or the Genesis central repositories; every other test class is queued. Because the queue is keyed by run id and run attempt, a re-run of the workflow starts with a fresh queue.
 
 The `shards` input (default 20) only sets the number of parallel jobs. The classes form one queue: `scripts/github-actions/run-test-queue.py` makes every shard claim the next unclaimed class by creating the git ref `refs/openl-queue/<run id>/<class name>` through the GitHub API (creating a ref is atomic, the second shard gets HTTP 422 and moves on), run it with `mvn surefire:test` on a generated one-class TestNG suite and claim again until the queue is empty. Shards therefore finish within one class duration of each other with no duration bookkeeping; the queue refs are invisible in the GitHub UI and the merge job deletes them. The workflow needs `contents: write` on the default token for the refs. Every shard runs with both images available: Studio from `docker_image_name` and Rule Services from `ws_docker_image_name`; a class that needs Rule Services declares `dockerImageProperty = PropertyNameSpace.WS_DOCKER_IMAGE_NAME` in its `@AppContainerConfig`. Instead of a suite name, the test export and the merged report group tests by the test package: `tests.ui.webstudio.git` becomes `git`, `tests.ui.webservice` becomes `webservice` (`TestGroupUtil` in Java, `testgroups.py` in the scripts).
 
