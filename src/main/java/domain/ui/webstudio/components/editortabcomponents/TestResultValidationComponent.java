@@ -4,31 +4,34 @@ import configuration.core.ui.WebElement;
 import configuration.driver.DriverPool;
 import domain.ui.webstudio.components.BaseComponent;
 import domain.ui.webstudio.components.common.TableComponent;
-import helpers.utils.StringUtil;
 import helpers.utils.WaitUtil;
-import lombok.Getter;
 
-import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * The results of running a module's tests. A test table is named by a link that carries the outcome of the
+ * whole table, and the cases below it are marked one by one.
+ */
 public class TestResultValidationComponent extends BaseComponent {
 
+    private static final String RESULTS = "xpath=//div[contains(@class,'ant-modal-content')]"
+            + "[.//div[contains(@class,'ant-modal-title')][contains(normalize-space(),'Test Results')]]";
+    private static final String TABLE_LINK = RESULTS + "//a[starts-with(@data-testid,'test-table-')]";
+    private static final String CASE_STATUS = RESULTS + "//table[starts-with(@data-testid,'test-results-')]//span[@title='%s']";
+    private static final int PROBE_MS = 500;
+    private static final long RESULTS_TIMEOUT_MS = 30000;
+
+    private WebElement resultsWindow;
+    private WebElement resultsTitle;
     private WebElement resultTableHeader;
     private TableComponent resultTable;
-    
-    // Test result status element lists
-    private List<WebElement> caseErrorElementsList;
-    private List<WebElement> caseSuccessElementsList;
-    private List<WebElement> testResultRowElementsList;
-    private List<WebElement> testResultRowElementsLinksList;
-    private List<WebElement> testResultBadgeErrors;
+    private WebElement failedTableLinkTemplate;
+    private List<WebElement> tableLinks;
+    private List<WebElement> failedTableLinks;
+    private List<WebElement> passedCases;
+    private List<WebElement> failedCases;
     private WebElement currentModuleOnlyCheckbox;
-
-    private WebElement resultPageHeader;
-    private WebElement failuresOnlyInlineCheckbox;
-    private List<WebElement> resultTableBodyRows;
-    private List<WebElement> caseErrorIconsLenient;
-    private List<WebElement> failedTestNameLinksLenient;
+    private WebElement failuresOnlyCheckbox;
 
     public TestResultValidationComponent() {
         super(DriverPool.getPage());
@@ -41,73 +44,79 @@ public class TestResultValidationComponent extends BaseComponent {
     }
 
     private void initializeElements() {
-        resultTableHeader = createScopedElement("xpath=.//table[@class='table']/thead//tr", "resultTableHeader");
-        resultTable = createScopedComponent(TableComponent.class, "xpath=.//table[@class='table']", "resultTable");
-        
-        // Test result status element lists
-        caseErrorElementsList = createScopedElementList("xpath=.//tr//span[@class='case-error']", "caseErrorElements");
-        caseSuccessElementsList = createScopedElementList("xpath=.//tr//span[@class='case-success']", "caseSuccessElements");
-        testResultRowElementsList = createScopedElementList("xpath=.//table[@class='table']//tr[contains(@class, 'test-result-row')]//td[contains(@class, 'test-name')]", "testResultRowElements");
-        testResultRowElementsLinksList = createScopedElementList("xpath=.//a[@class='testError']", "testResultRowElementsLinksList");
-        testResultBadgeErrors = createScopedElementList("xpath=.//span[@class='badge badge-error']", "testResultBadgeError");
-        currentModuleOnlyCheckbox = new WebElement(page, "xpath=//input[@id='currentModuleOnly']", "currentModuleOnlyCheckbox");
+        resultsWindow = new WebElement(page, RESULTS, "testResultsWindow");
+        resultsTitle = new WebElement(page, RESULTS + "//div[contains(@class,'ant-modal-title')]", "testResultsTitle");
+        resultTableHeader = new WebElement(page,
+                "xpath=(" + RESULTS.substring("xpath=".length()) + "//table[starts-with(@data-testid,'test-results-')])[1]/thead/tr", "resultTableHeader");
+        resultTable = createScopedComponent(TableComponent.class,
+                "xpath=(" + RESULTS.substring("xpath=".length()) + "//table[starts-with(@data-testid,'test-results-')])[1]", "resultTable");
+        tableLinks = createElementList(TABLE_LINK, "testTableLinks");
+        failedTableLinks = createElementList(TABLE_LINK + "[contains(@class,'ant-typography-danger')]", "failedTestTableLinks");
+        failedTableLinkTemplate = new WebElement(page,
+                TABLE_LINK + "[contains(@class,'ant-typography-danger')][normalize-space()='%s']", "failedTestTableLink");
+        passedCases = createElementList(String.format(CASE_STATUS, "Passed"), "passedCases");
+        failedCases = createElementList(RESULTS + "//table[starts-with(@data-testid,'test-results-')]"
+                + "//span[@title='Failed' or @title='Error']", "failedCases");
+        // The setting belongs to the launcher the run is started from, not to the window the results arrive in.
+        currentModuleOnlyCheckbox = new WebElement(page,
+                "xpath=//div[contains(@class,'ant-popover')][not(contains(@class,'ant-popover-hidden'))]"
+                        + "//input[@data-testid='tests-module-only']", "currentModuleOnlyCheckbox");
+        failuresOnlyCheckbox = new WebElement(page, RESULTS + "//input[@data-testid='tests-failures-only']", "failuresOnlyCheckbox");
+    }
 
-        resultPageHeader = createScopedElement("xpath=.//h1[contains(@class,'page-header')]", "resultPageHeader");
-        failuresOnlyInlineCheckbox = createScopedElement(
-                "xpath=.//h1[contains(@class,'page-header')]//input[@type='checkbox' and contains(@onchange,'failuresOnly')]",
-                "failuresOnlyInlineCheckbox");
-        resultTableBodyRows = createScopedElementList(
-                "xpath=.//table[contains(@class,'table')]//tbody/tr",
-                "resultTableBodyRows");
-        caseErrorIconsLenient = createScopedElementList(
-                "xpath=.//tbody//span[contains(@class,'case-error')]",
-                "caseErrorIconsLenient");
-        failedTestNameLinksLenient = createScopedElementList(
-                "xpath=.//a[contains(@class,'testError')]",
-                "failedTestNameLinksLenient");
+    private void waitForResults() {
+        resultsWindow.waitForVisible(RESULTS_TIMEOUT_MS);
+        WaitUtil.requireCondition(() -> !tableLinks.isEmpty(), RESULTS_TIMEOUT_MS, 250,
+                "Waiting for the test results to be reported");
     }
 
     public TableComponent getResultTable() {
-        WaitUtil.waitForCondition(() -> resultTable.isVisible() && !resultTable.getRows().isEmpty(), 5000, 50, "Waiting for resultTable to be visible");
+        waitForResults();
+        WaitUtil.requireCondition(() -> resultTable.isVisible() && !resultTable.getRows().isEmpty(),
+                DEFAULT_TIMEOUT_MS, 100, "Waiting for the table of test cases to be drawn");
         return resultTable;
     }
 
     public boolean isTestTableFailed() {
-        WaitUtil.isListNotEmpty(() -> caseErrorElementsList, 3000, 100, "Checking if test table has error elements");
-        return testResultBadgeErrors.stream().anyMatch(WebElement::isVisible);
+        waitForResults();
+        return !failedTableLinks.isEmpty();
     }
 
     public boolean isTestTablePassed() {
-        WaitUtil.isListNotEmpty(() -> caseSuccessElementsList, 3000, 100, "Checking if test table has success elements");
-        return testResultBadgeErrors.stream().noneMatch(WebElement::isVisible);
+        waitForResults();
+        return failedTableLinks.isEmpty();
     }
 
     public int getFailedTestCount() {
-        WaitUtil.waitForListNotEmpty(() -> caseErrorElementsList, 3000, 100, "Waiting for failed test elements to be available");
-        return caseErrorElementsList.size();
+        waitForResults();
+        return failedCases.size();
     }
 
     public int getPassedTestCount() {
-        WaitUtil.waitForListNotEmpty(() -> caseSuccessElementsList, 3000, 100, "Waiting for passed test elements to be available");
-        return caseSuccessElementsList.size();
+        waitForResults();
+        return passedCases.size();
     }
 
     public int getTotalTestCount() {
-        return testResultRowElementsList.size();
+        waitForResults();
+        return passedCases.size() + failedCases.size();
     }
 
     public String getTestResultSummary() {
-        int total = getTotalTestCount();
-        int passed = getPassedTestCount();
-        int failed = getFailedTestCount();
-        return String.format("Total: %d, Passed: %d, Failed: %d", total, passed, failed);
+        return String.format("Total: %d, Passed: %d, Failed: %d",
+                getTotalTestCount(), getPassedTestCount(), getFailedTestCount());
     }
-    
+
+    /** The column headings of the first table of results: what each case was run with, and what it returned. */
     public String getResultTableHeader() {
-        if (resultTableHeader.isVisible()) {
-            return resultTableHeader.getText();
-        }
-        return "";
+        waitForResults();
+        return resultTableHeader.getText().trim();
+    }
+
+    /** What the window says about the run as a whole: how many tests were run, and how long they took. */
+    public String getRunSummary() {
+        waitForResults();
+        return resultsTitle.getText().trim();
     }
 
     public List<String> getTestResult(int rowIndex) {
@@ -115,32 +124,25 @@ public class TestResultValidationComponent extends BaseComponent {
     }
 
     public int countTestTables() {
-        WaitUtil.waitForCondition(() -> !testResultRowElementsList.isEmpty(), 5000, 100, "Waiting for test result rows to load");
-        return testResultRowElementsList.size();
+        waitForResults();
+        return tableLinks.size();
     }
 
     public void checkAllTablesPassed() {
-        WaitUtil.waitForCondition(() -> !testResultRowElementsList.isEmpty(), 10000, 250, "Waiting for test results to appear");
-        boolean allPassed = testResultBadgeErrors.stream().noneMatch(badge -> badge.isVisible(500));
-        if (!allPassed) {
+        waitForResults();
+        if (!failedTableLinks.isEmpty()) {
             throw new AssertionError("Expected all test tables to pass, but found failures: " + getAllFailedTests());
         }
     }
 
     public void checkTestTableFailed(String tableName) {
-        WaitUtil.waitForCondition(
-                () -> !testResultRowElementsList.isEmpty() || !testResultRowElementsLinksList.isEmpty(),
-                10000, 250, "Waiting for test results to appear");
-        boolean found = testResultRowElementsList.stream()
-                .anyMatch(row -> row.getText().contains(tableName))
-                || testResultRowElementsLinksList.stream()
-                .anyMatch(link -> link.getText().contains(tableName));
-        if (!found) {
+        waitForResults();
+        boolean listed = tableLinks.stream().anyMatch(link -> link.getText().contains(tableName));
+        if (!listed) {
             throw new AssertionError("Test table '" + tableName + "' not found in results");
         }
-        boolean hasBadge = testResultBadgeErrors.stream().anyMatch(badge -> badge.isVisible(500));
-        if (!hasBadge) {
-            throw new AssertionError("Expected test table '" + tableName + "' to have failures, but all passed");
+        if (!failedTableLinkTemplate.format(tableName).isVisible(PROBE_MS)) {
+            throw new AssertionError("Expected test table '" + tableName + "' to have failures, but it passed");
         }
     }
 
@@ -153,96 +155,41 @@ public class TestResultValidationComponent extends BaseComponent {
     }
 
     public boolean isFailuresOnlyFilterChecked() {
-        return failuresOnlyInlineCheckbox.isVisible() && failuresOnlyInlineCheckbox.isChecked();
+        return failuresOnlyCheckbox.isVisible(PROBE_MS) && failuresOnlyCheckbox.isChecked();
     }
 
     public void setFailuresOnlyFilter(boolean enabled) {
-        WaitUtil.waitForCondition(failuresOnlyInlineCheckbox::isVisible, 10000, 200,
-                "Waiting for inline 'Failures Only' checkbox to be visible");
-        if (failuresOnlyInlineCheckbox.isChecked() == enabled) return;
-        failuresOnlyInlineCheckbox.click();
-        WaitUtil.waitForCondition(() -> failuresOnlyInlineCheckbox.isChecked() == enabled,
-                5000, 100, "Waiting for 'Failures Only' filter to switch to " + enabled);
+        failuresOnlyCheckbox.waitForVisible(DEFAULT_TIMEOUT_MS);
+        if (failuresOnlyCheckbox.isChecked() == enabled) {
+            return;
+        }
+        failuresOnlyCheckbox.click();
+        WaitUtil.requireCondition(() -> failuresOnlyCheckbox.isChecked() == enabled,
+                DEFAULT_TIMEOUT_MS, 100, "Waiting for the 'Failures only' filter to switch to " + enabled);
         waitUntilSpinnerLoaded();
     }
 
     public List<String> getFailedTestNamesLenient() {
-        return failedTestNameLinksLenient.stream()
-                .map(e -> e.getText().trim())
-                .filter(s -> !s.isEmpty())
-                .distinct()
-                .toList();
+        return getAllFailedTests();
     }
 
     public void assertNoTestFailures(String contextMsg) {
-        boolean headerReady = WaitUtil.waitForCondition(
-                () -> resultPageHeader.isVisible() && resultPageHeader.getText(false).contains("Tests:"),
-                30000, 200,
-                "Waiting for test results page header to render");
-        String headerText = resultPageHeader.isVisible()
-                ? StringUtil.oneLine(resultPageHeader.getText(false))
-                : "<not visible>";
-        if (!headerReady) {
-            throw new AssertionError(String.format(
-                    "Test results page did not render (header='%s'). %s", headerText, contextMsg));
-        }
-
-        setFailuresOnlyFilter(false);
-        WaitUtil.isListNotEmpty(() -> resultTableBodyRows, 5000, 100,
-                "Waiting for test result rows to render with filter off");
-        if (resultTableBodyRows.isEmpty()) {
-            throw new AssertionError(String.format(
-                    "Tests did not produce any rendered rows (likely did not execute). header='%s'. %s",
-                    headerText, contextMsg));
-        }
-
-        setFailuresOnlyFilter(true);
-
-        int failingRows = resultTableBodyRows.size();
-        int caseErrorIcons = caseErrorIconsLenient.size();
-        int failedNameLinks = failedTestNameLinksLenient.size();
-
-        if (failingRows == 0 && caseErrorIcons == 0 && failedNameLinks == 0) {
+        waitForResults();
+        if (failedTableLinks.isEmpty() && failedCases.isEmpty()) {
             return;
         }
-
-        List<String> failedTestNames = getFailedTestNamesLenient();
         throw new AssertionError(String.format(
-                "Test failures detected. %s%n" +
-                        "Failed test tables (%d): %s%n" +
-                        "Indicators -> rows=%d, caseErrors=%d, failedLinks=%d%n" +
-                        "Header: %s",
-                contextMsg, failedTestNames.size(), failedTestNames,
-                failingRows, caseErrorIcons, failedNameLinks, headerText));
+                "Test failures detected. %s%nFailed test tables (%d): %s%nFailed cases: %d%nResults: %s",
+                contextMsg, failedTableLinks.size(), getAllFailedTests(), failedCases.size(), getRunSummary()));
     }
 
     public List<String> getAllFailedTests() {
-        WaitUtil.waitForCondition(() -> !testResultRowElementsList.isEmpty(), 3000, 100, "Waiting for test result rows");
-        List<String> failedTests = new ArrayList<>();
-        if(!testResultRowElementsLinksList.isEmpty())
-            failedTests.addAll(testResultRowElementsLinksList.stream().map(e -> e.getText().trim()).toList());
-
-        if(!testResultRowElementsList.isEmpty()) {
-            for (int i = 1; i <= getTotalTestCount(); i++) {
-                List<String> rowData = getResultTable().getRow(i).getValue();
-                if (!rowData.isEmpty()) {
-                    // Check if this row has error badge using the badge list
-                    String rowXpath = String.format(".//table[@class='table']//tr[contains(@class, 'test-result-row')][%d]//span[@class='badge badge-error']", i);
-                    WebElement errorBadge = createScopedElement("xpath=" + rowXpath, "errorBadge");
-
-                    try {
-                        if (errorBadge.isVisible(500)) {
-                            // This row has failed tests - get all details from the row
-                            String failureDetails = String.join(" | ", rowData);
-                            failedTests.add(failureDetails);
-                        }
-                    } catch (Exception e) {
-                        // No error badge in this row, skip it
-                    }
-                }
-            }
-        }
-
-        return failedTests;
+        waitForResults();
+        return failedTableLinks.stream()
+                .map(WebElement::getText)
+                .map(String::trim)
+                .filter(name -> !name.isEmpty())
+                .distinct()
+                .toList();
     }
 }

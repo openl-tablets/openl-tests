@@ -174,12 +174,12 @@ public class TestModuleCategoryInheritedProperties extends BaseTest {
     private void verifyBlueArrowWork(EditorPage editorPage) {
         RightTableDetailsComponent tableDetails = editorPage.getRightTableDetailsComponent();
 
-        assertThat(tableDetails.getPropertyRowBackgroundColor("LOB"))
-                .isEqualTo("rgba(190, 220, 255, 0.3)");
-        assertThat(tableDetails.getPropertyRowTitle("LOB"))
-                .isEqualTo("Inherited property");
-        assertThat(tableDetails.getGoToPropertiesTableArrowTitle("LOB"))
-                .isEqualTo("Go to Properties table");
+        assertThat(tableDetails.isPropertyInherited("LOB"))
+                .as("LOB should be shown as a property the table did not set itself")
+                .isTrue();
+        assertThat(tableDetails.getInheritedPropertyTitle("LOB"))
+                .as("The panel should say where the inherited value comes from")
+                .isEqualTo("Inherited from the category properties table");
 
         tableDetails.clickGoToPropertiesTableArrow("LOB");
 

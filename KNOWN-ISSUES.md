@@ -91,6 +91,47 @@ because of a forbidden character in its name answers with an empty message.
 
 ---
 
+## 6. A row can only be added below the current one, and the button says the opposite
+
+**What changed.** The JSF table toolbar had *Insert row before* and *Insert row after*. The React edit
+toolbar has one button: its tooltip reads **Insert Row Before** (`browser.module.edit_insert_row`), while the
+code behind it inserts **after** the cell in hand — `onInsertRow={() => step({ kind: 'insertRow', at: at.row
++ rowsOfChosen })}` in `TableEditor.tsx`. Inserting a row above the current one is therefore not offered at
+all, and the one button that is offered is labelled as the action it does not perform. (Insert Column Before
+is both labelled and implemented as "before", so only the row action is affected.)
+
+**Effect on the tests.** `TestSimpleLookupSimpleRules` used *Insert row before*; it now adds the row below
+and writes it from the row above, which reaches the same table and keeps the assertion. Nothing covers
+"insert above" any more, because the product no longer does it.
+
+## 7. Half the table properties cannot be added: the panel asks for the wrong dictionary
+
+**What changed.** The table details panel offers "Add a property" from a dictionary it reads with
+`getProjectProperties(projectId)` — without a table type (`TableDetailsPanel.tsx`, the effect that fills
+`dictionary`). The endpoint answers differently depending on that argument: with a table type it returns the
+properties a *table* may declare (`InheritanceLevel.TABLE`), and without one the properties a *Properties
+table* may declare at Global, Module or Category scope (`ProjectMetadataService.PROPERTIES`). The panel then
+offers the intersection of that wrong dictionary with the table's own `available` list, so every property that
+exists only at table scope is silently dropped from the list.
+
+**Verified against a running 6.5.0-SNAPSHOT.** For a table that declares nothing
+(`GET /web/projects/{id}/tables/{id}/details`), the server answers
+`available: [category, description, tags, effectiveDate, …, active, id, …]`, while
+`GET /web/projects/{id}/properties` (no `tableType`) answers a list without `description`, `tags`, `id` and
+`active`. In the UI, typing "Desc" into "Add a property" shows "No data" — the property cannot be added at
+all, although the server would accept it.
+
+**Effect:** `description`, `tags`, `id` and `active` cannot be set on a table through the properties panel.
+
+**Blocked tests.**
+- `tests.ui.webstudio.rules_editor.TestAddAndDeleteProperty#testAddAndDeleteProperty` — adds Description,
+  Tags and ID among others. The scenario now stops with `SkipException` after the properties that can still
+  be added; the Category part still runs and passes.
+
+---
+
+---
+
 ## Renamings that are not bugs
 
 For the record, so they are not raised twice. These are the same tree, named the way the tables API has named

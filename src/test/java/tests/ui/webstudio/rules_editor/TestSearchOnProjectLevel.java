@@ -49,7 +49,7 @@ public class TestSearchOnProjectLevel extends BaseTest {
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(nameProjectSpreadsheetSalary);
         search.typeSearchAndEnter("");
         search.waitForSearchResult();
-        assertThat(search.getResultCounterText()).isEqualTo("2 tables found");
+        assertThat(search.getFoundTablesCount()).isEqualTo(2);
         assertThat(search.isTableFound("SalaryCalc")).isTrue();
         assertThat(search.isTableFound("SalaryInfo")).isTrue();
 
@@ -86,14 +86,14 @@ public class TestSearchOnProjectLevel extends BaseTest {
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(nameProjectExample1BankRating);
         search.typeSearchAndEnter("MONEY");
         search.waitForSearchResult();
-        assertThat(search.getResultCounterText()).isEqualTo("2 tables found");
+        assertThat(search.getFoundTablesCount()).isEqualTo(2);
         assertThat(search.isTableFound("BalanceQualityIndexCalculation")).isTrue();
         assertThat(search.isTableFound("NetMoneyMarketLiabilitiesScore")).isTrue();
 
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(nameProjectExample1BankRating);
         search.typeSearchAndEnter(" Balance");
         search.waitForSearchResult();
-        assertThat(search.getResultCounterText()).isEqualTo("10 tables found");
+        assertThat(search.getFoundTablesCount()).isEqualTo(10);
         assertThat(search.isTableFound("BalanceDynamicIndexCalculation")).isTrue();
         assertThat(search.isTableFound("BalanceQualityIndexCalculation")).isTrue();
 
@@ -101,7 +101,7 @@ public class TestSearchOnProjectLevel extends BaseTest {
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(nameProjectExample1BankRating);
         search.typeSearchAndEnter("Balance ");
         search.waitForSearchResult();
-        assertThat(search.getResultCounterText()).isEqualTo("16 tables found");
+        assertThat(search.getFoundTablesCount()).isEqualTo(16);
         assertThat(search.isTableFound("BalanceDynamicIndexCalculation")).isTrue();
         assertThat(search.isTableFound("BalanceQualityIndexCalculation")).isTrue();
 
@@ -118,18 +118,27 @@ public class TestSearchOnProjectLevel extends BaseTest {
         // 1.7 Search for non-existing values
         search.typeSearchAndEnter("money");
         search.waitForSearchResult();
-        assertThat(search.getResultCounterText()).isEqualTo("No results found");
+        assertThat(search.getFoundTablesCount()).isZero();
+        assertThat(search.getNoResultsMessage())
+                .as("The search should say that nothing matched")
+                .isNotEmpty();
 
         editorPage.getEditorToolbarPanelComponent().navigateToProjectsInBreadcrumbs();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(nameProjectSearchingByTag);
         search.typeSearchAndEnter("''");
         search.waitForSearchResult();
-        assertThat(search.getResultCounterText()).isEqualTo("No results found");
+        assertThat(search.getFoundTablesCount()).isZero();
+        assertThat(search.getNoResultsMessage())
+                .as("The search should say that nothing matched")
+                .isNotEmpty();
 
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(nameProjectSearchingByTag);
         search.typeSearchAndEnter(" alert(\"zzz\") ");
         search.waitForSearchResult();
-        assertThat(search.getResultCounterText()).isEqualTo("No results found");
+        assertThat(search.getFoundTablesCount()).isZero();
+        assertThat(search.getNoResultsMessage())
+                .as("The search should say that nothing matched")
+                .isNotEmpty();
     }
 
     @Test
@@ -162,7 +171,7 @@ public class TestSearchOnProjectLevel extends BaseTest {
         search.openAdvancedSearch();
         assertThat(search.getScopeOptions()).contains("Current Project");
         assertThat(search.getScopeOptions()).contains("ALL (includes dependency projects)");
-        search.setScope("Current Project");
+        search.setScope("Current project");
         search.performSearch();
         search.waitForSearchResult();
         assertThat(search.isTableFound("SalaryCalc")).isTrue();
@@ -171,36 +180,39 @@ public class TestSearchOnProjectLevel extends BaseTest {
         // 2.2 Advanced search with "ALL" scope
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(nameProjectSpreadsheetSalary);
         search.openAdvancedSearch();
-        search.setScope("ALL (includes dependency projects)");
+        search.setScope("Everything compiled, dependencies included");
         search.performSearch();
         search.waitForSearchResult();
-        assertThat(search.getResultCounterText()).isEqualTo("107 tables found");
+        assertThat(search.getFoundTablesCount()).isEqualTo(107);
         search.openAdvancedSearch();
-        search.setScope("Current Project");
+        search.setScope("Current project");
         search.performSearch();
         search.waitForSearchResult();
-        assertThat(search.getResultCounterText()).isEqualTo("2 tables found");
+        assertThat(search.getFoundTablesCount()).isEqualTo(2);
 
         // 2.3 Filter by table type with ALL scope
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(nameProjectSpreadsheetSalary);
         search.openAdvancedSearch();
-        search.setScope("ALL (includes dependency projects)");
-        search.searchByTableType("xls.spreadsheet");
+        search.setScope("Everything compiled, dependencies included");
+        search.searchByTableType("Spreadsheet");
         search.performSearch();
         search.waitForSearchResult();
-        assertThat(search.getResultCounterText()).isEqualTo("8 tables found");
+        assertThat(search.getFoundTablesCount()).isEqualTo(8);
 
         // 2.4 Filter by table type + header with current project scope
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(nameProjectSpreadsheetSalary);
         search.openAdvancedSearch();
-        search.setScope("Current Project");
-        search.searchByTableType("xls.spreadsheet");
+        search.setScope("Current project");
+        search.searchByTableType("Spreadsheet");
         search.setHeaderContains("balance");
         search.performSearch();
         search.waitForSearchResult();
-        assertThat(search.getResultCounterText()).isEqualTo("No results found");
+        assertThat(search.getFoundTablesCount()).isZero();
+        assertThat(search.getNoResultsMessage())
+                .as("The search should say that nothing matched")
+                .isNotEmpty();
         search.openAdvancedSearch();
-        search.setScope("ALL (includes dependency projects)");
+        search.setScope("Everything compiled, dependencies included");
         search.performSearch();
         search.waitForSearchResult();
         assertThat(search.isTableFound("BalanceDynamicIndexCalculation")).isTrue();
@@ -209,8 +221,8 @@ public class TestSearchOnProjectLevel extends BaseTest {
         // 2.5 Header search with leading/trailing spaces
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(nameProjectSpreadsheetSalary);
         search.openAdvancedSearch();
-        search.setScope("ALL (includes dependency projects)");
-        search.searchByTableType("xls.spreadsheet");
+        search.setScope("Everything compiled, dependencies included");
+        search.searchByTableType("Spreadsheet");
         search.setHeaderContains(" balance");
         search.performSearch();
         search.waitForSearchResult();
@@ -220,28 +232,34 @@ public class TestSearchOnProjectLevel extends BaseTest {
         search.setHeaderContains("balance ");
         search.performSearch();
         search.waitForSearchResult();
-        assertThat(search.getResultCounterText()).isEqualTo("No results found");
+        assertThat(search.getFoundTablesCount()).isZero();
+        assertThat(search.getNoResultsMessage())
+                .as("The search should say that nothing matched")
+                .isNotEmpty();
 
         // 2.6 Filter by property "Description"
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(nameProjectSpreadsheetSalary);
         search.openAdvancedSearch();
-        search.setScope("ALL (includes dependency projects)");
-        search.searchByTableType("xls.spreadsheet");
+        search.setScope("Everything compiled, dependencies included");
+        search.searchByTableType("Spreadsheet");
         search.searchByProperty("Description", "hello");
         search.performSearch();
         search.waitForSearchResult();
         assertThat(search.isTableFound("BankRatingCalculation")).isTrue();
         search.openAdvancedSearch();
-        search.setScope("Current Project");
+        search.setScope("Current project");
         search.performSearch();
         search.waitForSearchResult();
-        assertThat(search.getResultCounterText()).isEqualTo("No results found");
+        assertThat(search.getFoundTablesCount()).isZero();
+        assertThat(search.getNoResultsMessage())
+                .as("The search should say that nothing matched")
+                .isNotEmpty();
 
         // 2.7 Combined filter: table type + header + property
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(nameProjectSpreadsheetSalary);
         search.openAdvancedSearch();
-        search.setScope("ALL (includes dependency projects)");
-        search.searchByTableType("xls.spreadsheet");
+        search.setScope("Everything compiled, dependencies included");
+        search.searchByTableType("Spreadsheet");
         search.setHeaderContains("ban");
         search.searchByProperty("Description", "hello");
         search.performSearch();
@@ -261,7 +279,7 @@ public class TestSearchOnProjectLevel extends BaseTest {
         editorPage.getEditorToolbarPanelComponent().navigateToProjectsInBreadcrumbs();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(nameProjectSpreadsheetSalary);
         search.openAdvancedSearch();
-        search.setScope("Current Project");
+        search.setScope("Current project");
         search.setSearchName("spreadsheet");
         search.performSearch();
         search.waitForSearchResult();
@@ -269,11 +287,11 @@ public class TestSearchOnProjectLevel extends BaseTest {
         assertThat(search.isTableFound("SalaryInfo")).isTrue();
 
         search.openAdvancedSearch();
-        search.setScope("ALL (includes dependency projects)");
+        search.setScope("Everything compiled, dependencies included");
         search.setSearchName("spreadsheet");
         search.performSearch();
         search.waitForSearchResult();
-        assertThat(search.getResultCounterText()).isEqualTo("8 tables found");
+        assertThat(search.getFoundTablesCount()).isEqualTo(8);
         assertThat(search.isTableFound("IsAdequateNormativeIndexCalculation")).isTrue();
         assertThat(search.isTableFound("SetNonZeroValues")).isTrue();
 

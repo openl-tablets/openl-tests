@@ -22,6 +22,9 @@ import java.util.Optional;
  */
 public class EditorLeftRulesTreeComponent extends BaseComponent {
 
+    /** The list the Select last opened: a list closed before it stays in the page, and the newest is last. */
+    private static final String OPEN_DROPDOWN = "(//div[contains(@class,'ant-select-dropdown')][not(contains(@class,'ant-select-dropdown-hidden'))])[last()]";
+
     private static final String TREE = "xpath=//div[@data-testid='module-tables-tree']";
     private static final String TREE_NODE = TREE + "//div[contains(@class,'ant-tree-treenode')]";
     private static final int SETTLE_POLL_MS = 200;
@@ -45,10 +48,13 @@ public class EditorLeftRulesTreeComponent extends BaseComponent {
                     for (const node of find(".//div[contains(@class,'ant-tree-treenode')]", tree)) {
                         if (!seen.has(node.id)) {
                             const [title] = find(".//span[contains(@class,'ant-tree-title')]", node);
+                            // A row carrying errors writes their number beside its name; the name is the row.
+                            const named = title?.cloneNode(true);
+                            named?.querySelectorAll("[data-testid='module-table-errors']").forEach(count => count.remove());
                             seen.set(node.id, {
                                 id: node.id,
                                 depth: find(".//span[contains(@class,'ant-tree-indent-unit')]", node).length,
-                                title: (title?.textContent ?? '').trim(),
+                                title: (named?.textContent ?? '').trim(),
                                 leaf: node.className.split(/\\s+/).includes('ant-tree-treenode-leaf'),
                                 expanded: node.getAttribute('aria-expanded') === 'true'
                             });
@@ -121,7 +127,7 @@ public class EditorLeftRulesTreeComponent extends BaseComponent {
     private void initializeElements() {
         viewSelect = new WebElement(page, "xpath=//div[@data-testid='module-tables-view']", "viewSelect");
         viewSelectValue = new WebElement(page, "xpath=//div[@data-testid='module-tables-view']//div[contains(@class,'ant-select-content')]", "viewSelectValue");
-        viewOptionTemplate = new WebElement(page, "xpath=//div[contains(@class,'ant-select-item-option')][@title='%s']", "viewOption");
+        viewOptionTemplate = new WebElement(page, "xpath=" + OPEN_DROPDOWN + "//div[contains(@class,'ant-select-item-option')][@title='%s']", "viewOption");
         searchInput = new WebElement(page, "xpath=//input[@data-testid='module-tables-search']", "tablesSearchInput");
         extendedSearchBtn = new WebElement(page, "xpath=//button[@data-testid='module-tables-search-extended']", "extendedSearchBtn");
         tree = new WebElement(page, TREE, "tablesTree");

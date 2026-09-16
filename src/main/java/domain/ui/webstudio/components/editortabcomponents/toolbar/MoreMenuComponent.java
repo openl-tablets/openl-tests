@@ -24,18 +24,21 @@ public class MoreMenuComponent extends BaseComponent implements IMoreMenu {
     private final WebElement tableDependenciesBtn;
     private final WebElement allMenuLinks;
 
+    // The menu itself is rendered into a body-level dropdown, so its items are located at page level.
+    private static final String OPEN_MENU = "xpath=//div[contains(@class,'ant-dropdown')][not(contains(@class,'ant-dropdown-hidden'))]";
+
     public MoreMenuComponent(Page page) {
-        this(new WebElement(page, "xpath=//span[@id='topMorePanel']", "topMorePanel"));
+        this(new WebElement(page, "xpath=//button[@data-testid='module-more']", "moreBtn"));
     }
 
     public MoreMenuComponent(WebElement rootLocator) {
         super(rootLocator);
-        toggle = createScopedElement("xpath=.//a[contains(@class,'dropdown-toggle')]", "moreBtn");
-        changesBtn = createScopedElement("xpath=.//a[@id='topRevertLink']", "changesBtn");
-        revisionsBtn = createScopedElement("xpath=.//a[@title='Show project revisions']", "revisionsBtn");
-        compareExcelFilesBtn = createScopedElement("xpath=.//a[contains(text(),'Compare Excel files')]", "compareExcelFilesBtn");
-        tableDependenciesBtn = createScopedElement("xpath=.//a[contains(text(),'Table Dependencies')]", "tableDependenciesBtn");
-        allMenuLinks = createScopedElement("xpath=.//ul[contains(@class,'dropdown-menu')]//li//a", "allMoreMenuLinks");
+        toggle = rootLocator;
+        changesBtn = new WebElement(page, OPEN_MENU + "//li[normalize-space()='Local Changes']", "changesBtn");
+        revisionsBtn = new WebElement(page, OPEN_MENU + "//li[normalize-space()='Revisions']", "revisionsBtn");
+        compareExcelFilesBtn = new WebElement(page, OPEN_MENU + "//li[normalize-space()='Compare Excel files']", "compareExcelFilesBtn");
+        tableDependenciesBtn = new WebElement(page, OPEN_MENU + "//li[normalize-space()='Table Dependencies']", "tableDependenciesBtn");
+        allMenuLinks = new WebElement(page, OPEN_MENU + "//li[contains(@class,'ant-dropdown-menu-item')]", "allMoreMenuLinks");
     }
 
     public MoreMenuComponent open() {

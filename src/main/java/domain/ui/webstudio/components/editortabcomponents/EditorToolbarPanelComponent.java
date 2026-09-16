@@ -106,14 +106,10 @@ public class EditorToolbarPanelComponent extends BaseComponent {
         createTableBtn.click();
     }
 
+    /** Saves the project. The toolbar offers Save only while the project has changes of its own to save. */
     public void clickSave() {
-        // A real click is what reliably opens the save dialog; dispatching the event is only the fallback for
-        // when the recompile keeps re-rendering this JSF toolbar button (see WebElement.clickWhenSettled).
-        try {
-            saveBtn.click();
-        } catch (RuntimeException stillReRendering) {
-            saveBtn.clickWhenSettled();
-        }
+        saveBtn.waitForVisible(DEFAULT_TIMEOUT_MS);
+        saveBtn.click();
     }
 
     /** The toolbar's Refresh, which reloads the project the editor is showing. */
@@ -122,6 +118,7 @@ public class EditorToolbarPanelComponent extends BaseComponent {
     }
 
     public void clickSync() {
+        syncBtn.waitForVisible(DEFAULT_TIMEOUT_MS);
         syncBtn.click();
         WaitUtil.sleep(500, "Waiting for Sync dialog to open");
     }

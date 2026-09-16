@@ -9,7 +9,10 @@ import java.util.List;
 
 public class TableComponent extends BaseComponent {
 
+
     private WebElement editorWrapper;
+    private WebElement firstRowLineNumber;
+    private WebElement numberedFirstColumn;
     private WebElement inputLocator;
     private List<PlaywrightTableRowComponent> rows;
     private WebElement propertyValueTemplate;
@@ -26,6 +29,8 @@ public class TableComponent extends BaseComponent {
 
     private void initializeElements() {
         editorWrapper = new WebElement(page, "xpath=//*[@data-testid='table-cell-input']", "editorWrapper");
+        firstRowLineNumber = createScopedElement("xpath=./tbody/tr[1]//span[@data-testid='table-line-number']", "firstRowLineNumber");
+        numberedFirstColumn = createScopedElement("xpath=./tbody/tr[last()]/td[1][.//span[@data-testid='table-line-number']]", "numberedFirstColumn");
         inputLocator = new WebElement(page, "xpath=//*[@data-testid='table-cell-input']", "inputLocator");
         rows = createScopedComponentList(PlaywrightTableRowComponent.class, "xpath=.//tbody/tr", "rowSelectorTemplate");
         propertyValueTemplate = createScopedElement("xpath=//tr/td[text()='%s']/following-sibling::td[1]", "propertyValue");
@@ -37,9 +42,16 @@ public class TableComponent extends BaseComponent {
 
     public WebElement getCell(int rowIndex, int columnIndex) {
         WaitUtil.waitForListNotEmpty(() -> rows, 3000, 100, "Waiting for table rows to load before getting cell [" + rowIndex + "," + columnIndex + "]");
-        PlaywrightTableRowComponent row = rows.get(rowIndex - 1);
-        List<WebElement> cells = row.getCells();
-        return cells.get(columnIndex - 1);
+        return rows.get(rowIndex - 1 + rowOffset()).getCells().get(columnIndex - 1);
+    }
+
+    /**
+     * A table written across its columns is drawn with its line numbers in a row above it, which is no row of
+     * the table. A table written the usual way round carries them in a column instead, which the row's own
+     * cells leave out.
+     */
+    private int rowOffset() {
+        return numberedFirstColumn.getLocator().count() == 0 && firstRowLineNumber.getLocator().count() > 0 ? 1 : 0;
     }
 
     public String getCellText(int rowIndex, int columnIndex) {
@@ -49,6 +61,7 @@ public class TableComponent extends BaseComponent {
     public List<String> getColumn(int columnIndex) {
         WaitUtil.waitForListNotEmpty(() -> rows, 3000, 250, "Waiting for table rows before getting column " + columnIndex);
         return rows.stream()
+                .skip(rowOffset())
                 .map(PlaywrightTableRowComponent::getCells)
                 .filter(cells -> cells.size() >= columnIndex)
                 .map(cells -> cells.get(columnIndex - 1).getInnerText().trim())
@@ -77,11 +90,7 @@ public class TableComponent extends BaseComponent {
         boolean isSelectEditor = inputLocator.getLocator().locator("xpath=self::div[contains(@class,'ant-select')]").count() > 0;
         if (isSelectEditor) {
             // A cell offering a list of values is written by picking from it, not by typing over it.
-            inputLocator.click();
-            WebElement option = new WebElement(page,
-                    String.format("xpath=//div[contains(@class,'ant-select-item-option')][@title=\'%s\']", text), "cellValueOption");
-            option.waitForVisible(DEFAULT_TIMEOUT_MS);
-            option.click();
+            pickInSelect(new WebElement(inputLocator, "xpath=.//input", "cellValueInput"), text);
         } else {
             inputLocator.press("Control+A");
             inputLocator.press("Delete");
@@ -99,17 +108,17 @@ public class TableComponent extends BaseComponent {
 
     public List<PlaywrightTableRowComponent> getRows() {
         WaitUtil.waitForCondition(() -> !rows.isEmpty(), 3000, 250, "Waiting for table rows to be loaded");
-        return rows;
+        return rows.subList(rowOffset(), rows.size());
     }
 
     public int getRowsCount() {
         WaitUtil.waitForListNotEmpty(() -> rows, 3000, 250, "Waiting for table rows before counting");
-        return rows.size();
+        return rows.size() - rowOffset();
     }
 
     public PlaywrightTableRowComponent getRow(int rowIndex) {
         WaitUtil.waitForListNotEmpty(() -> rows, 3000, 250, "Waiting for table rows before getting row " + rowIndex);
-        return rows.get(rowIndex - 1);
+        return rows.get(rowIndex - 1 + rowOffset());
     }
 
     public String getCellHintText(int rowIndex, int columnIndex, String variableName) {
@@ -150,7 +159,11 @@ public class TableComponent extends BaseComponent {
         }
 
         private void initializeElements() {
-            cells = createScopedElementList("xpath=./td[@data-cell]", "cells");
+            // While the table is edited it is drawn with its lines numbered. A table written the usual way
+            // round carries the numbers in a column before the first, which is not a cell of the table; a
+            // transposed one carries them in a row above it, where they take no column away.
+            cells = createScopedElementList("xpath=./td[not(position()=1"
+                    + " and ancestor::table[1]/tbody/tr[last()]/td[1][.//span[@data-testid='table-line-number']])]", "cells");
         }
 
         public  List<WebElement> getCells() {

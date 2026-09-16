@@ -13,6 +13,8 @@ import helpers.utils.WaitUtil;
  */
 public class RunTestsMenuComponent extends BaseComponent implements IRunTestsMenu {
 
+    private static final String LAUNCHER = "xpath=//div[contains(@class,'ant-popover')][not(contains(@class,'ant-popover-hidden'))]";
+
     private final WebElement testBtn;
     private final WebElement dropdownToggle;
     private final WebElement perPageDropdown;
@@ -22,18 +24,20 @@ public class RunTestsMenuComponent extends BaseComponent implements IRunTestsMen
     private final WebElement withinCurrentModuleOnly;
 
     public RunTestsMenuComponent(Page page) {
-        this(new WebElement(page, "xpath=//div[@id='testPanel']", "testPanel"));
+        this(new WebElement(page, "xpath=//button[@data-testid='module-test']", "moduleTestBtn"));
     }
 
     public RunTestsMenuComponent(WebElement rootLocator) {
         super(rootLocator);
-        testBtn = createScopedElement("xpath=.//a[@title='Run Tests']", "topPanelTestBtn");
-        dropdownToggle = createScopedElement("xpath=.//a[@title='Run Tests']/following-sibling::span[1]", "testDropdownBtn");
-        perPageDropdown = createScopedElement("xpath=.//ul[@id='testSettings']//select[@name='pp']", "testPerPageDropdown");
-        failuresOnlyCheckbox = createScopedElement("xpath=.//ul[@id='testSettings']//input[@name='failuresOnly']", "failuresOnlyCheckbox");
-        compoundResultCheckbox = createScopedElement("xpath=.//ul[@id='testSettings']//input[@name='complexResult']", "compoundResultCheckbox");
-        runTestsBtn = createScopedElement("xpath=.//ul[@id='testSettings']//a[contains(@class,'button') and text()='Test']", "runTestsBtn");
-        withinCurrentModuleOnly = createScopedElement("xpath=.//input[@id='testModuleOnlyField']", "topPanelWithinCurrentModuleOnly");
+        // The Test button of the toolbar opens the launcher; the launcher carries the settings of the run and
+        // the button that starts it.
+        testBtn = rootLocator;
+        dropdownToggle = rootLocator;
+        runTestsBtn = new WebElement(page, LAUNCHER + "//button[@data-testid='tests-start']", "runTestsBtn");
+        perPageDropdown = new WebElement(page, LAUNCHER + "//div[@data-testid='tests-per-page']//input", "testPerPageDropdown");
+        failuresOnlyCheckbox = new WebElement(page, LAUNCHER + "//input[@data-testid='tests-failures-only']", "failuresOnlyCheckbox");
+        compoundResultCheckbox = new WebElement(page, LAUNCHER + "//input[@data-testid='tests-compound-result']", "compoundResultCheckbox");
+        withinCurrentModuleOnly = new WebElement(page, LAUNCHER + "//input[@data-testid='tests-module-only']", "withinCurrentModuleOnly");
     }
 
     // ========== Test button ==========
@@ -54,18 +58,21 @@ public class RunTestsMenuComponent extends BaseComponent implements IRunTestsMen
     }
 
     public void runAllTests() {
-        testBtn.waitForVisible();
-        testBtn.click();
+        openDropdown();
+        clickRunTestsButton();
     }
 
     public void openDropdown() {
-        dropdownToggle.click();
+        if (!runTestsBtn.isVisible(1000)) {
+            dropdownToggle.click();
+            runTestsBtn.waitForVisible(DEFAULT_TIMEOUT_MS);
+        }
     }
 
     /** Opens the dropdown and waits for the module-only checkbox state to settle after the server round-trip. */
     public void openDropdownAndWaitForSettings() {
         waitUntilSpinnerLoaded();
-        dropdownToggle.click();
+        openDropdown();
         waitForWithinCurrentModuleOnlyToStabilize();
     }
 
@@ -79,7 +86,7 @@ public class RunTestsMenuComponent extends BaseComponent implements IRunTestsMen
     @Override
     public IRunTestsMenu setTestPerPage(String testsPerPage) {
         if (testsPerPage != null && !testsPerPage.isEmpty() && !testsPerPage.equals("empty")) {
-            perPageDropdown.selectByVisibleText(testsPerPage);
+            pickInSelect(perPageDropdown, testsPerPage);
         }
         return this;
     }
@@ -102,12 +109,14 @@ public class RunTestsMenuComponent extends BaseComponent implements IRunTestsMen
 
     @Override
     public void runTests() {
+        openDropdown();
         runTestsBtn.click();
     }
 
     @Override
     public String getTestPerPage() {
-        return perPageDropdown.getLocator().inputValue();
+        return new WebElement(page, LAUNCHER + "//div[@data-testid='tests-per-page']//div[contains(@class,'ant-select-content')]",
+                "testPerPageValue").getText().trim();
     }
 
     @Override

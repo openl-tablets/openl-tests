@@ -20,10 +20,20 @@ public class RangeEditorComponent extends BaseComponent {
     }
 
     private void initializeElements() {
-        doneBtn = createScopedElement("xpath=.//input[@value='Done']", "Range Editor Done Button");
+        doneBtn = createScopedElement("xpath=.//button[@data-testid='range-write']", "Range Editor Done Button");
         discardChangesBtn = new WebElement(page,
-                "xpath=//form[@id='discardChangesForm' and not(ancestor::div[@style='display: none;' or @style='visibility: hidden; display: none;'])]//input[@value='Discard changes']",
+                "xpath=//div[contains(@class,'ant-modal-content')]//button[@data-testid='table-edit-discard']",
                 "Discard Changes Button");
+    }
+
+    /**
+     * Opens the range panel of the cell being written: a cell that holds a range offers it from its own
+     * editor, which is what a reader presses once the cell is open for writing.
+     */
+    public void openFromCellEditor() {
+        WebElement cellEditor = new WebElement(page, "xpath=//*[@data-testid='table-cell-input']", "cellEditor");
+        cellEditor.waitForVisible(DEFAULT_TIMEOUT_MS);
+        cellEditor.click();
     }
 
     public boolean isOpen() {

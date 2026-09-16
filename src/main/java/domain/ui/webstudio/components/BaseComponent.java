@@ -12,6 +12,9 @@ import java.util.List;
 
 public abstract class BaseComponent extends CoreComponent {
 
+    private static final int SELECT_OPTION_PROBE_MS = 2000;
+    private static final int SELECT_SETTLE_MS = 250;
+
     private WebElement contentLoadingSpinner;
     @Getter
     private List<MessageComponent> messages;
@@ -55,6 +58,39 @@ public abstract class BaseComponent extends CoreComponent {
             }
             WaitUtil.sleep(100, "Waiting between message close attempts");
         }
+    }
+
+    /**
+     * Picks a value from an Ant Design Select, whatever screen it stands on.
+     *
+     * <p>The list a Select opens is drawn outside it, and the Select says which list is its own through
+     * {@code aria-controls}, so the value is looked for in that list rather than in whatever list is open.
+     * A Select that takes typing is narrowed by the value first, because a long list is drawn a screenful at
+     * a time and the value may not be drawn yet.
+     */
+    protected void pickInSelect(WebElement selectInput, String value) {
+        WaitUtil.requireCondition(() -> {
+            selectInput.click();
+            String listId = selectInput.getAttribute("aria-controls");
+            if (listId == null || listId.isBlank()) {
+                return false;
+            }
+            if (selectInput.getAttribute("readonly") == null) {
+                selectInput.fill("");
+                page.keyboard().type(value);
+            }
+            WebElement option = optionOf(listId, value);
+            if (!option.isVisible(SELECT_OPTION_PROBE_MS)) {
+                return false;
+            }
+            option.click();
+            return true;
+        }, DEFAULT_TIMEOUT_MS, SELECT_SETTLE_MS, "Picking '" + value + "' from the list");
+    }
+
+    private WebElement optionOf(String listId, String value) {
+        return new WebElement(page, "xpath=//div[@id=\"" + listId + "\"]//div[contains(@class,'ant-select-item-option')]"
+                + "[@title=\"" + value + "\"]", "selectOption[" + value + "]");
     }
 
     public List<String> getAllMessages() {

@@ -78,7 +78,7 @@ public class EditorPage extends BasePage {
         tabSwitcherComponent = createScopedComponent(TabSwitcherComponent.class, "xpath=//ul[@role='menu' and contains(@class,'ant-menu-horizontal')]", "tabSwitcherComponent");
         centerTable = createScopedComponent(TableComponent.class, "xpath=//table[@data-testid='module-table']", "centerTable");
         editorToolbarPanelComponent = createScopedComponent(EditorToolbarPanelComponent.class, "xpath=//div[@id='tableToolbarPanel']", "editorToolbarPanelComponent");
-        testResultValidationComponent = createScopedComponent(TestResultValidationComponent.class, "xpath=//div[@id='content' and contains(@class,'ui-layout-center')]", "testResultValidationComponent");
+        testResultValidationComponent = new TestResultValidationComponent();
         problemsPanelComponent = createScopedComponent(ProblemsPanelComponent.class, "xpath=//section[@data-testid='compile-problems']", "problemsPanelComponent");
         projectDetailsComponent = createScopedComponent(ProjectDetailsComponent.class, "xpath=//div[@class='page']", "projectDetailsComponent");
         addModulePopupComponent = createScopedComponent(AddModuleComponent.class, "xpath=//div[@id='editModulePopup_container']", "addModulePopupComponent");
@@ -115,7 +115,7 @@ public class EditorPage extends BasePage {
         dependencyGraphOpenInEditorBtn = new WebElement(getPage(), "xpath=//button[normalize-space(.)='Open in editor']", "dependencyGraphOpenInEditorBtn");
         refreshBtn = new WebElement(getPage(), "xpath=//a[@id='refreshBtn']", "refreshBtn");
         searchFilterComponent = new SearchFilterComponent();
-        rangeEditorComponent = createScopedComponent(RangeEditorComponent.class, "xpath=//div[@class='range']", "rangeEditorComponent");
+        rangeEditorComponent = createScopedComponent(RangeEditorComponent.class, "xpath=//div[@data-testid='range-editor']", "rangeEditorComponent");
         multiselectArrayEditorComponent = createScopedComponent(MultiselectArrayEditorComponent.class, "xpath=//div[@class='multiselect_container']", "multiselectArrayEditorComponent");
     }
 

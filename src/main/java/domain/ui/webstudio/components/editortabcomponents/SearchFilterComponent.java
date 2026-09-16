@@ -5,28 +5,33 @@ import configuration.driver.DriverPool;
 import domain.ui.webstudio.components.BaseComponent;
 import helpers.utils.WaitUtil;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/** Searching a module's tables: the box above the tables rail, and the extended search it opens. */
 public class SearchFilterComponent extends BaseComponent {
 
-    private WebElement searchName;
-    private WebElement openSearchDropdown;
-    private WebElement selectScope;
-    private WebElement selectType;
-    private WebElement outsideSelectTableType;
+    private static final String FORM = "xpath=//div[@data-testid='table-search-form']";
+    private static final String RESULTS = "xpath=//div[@data-testid='table-search-results']";
+    private static final int PROBE_MS = 1000;
+    private static final int SETTLE_MS = 200;
+
+    private WebElement quickSearch;
+    private WebElement openExtendedSearchBtn;
+    private WebElement form;
+    private WebElement scopeSelect;
+    private WebElement kindSelect;
+    private WebElement nameInput;
+    private WebElement headerInput;
+    private WebElement textInput;
+    private WebElement propertyAddBtn;
+    private WebElement propertyNameTemplate;
+    private WebElement propertyValueTemplate;
     private WebElement searchBtn;
     private WebElement closeSearchBtn;
-    private WebElement headerContains;
-    private WebElement tableProperties;
-    private WebElement addPropertyBtn;
-    private WebElement searchResultCounter;
-    private WebElement selectTableTypeCheckboxTemplate;
-    private WebElement propertyValueTextTemplate;
-    private WebElement viewTableTemplate;
-    private List<WebElement> tableNameCells;
-    private List<WebElement> scopeOptions;
+    private WebElement results;
+    private List<WebElement> resultRows;
+    private List<WebElement> viewTableRows;
 
     public SearchFilterComponent() {
         super(DriverPool.getPage());
@@ -39,88 +44,122 @@ public class SearchFilterComponent extends BaseComponent {
     }
 
     private void initializeElements() {
-        searchName = new WebElement(page, "xpath=//input[@id='searchQuery']", "searchName");
-        openSearchDropdown = new WebElement(page, "xpath=//span[@id='searchInput']//a", "openSearchDropdown");
-        selectScope = new WebElement(page, "xpath=//select[@id='searchScopeSelection']", "selectScope");
-        selectType = new WebElement(page, "xpath=//input[@id='multiselect-select']", "selectType");
-        outsideSelectTableType = new WebElement(page, "xpath=//div[@id='advancedSearch']//label[text()='Table Type']", "outsideSelectTableType");
-        searchBtn = new WebElement(page, "xpath=//div[@id='advancedSearch']//input[@value='Search']", "searchBtn");
-        closeSearchBtn = new WebElement(page, "xpath=//span[contains(@class,'jquery-popup-close-icon')]", "closeSearchBtn");
-        headerContains = new WebElement(page, "xpath=//input[@id='tableHeader']", "headerContains");
-        tableProperties = new WebElement(page, "xpath=//select[@id='propertyItems']", "tableProperties");
-        addPropertyBtn = new WebElement(page, "xpath=//div[@id='advancedSearch']//input[@value='Add']", "addPropertyBtn");
-        searchResultCounter = new WebElement(page, "xpath=//h1[@class='page-header']", "searchResultCounter");
-        selectTableTypeCheckboxTemplate = new WebElement(page, "xpath=//div[@class='jquery-multiselect-popup jquery-popup']//div[@class='jquery-multiselect-popup-data']//input[contains(@value, '%s')]", "selectTableTypeCheckbox");
-        propertyValueTextTemplate = new WebElement(page, "xpath=//div[@id='advancedSearch']//td[text()='%s']/..//input[@type='text']", "propertyValueText");
-        viewTableTemplate = new WebElement(page, "xpath=//div[@id='searchResults']//table//tr//td[contains(text(), '%s')]/../../../../../..//a[text()='View Table']", "viewTable");
-        tableNameCells = createElementList("xpath=//table[@class='te_table']//tr[1]/td[1]", "tableNameCells");
-        scopeOptions = createElementList("xpath=//select[@id='searchScopeSelection']/option", "scopeOptions");
+        quickSearch = new WebElement(page, "xpath=//input[@data-testid='module-tables-search']", "quickSearch");
+        openExtendedSearchBtn = new WebElement(page, "xpath=//button[@data-testid='module-tables-search-extended']", "openExtendedSearchBtn");
+        form = new WebElement(page, FORM, "extendedSearchForm");
+        scopeSelect = new WebElement(page, FORM + "//div[@data-testid='table-search-scope']//input", "searchScope");
+        kindSelect = new WebElement(page, FORM + "//div[@data-testid='table-search-kind']//input", "searchKind");
+        nameInput = new WebElement(page, FORM + "//input[@data-testid='table-search-name']", "searchName");
+        headerInput = new WebElement(page, FORM + "//input[@data-testid='table-search-header']", "searchHeader");
+        textInput = new WebElement(page, FORM + "//input[@data-testid='table-search-text']", "searchText");
+        propertyAddBtn = new WebElement(page, FORM + "//button[@data-testid='table-search-property-add']", "searchPropertyAdd");
+        propertyNameTemplate = new WebElement(page, FORM + "//div[@data-testid='table-search-property-%s']//input", "searchPropertyName");
+        propertyValueTemplate = new WebElement(page, FORM + "//input[@data-testid='table-search-property-value-%s']", "searchPropertyValue");
+        searchBtn = new WebElement(page, "xpath=//button[@data-testid='table-search-run']", "searchBtn");
+        closeSearchBtn = new WebElement(page, "xpath=//div[contains(@class,'ant-modal')][.//div[@data-testid='table-search-form']]//button[contains(@class,'ant-modal-close')]", "closeSearchBtn");
+        results = new WebElement(page, RESULTS, "searchResults");
+        resultRows = createElementList(RESULTS + "//div[starts-with(@data-testid,'table-search-result-')]", "searchResultRows");
+        viewTableRows = createElementList(RESULTS + "//div[starts-with(@data-testid,'table-search-result-')]"
+                + "//button[starts-with(@data-testid,'table-search-open-')]", "viewTableButtons");
     }
 
     public SearchFilterComponent typeSearchAndEnter(String text) {
-        WaitUtil.sleep(1000, "Waiting before type search");
-        searchName.fillSequentially(text);
-        WaitUtil.sleep(1000, "Waiting after type search");
-        searchName.press("Enter");
+        openAdvancedSearch();
+        nameInput.fill(text);
+        performSearch();
         return this;
     }
 
     public SearchFilterComponent setSearchName(String text) {
-        searchName.fill(text);
+        openAdvancedSearch();
+        nameInput.fill(text);
+        return this;
+    }
+
+    /** Filters the tables rail itself by name, without opening the extended search. */
+    public SearchFilterComponent filterTablesRail(String text) {
+        quickSearch.click();
+        quickSearch.fill(text);
+        WaitUtil.sleep(500, "Waiting for the tables rail to be filtered by name");
         return this;
     }
 
     public SearchFilterComponent openAdvancedSearch() {
-        openSearchDropdown.click();
+        if (!form.isVisible(PROBE_MS)) {
+            openExtendedSearchBtn.click();
+            form.waitForVisible(DEFAULT_TIMEOUT_MS);
+        }
         return this;
     }
 
     public SearchFilterComponent setScope(String scopeValue) {
-        selectScope.selectByVisibleText(scopeValue);
+        openAdvancedSearch();
+        pickInSelect(scopeSelect, scopeValue);
         return this;
     }
 
     public SearchFilterComponent setHeaderContains(String value) {
-        headerContains.fill(value);
+        openAdvancedSearch();
+        headerInput.fill(value);
+        return this;
+    }
+
+    public SearchFilterComponent setTextInCells(String value) {
+        openAdvancedSearch();
+        textInput.fill(value);
         return this;
     }
 
     public SearchFilterComponent searchByTableType(String... types) {
-        waitUntilSpinnerLoaded();
-        selectType.click();
+        openAdvancedSearch();
         for (String type : types) {
-            WebElement checkbox = selectTableTypeCheckboxTemplate.format(type);
-            if (!checkbox.isChecked()) {
-                checkbox.click();
-            }
+            pickInSelect(kindSelect, type);
         }
-        outsideSelectTableType.click();
+        // Closing the list by pressing Escape would close the search itself, so the box is closed by
+        // pressing it again.
+        kindSelect.click();
         return this;
     }
 
     public SearchFilterComponent searchByProperty(String propertyName, String propertyValue) {
-        tableProperties.selectByVisibleText(propertyName);
-        addPropertyBtn.click();
-        propertyValueTextTemplate.format(propertyName).fill(propertyValue);
+        openAdvancedSearch();
+        propertyAddBtn.click();
+        int index = Math.max(0, resultPropertyCount() - 1);
+        pickInSelect(propertyNameTemplate.format(String.valueOf(index)), propertyName);
+        propertyValueTemplate.format(String.valueOf(index)).fill(propertyValue);
         return this;
+    }
+
+    private int resultPropertyCount() {
+        return createElementList(FORM + "//div[starts-with(@data-testid,'table-search-property-')][not(contains(@data-testid,'value'))]",
+                "searchPropertyRows").size();
     }
 
     public SearchFilterComponent performSearch() {
         searchBtn.click();
-        closeSearchBtn.click();
+        waitForSearchResult();
         return this;
     }
 
+    /**
+     * Waits for the search that was started to report back. The previous results stay on screen while it
+     * runs, so what is waited for is the Search button coming back from its busy state.
+     */
     public SearchFilterComponent waitForSearchResult() {
-        WaitUtil.waitForCondition(
-                () -> searchResultCounter.getText().contains("found") || searchResultCounter.getText().contains("No results"),
-                10000, 250, "Waiting for search results to appear"
-        );
+        WaitUtil.requireCondition(() -> !searchBtn.getAttribute("class").contains("ant-btn-loading"),
+                DEFAULT_TIMEOUT_MS, SETTLE_MS, "Waiting for the search to report its results");
         return this;
     }
 
-    public String getResultCounterText() {
-        return searchResultCounter.getText().trim();
+    public String getNoResultsMessage() {
+        WebElement empty = new WebElement(page,
+                "xpath=//div[contains(@class,'ant-modal-content')][.//div[@data-testid='table-search-form']]"
+                        + "//div[contains(@class,'ant-empty-description')]", "noSearchResults");
+        return empty.isVisible(PROBE_MS) ? empty.getText().trim() : "";
+    }
+
+    public int getFoundTablesCount() {
+        return resultRows.size();
     }
 
     public boolean isTableFound(String tableName) {
@@ -128,29 +167,49 @@ public class SearchFilterComponent extends BaseComponent {
     }
 
     public SearchFilterComponent clickViewTable(String tableName) {
-        viewTableTemplate.format(tableName).getLocator().first().click();
+        int index = getTableNamesInSearchResults().indexOf(tableName);
+        if (index < 0) {
+            throw new AssertionError("Table '" + tableName + "' is not among the search results: "
+                    + getTableNamesInSearchResults());
+        }
+        viewTableRows.get(index).click();
         return this;
     }
 
+    public void closeSearch() {
+        if (closeSearchBtn.isVisible(PROBE_MS)) {
+            closeSearchBtn.click();
+        }
+    }
+
+    /**
+     * The names of the tables found, read from the header each result shows: the header names the kind of the
+     * table and then the table itself, so the name is the last word before the signature.
+     */
     public List<String> getTableNamesInSearchResults() {
-        return tableNameCells.stream().map(e -> {
-            String tableHeaderFull = e.getText().replace("\n", " ").trim();
-            // Table name is the last word before the opening parenthesis
-            int parenIndex = tableHeaderFull.indexOf("(");
-            if (parenIndex > 0) {
-                String beforeParen = tableHeaderFull.substring(0, parenIndex).trim();
-                String[] parts = beforeParen.split("\\s+");
-                return parts[parts.length - 1].replaceAll("[^a-zA-Z0-9]", "");
-            }
-            // No parenthesis — standalone name (e.g. Datatype tables)
-            String[] parts = tableHeaderFull.split("\\s+");
-            return parts[parts.length - 1].replaceAll("[^a-zA-Z0-9]", "");
+        return resultRows.stream().map(row -> {
+            String header = row.getInnerText().lines()
+                    .map(String::trim)
+                    .filter(line -> !line.isEmpty() && !line.equals("View table") && !line.equals("Show body"))
+                    .findFirst()
+                    .orElse("");
+            int parenIndex = header.indexOf("(");
+            String beforeParen = parenIndex > 0 ? header.substring(0, parenIndex).trim() : header;
+            String[] parts = beforeParen.split("\\s+");
+            return parts.length == 0 ? "" : parts[parts.length - 1].replaceAll("[^a-zA-Z0-9]", "");
         }).collect(Collectors.toList());
     }
 
     public List<String> getScopeOptions() {
-        return scopeOptions.stream()
-                .map(WebElement::getText)
-                .collect(Collectors.toList());
+        openAdvancedSearch();
+        scopeSelect.click();
+        String listId = scopeSelect.getAttribute("aria-controls");
+        List<WebElement> options = createElementList(
+                "xpath=//div[@id=\"" + listId + "\"]//div[contains(@class,'ant-select-item-option')]", "scopeOptions");
+        WaitUtil.waitForListNotEmpty(() -> options, DEFAULT_TIMEOUT_MS, 100, "Waiting for the search scopes to be listed");
+        List<String> names = options.stream().map(WebElement::getText).map(String::trim).collect(Collectors.toList());
+        scopeSelect.click();
+        return names;
     }
+
 }

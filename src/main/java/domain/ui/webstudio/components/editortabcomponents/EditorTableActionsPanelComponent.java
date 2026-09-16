@@ -12,7 +12,6 @@ public class EditorTableActionsPanelComponent extends BaseComponent {
     private WebElement saveChangesBtn;
     private WebElement undoChangesBtn;
     private WebElement redoChangesBtn;
-    private WebElement insertRowBeforeBtn;
     private WebElement insertRowAfterBtn;
     private WebElement removeRowBtn;
     private WebElement insertColumnBeforeBtn;
@@ -29,14 +28,13 @@ public class EditorTableActionsPanelComponent extends BaseComponent {
     }
 
     private void initializeElements() {
-        saveChangesBtn = createScopedElement("xpath=.//img[@title='Save changes']", "saveChangesBtn");
-        undoChangesBtn = createScopedElement("xpath=.//img[@title='Undo changes']", "undoChangesBtn");
-        redoChangesBtn = createScopedElement("xpath=.//img[@title='Redo changes']", "redoChangesBtn");
-        insertRowBeforeBtn = createScopedElement("xpath=.//img[@id='t_te_insert_row_before']", "insertRowBeforeBtn");
-        insertRowAfterBtn = createScopedElement("xpath=.//img[@title='Insert row after']", "insertRowAfterBtn");
-        removeRowBtn = createScopedElement("xpath=.//img[@title='Remove row']", "removeRowBtn");
-        insertColumnBeforeBtn = createScopedElement("xpath=.//img[@title='Insert column before']", "insertColumnBeforeBtn");
-        removeColumnBtn = createScopedElement("xpath=.//img[@title='Remove column']", "removeColumnBtn");
+        saveChangesBtn = createScopedElement("xpath=.//button[@data-testid='table-edit-save']", "saveChangesBtn");
+        undoChangesBtn = createScopedElement("xpath=.//button[@data-testid='table-edit-undo']", "undoChangesBtn");
+        redoChangesBtn = createScopedElement("xpath=.//button[@data-testid='table-edit-redo']", "redoChangesBtn");
+        insertRowAfterBtn = createScopedElement("xpath=.//button[@data-testid='table-edit-insert_row']", "insertRowAfterBtn");
+        removeRowBtn = createScopedElement("xpath=.//button[@data-testid='table-edit-remove_row']", "removeRowBtn");
+        insertColumnBeforeBtn = createScopedElement("xpath=.//button[@data-testid='table-edit-insert_column']", "insertColumnBeforeBtn");
+        removeColumnBtn = createScopedElement("xpath=.//button[@data-testid='table-edit-remove_column']", "removeColumnBtn");
     }
 
     private void waitWhileTablePanelActionExecuted() {
@@ -69,11 +67,6 @@ public class EditorTableActionsPanelComponent extends BaseComponent {
 
     public void clickInsertRowAfter() {
         insertRowAfterBtn.click();
-        waitWhileTablePanelActionExecuted();
-    }
-
-    public void clickInsertRowBefore() {
-        insertRowBeforeBtn.click();
         waitWhileTablePanelActionExecuted();
     }
 

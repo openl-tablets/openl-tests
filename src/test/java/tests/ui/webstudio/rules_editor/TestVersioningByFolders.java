@@ -86,14 +86,14 @@ public class TestVersioningByFolders extends BaseTest {
         assertThat(tableDetails.getPropertyValue(PROPERTY_NAME))
                 .as("Inherited property value should be visible in table details")
                 .contains(expectedValue);
-        assertThat(tableDetails.getPropertyRowBackgroundColor(PROPERTY_NAME))
-                .as("Inherited property row should stay highlighted")
-                .isEqualTo("rgba(190, 220, 255, 0.3)");
-        assertThat(tableDetails.getPropertyRowTitle(PROPERTY_NAME))
-                .as("Inherited property row should keep the inherited tooltip")
-                .isEqualTo("Inherited property");
-        assertThat(tableDetails.getGoToPropertiesTableArrowTitle(PROPERTY_NAME))
-                .as("Inherited property should keep the blue-arrow navigation to the properties table")
-                .isEqualTo("Go to Properties table");
+        assertThat(tableDetails.isPropertyInherited(PROPERTY_NAME))
+                .as("Inherited property should stay marked as inherited")
+                .isTrue();
+        assertThat(tableDetails.getInheritedPropertyTitle(PROPERTY_NAME))
+                .as("Inherited property should keep saying where its value comes from")
+                .isEqualTo("Inherited from the module properties table");
+        assertThat(tableDetails.getGoToPropertiesTableArrow(PROPERTY_NAME).isVisible())
+                .as("Inherited property should keep the arrow leading to the properties table it comes from")
+                .isTrue();
     }
 }

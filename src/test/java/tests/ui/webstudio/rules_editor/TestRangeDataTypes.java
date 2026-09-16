@@ -64,7 +64,9 @@ public class TestRangeDataTypes extends BaseTest {
         // The table of a freshly selected node arrives asynchronously, so a double click can land on nothing.
         WaitUtil.waitForCondition(table::isVisible, TABLE_LOAD_TIMEOUT_MS, 250,
                 "Waiting for the table of the selected node");
+        editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
         table.doubleClickCell(row, column);
+        rangeEditor.openFromCellEditor();
 
         assertThat(rangeEditor.isOpen(3000))
                 .as("Range Editor is expected to be seen for the following cell (row: %d, column: %d) of %s/%s",
