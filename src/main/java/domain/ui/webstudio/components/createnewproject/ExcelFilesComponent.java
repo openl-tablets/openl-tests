@@ -25,7 +25,7 @@ public class ExcelFilesComponent extends BaseComponent {
     private void initializeElements() {
         fileInputField = createScopedElement("xpath=.//div[@id='createProjectFormFiles:file']//input[@accept='xls, xlsx, xlsm']", "fileInputField");
         projectNameField = createScopedElement("xpath=.//input[@id='createProjectFormFiles:projectName']", "projectNameField");
-        createProjectBtn = createScopedElement("#createProjectFormFiles\\:sbtFilesBtn", "createProjectBtn");
+        createProjectBtn = createScopedElement("xpath=.//*[@id='createProjectFormFiles:sbtFilesBtn']", "createProjectBtn");
         cancelBtn = createScopedElement("xpath=.//input[@value='Cancel']", "cancelBtn");
     }
 

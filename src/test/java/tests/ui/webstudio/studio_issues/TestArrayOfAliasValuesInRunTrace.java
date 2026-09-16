@@ -44,19 +44,19 @@ public class TestArrayOfAliasValuesInRunTrace extends BaseTest {
 
             IRunMenu runMenu = editorPage.getEditorToolbarPanelComponent().clickRun();
             runMenu.clickCreateItem()
-                    .clickAddElementToCollectionBtn("my =")
+                    .clickAddElementToCollectionBtn("my")
                     .clickExpandCollection();
             
             // Verify dropdown in Run menu
             assertThat(runMenu.getAliasDropdownValues())
                     .as("Dropdown for alias values should contain expected values in Run menu for table: " + tableName)
-                    .containsExactly("", "bla1", "bla2", "bla3");
+                    .containsExactly("bla1", "bla2", "bla3");
 
             // Switch to Trace and verify again
             ITraceMenu traceMenu = editorPage.getEditorToolbarPanelComponent().clickTrace();
             assertThat(traceMenu.getAliasDropdownValues())
                     .as("Dropdown for alias values should contain expected values in Trace menu for table: " + tableName)
-                    .containsExactly("", "bla1", "bla2", "bla3");
+                    .containsExactly("bla1", "bla2", "bla3");
         });
     }
 }

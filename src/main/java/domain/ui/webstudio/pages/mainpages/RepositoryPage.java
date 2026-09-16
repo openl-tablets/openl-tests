@@ -40,15 +40,15 @@ public class RepositoryPage extends BasePage {
     }
 
     private void initializeComponents() {
-        createProjectLink = new WebElement(page, "[data-testid=projects-new]", "createProjectLink");
+        createProjectLink = new WebElement(page, "xpath=//*[@data-testid='projects-new']", "createProjectLink");
         refreshBtn = new WebElement(page, "xpath=//a[@id='designRepoRefresh']", "refreshBtn");
         projectsListTable = new ProjectsTableComponent(page);
         filterRail = new ProjectsFilterRailComponent(page);
-        discardCloseConfirmBtn = new WebElement(page, "[data-testid=discard-close-confirm]", "discardCloseConfirmBtn");
-        copyProjectNameField = new WebElement(page, "[data-testid=copy-project-name]", "copyProjectNameField");
-        copyProjectSubmitBtn = new WebElement(page, "[data-testid=copy-project-submit]", "copyProjectSubmitBtn");
+        discardCloseConfirmBtn = new WebElement(page, "xpath=//*[@data-testid='discard-close-confirm']", "discardCloseConfirmBtn");
+        copyProjectNameField = new WebElement(page, "xpath=//*[@data-testid='copy-project-name']", "copyProjectNameField");
+        copyProjectSubmitBtn = new WebElement(page, "xpath=//*[@data-testid='copy-project-submit']", "copyProjectSubmitBtn");
 
-        filterByNameInput = new WebElement(page, "[data-testid=projects-search]", "filterByNameInput");
+        filterByNameInput = new WebElement(page, "xpath=//*[@data-testid='projects-search']", "filterByNameInput");
 
         createNewProjectComponent = createScopedComponent(CreateNewProjectComponent.class, "xpath=//div[@id='modalNewProject_container']", "createNewProjectComponent");
         tabSwitcherComponent = createScopedComponent(TabSwitcherComponent.class, "xpath=//ul[@role='menu' and contains(@class,'ant-menu-horizontal')]", "tabSwitcherComponent");

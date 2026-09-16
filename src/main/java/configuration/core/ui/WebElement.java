@@ -27,7 +27,7 @@ public class WebElement {
     // React full-screen click shield raised while the app loader is busy (EPBDS-16241 / EPBDS-16261).
     // It has pointer-events:auto and covers the whole viewport, so any pointer interaction started
     // while it is up is intercepted and times out. We wait for it to detach before interacting.
-    public static final String LOADING_OVERLAY_SELECTOR = "[data-testid=loading-overlay]";
+    public static final String LOADING_OVERLAY_SELECTOR = "xpath=//*[@data-testid='loading-overlay']";
     private static final int OVERLAY_IDLE_TIMEOUT_MS = resolveOverlayIdleTimeout();
     private final int timeoutInMilliseconds;
     @Getter
@@ -395,7 +395,7 @@ public class WebElement {
         // appear before Playwright captures it is what keeps these actions stable (EPBDS-16261).
         isVisible();
         LOGGER.info("Selecting option '{}' in {}", text, elementName);
-        List<String> optionLabels = locator.locator("option").allTextContents().stream()
+        List<String> optionLabels = locator.locator("xpath=.//option").allTextContents().stream()
                 .map(String::trim)
                 .toList();
         List<String> optionValues = getSelectValues();
@@ -412,7 +412,7 @@ public class WebElement {
     public List<String> getSelectValues() {
         isVisible();
         LOGGER.info("Getting select option values from {}", elementName);
-        Locator options = locator.locator("option");
+        Locator options = locator.locator("xpath=.//option");
         List<String> values = new ArrayList<>();
         int count = options.count();
         for (int i = 0; i < count; i++) {
@@ -425,12 +425,15 @@ public class WebElement {
     public List<String> getSelectVisibleTextValues() {
         isVisible();
         LOGGER.info("Getting select option texts from {}", elementName);
-        return locator.locator("option").allTextContents();
+        return locator.locator("xpath=.//option").allTextContents();
     }
 
     public String getSelectedOptionText() {
         LOGGER.info("Getting selected option text from {}", elementName);
-        return locator.locator("option:checked").textContent();
+        // What the list stands at is its value, not an attribute written into the page: an option the user
+        // picked is the selected one without the mark a freshly drawn page carries.
+        String value = locator.inputValue();
+        return locator.locator("xpath=.//option[@value=\"" + value + "\"]").first().textContent();
     }
     
     public WebElement child(String subSelector) {

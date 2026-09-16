@@ -22,15 +22,15 @@ public class ProjectsFilterRailComponent extends BaseComponent {
     private final WebElement filterStatusCheckbox;
 
     public ProjectsFilterRailComponent(Page page) {
-        this(new WebElement(page, "[data-testid=projects-rail]", "projectsRail"));
+        this(new WebElement(page, "xpath=//*[@data-testid='projects-rail']", "projectsRail"));
     }
 
     public ProjectsFilterRailComponent(WebElement rootLocator) {
         super(rootLocator);
-        filterGroupToggle = createScopedElement("[data-testid=filter-toggle-%s]", "filterGroupToggle");
-        filterGroupShow = createScopedElement("[data-testid=filter-show-%s]", "filterGroupShow");
-        filterRepoCheckbox = createScopedElement("[data-testid=filter-repo-%s]", "filterRepoCheckbox");
-        filterStatusCheckbox = createScopedElement("[data-testid=filter-status-%s]", "filterStatusCheckbox");
+        filterGroupToggle = createScopedElement("xpath=.//*[@data-testid='filter-toggle-%s']", "filterGroupToggle");
+        filterGroupShow = createScopedElement("xpath=.//*[@data-testid='filter-show-%s']", "filterGroupShow");
+        filterRepoCheckbox = createScopedElement("xpath=.//*[@data-testid='filter-repo-%s']", "filterRepoCheckbox");
+        filterStatusCheckbox = createScopedElement("xpath=.//*[@data-testid='filter-status-%s']", "filterStatusCheckbox");
     }
 
     /**

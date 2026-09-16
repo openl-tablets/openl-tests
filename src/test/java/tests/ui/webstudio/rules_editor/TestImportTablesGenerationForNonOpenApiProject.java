@@ -44,18 +44,20 @@ public class TestImportTablesGenerationForNonOpenApiProject extends BaseTest {
 
         editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName);
+        // A template project keeps its workbooks in its root; the settings are offered once they are moved.
+        editorPage.migrateProject();
         ImportOpenApiDialogComponent importDialog = editorPage.openImportOpenApiDialog();
-        importDialog.selectUploadInRepository();
+        importDialog.waitForFilePathField();
         importDialog.setOpenApiFilePath(OPENAPI_FILE);
         importDialog.clickImportReconciliation();
         editorPage.getEditorToolbarPanelComponent().clickSave();
         editorPage.getSaveChangesComponent().clickSave();
         editorPage.waitUntilSpinnerLoaded();
 
-        assertThat(editorPage.getOpenApiPropertyValue("Mode:"))
+        assertThat(editorPage.getOpenApiMode())
                 .as("Mode should be 'Reconciliation' after reconciliation import")
                 .isEqualTo("Reconciliation");
-        assertThat(editorPage.getOpenApiPropertyValue("OpenAPI File:"))
+        assertThat(editorPage.getOpenApiPropertyValue("File"))
                 .as("OpenAPI File should be 'openapi2.json'")
                 .isEqualTo(OPENAPI_FILE);
 
@@ -98,16 +100,16 @@ public class TestImportTablesGenerationForNonOpenApiProject extends BaseTest {
                 .as("Algorithms module should not be present (was never created in this project)")
                 .doesNotContain("Algorithms");
 
-        assertThat(editorPage.getOpenApiPropertyValue("Mode:"))
+        assertThat(editorPage.getOpenApiMode())
                 .as("Mode should be 'Tables generation'")
                 .isEqualTo("Tables generation");
-        assertThat(editorPage.getOpenApiPropertyValue("OpenAPI File:"))
+        assertThat(editorPage.getOpenApiPropertyValue("File"))
                 .as("OpenAPI File should be 'openapi2.json'")
                 .isEqualTo(OPENAPI_FILE);
-        assertThat(editorPage.getOpenApiPropertyValue("Rules Module:"))
+        assertThat(editorPage.getOpenApiPropertyValue("Services module"))
                 .as("Rules Module should be 'Bank Rating'")
                 .isEqualTo("Bank Rating");
-        assertThat(editorPage.getOpenApiPropertyValue("Data Module:"))
+        assertThat(editorPage.getOpenApiPropertyValue("Data types module"))
                 .as("Data Module should be 'Models'")
                 .isEqualTo("Models");
 

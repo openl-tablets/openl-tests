@@ -20,9 +20,9 @@ public class SaveProjectDialogComponent extends BaseComponent {
 
     private void initializeElements() {
         commentField = new WebElement(DriverPool.getPage(),
-                "[data-testid=save-project-comment]", "saveProjectComment");
+                "xpath=//textarea[@data-testid='save-project-comment'] | //input[@data-testid='save-project-comment']", "saveProjectComment");
         submitBtn = new WebElement(DriverPool.getPage(),
-                "[data-testid=save-project-submit]", "saveProjectSubmit");
+                "xpath=//button[@data-testid='save-project-submit']", "saveProjectSubmit");
         cancelBtn = new WebElement(DriverPool.getPage(),
                 "xpath=" + MODAL_ROOT + "//button[normalize-space(.)='Cancel']", "saveProjectCancel");
     }

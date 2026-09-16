@@ -39,12 +39,12 @@ public class SystemSettingsPageComponent extends BaseComponent {
     }
 
     private void initializeElements() {
-        dispatchingValidationCheckbox = createScopedElement("#dispatchingValidationEnabled", "dispatchingValidationCheckbox");
-        verifyOnEditCheckbox = createScopedElement("#autoCompile", "verifyOnEditCheckbox");
-        testThreadCountField = createScopedElement("#testRunThreadCount", "testThreadCountField");
-        projectHistoryCountField = createScopedElement("#projectHistoryCount", "projectHistoryCountField");
+        dispatchingValidationCheckbox = createScopedElement("xpath=.//*[@id='dispatchingValidationEnabled']", "dispatchingValidationCheckbox");
+        verifyOnEditCheckbox = createScopedElement("xpath=.//*[@id='autoCompile']", "verifyOnEditCheckbox");
+        testThreadCountField = createScopedElement("xpath=.//*[@id='testRunThreadCount']", "testThreadCountField");
+        projectHistoryCountField = createScopedElement("xpath=.//*[@id='projectHistoryCount']", "projectHistoryCountField");
         clearAllHistoryBtn = createScopedElement("xpath=.//button[./span[text()='Clear All History']]", "clearAllHistoryBtn");
-        cancelModalBtn = new WebElement(page, "xpath=//div[@class='ant-modal-container']//button[./span[contains(text(),'Cancel')]]", "cancelModalBtn");
+        cancelModalBtn = new WebElement(page, "xpath=//div[contains(@class,'ant-modal-container')]//button[./span[contains(text(),'Cancel')]]", "cancelModalBtn");
         applyButton = createScopedElement("xpath=.//button[./span[text()='Apply Changes'] or ./span[text()='Apply']]", "applyButton");
         errorMessage = createScopedElement("xpath=.//div[contains(@class, 'ant-form-item-explain-error')]", "errorMessage");
 

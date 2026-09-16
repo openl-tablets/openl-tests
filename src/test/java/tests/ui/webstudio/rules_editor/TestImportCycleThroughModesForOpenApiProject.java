@@ -43,10 +43,10 @@ public class TestImportCycleThroughModesForOpenApiProject extends BaseTest {
         editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName);
 
-        assertThat(editorPage.getOpenApiPropertyValue("Mode:")).isEqualTo("Tables generation");
-        assertThat(editorPage.getOpenApiPropertyValue("OpenAPI File:")).isEqualTo(OPENAPI_FILE_3);
-        assertThat(editorPage.getOpenApiPropertyValue("Rules Module:")).isEqualTo("Algorithms");
-        assertThat(editorPage.getOpenApiPropertyValue("Data Module:")).isEqualTo("Models");
+        assertThat(editorPage.getOpenApiMode()).isEqualTo("Tables generation");
+        assertThat(editorPage.getOpenApiPropertyValue("File")).isEqualTo(OPENAPI_FILE_3);
+        assertThat(editorPage.getOpenApiPropertyValue("Services module")).isEqualTo("Algorithms");
+        assertThat(editorPage.getOpenApiPropertyValue("Data types module")).isEqualTo("Models");
 
         // Step 6.1: Switch to Reconciliation mode import (using Generate from Rules, no file path needed)
         ImportOpenApiDialogComponent importDialog = editorPage.openImportOpenApiDialog();
@@ -54,8 +54,8 @@ public class TestImportCycleThroughModesForOpenApiProject extends BaseTest {
         editorPage.waitUntilSpinnerLoaded();
         editorPage.getEditorToolbarPanelComponent().navigateToProjectRoot(projectName);
 
-        assertThat(editorPage.getOpenApiPropertyValue("Mode:")).isEqualTo("Reconciliation");
-        assertThat(editorPage.getOpenApiPropertyValue("OpenAPI File:")).isEqualTo(OPENAPI_FILE_3);
+        assertThat(editorPage.getOpenApiMode()).isEqualTo("Reconciliation");
+        assertThat(editorPage.getOpenApiPropertyValue("File")).isEqualTo(OPENAPI_FILE_3);
 
         editorPage.getEditorToolbarPanelComponent().clickSave();
         editorPage.getSaveChangesComponent().clickSave();
@@ -70,7 +70,7 @@ public class TestImportCycleThroughModesForOpenApiProject extends BaseTest {
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName);
 
         importDialog = editorPage.openImportOpenApiDialog();
-        importDialog.selectUploadInRepository();
+        importDialog.waitForFilePathField();
         importDialog.setOpenApiFilePath(OPENAPI_FILE);
         importDialog.selectTablesGenerationMode();
         importDialog.clickImportTablesGeneration();
@@ -95,10 +95,10 @@ public class TestImportCycleThroughModesForOpenApiProject extends BaseTest {
         editorPage.waitUntilSpinnerLoaded();
         editorPage.getEditorToolbarPanelComponent().navigateToProjectRoot(projectName);
 
-        assertThat(editorPage.getOpenApiPropertyValue("Mode:")).isEqualTo("Tables generation");
-        assertThat(editorPage.getOpenApiPropertyValue("OpenAPI File:")).isEqualTo(OPENAPI_FILE);
-        assertThat(editorPage.getOpenApiPropertyValue("Rules Module:")).isEqualTo("Algorithms");
-        assertThat(editorPage.getOpenApiPropertyValue("Data Module:")).isEqualTo("Models");
+        assertThat(editorPage.getOpenApiMode()).isEqualTo("Tables generation");
+        assertThat(editorPage.getOpenApiPropertyValue("File")).isEqualTo(OPENAPI_FILE);
+        assertThat(editorPage.getOpenApiPropertyValue("Services module")).isEqualTo("Algorithms");
+        assertThat(editorPage.getOpenApiPropertyValue("Data types module")).isEqualTo("Models");
 
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Algorithms");
         editorPage.getProblemsPanelComponent().waitForCompilationToComplete();
@@ -112,7 +112,7 @@ public class TestImportCycleThroughModesForOpenApiProject extends BaseTest {
         // Step 6.3: Import openapi3.json in Tables Generation mode, verify Algorithms has Spreadsheet+Configuration
         editorPage.getEditorToolbarPanelComponent().navigateToProjectRoot(projectName);
         importDialog = editorPage.openImportOpenApiDialog();
-        importDialog.selectUploadInRepository();
+        importDialog.waitForFilePathField();
         importDialog.setOpenApiFilePath(OPENAPI_FILE_3);
         importDialog.selectTablesGenerationMode();
         importDialog.clickImportTablesGeneration();

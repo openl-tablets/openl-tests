@@ -9,6 +9,9 @@ import java.util.List;
 
 public class ImportOpenApiDialogComponent extends BaseComponent {
 
+    private static final String OVERVIEW = "xpath=//div[@data-testid='overview-panel']";
+    private static final String MODE = OVERVIEW + "//div[@data-testid='edit-openapi-mode']";
+
     private WebElement openApiFilePathInput;
     private WebElement generateFromRulesRadio;
     private WebElement uploadInRepositoryRadio;
@@ -35,34 +38,52 @@ public class ImportOpenApiDialogComponent extends BaseComponent {
     }
 
     private void initializeElements() {
-        openApiFilePathInput = createScopedElement("xpath=.//input[@id='importOpenAPIForm:openAPIPath']", "openApiFilePathInput");
-        generateFromRulesRadio = createScopedElement("xpath=.//input[@id='openApiImportType1']", "generateFromRulesRadio");
-        uploadInRepositoryRadio = createScopedElement("xpath=.//input[@id='openApiImportType2']", "uploadInRepositoryRadio");
-        reconciliationRadio = createScopedElement("xpath=.//input[@id='reconciliation']", "reconciliationRadio");
-        generationRadio = createScopedElement("xpath=.//input[@id='generation']", "generationRadio");
-        rulesModuleInput = createScopedElement("xpath=.//input[@id='importOpenAPIForm:algorithmModuleName']", "rulesModuleInput");
-        dataModuleInput = createScopedElement("xpath=.//input[@id='importOpenAPIForm:modelModuleName']", "dataModuleInput");
-        importReconciliationBtn = createScopedElement("xpath=.//input[@id='importOpenAPIForm:reconciliationOpenAPIBtn']", "importReconciliationBtn");
-        importTablesGenerationBtn = createScopedElement("xpath=.//input[@id='importOpenAPIForm:importOpenAPIBtn']", "importTablesGenerationBtn");
-        createOrUpdateSchemaBtn = createScopedElement("xpath=.//input[@id='importOpenAPIForm:createOrUpdateOpenAPISchemaBtn']", "createOrUpdateSchemaBtn");
-        cancelBtn = createScopedElement("xpath=.//input[@value='Cancel']", "cancelBtn");
-        errorMsg = createScopedElement("xpath=.//input[@id='importOpenAPIForm:algorithmModuleName']/following-sibling::span//span[@class='error']", "errorMsg");
-        anyErrorMsg = createScopedElement("xpath=.//span[@class='error']", "anyErrorMsg");
-        errorMsgs = createScopedElementList("xpath=.//span[@class='error']", "errorMsgs");
+        openApiFilePathInput = new WebElement(page, OVERVIEW + "//div[@data-testid='edit-openapi-path']//input", "openApiFilePathInput");
+        generateFromRulesRadio = new WebElement(page, OVERVIEW + "//button[@data-testid='openapi-write']", "generateFromRulesBtn");
+        uploadInRepositoryRadio = new WebElement(page, OVERVIEW + "//div[@data-testid='edit-openapi-path']//input", "uploadInRepositoryInput");
+        reconciliationRadio = new WebElement(page, MODE + "//label[contains(normalize-space(.),'Reconciliation')]", "reconciliationMode");
+        generationRadio = new WebElement(page, MODE + "//label[contains(normalize-space(.),'Tables generation')]", "generationMode");
+        rulesModuleInput = new WebElement(page, OVERVIEW + "//input[@data-testid='edit-openapi-algorithm']", "rulesModuleInput");
+        dataModuleInput = new WebElement(page, OVERVIEW + "//input[@data-testid='edit-openapi-model']", "dataModuleInput");
+        importReconciliationBtn = new WebElement(page, OVERVIEW + "//button[@data-testid='overview-save']", "saveOverviewBtn");
+        importTablesGenerationBtn = new WebElement(page, "xpath=//button[@data-testid='openapi-generate']", "generateTablesBtn");
+        createOrUpdateSchemaBtn = new WebElement(page, "xpath=//button[@data-testid='openapi-write']", "writeSchemaBtn");
+        cancelBtn = new WebElement(page, OVERVIEW + "//button[@data-testid='overview-cancel']", "cancelBtn");
+        errorMsg = new WebElement(page, "xpath=(" + OVERVIEW.substring("xpath=".length())
+                + "//div[contains(@class,'ant-form-item-explain-error')]"
+                + " | //div[contains(@class,'ant-notification-notice-description')])[1]", "errorMsg");
+        anyErrorMsg = new WebElement(page, "xpath=//div[contains(@class,'ant-form-item-explain-error')] | //div[contains(@class,'ant-notification-notice-description')]", "anyErrorMsg");
+        // What the settings refuse is said beside the field it belongs to; what the server refuses arrives
+        // as a notice of its own, so both are read.
+        errorMsgs = createElementList("xpath=//div[contains(@class,'ant-form-item-explain-error')]"
+                + " | //div[contains(@class,'ant-notification-notice-description')]"
+                + " | //div[contains(@class,'ant-notification-notice-message')]", "errorMsgs");
     }
 
-    public void selectUploadInRepository() {
-        uploadInRepositoryRadio.click();
+    /**
+     * Waits for the field the specification is named in. The settings point the project at a file it already
+     * holds, so there is no choice of source to make: naming the path is the whole of it.
+     */
+    public void waitForFilePathField() {
+        openApiFilePathInput.waitForVisible(DEFAULT_TIMEOUT_MS);
     }
 
+
+    /** Writes a specification out of the rules the project already holds. */
     public void selectGenerateFromRules() {
         generateFromRulesRadio.click();
     }
 
+    /** Points the project at one of the specifications it already holds. */
     public void setOpenApiFilePath(String path) {
-        openApiFilePathInput.clear();
-        openApiFilePathInput.fillSequentially(path);
-        openApiFilePathInput.press("Tab");
+        pickInSelect(openApiFilePathInput, path);
+    }
+
+    /** The mode the settings currently stand at, as the switch shows it. */
+    public String getSelectedMode() {
+        WebElement selected = new WebElement(page, MODE + "//label[contains(@class,'ant-segmented-item-selected')]", "selectedMode");
+        selected.waitForVisible(DEFAULT_TIMEOUT_MS);
+        return selected.getText().trim();
     }
 
     public void selectReconciliationMode() {
@@ -91,20 +112,26 @@ public class ImportOpenApiDialogComponent extends BaseComponent {
         return dataModuleInput.getCurrentInputValue();
     }
 
+    /** Keeps what was named on the screen: the file, the mode and the modules it writes into. */
     public void clickImportReconciliation() {
-        importReconciliationBtn.press("Tab");
+        selectReconciliationMode();
         importReconciliationBtn.click();
-        WaitUtil.sleep(500, "Waiting for reconciliation import to process");
+        waitUntilSpinnerLoaded();
     }
 
+    /** Keeps the settings and then writes the tables the specification describes. */
     public void clickImportTablesGeneration() {
+        selectTablesGenerationMode();
+        importReconciliationBtn.click();
+        waitUntilSpinnerLoaded();
+        importTablesGenerationBtn.waitForVisible(DEFAULT_TIMEOUT_MS);
         importTablesGenerationBtn.click();
-        WaitUtil.sleep(500, "Waiting for tables generation import to process");
+        waitUntilSpinnerLoaded();
     }
 
     public void clickCreateOrUpdateSchema() {
         createOrUpdateSchemaBtn.click();
-        WaitUtil.sleep(500, "Waiting for schema creation to process");
+        waitUntilSpinnerLoaded();
     }
 
     public void clickCancel() {

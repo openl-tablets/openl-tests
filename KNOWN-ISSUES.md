@@ -130,6 +130,24 @@ all, although the server would accept it.
 
 ---
 
+## 8. A module can no longer be added, renamed or removed from the project's card
+
+**What changed.** The JSF project page listed the modules with "Add Module", "Edit" and "Remove" beside
+them. The React Overview panel lists the modules as read-only (`modules-readonly`) and says instead: *"These
+modules are discovered automatically from the rules and tests folders. To add a module, put its Excel file in
+the rules or tests folder."* For a project whose descriptor declares its modules explicitly the panel still
+shows them, but the actions are gone from the card either way.
+
+This looks deliberate — modules are files now, and files are managed on the Files tab — but it is a
+capability the old screen offered and the new one does not, so the tests that used it have nothing to press.
+Confirm with development whether editing an explicitly declared module is meant to come back.
+
+**Blocked tests.**
+- `tests.ui.webstudio.studio_issues.TestAddModuleWithPathExistingModule`
+- `tests.ui.webstudio.rules_editor.TestCreateProjectFromOpenApiYamlWithCustomModuleNames`
+- `tests.ui.webstudio.rules_editor.TestCreateProjectFromOpenApiJsonFile`
+- `tests.ui.webstudio.rules_editor.TestMigratedMethodFilterReloadUi`
+
 ---
 
 ## Renamings that are not bugs
@@ -146,3 +164,32 @@ it since `EPBDS-13931` (2023); `EPBDS-16599` only removed the second, JSF-only v
 The tests were updated to the new names. Note that the *user settings* still offer the old wording
 (`By Excel Sheet` and friends come from the server-side tree profiles), so the same view is called two
 different things depending on the screen — worth tidying, but it breaks nothing.
+
+---
+
+## Behaviour the React screens changed, which the tests now follow
+
+Recorded so the next reader does not mistake them for defects. Each was checked against the React sources of
+the build under test (`6.5.0-b48c86279338`) and against the screens themselves.
+
+| What changed | What the tests do now |
+|---|---|
+| A project whose workbooks lie in its root has no `rules.xml`, and the project card offers **Migrate** in place of **Edit** until they are moved under `rules/`. Writing a descriptor without moving them first would stop the project finding them, which is why the card withholds the settings (`OverviewPanel.tsx`, `useProjectMigration`). | The OpenAPI tests perform the move as an explicit step (`EditorPage.migrateProject()`) before writing the settings, as a user must. |
+| The card names the OpenAPI **Mode** only when the project declares one. Choosing the mode the engine falls back to (Reconciliation) writes nothing into `rules.xml`, so the row is absent. | The mode is read from the card when it names one, and otherwise from the settings, which stand at the mode the project falls back to. A project reading in Tables generation still names it, so a lost mode is still caught. |
+| The result of running a rule is a window of its own, with one column per input and one for the result. The row carries no number, and each value is shown as the literal its type reads as (`"Tom"`, not `Tom`). | The expected rows were rewritten to what the window shows, keeping the value equality the test was written for. |
+| Running anything opens a window that covers the screen, and the module cannot be worked on again until it is closed. | `TestResultValidationComponent.closeResults()` is pressed once the results have been read. |
+| A table is removed behind a question the screen asks in a window of its own, not behind the browser's own confirm dialog. | `removeCurrentTable()` answers the screen's window. |
+
+## Class names of the component library, for whoever writes the next locator
+
+Ant Design 6 renamed two containers that a great many locators were written against. Both were confirmed in
+the running application, not only in the sources:
+
+| Ant Design 5 (≤ 6.4.0) | Ant Design 6 (6.5.0) |
+|---|---|
+| `ant-modal-content` | `ant-modal-container` |
+| `rc-virtual-list-holder-inner` (the box a Select's options are drawn in) | `ant-select-dropdown-list-holder-inner` |
+
+`ant-select-content` (not `ant-select-selector`) is the box a Select shows its value in. An option is
+`div.ant-select-item-option` and carries the value as its `title`; the text inside it sits in a box whose
+class reads as the option's own, so a locator must ask for the `title` to count each option once.

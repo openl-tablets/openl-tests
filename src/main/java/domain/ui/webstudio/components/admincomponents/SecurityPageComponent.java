@@ -22,7 +22,7 @@ public class SecurityPageComponent extends BaseComponent {
     // Multi-User Mode Fields
     private WebElement administratorsField;
     private WebElement defaultGroupDropdown;
-    private WebElement defaultGroupDropdownList;
+    private WebElement defaultGroupInput;
 
     // EPBDS-15960 G: Allow Managers to bypass protected branches checkbox + info tooltip icon.
     private WebElement allowBypassCheckbox;
@@ -52,7 +52,7 @@ public class SecurityPageComponent extends BaseComponent {
         // Multi-User Mode Fields (visible when multi-user mode is selected)
         administratorsField = createScopedElement("xpath=.//input[@id='administrators']", "administratorsField");
         defaultGroupDropdown = createScopedElement("xpath=.//div[./label[@title='Default Group']]/following-sibling::div//div[@class='ant-form-item-control-input-content']", "defaultGroupDropdown");
-        defaultGroupDropdownList = new WebElement(page, "xpath=//div[@class='rc-virtual-list-holder']//div[contains(@class,'ant-select-item-option') and @title='%s']", "defaultGroupDropdownList");
+        defaultGroupInput = createScopedElement("xpath=.//div[./label[@title='Default Group']]/following-sibling::div//input[contains(@class,'ant-select-input')]", "defaultGroupInput");
 
         allowBypassCheckbox = createScopedElement("xpath=.//input[@id='allowBypassProtectedBranches']", "allowBypassCheckbox");
         allowBypassTooltipIcon = createScopedElement("xpath=.//label[@for='allowBypassProtectedBranches']//span[@aria-label='info-circle']", "allowBypassTooltipIcon");
@@ -126,8 +126,7 @@ public class SecurityPageComponent extends BaseComponent {
     }
 
     public SecurityPageComponent selectDefaultGroup(String value) {
-        defaultGroupDropdown.click();
-        defaultGroupDropdownList.format(value).waitForVisible(500).click();
+        pickInSelect(defaultGroupInput, value);
         return this;
     }
 }

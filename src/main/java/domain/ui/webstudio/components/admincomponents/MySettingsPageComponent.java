@@ -11,7 +11,8 @@ public class MySettingsPageComponent extends BaseComponent {
     private WebElement defaultOrderDropdown;
     private WebElement defaultOrderSelectedItem;
     private WebElement testsPerPageDropdown;
-    private WebElement selectOptionTemplate;
+    private WebElement defaultOrderInput;
+    private WebElement testsPerPageInput;
     private WebElement testsPerPageSelectedItem;
     private WebElement failuresOnlyCheckbox;
     private WebElement compoundResultCheckbox;
@@ -36,7 +37,8 @@ public class MySettingsPageComponent extends BaseComponent {
         defaultOrderSelectedItem = createScopedElement("xpath=.//input[@id='treeView']/ancestor::div[contains(@class,'ant-select')]//div[contains(@class,'ant-select-content')]", "defaultOrderSelectedItem");
 
         testsPerPageDropdown = createScopedElement("xpath=.//div[./label[@title='Tests Per Page']]/following-sibling::div//div[contains(@class,'ant-select-content')]", "testsPerPageDropdown");
-        selectOptionTemplate =  new WebElement(page,"xpath=//div[@class='rc-virtual-list-holder-inner' and not(ancestor::div[contains(@class,'dropdown-hidden')])]/div[@title='%s']", "selectOptionTemplate");
+        defaultOrderInput = createScopedElement("xpath=.//input[@id='treeView']", "defaultOrderInput");
+        testsPerPageInput = createScopedElement("xpath=.//input[@id='testsPerPage']", "testsPerPageInput");
         testsPerPageSelectedItem = createScopedElement("xpath=.//input[@id='testsPerPage']/..", "testsPerPageSelectedItem");
 
         failuresOnlyCheckbox = createScopedElement("xpath=.//input[@id='testsFailuresOnly']", "failuresOnlyCheckbox");
@@ -68,8 +70,7 @@ public class MySettingsPageComponent extends BaseComponent {
     }
 
     public void setDefaultOrder(String orderOption) {
-        defaultOrderDropdown.click();
-        selectOptionTemplate.format(orderOption).waitForVisible().click();
+        pickInSelect(defaultOrderInput, orderOption);
     }
 
     public String getDefaultOrder() {
@@ -77,8 +78,7 @@ public class MySettingsPageComponent extends BaseComponent {
     }
 
     public MySettingsPageComponent setTestsPerPage(int testsPerPage) {
-        testsPerPageDropdown.click();
-        selectOptionTemplate.format(String.valueOf(testsPerPage)).waitForVisible().click();
+        pickInSelect(testsPerPageInput, String.valueOf(testsPerPage));
         return this;
     }
 

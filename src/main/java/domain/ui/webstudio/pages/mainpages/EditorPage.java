@@ -20,6 +20,7 @@ import org.apache.logging.log4j.Logger;
 public class EditorPage extends BasePage {
 
     private static final Logger LOGGER = LogManager.getLogger(EditorPage.class);
+    private static final int OVERVIEW_PROBE_MS = 3000;
 
     private EditorLeftProjectModuleSelectorComponent editorLeftProjectModuleSelectorComponent;
     private EditorLeftRulesTreeComponent editorLeftRulesTreeComponent;
@@ -53,6 +54,9 @@ public class EditorPage extends BasePage {
     private WebElement openApiSectionHeader;
     private WebElement importOpenApiImg;
     private WebElement openApiPropertyValueTemplate;
+    private WebElement migrateProjectBtn;
+    private WebElement overviewSaveBtn;
+    private WebElement migrateConfirmBtn;
     private ManageDependenciesDialogComponent manageDependenciesDialogComponent;
     private WebElement dependenciesHeader;
     private WebElement addDependenciesLink;
@@ -83,7 +87,7 @@ public class EditorPage extends BasePage {
         projectDetailsComponent = createScopedComponent(ProjectDetailsComponent.class, "xpath=//div[@class='page']", "projectDetailsComponent");
         addModulePopupComponent = createScopedComponent(AddModuleComponent.class, "xpath=//div[@id='editModulePopup_container']", "addModulePopupComponent");
         editorTableActionsPanelComponent = createScopedComponent(EditorTableActionsPanelComponent.class, "xpath=//div[@data-testid='table-edit-toolbar']", "editorTableActionsPanelComponent");
-        editorMainContentProblemsPanelComponent = createScopedComponent(EditorMainContentProblemsPanelComponent.class, "xpath=//div[@id='content']", "editorMainContentProblemsPanelComponent");
+        editorMainContentProblemsPanelComponent = new EditorMainContentProblemsPanelComponent();
         projectModuleDetailsComponent = createScopedComponent(ProjectModuleDetailsComponent.class, "xpath=//div[contains(@class, 'ui-layout-center') and @id='content']", "projectModuleDetailsComponent");
         syncChangesDialogComponent = createScopedComponent(SyncChangesDialogComponent.class, "xpath=//div[@role='dialog' and .//form[@id='merge_branches_form']]", "syncChangesDialogComponent");
         saveChangesComponent = new SaveChangesComponent();
@@ -94,17 +98,20 @@ public class EditorPage extends BasePage {
         createTableDialogComponent = createScopedComponent(CreateTableDialogComponent.class,
                 "xpath=//div[contains(@class,'ant-modal')][.//div[contains(@class,'ant-modal-title')][contains(normalize-space(.),'Create Table')]]",
                 "createTableDialogComponent");
-        topProblemsPanelComponent = createScopedComponent(TopProblemsPanelComponent.class, "xpath=//div[@id='content']", "topProblemsPanelComponent");
+        topProblemsPanelComponent = new TopProblemsPanelComponent();
         editModuleDialogComponent = createScopedComponent(EditModuleDialogComponent.class, "xpath=//div[@id='editModulePopup_container']", "editModuleDialogComponent");
         projectHeaderTemplate = new WebElement(getPage(), "xpath=//div[@id='content']//h1[@class='page-header']/span[text()='%s']/..", "projectHeaderTemplate");
         editProjectIconTemplate = new WebElement(getPage(), "xpath=//div[@id='content']//h1[@class='page-header']/span[text()='%s']/..//a[@title='Edit']", "editProjectIconTemplate");
         moduleHeader = new WebElement(getPage(), "xpath=//div[@id='content']//div[@class='page editable']/h1", "moduleHeader");
         copyModuleBtn = new WebElement(getPage(), "xpath=//div[@id='content']//div[@class='page editable']/h1//a[@title='Copy']", "copyModuleBtn");
-        importOpenApiDialogComponent = createScopedComponent(ImportOpenApiDialogComponent.class, "xpath=//div[@id='importOpenAPIPopup_container']", "importOpenApiDialogComponent");
+        importOpenApiDialogComponent = createScopedComponent(ImportOpenApiDialogComponent.class, "xpath=//div[@data-testid='overview-panel']", "importOpenApiDialogComponent");
         openApiModuleSettingsDialogComponent = createScopedComponent(OpenApiModuleSettingsDialogComponent.class, "xpath=//form[@id='generateOpenAPIForm']", "openApiModuleSettingsDialogComponent");
-        openApiSectionHeader = new WebElement(getPage(), "xpath=//div[@class='block editable']//h3[./span[text()='OpenAPI']]", "openApiSectionHeader");
-        importOpenApiImg = new WebElement(getPage(), "xpath=//a[@title='Import OpenAPI']/img", "importOpenApiImg");
-        openApiPropertyValueTemplate = new WebElement(getPage(), "xpath=//div[@class='block editable']//table[@class='properties']//tr[normalize-space(./td[1]/text())='%s']/td[2]", "openApiPropertyValueTemplate");
+        openApiSectionHeader = new WebElement(getPage(), "xpath=//div[@data-testid='overview-panel']//button[normalize-space()='OpenAPI']", "openApiSectionHeader");
+        importOpenApiImg = new WebElement(getPage(), "xpath=//button[@data-testid='overview-edit']", "importOpenApiImg");
+        openApiPropertyValueTemplate = new WebElement(getPage(), "xpath=//div[@data-testid='overview-panel']//dt[normalize-space()='%s']/following-sibling::dd[1]", "openApiPropertyValueTemplate");
+        migrateProjectBtn = new WebElement(getPage(), "xpath=//button[@data-testid='overview-migrate']", "migrateProjectBtn");
+        overviewSaveBtn = new WebElement(getPage(), "xpath=//button[@data-testid='overview-save']", "overviewSaveBtn");
+        migrateConfirmBtn = new WebElement(getPage(), "xpath=//div[contains(@class,'ant-modal-confirm')]//button[normalize-space()='Migrate']", "migrateConfirmBtn");
         manageDependenciesDialogComponent = createScopedComponent(ManageDependenciesDialogComponent.class, "xpath=//div[@id='manageDependenciesPopup_container']", "manageDependenciesDialogComponent");
         dependenciesHeader = new WebElement(getPage(), "xpath=//div[@id='content']//span[text()='Dependencies']", "dependenciesHeader");
         addDependenciesLink = new WebElement(getPage(), "xpath=//div[@id='content']//a[contains(text(),'Click to add dependencies')]", "addDependenciesLink");
@@ -159,26 +166,91 @@ public class EditorPage extends BasePage {
         return copyModuleDialogComponent;
     }
 
+    /**
+     * Opens the project's settings for writing, which is where the OpenAPI specification it reads, the mode
+     * it reads it in and the modules it writes into are named.
+     */
     public ImportOpenApiDialogComponent openImportOpenApiDialog() {
-        openApiSectionHeader.waitForVisible().hover();
+        importOpenApiImg.waitForVisible(DEFAULT_TIMEOUT_MS);
         importOpenApiImg.click();
         importOpenApiDialogComponent.waitForVisible();
+        expandOpenApiSection();
         return importOpenApiDialogComponent;
     }
 
+    /**
+     * Moves the workbooks lying in the project's root under {@code rules/} and writes the rules.xml that
+     * names them. A project without one declares nothing, and writing a descriptor without moving them
+     * first would stop the project finding them, so the card withholds its settings until this is done.
+     *
+     * <p>The move is refused for a project holding workbooks no descriptor may name, and the card says so
+     * on the button instead of offering it; that reason is reported rather than waited out.
+     */
+    public void migrateProject() {
+        if (importOpenApiImg.isVisible(OVERVIEW_PROBE_MS)) {
+            return;
+        }
+        migrateProjectBtn.waitForVisible(DEFAULT_TIMEOUT_MS);
+        if (!migrateProjectBtn.isEnabled()) {
+            throw new AssertionError("The project card offers the move but refuses to make it: the project holds "
+                    + "workbooks a descriptor may not name");
+        }
+        migrateProjectBtn.click();
+        migrateConfirmBtn.waitForVisible(DEFAULT_TIMEOUT_MS);
+        migrateConfirmBtn.click();
+        waitUntilSpinnerLoaded();
+        WaitUtil.requireCondition(() -> importOpenApiImg.isVisible(OVERVIEW_PROBE_MS), DEFAULT_TIMEOUT_MS, 250,
+                "Waiting for the project settings to be offered for writing after the move");
+    }
+
+    /** Each section of the panel can be folded away, so the one the settings stand in is opened first. */
+    private void expandOpenApiSection() {
+        openApiSectionHeader.waitForVisible(DEFAULT_TIMEOUT_MS);
+        if (!"true".equals(openApiSectionHeader.getAttribute("aria-expanded"))) {
+            openApiSectionHeader.click();
+        }
+    }
+
     public String getOpenApiPropertyValue(String propertyName) {
+        waitUntilOverviewIsRead();
         return openApiPropertyValueTemplate.format(propertyName).getText().trim();
     }
 
+    /**
+     * Waits for the card to be back to what it says rather than what it is being told. While the settings
+     * are open for writing every row holds the control it is written with, and a row read then would read
+     * as the whole of what that control offers.
+     */
+    private void waitUntilOverviewIsRead() {
+        WaitUtil.requireCondition(() -> !overviewSaveBtn.isVisible(OVERVIEW_PROBE_MS / 3), DEFAULT_TIMEOUT_MS, 250,
+                "Waiting for the project settings to be kept and read back");
+    }
+
+    /**
+     * The mode the project reads its specification in.
+     *
+     * <p>The card names the mode the project declares. A project that declares none reads in the mode the
+     * engine falls back to, and the card says so by naming no mode at all; that mode is then read from the
+     * settings, which stand at it. A card naming no specification either is not a project to ask this of.
+     */
+    public String getOpenApiMode() {
+        waitUntilOverviewIsRead();
+        WebElement shownMode = openApiPropertyValueTemplate.format("Mode");
+        if (shownMode.isVisible(OVERVIEW_PROBE_MS)) {
+            return shownMode.getText().trim();
+        }
+        if (!openApiPropertyValueTemplate.format("File").isVisible(OVERVIEW_PROBE_MS)) {
+            throw new AssertionError("The project card declares no OpenAPI specification");
+        }
+        String mode = openImportOpenApiDialog().getSelectedMode();
+        importOpenApiDialogComponent.clickCancel();
+        waitUntilOverviewIsRead();
+        return mode;
+    }
+
+    /** Whether the project says it declares no OpenAPI specification. */
     public boolean isOpenApiPropertiesSectionEmpty() {
-        if (!openApiSectionHeader.isVisible(2000)) {
-            return true;
-        }
-        WebElement propsTable = new WebElement(page, "xpath=//div[@class='block editable']//table[@class='properties']", "openApiPropsTable");
-        if (!propsTable.isVisible(1000)) {
-            return true;
-        }
-        return propsTable.getLocator().locator("xpath=.//tr").count() == 0;
+        return new WebElement(page, "xpath=//span[@data-testid='openapi-none']", "openApiNone").isVisible(DEFAULT_TIMEOUT_MS / 5);
     }
 
     public void refresh() {

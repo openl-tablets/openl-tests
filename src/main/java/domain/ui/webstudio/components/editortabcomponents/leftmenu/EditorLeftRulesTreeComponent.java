@@ -28,6 +28,7 @@ public class EditorLeftRulesTreeComponent extends BaseComponent {
     private static final String TREE = "xpath=//div[@data-testid='module-tables-tree']";
     private static final String TREE_NODE = TREE + "//div[contains(@class,'ant-tree-treenode')]";
     private static final int SETTLE_POLL_MS = 200;
+    private static final int NODE_PROBE_MS = 1000;
     private static final int PROBE_MS = 1000;
     private static final long EXPAND_TIMEOUT_MS = 10000;
 
@@ -360,10 +361,44 @@ public class EditorLeftRulesTreeComponent extends BaseComponent {
         return new WebElement(page, TREE + "//div[@id=\"" + nodeId + "\"]", "treeNode[" + nodeId + "]");
     }
 
+    /**
+     * Selects the row. The rail draws itself anew whenever the module is read again — after a run, a save or
+     * a table opened — and gives every row a fresh id as it does, so a row read a moment ago may no longer be
+     * the row standing in the page. The row is therefore looked up again by what names it rather than by the
+     * id it was read under.
+     */
     private void clickNode(TreeRow row) {
-        revealNode(row.nodeId());
-        row.node().child("xpath=./span[contains(@class,'ant-tree-node-content-wrapper')]").click();
+        WaitUtil.requireCondition(() -> {
+            TreeRow current = rowStandingFor(row);
+            if (current == null || !Boolean.TRUE.equals(page.evaluate(REVEAL_NODE_SCRIPT, current.nodeId()))) {
+                return false;
+            }
+            WebElement title = current.node().child("xpath=./span[contains(@class,'ant-tree-node-content-wrapper')]");
+            if (!title.isVisible(NODE_PROBE_MS)) {
+                return false;
+            }
+            title.click();
+            return true;
+        }, DEFAULT_TIMEOUT_MS, SETTLE_POLL_MS, "Selecting '" + row.title() + "' in the tables tree");
         waitUntilSpinnerLoaded();
+    }
+
+    /**
+     * The row now standing where the given one stood: the one carrying its id while the rail is unchanged,
+     * and otherwise the one drawn under the same name at the same depth, nearest to where it stood — which
+     * is what tells two tables of one name apart.
+     */
+    private TreeRow rowStandingFor(TreeRow wanted) {
+        List<TreeRow> rows = readRows();
+        return rows.stream()
+                .filter(row -> row.nodeId().equals(wanted.nodeId()))
+                .findFirst()
+                .orElseGet(() -> rows.stream()
+                        .filter(row -> row.depth() == wanted.depth()
+                                && row.folder() == wanted.folder()
+                                && row.title().equals(wanted.title()))
+                        .min(java.util.Comparator.comparingInt(row -> Math.abs(row.index() - wanted.index())))
+                        .orElse(null));
     }
 
     /** Scrolls the rail until the row is drawn: a row the rail has no room for is not in the page at all. */

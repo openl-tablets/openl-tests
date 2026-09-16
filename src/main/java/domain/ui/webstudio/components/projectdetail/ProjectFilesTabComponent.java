@@ -37,30 +37,30 @@ public class ProjectFilesTabComponent extends BaseComponent {
     private final WebElement filePaneLoading;
 
     public ProjectFilesTabComponent(Page page) {
-        this(new WebElement(page, "[data-testid=project-detail]", "projectDetail"));
+        this(new WebElement(page, "xpath=//*[@data-testid='project-detail']", "projectDetail"));
     }
 
     public ProjectFilesTabComponent(WebElement rootLocator) {
         super(rootLocator);
         fileNodeByName = createScopedElement("xpath=.//div[@role='treeitem'][.//*[normalize-space()='%s']]", "fileTreeNode");
-        addBtn = createScopedElement("[data-testid=files-add]", "filesAddBtn");
-        searchField = createScopedElement("[data-testid=files-search]", "filesSearchField");
-        fileActionsBtn = createScopedElement("[data-testid=file-actions]", "fileActionsBtn");
+        addBtn = createScopedElement("xpath=.//*[@data-testid='files-add']", "filesAddBtn");
+        searchField = createScopedElement("xpath=.//*[@data-testid='files-search']", "filesSearchField");
+        fileActionsBtn = createScopedElement("xpath=.//*[@data-testid='file-actions']", "fileActionsBtn");
         addMenuItem = new WebElement(page, "xpath=//div[contains(@class,'ant-dropdown')][not(contains(@class,'ant-dropdown-hidden'))]//li[contains(@class,'ant-dropdown-menu-item')][.//span[@data-testid='%s']]", "filesAddMenuItem");
         fileActionsMenuItem = new WebElement(page, "xpath=//div[contains(@class,'ant-dropdown')][not(contains(@class,'ant-dropdown-hidden'))]//li[contains(@class,'ant-dropdown-menu-item')][normalize-space()='%s']", "fileActionsMenuItem");
-        fileDeleteSubmitBtn = new WebElement(page, "[data-testid=file-delete-submit]", "fileDeleteSubmitBtn");
-        updateFileInput = new WebElement(page, "input[data-testid=update-file-dragger]", "updateFileInput");
-        updateFileSubmitBtn = new WebElement(page, "[data-testid=update-file-submit]", "updateFileSubmitBtn");
-        updateFileNameWarning = new WebElement(page, "[data-testid=update-file-name-warning]", "updateFileNameWarning");
-        uploadInput = new WebElement(page, "input[data-testid=files-upload-dragger]", "filesUploadInput");
-        uploadNameField = new WebElement(page, "[data-testid=files-upload-name]", "filesUploadNameField");
-        uploadPathField = new WebElement(page, "[data-testid=files-upload-path] input", "filesUploadPathField");
-        uploadSubmitBtn = new WebElement(page, "[data-testid=files-upload-submit]", "filesUploadSubmitBtn");
-        folderPathInput = new WebElement(page, "[data-testid=files-folder-path] input", "folderPathInput");
-        folderSubmitBtn = new WebElement(page, "[data-testid=files-folder-submit]", "folderSubmitBtn");
-        filePreviewEmpty = createScopedElement("[data-testid=file-preview-empty]", "filePreviewEmpty");
-        filePreviewError = createScopedElement("[data-testid=file-preview-error]", "filePreviewError");
-        filePaneLoading = createScopedElement("[data-testid=file-pane-loading]", "filePaneLoading");
+        fileDeleteSubmitBtn = new WebElement(page, "xpath=//*[@data-testid='file-delete-submit']", "fileDeleteSubmitBtn");
+        updateFileInput = new WebElement(page, "xpath=//input[@data-testid='update-file-dragger']", "updateFileInput");
+        updateFileSubmitBtn = new WebElement(page, "xpath=//*[@data-testid='update-file-submit']", "updateFileSubmitBtn");
+        updateFileNameWarning = new WebElement(page, "xpath=//*[@data-testid='update-file-name-warning']", "updateFileNameWarning");
+        uploadInput = new WebElement(page, "xpath=//input[@data-testid='files-upload-dragger']", "filesUploadInput");
+        uploadNameField = new WebElement(page, "xpath=//*[@data-testid='files-upload-name']", "filesUploadNameField");
+        uploadPathField = new WebElement(page, "xpath=//*[@data-testid='files-upload-path']//input", "filesUploadPathField");
+        uploadSubmitBtn = new WebElement(page, "xpath=//*[@data-testid='files-upload-submit']", "filesUploadSubmitBtn");
+        folderPathInput = new WebElement(page, "xpath=//*[@data-testid='files-folder-path']//input", "folderPathInput");
+        folderSubmitBtn = new WebElement(page, "xpath=//*[@data-testid='files-folder-submit']", "folderSubmitBtn");
+        filePreviewEmpty = createScopedElement("xpath=.//*[@data-testid='file-preview-empty']", "filePreviewEmpty");
+        filePreviewError = createScopedElement("xpath=.//*[@data-testid='file-preview-error']", "filePreviewError");
+        filePaneLoading = createScopedElement("xpath=.//*[@data-testid='file-pane-loading']", "filePaneLoading");
     }
 
     public boolean isOpen(int timeoutInMillis) {

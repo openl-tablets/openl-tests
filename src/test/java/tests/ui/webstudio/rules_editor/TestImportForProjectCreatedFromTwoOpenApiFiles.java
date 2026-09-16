@@ -42,7 +42,7 @@ public class TestImportForProjectCreatedFromTwoOpenApiFiles extends BaseTest {
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName);
 
         ImportOpenApiDialogComponent importDialog = editorPage.openImportOpenApiDialog();
-        importDialog.selectUploadInRepository();
+        importDialog.waitForFilePathField();
         importDialog.setOpenApiFilePath(OPENAPI_FILE_1);
         importDialog.selectTablesGenerationMode();
         importDialog.clickImportTablesGeneration();

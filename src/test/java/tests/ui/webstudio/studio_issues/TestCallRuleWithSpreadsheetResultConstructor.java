@@ -31,7 +31,7 @@ public class TestCallRuleWithSpreadsheetResultConstructor extends BaseTest {
                 .selectItemInFolder("Test", "test");
         
         // Run the tests
-        editorPage.getEditorToolbarPanelComponent().clickRun();
+        editorPage.getEditorToolbarPanelComponent().clickRun().clickRunInsideMenu();
         
         // Check that "Something went wrong" error is NOT visible
         assertThat(editorPage.isStudioMessageDisplayed("Sorry! Something went wrong."))

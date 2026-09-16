@@ -43,7 +43,7 @@ public class TestNoNewRecordWhenRegeneratingFromSameFile extends BaseTest {
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName);
 
         ImportOpenApiDialogComponent importDialog = editorPage.openImportOpenApiDialog();
-        importDialog.selectUploadInRepository();
+        importDialog.waitForFilePathField();
         importDialog.setOpenApiFilePath("openapi2-copy.json");
         importDialog.selectTablesGenerationMode();
         importDialog.clickImportTablesGeneration();

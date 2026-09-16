@@ -48,18 +48,18 @@ public class CopyProjectDialogComponent extends BaseComponent {
     }
 
     private void initializeElements() {
-        newProjectNameField = new WebElement(page, "[data-testid=copy-project-name]", "copyProjectName");
-        projectFolderField = new WebElement(page, "[data-testid=copy-project-path]", "copyProjectPath");
-        commentField = new WebElement(page, "[data-testid=copy-project-comment]", "copyProjectComment");
-        copyButton = new WebElement(page, "[data-testid=copy-project-submit]", "copyProjectSubmit");
+        newProjectNameField = new WebElement(page, "xpath=//*[@data-testid='copy-project-name']", "copyProjectName");
+        projectFolderField = new WebElement(page, "xpath=//*[@data-testid='copy-project-path']", "copyProjectPath");
+        commentField = new WebElement(page, "xpath=//*[@data-testid='copy-project-comment']", "copyProjectComment");
+        copyButton = new WebElement(page, "xpath=//*[@data-testid='copy-project-submit']", "copyProjectSubmit");
         cancelButton = new WebElement(page, "xpath=" + MODAL_ROOT + "//div[contains(@class,'ant-modal-footer')]//button[not(contains(@class,'ant-btn-primary'))]", "copyProjectCancel");
-        repositorySelect = new WebElement(page, "[data-testid=copy-project-repository]", "copyProjectRepository");
+        repositorySelect = new WebElement(page, "xpath=//*[@data-testid='copy-project-repository']", "copyProjectRepository");
         repositoryOption = new WebElement(page, "xpath=" + VISIBLE_DROPDOWN + OPTION_BY_TEXT, "copyProjectRepoOption");
-        asNewProjectCheckbox = new WebElement(page, "[data-testid=copy-project-as-new]", "copyProjectAsNew");
-        branchField = new WebElement(page, "[data-testid=copy-project-branch]", "copyProjectBranch");
-        currentBranchLabel = new WebElement(page, "[data-testid=copy-project-current-branch]", "copyProjectCurrentBranch");
-        oldRevisionCheckbox = new WebElement(page, "[data-testid=copy-project-old-revision]", "copyProjectOldRevision");
-        revisionSelect = new WebElement(page, "[data-testid=copy-project-revision]", "copyProjectRevision");
+        asNewProjectCheckbox = new WebElement(page, "xpath=//*[@data-testid='copy-project-as-new']", "copyProjectAsNew");
+        branchField = new WebElement(page, "xpath=//*[@data-testid='copy-project-branch']", "copyProjectBranch");
+        currentBranchLabel = new WebElement(page, "xpath=//*[@data-testid='copy-project-current-branch']", "copyProjectCurrentBranch");
+        oldRevisionCheckbox = new WebElement(page, "xpath=//*[@data-testid='copy-project-old-revision']", "copyProjectOldRevision");
+        revisionSelect = new WebElement(page, "xpath=//*[@data-testid='copy-project-revision']", "copyProjectRevision");
         revisionOption = new WebElement(page, "xpath=" + VISIBLE_DROPDOWN + OPTION_BY_TEXT, "copyProjectRevisionOption");
         errors = createElementList("xpath=" + MODAL_ROOT + "//div[contains(@class,'ant-form-item-explain-error')] | " + MODAL_ROOT + "//div[contains(@class,'ant-alert-error')]", "copyProjectErrors");
     }

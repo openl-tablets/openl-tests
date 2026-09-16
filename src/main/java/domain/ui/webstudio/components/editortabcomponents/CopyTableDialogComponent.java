@@ -44,23 +44,23 @@ public class CopyTableDialogComponent extends BaseComponent {
         modal = new WebElement(page, "xpath=" + MODAL, "copyTableModal");
         dialogTitle = new WebElement(page, "xpath=" + MODAL + "//div[contains(@class,'ant-modal-title')]", "copyTableTitle");
         nameTextBox = new WebElement(page,
-                "css=[data-testid=copy-table-name] input, input[data-testid=copy-table-name]", "copyTableName");
-        moduleComboBox = new WebElement(page, "css=[data-testid=copy-table-module]", "copyTableModule");
-        sheetComboBox = new WebElement(page, "css=[data-testid=copy-table-sheet]", "copyTableSheet");
+                "xpath=//*[@data-testid='copy-table-name']//input | //input[@data-testid='copy-table-name']", "copyTableName");
+        moduleComboBox = new WebElement(page, "xpath=//*[@data-testid='copy-table-module']", "copyTableModule");
+        sheetComboBox = new WebElement(page, "xpath=//*[@data-testid='copy-table-sheet']", "copyTableSheet");
         copyButton = new WebElement(page,
                 "xpath=" + MODAL + "//div[contains(@class,'ant-modal-footer')]//button[.//span[normalize-space()='Copy']]",
                 "copyTableSubmit");
         propertyNameTemplate = new WebElement(page,
-                "css=[data-testid=copy-table-property-name-%1$s] input, input[data-testid=copy-table-property-name-%1$s]",
+                "xpath=//*[@data-testid='copy-table-property-name-%1$s']//input | //input[@data-testid='copy-table-property-name-%1$s']",
                 "copyTablePropertyName");
         propertyValueTemplate = new WebElement(page,
-                "css=[data-testid=copy-table-property-value-%1$s] input, input[data-testid=copy-table-property-value-%1$s]",
+                "xpath=//*[@data-testid='copy-table-property-value-%1$s']//input | //input[@data-testid='copy-table-property-value-%1$s']",
                 "copyTablePropertyValue");
         versionPartTemplate = new WebElement(page,
-                "css=input[data-testid=copy-table-property-value-%1$s-%2$s]",
+                "xpath=//input[@data-testid='copy-table-property-value-%1$s-%2$s']",
                 "copyTableVersionPart");
         insertPropertyTemplate = new WebElement(page,
-                "css=[data-testid=copy-table-property-row-%s] button[aria-label='Insert property above']",
+                "xpath=//*[@data-testid='copy-table-property-row-%s']//button[@aria-label='Insert property above']",
                 "copyTableInsertProperty");
     }
 
@@ -147,7 +147,7 @@ public class CopyTableDialogComponent extends BaseComponent {
         }
         option.click(DEFAULT_TIMEOUT_MS / 2);
         WebElement chosen = new WebElement(page,
-                "css=[data-testid=copy-table-property-name-" + row + "] .ant-select-content", "copyTableChosenProperty");
+                "xpath=//*[@data-testid='copy-table-property-name-" + row + "']//*[contains(@class,'ant-select-content')]", "copyTableChosenProperty");
         if (!WaitUtil.waitForCondition(
                 () -> propertyLabel.equalsIgnoreCase(chosen.getText().trim()), DEFAULT_TIMEOUT_MS, 200,
                 "Waiting for the property row to hold '" + propertyLabel + "'")) {
@@ -214,14 +214,14 @@ public class CopyTableDialogComponent extends BaseComponent {
     }
 
     private boolean isListBacked(String row) {
-        return new WebElement(page, "css=[data-testid=copy-table-property-value-" + row + "].ant-select",
+        return new WebElement(page, "xpath=//*[@data-testid='copy-table-property-value-" + row + "'][contains(@class,'ant-select')]",
                 "copyTablePropertySelect").exists();
     }
 
     private void pickPropertyValue(String row, WebElement field, String value) {
         WebElement option = new WebElement(page,
-                "css=.ant-select-dropdown:not(.ant-select-dropdown-hidden) .ant-select-item-option[title='"
-                        + value + "']", "copyTablePropertyOption");
+                "xpath=//div[contains(@class,'ant-select-dropdown')][not(contains(@class,'ant-select-dropdown-hidden'))]"
+                        + "//div[contains(@class,'ant-select-item-option')][@title='" + value + "']", "copyTablePropertyOption");
         field.click();
         field.fillSequentially(value);
         if (!WaitUtil.waitForCondition(option::exists, DEFAULT_TIMEOUT_MS / 2, 200,
@@ -234,8 +234,8 @@ public class CopyTableDialogComponent extends BaseComponent {
         }
         option.click(DEFAULT_TIMEOUT_MS / 2);
         WebElement selected = new WebElement(page,
-                "css=[data-testid=copy-table-property-value-" + row + "] .ant-select-selection-item[title='"
-                        + value + "']", "copyTablePropertySelection");
+                "xpath=//*[@data-testid='copy-table-property-value-" + row + "']"
+                        + "//*[contains(@class,'ant-select-selection-item')][@title='" + value + "']", "copyTablePropertySelection");
         if (!WaitUtil.waitForCondition(selected::exists, DEFAULT_TIMEOUT_MS / 2, 200,
                 "Waiting for the property to hold '" + value + "'")) {
             throw new IllegalStateException("The copy dialog did not take '" + value + "' for this property");

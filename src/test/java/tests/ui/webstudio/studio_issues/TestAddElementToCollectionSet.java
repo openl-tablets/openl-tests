@@ -30,13 +30,13 @@ public class TestAddElementToCollectionSet extends BaseTest {
                 .selectItemInFolder("Spreadsheet", "mySpr");
 
         var runMenu = editorPage.getEditorToolbarPanelComponent().clickRun();
-        runMenu.clickAddElementToCollectionBtn("a =");
+        runMenu.clickAddElementToCollectionBtn("a");
         assertThat(editorPage.isStudioMessageDisplayed("Sorry! Something went wrong.")).isFalse();
         
-        runMenu.clickAddedElementsExpander("a =")
-               .clickAddElementToCollectionBtn("d =");
+        runMenu.clickAddedElementsExpander("a")
+               .clickAddElementToCollectionBtn("d");
         assertThat(editorPage.isStudioMessageDisplayed("Sorry! Something went wrong.")).isFalse();
         
-        runMenu.clickAddedElementsExpander("d =");
+        runMenu.clickAddedElementsExpander("d");
     }
 }

@@ -124,7 +124,7 @@ public class TestWorkWithDuplicateTables extends BaseTest {
         assertThat(editorPage.getEditorToolbarPanelComponent().isWithinCurrentModuleOnlyTestTablesEnabled())
                 .as("WithinCurrentModuleOnlyTestTables should be enabled after BenchmarkDropdown click (same module)")
                 .isTrue();
-        editorPage.getEditorToolbarPanelComponent().clickRun();
+        editorPage.getEditorToolbarPanelComponent().clickRun().clickRunInsideMenu();
         editorPage.getTestResultValidationComponent().checkAllTablesPassed();
 
         // Section 5: Different modules duplicate tables
@@ -231,7 +231,7 @@ public class TestWorkWithDuplicateTables extends BaseTest {
         assertThat(editorPage.getEditorToolbarPanelComponent().isWithinCurrentModuleOnlyTestTablesEnabled())
                 .as("WithinCurrentModuleOnlyTestTables should be disabled after BenchmarkDropdown (diff modules)")
                 .isFalse();
-        editorPage.getEditorToolbarPanelComponent().clickRun();
+        editorPage.getEditorToolbarPanelComponent().clickRun().clickRunInsideMenu();
         editorPage.getTestResultValidationComponent().checkAllTablesPassed();
 
         // Section 10: Project with dependency — duplicate table error across projects
@@ -300,7 +300,7 @@ public class TestWorkWithDuplicateTables extends BaseTest {
         assertThat(editorPage.getEditorToolbarPanelComponent().isWithinCurrentModuleOnlyTestTablesEnabled())
                 .as("WithinCurrentModuleOnlyTestTables should be enabled after BenchmarkDropdown (dependency project)")
                 .isTrue();
-        editorPage.getEditorToolbarPanelComponent().clickRun();
+        editorPage.getEditorToolbarPanelComponent().clickRun().clickRunInsideMenu();
         editorPage.getTestResultValidationComponent().checkAllTablesPassed();
         editorPage.getEditorToolbarPanelComponent().runAllTests();
         editorPage.getTestResultValidationComponent().checkAllTablesPassed();

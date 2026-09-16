@@ -37,9 +37,14 @@ import java.util.List;
  */
 public class EditorToolbarPanelComponent extends BaseComponent {
 
+    private static final int SAVE_PROBE_MS = 2000;
+
     // TOP LINE TOOLBAR — plain buttons that belong to no dropdown
     private WebElement exportBtn;
     private WebElement saveBtn;
+    private WebElement projectSaveBtn;
+    private WebElement projectActionsMoreBtn;
+    private WebElement projectSaveInOverflowBtn;
     private WebElement verifyBtn;
     private WebElement copyProjectBtn;
     private WebElement createTableBtn;
@@ -71,6 +76,12 @@ public class EditorToolbarPanelComponent extends BaseComponent {
         exportBtn = new WebElement(page, "xpath=//button[@data-testid='module-export']", "exportBtn");
         verifyBtn = new WebElement(page, "xpath=//button[@data-testid='module-verify']", "verifyBtn");
         saveBtn = new WebElement(page, "xpath=//button[@data-testid='module-save']", "saveBtn");
+        projectSaveBtn = new WebElement(page,
+                "xpath=//div[@data-testid='project-actions']//button[starts-with(@data-testid,'save-')]", "projectSaveBtn");
+        projectActionsMoreBtn = new WebElement(page,
+                "xpath=//button[@data-testid='project-actions-more']", "projectActionsMoreBtn");
+        projectSaveInOverflowBtn = new WebElement(page,
+                "xpath=//div[@data-testid='project-actions-overflow']//button[starts-with(@data-testid,'save-')]", "projectSaveInOverflowBtn");
         refreshProjectBtn = new WebElement(page, "xpath=//button[@data-testid='module-refresh']", "refreshProjectBtn");
         copyProjectBtn = new WebElement(page, "xpath=//button[@data-testid='module-copy']", "copyProjectBtn");
         createTableBtn = new WebElement(page, "xpath=//button[@data-testid='module-createTable']", "createTableBtn");
@@ -106,8 +117,27 @@ public class EditorToolbarPanelComponent extends BaseComponent {
         createTableBtn.click();
     }
 
-    /** Saves the project. The toolbar offers Save only while the project has changes of its own to save. */
+    /**
+     * Saves the project. Save belongs to the project, so it is offered wherever the project is: on the
+     * module screen it stands in the module's action bar, and on the project card in the card's own bar,
+     * from where it falls into the overflow menu when the bar runs out of room. It is offered only while
+     * the project has changes of its own to save.
+     */
     public void clickSave() {
+        if (saveBtn.isVisible(SAVE_PROBE_MS)) {
+            saveBtn.click();
+            return;
+        }
+        if (projectSaveBtn.isVisible(SAVE_PROBE_MS)) {
+            projectSaveBtn.click();
+            return;
+        }
+        if (projectActionsMoreBtn.isVisible(SAVE_PROBE_MS)) {
+            projectActionsMoreBtn.click();
+            projectSaveInOverflowBtn.waitForVisible(DEFAULT_TIMEOUT_MS);
+            projectSaveInOverflowBtn.click();
+            return;
+        }
         saveBtn.waitForVisible(DEFAULT_TIMEOUT_MS);
         saveBtn.click();
     }
@@ -304,9 +334,18 @@ public class EditorToolbarPanelComponent extends BaseComponent {
         copyDialog.selectCopyAs("New Business Dimension Version").setProperty(propertyLabel, propertyValue).clickCopy();
     }
 
+    /**
+     * Removes the table the screen shows. The removal clears the table from the sheet it is written on, so
+     * it is asked about first, in a window of the screen's own rather than the browser's.
+     */
     public void removeCurrentTable() {
-        DriverPool.getPage().onDialog(Dialog::accept);
         clickRemove();
+        WebElement confirmRemove = new WebElement(page,
+                "xpath=//div[contains(@class,'ant-modal-confirm')]//button[.//span[normalize-space()='Remove']]",
+                "confirmRemoveTable");
+        confirmRemove.waitForVisible(DEFAULT_TIMEOUT_MS);
+        confirmRemove.click();
+        waitUntilSpinnerLoaded();
     }
 
     public void createDefaultTestTable() {

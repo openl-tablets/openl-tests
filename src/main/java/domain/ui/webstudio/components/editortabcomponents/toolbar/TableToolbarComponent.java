@@ -12,6 +12,8 @@ import helpers.utils.WaitUtil;
  */
 public class TableToolbarComponent extends BaseComponent {
 
+    private static final int TRACE_WINDOW_TIMEOUT_MS = 65000;
+
     private final WebElement runBtn;
     private final WebElement runDropdownBtn;
     private final WebElement traceBtn;
@@ -66,29 +68,34 @@ public class TableToolbarComponent extends BaseComponent {
     public IRunMenu clickRun() {
         runBtn.waitForVisible();
         runBtn.click();
-        return new RunMenuComponent(page);
+        RunMenuComponent launcher = new RunMenuComponent(page);
+        launcher.waitForLauncher();
+        return launcher;
     }
 
     public ITraceMenu clickTrace() {
         traceBtn.click();
-        return new TraceMenuComponent(page);
+        TraceMenuComponent launcher = new TraceMenuComponent(page);
+        launcher.waitForLauncher();
+        return launcher;
     }
 
+    /**
+     * Traces the table the page shows, step by step. The button opens the launcher, and the trace itself
+     * starts from there — a table that declares no parameters is asked all the same, because the launcher
+     * carries the settings the trace runs under.
+     */
     public ITraceWindow clickTraceExpectTraceWindow() {
         waitUntilSpinnerLoaded();
         traceBtn.waitForVisible();
-
-        // Retry the click+wait: on slow CI the first click can land before the rule is runnable, so no popup opens.
-        boolean switchSet = AdvancedTracerSupport.requestAdvancedTracer(page);
-        Page popup = WaitUtil.retryOnException(
-                () -> page.waitForPopup(new Page.WaitForPopupOptions().setTimeout(30000), traceBtn::click),
-                65000, 1000, "Opening Trace popup window");
-        popup.waitForLoadState();
-        popup.waitForSelector("xpath=//div[@id='trace-view']", new Page.WaitForSelectorOptions().setTimeout(10000));
-        if (!switchSet) {
-            AdvancedTracerSupport.reopenInAdvancedTracer(popup);
-        }
-        return new TraceWindowComponent(popup);
+        // The press can land before the rule is ready to be traced, and then no window opens at all, so the
+        // whole of opening the launcher and starting from it is tried again rather than waited out.
+        return WaitUtil.retryOnException(() -> {
+            traceBtn.click();
+            TraceMenuComponent launcher = new TraceMenuComponent(page);
+            launcher.waitForLauncher();
+            return launcher.clickTraceInsideMenu();
+        }, TRACE_WINDOW_TIMEOUT_MS, 1000, "Opening the trace window");
     }
 
     public void clickBenchmark() {

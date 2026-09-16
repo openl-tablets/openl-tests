@@ -83,10 +83,10 @@ public class TestCreateProjectFromOpenApiYamlWithCustomModuleNames extends BaseT
         editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName);
 
-        assertThat(editorPage.getOpenApiPropertyValue("OpenAPI File:")).isEqualTo("new_openapi_1.yaml");
-        assertThat(editorPage.getOpenApiPropertyValue("Mode:")).isEqualTo("Tables generation");
-        assertThat(editorPage.getOpenApiPropertyValue("Rules Module:")).isEqualTo("Spreadsheets");
-        assertThat(editorPage.getOpenApiPropertyValue("Data Module:")).isEqualTo("Data_Types");
+        assertThat(editorPage.getOpenApiPropertyValue("File")).isEqualTo("new_openapi_1.yaml");
+        assertThat(editorPage.getOpenApiMode()).isEqualTo("Tables generation");
+        assertThat(editorPage.getOpenApiPropertyValue("Services module")).isEqualTo("Spreadsheets");
+        assertThat(editorPage.getOpenApiPropertyValue("Data types module")).isEqualTo("Data_Types");
 
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Spreadsheets");
         editorPage.getEditorLeftRulesTreeComponent().setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE);
@@ -112,8 +112,8 @@ public class TestCreateProjectFromOpenApiYamlWithCustomModuleNames extends BaseT
         editorPage.getSaveChangesComponent().clickSave();
         editorPage.waitUntilSpinnerLoaded();
 
-        assertThat(editorPage.getOpenApiPropertyValue("Rules Module:")).isEqualTo("Spreadsheets_test");
-        assertThat(editorPage.getOpenApiPropertyValue("Data Module:")).isEqualTo("Data_Type_test");
+        assertThat(editorPage.getOpenApiPropertyValue("Services module")).isEqualTo("Spreadsheets_test");
+        assertThat(editorPage.getOpenApiPropertyValue("Data types module")).isEqualTo("Data_Type_test");
 
         editorPage.getEditorToolbarPanelComponent().clickExport();
         File exportedZipAfterRename = editorPage.getExportProjectDialogComponent().clickExportAndDownload();

@@ -21,7 +21,11 @@ public class TopProblemsPanelComponent extends BaseComponent {
     }
 
     private void initializeElements() {
-        errorItems = createScopedElementList("xpath=.//div[@class='messages']//li[contains(@class,'error')]/span", "errorItems");
+        // The errors the project reports are listed in the compilation problems panel; a project that
+        // compiles clean carries no panel at all.
+        errorItems = createElementList("xpath=//section[@data-testid='compile-problems']"
+                + "[.//span[@data-testid='compile-problems-errors']]"
+                + "//div[@data-testid='compile-problems-body']/ul[1]/li", "errorItems");
     }
 
     public String getText() {

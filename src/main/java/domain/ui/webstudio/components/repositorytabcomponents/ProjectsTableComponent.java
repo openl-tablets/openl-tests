@@ -38,7 +38,7 @@ public class ProjectsTableComponent extends BaseComponent {
     private final WebElement overflowMenuItems;
 
     public ProjectsTableComponent(Page page) {
-        this(new WebElement(page, "[data-testid=projects-table]", "projectsTable"));
+        this(new WebElement(page, "xpath=//*[@data-testid='projects-table']", "projectsTable"));
     }
 
     public ProjectsTableComponent(WebElement rootLocator) {
@@ -175,7 +175,7 @@ public class ProjectsTableComponent extends BaseComponent {
             if (!rows.nth(i).isVisible()) {
                 continue;
             }
-            String name = rows.nth(i).locator("span").first().textContent();
+            String name = rows.nth(i).locator("xpath=.//span").first().textContent();
             if (name != null && !name.trim().isEmpty()) {
                 projectNames.add(name.trim());
             }

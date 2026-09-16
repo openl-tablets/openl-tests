@@ -49,7 +49,9 @@ public class TestMethodTable extends BaseTest {
         assertThat(row2Content).anyMatch(cell -> cell.contains("return \"Hi,\"+name"));
 
         // Run the method with test parameter
-        runMethodTest(editorPage, "Tom", Arrays.asList("1", "Tom", "Hi,Tom"));
+        // The run shows what it was given and what it returned, each as the literal its type reads
+        // as, and the row is no longer numbered.
+        runMethodTest(editorPage, "Tom", Arrays.asList("\"Tom\"", "\"Hi,Tom\""));
 
         // Test table editing operations
         testTableEditingOperations(editorPage, table);
@@ -64,6 +66,7 @@ public class TestMethodTable extends BaseTest {
                 .clickRunInsideMenu();
         List<String> actualResult = editorPage.getTestResultValidationComponent().getTestResult(1);
         assertThat(actualResult).isEqualTo(expectedResult);
+        editorPage.getTestResultValidationComponent().closeResults();
     }
 
     private void testTableEditingOperations(EditorPage editorPage, TableComponent table) {

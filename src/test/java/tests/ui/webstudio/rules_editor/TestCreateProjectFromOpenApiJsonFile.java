@@ -60,13 +60,13 @@ public class TestCreateProjectFromOpenApiJsonFile extends BaseTest {
         editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName);
 
-        assertThat(editorPage.getOpenApiPropertyValue("OpenAPI File:"))
+        assertThat(editorPage.getOpenApiPropertyValue("File"))
                 .as("OpenAPI File property should reflect uploaded file name").isEqualTo("openapi.json");
-        assertThat(editorPage.getOpenApiPropertyValue("Mode:"))
+        assertThat(editorPage.getOpenApiMode())
                 .as("Mode should be 'Tables generation'").isEqualTo("Tables generation");
-        assertThat(editorPage.getOpenApiPropertyValue("Rules Module:"))
+        assertThat(editorPage.getOpenApiPropertyValue("Services module"))
                 .as("Rules Module property should be 'Algorithms'").isEqualTo("Algorithms");
-        assertThat(editorPage.getOpenApiPropertyValue("Data Module:"))
+        assertThat(editorPage.getOpenApiPropertyValue("Data types module"))
                 .as("Data Module property should be 'Models'").isEqualTo("Models");
 
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Algorithms");

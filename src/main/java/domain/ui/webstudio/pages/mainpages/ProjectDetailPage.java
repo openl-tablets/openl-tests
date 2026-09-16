@@ -67,18 +67,18 @@ public class ProjectDetailPage extends BasePage {
         overview = new ProjectOverviewTabComponent(page);
         files = new ProjectFilesTabComponent(page);
         history = new ProjectHistoryTabComponent(page);
-        openRevisionSelect = new WebElement(page, "[data-testid=open-revision-select]", "openRevisionSelect");
+        openRevisionSelect = new WebElement(page, "xpath=//*[@data-testid='open-revision-select']", "openRevisionSelect");
         openRevisionOption = new WebElement(page, "xpath=//div[contains(@class,'ant-select-item-option')][@title='%s']", "openRevisionOption");
-        openRevisionSubmit = new WebElement(page, "[data-testid=open-revision-submit]", "openRevisionSubmit");
+        openRevisionSubmit = new WebElement(page, "xpath=//*[@data-testid='open-revision-submit']", "openRevisionSubmit");
         openRevisionOptions = createElementList("xpath=//div[contains(@class,'ant-select-item-option')]", "openRevisionOptions");
         exportProjectModalComponent = new ExportProjectModalComponent();
-        mergeTargetBranchSelect = new WebElement(page, "[data-testid=merge-target-branch]", "mergeTargetBranchSelect");
+        mergeTargetBranchSelect = new WebElement(page, "xpath=//*[@data-testid='merge-target-branch']", "mergeTargetBranchSelect");
         mergeBranchOptions = createElementList("xpath=//div[contains(@class,'ant-select-item-option')]//div[contains(@class,'ant-select-item-option-content')]", "mergeBranchOptions");
         copyProjectDialogComponent = new CopyProjectDialogComponent();
         configureCommitInfoComponent = createScopedComponent(ConfigureCommitInfoComponent.class, "xpath=//div[@role='dialog'][.//div[contains(@class,'ant-modal-title') and normalize-space()='Configure Git Commit Info']]", "configureCommitInfoComponent");
         configureCommitInfoShade = new WebElement(page, "xpath=//div[@role='dialog'][.//div[contains(@class,'ant-modal-title') and normalize-space()='Configure Git Commit Info']]", "configureCommitInfoShade");
         syncUpdatesDialogComponent = new SyncUpdatesDialogComponent();
-        detailRoot = new WebElement(page, "[data-testid=project-detail]", "detailRoot");
+        detailRoot = new WebElement(page, "xpath=//*[@data-testid='project-detail']", "detailRoot");
         errorNotification = new WebElement(page, "xpath=(//div[contains(@class,'ant-notification-notice')])[last()]", "errorNotification");
     }
 

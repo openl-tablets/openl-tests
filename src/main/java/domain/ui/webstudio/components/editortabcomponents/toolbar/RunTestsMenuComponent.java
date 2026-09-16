@@ -13,7 +13,8 @@ import helpers.utils.WaitUtil;
  */
 public class RunTestsMenuComponent extends BaseComponent implements IRunTestsMenu {
 
-    private static final String LAUNCHER = "xpath=//div[contains(@class,'ant-popover')][not(contains(@class,'ant-popover-hidden'))]";
+    // Only one launcher stands open at a time, and it draws what it holds into the page.
+    private static final String LAUNCHER = "xpath=";
 
     private final WebElement testBtn;
     private final WebElement dropdownToggle;

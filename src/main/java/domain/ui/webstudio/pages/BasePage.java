@@ -42,7 +42,7 @@ public abstract class BasePage extends CorePage {
         messages = createComponentList(MessageComponent.class, "xpath=//div[contains(@class,'ant-notification-notice-wrapper')]", "Studio Messages");
         userMenuDrawer = new WebElement(page, "xpath=//div[contains(@class,'ant-drawer') and contains(@class,'ant-drawer-open')]//div[contains(@class,'ant-drawer-section')]", "User Menu Drawer");
         contentLoadingSpinner = new WebElement(page, "xpath=//div[@id='loadingPanel']", "contentLoadingSpinner");
-        modalOkBtn = new WebElement(page, "xpath=//div[@class='ant-modal-content']//button[./span[contains(text(),'OK')]]", "applyChangesBtn");
+        modalOkBtn = new WebElement(page, "xpath=//div[contains(@class,'ant-modal-container')]//button[./span[contains(text(),'OK')]]", "applyChangesBtn");
         notificationPanel = new WebElement(page, "xpath=//div[@data-show='true' and contains(@class, 'ant-alert-banner')]", "Notification Panel");
         closableMessage = new WebElement(page, "xpath=//div[contains(@class, 'message closable')]", "closableMessage");
     }
@@ -122,7 +122,7 @@ public abstract class BasePage extends CorePage {
      */
     public boolean hasHorizontalScroll() {
         waitUntilSpinnerLoaded();
-        BoundingBox body = page.locator("body").boundingBox();
+        BoundingBox body = page.locator("xpath=//body").boundingBox();
         int viewportWidth = page.viewportSize().width;
         // A pixel of slack: rounding of a fractional layout width is not a scrollbar.
         return body != null && body.width > viewportWidth + 1;

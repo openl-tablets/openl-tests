@@ -43,7 +43,7 @@ public class TestNoLocalChangesAfterReconciliationImport extends BaseTest {
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName);
 
         ImportOpenApiDialogComponent importDialog = editorPage.openImportOpenApiDialog();
-        importDialog.selectUploadInRepository();
+        importDialog.waitForFilePathField();
         importDialog.setOpenApiFilePath(OPENAPI_FILE_2);
         importDialog.clickImportReconciliation();
         editorPage.waitUntilSpinnerLoaded();

@@ -14,10 +14,15 @@ import java.util.List;
  */
 public class TestResultValidationComponent extends BaseComponent {
 
-    private static final String RESULTS = "xpath=//div[contains(@class,'ant-modal-content')]"
-            + "[.//div[contains(@class,'ant-modal-title')][contains(normalize-space(),'Test Results')]]";
+    // The window a run reports in, whichever run it was: a rule reports what it returned, a test table how
+    // its cases went, and both are the same window with the same way out of it.
+    private static final String RESULTS = "xpath=//div[contains(@class,'ant-modal-container')]"
+            + "[.//button[@data-testid='execution-close']]";
     private static final String TABLE_LINK = RESULTS + "//a[starts-with(@data-testid,'test-table-')]";
     private static final String CASE_STATUS = RESULTS + "//table[starts-with(@data-testid,'test-results-')]//span[@title='%s']";
+    // A rule's run shows the one row it produced; a test table shows a table of cases for each of its tables.
+    private static final String RESULT_TABLE = "(" + RESULTS.substring("xpath=".length())
+            + "//table[@data-testid='run-result-table' or starts-with(@data-testid,'test-results-')])[1]";
     private static final int PROBE_MS = 500;
     private static final long RESULTS_TIMEOUT_MS = 30000;
 
@@ -46,10 +51,8 @@ public class TestResultValidationComponent extends BaseComponent {
     private void initializeElements() {
         resultsWindow = new WebElement(page, RESULTS, "testResultsWindow");
         resultsTitle = new WebElement(page, RESULTS + "//div[contains(@class,'ant-modal-title')]", "testResultsTitle");
-        resultTableHeader = new WebElement(page,
-                "xpath=(" + RESULTS.substring("xpath=".length()) + "//table[starts-with(@data-testid,'test-results-')])[1]/thead/tr", "resultTableHeader");
-        resultTable = createScopedComponent(TableComponent.class,
-                "xpath=(" + RESULTS.substring("xpath=".length()) + "//table[starts-with(@data-testid,'test-results-')])[1]", "resultTable");
+        resultTableHeader = new WebElement(page, "xpath=" + RESULT_TABLE + "/thead/tr", "resultTableHeader");
+        resultTable = createScopedComponent(TableComponent.class, "xpath=" + RESULT_TABLE, "resultTable");
         tableLinks = createElementList(TABLE_LINK, "testTableLinks");
         failedTableLinks = createElementList(TABLE_LINK + "[contains(@class,'ant-typography-danger')]", "failedTestTableLinks");
         failedTableLinkTemplate = new WebElement(page,
@@ -59,15 +62,19 @@ public class TestResultValidationComponent extends BaseComponent {
                 + "//span[@title='Failed' or @title='Error']", "failedCases");
         // The setting belongs to the launcher the run is started from, not to the window the results arrive in.
         currentModuleOnlyCheckbox = new WebElement(page,
-                "xpath=//div[contains(@class,'ant-popover')][not(contains(@class,'ant-popover-hidden'))]"
+                "xpath="
                         + "//input[@data-testid='tests-module-only']", "currentModuleOnlyCheckbox");
         failuresOnlyCheckbox = new WebElement(page, RESULTS + "//input[@data-testid='tests-failures-only']", "failuresOnlyCheckbox");
     }
 
+    /**
+     * Waits for the run to report. The window opens while the run is still on its way, so what is waited for
+     * is what it has to show: the test tables it ran, or the row a rule's run produced.
+     */
     private void waitForResults() {
         resultsWindow.waitForVisible(RESULTS_TIMEOUT_MS);
-        WaitUtil.requireCondition(() -> !tableLinks.isEmpty(), RESULTS_TIMEOUT_MS, 250,
-                "Waiting for the test results to be reported");
+        WaitUtil.requireCondition(() -> !tableLinks.isEmpty() || resultTable.isVisible(), RESULTS_TIMEOUT_MS, 250,
+                "Waiting for the run to report its results");
     }
 
     public TableComponent getResultTable() {
@@ -181,6 +188,18 @@ public class TestResultValidationComponent extends BaseComponent {
         throw new AssertionError(String.format(
                 "Test failures detected. %s%nFailed test tables (%d): %s%nFailed cases: %d%nResults: %s",
                 contextMsg, failedTableLinks.size(), getAllFailedTests(), failedCases.size(), getRunSummary()));
+    }
+
+    /**
+     * Closes the window the run reported in. It covers the screen while it stands open, so the module cannot
+     * be worked on again until it is out of the way.
+     */
+    public void closeResults() {
+        WebElement closeBtn = new WebElement(page, RESULTS + "//button[@data-testid='execution-close']", "closeResultsBtn");
+        if (closeBtn.isVisible(PROBE_MS)) {
+            closeBtn.click();
+            resultsWindow.waitForHidden(DEFAULT_TIMEOUT_MS);
+        }
     }
 
     public List<String> getAllFailedTests() {

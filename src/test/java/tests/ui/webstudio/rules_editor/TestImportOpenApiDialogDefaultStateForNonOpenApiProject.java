@@ -40,6 +40,8 @@ public class TestImportOpenApiDialogDefaultStateForNonOpenApiProject extends Bas
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName);
 
         // Step 8: Open dialog and immediately cancel
+        // A template project keeps its workbooks in its root; the settings are offered once they are moved.
+        editorPage.migrateProject();
         ImportOpenApiDialogComponent importDialog = editorPage.openImportOpenApiDialog();
         importDialog.clickCancel();
 
@@ -51,7 +53,7 @@ public class TestImportOpenApiDialogDefaultStateForNonOpenApiProject extends Bas
         assertThat(importDialog.isReconciliationModeSelected())
                 .as("Reconciliation mode should be selected by default for a non-OpenAPI project")
                 .isTrue();
-        importDialog.selectUploadInRepository();
+        importDialog.waitForFilePathField();
         importDialog.selectTablesGenerationMode();
 
         // Step 8.2: Enter non-existent file path and verify file-not-found error

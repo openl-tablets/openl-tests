@@ -50,14 +50,14 @@ public class TraceWindowComponent extends BasePage implements ITraceWindow {
         detailedTraceToggle = new WebElement(tracePage, "xpath=//*[@data-testid='trace-detailed']", "detailedTraceToggle");
         simpleTree = new WebElement(tracePage, "xpath=//*[@data-testid='simple-tree']", "simpleTree");
         breakOnFireCheckbox = new WebElement(tracePage,
-                "css=[data-testid=decision-break-on-fire] input, input[data-testid=decision-break-on-fire]",
+                "xpath=//*[@data-testid='decision-break-on-fire']//input | //input[@data-testid='decision-break-on-fire']",
                 "breakOnFireCheckbox");
         breakOnRuleSelect = new WebElement(tracePage, "xpath=//*[@data-testid='decision-rule-select']", "breakOnRuleSelect");
         breakOnRuleOption = new WebElement(tracePage,
                 "xpath=//div[contains(@class,'ant-select-dropdown')][not(contains(@class,'ant-select-dropdown-hidden'))]//div[contains(@class,'ant-select-item-option')][@title='%s' or .//*[normalize-space()='%s']]",
                 "breakOnRuleOption");
         watchInput = new WebElement(tracePage,
-                "css=[data-testid=watch-add] input, input[data-testid=watch-add]", "watchInput");
+                "xpath=//*[@data-testid='watch-add']//input | //input[@data-testid='watch-add']", "watchInput");
         watchAddButton = new WebElement(tracePage, "xpath=//*[@data-testid='watch-add-button']", "watchAddButton");
         watchPanel = new WebElement(tracePage, "xpath=//*[@data-testid='watch-panel']", "watchPanel");
         rerunBtn = new WebElement(tracePage, "xpath=//*[@data-testid='debug-rerun']", "rerunBtn");

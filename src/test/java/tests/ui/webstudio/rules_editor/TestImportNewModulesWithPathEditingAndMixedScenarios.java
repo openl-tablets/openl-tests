@@ -59,7 +59,7 @@ public class TestImportNewModulesWithPathEditingAndMixedScenarios extends BaseTe
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName);
 
         ImportOpenApiDialogComponent importDialog = editorPage.openImportOpenApiDialog();
-        importDialog.selectUploadInRepository();
+        importDialog.waitForFilePathField();
         importDialog.setOpenApiFilePath(OPENAPI_FILE);
         importDialog.clickImportReconciliation();
         editorPage.waitUntilSpinnerLoaded();
@@ -80,7 +80,7 @@ public class TestImportNewModulesWithPathEditingAndMixedScenarios extends BaseTe
 
         editorPage.getEditorToolbarPanelComponent().navigateToProjectRoot(projectName);
         importDialog = editorPage.openImportOpenApiDialog();
-        importDialog.selectUploadInRepository();
+        importDialog.waitForFilePathField();
         importDialog.setOpenApiFilePath(OPENAPI_FILE_1);
         importDialog.selectTablesGenerationMode();
         importDialog.setRulesModuleName("Alg");
@@ -150,14 +150,14 @@ public class TestImportNewModulesWithPathEditingAndMixedScenarios extends BaseTe
         assertThat(modules).as("Alg should be created").contains("Alg");
         assertThat(modules).as("Mod-123 should be created").contains(moduleName);
 
-        assertThat(editorPage.getOpenApiPropertyValue("Mode:")).isEqualTo("Tables generation");
-        assertThat(editorPage.getOpenApiPropertyValue("OpenAPI File:")).isEqualTo(OPENAPI_FILE_1);
-        assertThat(editorPage.getOpenApiPropertyValue("Rules Module:")).isEqualTo("Alg");
-        assertThat(editorPage.getOpenApiPropertyValue("Data Module:")).isEqualTo(moduleName);
+        assertThat(editorPage.getOpenApiMode()).isEqualTo("Tables generation");
+        assertThat(editorPage.getOpenApiPropertyValue("File")).isEqualTo(OPENAPI_FILE_1);
+        assertThat(editorPage.getOpenApiPropertyValue("Services module")).isEqualTo("Alg");
+        assertThat(editorPage.getOpenApiPropertyValue("Data types module")).isEqualTo(moduleName);
 
         editorPage.getEditorToolbarPanelComponent().navigateToProjectRoot(projectName);
         importDialog = editorPage.openImportOpenApiDialog();
-        importDialog.selectUploadInRepository();
+        importDialog.waitForFilePathField();
         importDialog.setOpenApiFilePath(OPENAPI_FILE);
         importDialog.selectTablesGenerationMode();
         importDialog.setRulesModuleName("Alg1");
@@ -206,10 +206,10 @@ public class TestImportNewModulesWithPathEditingAndMixedScenarios extends BaseTe
         assertThat(modules).as("Mod-123 should remain in module list").contains(moduleName);
         assertThat(modules).as("Mod1 should be newly created").contains("Mod1");
 
-        assertThat(editorPage.getOpenApiPropertyValue("Mode:")).isEqualTo("Tables generation");
-        assertThat(editorPage.getOpenApiPropertyValue("OpenAPI File:")).isEqualTo(OPENAPI_FILE);
-        assertThat(editorPage.getOpenApiPropertyValue("Rules Module:")).isEqualTo("Alg");
-        assertThat(editorPage.getOpenApiPropertyValue("Data Module:")).isEqualTo("Mod1");
+        assertThat(editorPage.getOpenApiMode()).isEqualTo("Tables generation");
+        assertThat(editorPage.getOpenApiPropertyValue("File")).isEqualTo(OPENAPI_FILE);
+        assertThat(editorPage.getOpenApiPropertyValue("Services module")).isEqualTo("Alg");
+        assertThat(editorPage.getOpenApiPropertyValue("Data types module")).isEqualTo("Mod1");
     }
 
     private void uploadFileToProject(RepositoryPage repositoryPage, String projectName, String fileName) {

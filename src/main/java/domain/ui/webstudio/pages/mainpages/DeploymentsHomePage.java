@@ -30,23 +30,23 @@ public class DeploymentsHomePage extends BasePage {
     }
 
     private void initializeComponents() {
-        homeRoot = new WebElement(page, "[data-testid=deployments-home]", "deploymentsHome");
+        homeRoot = new WebElement(page, "xpath=//*[@data-testid='deployments-home']", "deploymentsHome");
         emptyRepositoriesPlaceholder = new WebElement(page,
-                "[data-testid=deployments-empty-repositories]", "deploymentsEmptyRepositories");
+                "xpath=//*[@data-testid='deployments-empty-repositories']", "deploymentsEmptyRepositories");
         noRepositoriesRailPlaceholder = new WebElement(page,
-                "[data-testid=deployments-no-repositories]", "deploymentsNoRepositories");
-        summary = new WebElement(page, "[data-testid=deployments-summary]", "deploymentsSummary");
+                "xpath=//*[@data-testid='deployments-no-repositories']", "deploymentsNoRepositories");
+        summary = new WebElement(page, "xpath=//*[@data-testid='deployments-summary']", "deploymentsSummary");
         searchInput = new WebElement(page,
-                "css=[data-testid=deployments-search] input, input[data-testid=deployments-search]",
+                "xpath=//*[@data-testid='deployments-search']//input | //input[@data-testid='deployments-search']",
                 "deploymentsSearch");
-        deploymentsTable = new WebElement(page, "[data-testid=deployments-table]", "deploymentsTable");
+        deploymentsTable = new WebElement(page, "xpath=//*[@data-testid='deployments-table']", "deploymentsTable");
         deploymentOpenTemplate = new WebElement(page,
                 "xpath=//button[starts-with(@data-testid,'deployment-open-')][normalize-space()='%s']",
                 "deploymentOpen");
-        noMatchPlaceholder = new WebElement(page, "[data-testid=deployments-no-match]", "deploymentsNoMatch");
+        noMatchPlaceholder = new WebElement(page, "xpath=//*[@data-testid='deployments-no-match']", "deploymentsNoMatch");
         clearSearchBtn = new WebElement(page, "xpath=//button[normalize-space()='Clear search']", "clearSearchBtn");
-        emptyPlaceholder = new WebElement(page, "[data-testid=deployments-empty]", "deploymentsEmpty");
-        pagination = new WebElement(page, "[data-testid=deployments-pagination]", "deploymentsPagination");
+        emptyPlaceholder = new WebElement(page, "xpath=//*[@data-testid='deployments-empty']", "deploymentsEmpty");
+        pagination = new WebElement(page, "xpath=//*[@data-testid='deployments-pagination']", "deploymentsPagination");
         repositoryRailItemTemplate = new WebElement(page,
                 "xpath=//button[@data-testid='deployment-repository-%s']", "deploymentRepositoryRailItem");
     }

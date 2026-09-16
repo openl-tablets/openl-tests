@@ -46,7 +46,7 @@ public class TestLocalChangesAfterTablesGenerationReImport extends BaseTest {
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName);
 
         ImportOpenApiDialogComponent importDialog = editorPage.openImportOpenApiDialog();
-        importDialog.selectUploadInRepository();
+        importDialog.waitForFilePathField();
         importDialog.setOpenApiFilePath(OPENAPI_FILE_2);
         importDialog.selectTablesGenerationMode();
         importDialog.clickImportTablesGeneration();

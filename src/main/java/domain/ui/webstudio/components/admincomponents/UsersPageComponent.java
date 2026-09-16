@@ -46,7 +46,6 @@ public class UsersPageComponent extends BaseComponent {
     private WebElement projectSelectorTemplate;
     private WebElement projectRoleSelectorTemplate;
     private WebElement removeRoleBtn;
-    private WebElement selectOptionTemplate;
 
     // ==== Error Handling Section ====
     private WebElement errorNotification;
@@ -95,7 +94,6 @@ public class UsersPageComponent extends BaseComponent {
         projectSelectorTemplate = new WebElement(page, "xpath=//input[@id='projects_%s_id']", "projectSelectorTemplate");
         projectRoleSelectorTemplate = new WebElement(page, "xpath=//input[@id='projects_%s_role']", "projectRoleSelectorTemplate");
         removeRoleBtn = new WebElement(page, "xpath=//button[./span[contains(@aria-label,'delete')] and ancestor::div[contains(@class,'ant-form-item')]]", "removeRoleBtn");
-        selectOptionTemplate = new WebElement(page, "xpath=//div[@class='rc-virtual-list-holder-inner' and not(ancestor::div[contains(@class,'dropdown-hidden')])]/div[@title='%s' and not(contains(@class,'ant-select-item-option-selected'))]", "selectOptionTemplate");
 
         // Error handling
         errorNotification = new WebElement(page, "xpath=//div[contains(@class,'ant-notification-notice-error')]", "errorNotification");
@@ -107,7 +105,7 @@ public class UsersPageComponent extends BaseComponent {
     private com.microsoft.playwright.Locator rowActionButton(int row, String icon) {
         return usersTable.getCell(row, COL_USERNAME).getLocator()
                 .locator("xpath=ancestor::tr[1]")
-                .locator("button:has(svg[data-icon='" + icon + "'])");
+                .locator("xpath=.//button[.//*[@data-icon='" + icon + "']]");
     }
 
     public int getUserRow(String username) {
@@ -238,14 +236,12 @@ public class UsersPageComponent extends BaseComponent {
     }
 
     public UsersPageComponent setRoleRepository(int row, String repositoryName) {
-        roleRepositoryTemplate.format(row).child("xpath=/ancestor::div[contains(@class,'ant-select-content')]").click();
-        selectOptionTemplate.format(repositoryName).waitForVisible().click();
+        pickInSelect(roleRepositoryTemplate.format(row), repositoryName);
         return this;
     }
 
     public UsersPageComponent setRole(int row, String role) {
-        roleNameTemplate.format(row).child("xpath=/ancestor::div[contains(@class,'ant-select-content')]").click();
-        selectOptionTemplate.format(role).waitForVisible().click();
+        pickInSelect(roleNameTemplate.format(row), role);
         return this;
     }
 
@@ -260,26 +256,22 @@ public class UsersPageComponent extends BaseComponent {
     }
 
     public UsersPageComponent setDeployRoleRepository(int row, String repositoryName) {
-        deployRepoRepositoryTemplate.format(row).child("xpath=/ancestor::div[contains(@class,'ant-select-content')]").click();
-        selectOptionTemplate.format(repositoryName).waitForVisible().click();
+        pickInSelect(deployRepoRepositoryTemplate.format(row), repositoryName);
         return this;
     }
 
     public UsersPageComponent setDeployRole(int row, String role) {
-        deployRepoRoleTemplate.format(row).child("xpath=/ancestor::div[contains(@class,'ant-select-content')]").click();
-        selectOptionTemplate.format(role).waitForVisible().click();
+        pickInSelect(deployRepoRoleTemplate.format(row), role);
         return this;
     }
 
     public UsersPageComponent setProject(int row, String projectName) {
-        projectSelectorTemplate.format(row).child("xpath=/ancestor::div[contains(@class,'ant-select-content')]").click();
-        selectOptionTemplate.format(projectName).waitForVisible().click();
+        pickInSelect(projectSelectorTemplate.format(row), projectName);
         return this;
     }
 
     public UsersPageComponent setProjectRole(int row, String roleName) {
-        projectRoleSelectorTemplate.format(row).child("xpath=/ancestor::div[contains(@class,'ant-select-content')]").click();
-        selectOptionTemplate.format(roleName).waitForVisible().click();
+        pickInSelect(projectRoleSelectorTemplate.format(row), roleName);
         return this;
     }
 

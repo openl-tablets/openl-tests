@@ -17,7 +17,7 @@ public class ExportProjectModalComponent extends BaseComponent {
 
     private static final String MODAL =
             "//div[contains(@class,'ant-modal')][.//*[@data-testid='export-project-revision']]";
-    private static final String OPEN_DROPDOWN = "css=.ant-select-dropdown:not(.ant-select-dropdown-hidden)";
+    private static final String OPEN_DROPDOWN = "xpath=//div[contains(@class,'ant-select-dropdown')][not(contains(@class,'ant-select-dropdown-hidden'))]";
 
     private WebElement revisionSelect;
     private WebElement selectedRevisionLabel;
@@ -38,16 +38,16 @@ public class ExportProjectModalComponent extends BaseComponent {
     }
 
     private void initializeElements() {
-        revisionSelect = new WebElement(page, "[data-testid=export-project-revision]", "exportRevisionSelect");
+        revisionSelect = new WebElement(page, "xpath=//*[@data-testid='export-project-revision']", "exportRevisionSelect");
         selectedRevisionLabel = new WebElement(page,
-                "css=[data-testid=export-project-revision] .ant-select-content", "exportSelectedRevision");
+                "xpath=//*[@data-testid='export-project-revision']//*[contains(@class,'ant-select-content')]", "exportSelectedRevision");
         revisionOption = new WebElement(page,
                 "xpath=//div[contains(@class,'ant-select-item-option')][@title='%s']", "exportRevisionOption");
         revisionOptions = createElementList(
                 "xpath=//div[contains(@class,'ant-select-dropdown') and not(contains(@class,'ant-select-dropdown-hidden'))]"
                         + "//div[contains(@class,'ant-select-item-option')]",
                 "exportRevisionOptions");
-        exportBtn = new WebElement(page, "[data-testid=export-project-submit]", "exportSubmitBtn");
+        exportBtn = new WebElement(page, "xpath=//*[@data-testid='export-project-submit']", "exportSubmitBtn");
         cancelBtn = new WebElement(page,
                 "xpath=" + MODAL + "//div[contains(@class,'ant-modal-footer')]//button[normalize-space()='Cancel']",
                 "exportCancelBtn");

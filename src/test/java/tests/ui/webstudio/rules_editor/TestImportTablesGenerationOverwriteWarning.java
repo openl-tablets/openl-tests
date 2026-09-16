@@ -57,7 +57,7 @@ public class TestImportTablesGenerationOverwriteWarning extends BaseTest {
         editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName);
         ImportOpenApiDialogComponent importDialog = editorPage.openImportOpenApiDialog();
-        importDialog.selectUploadInRepository();
+        importDialog.waitForFilePathField();
         importDialog.setOpenApiFilePath(OPENAPI_FILE);
         importDialog.clickImportReconciliation();
         editorPage.waitUntilSpinnerLoaded();
@@ -105,16 +105,16 @@ public class TestImportTablesGenerationOverwriteWarning extends BaseTest {
 
         // Step 3.2: Verify OpenAPI properties after Tables Generation import
         editorPage.getEditorToolbarPanelComponent().navigateToProjectRoot(projectName);
-        assertThat(editorPage.getOpenApiPropertyValue("Mode:"))
+        assertThat(editorPage.getOpenApiMode())
                 .as("Mode should be 'Tables generation' after Tables Generation import with overwrite")
                 .isEqualTo("Tables generation");
-        assertThat(editorPage.getOpenApiPropertyValue("OpenAPI File:"))
+        assertThat(editorPage.getOpenApiPropertyValue("File"))
                 .as("OpenAPI File should be 'openapi2.json'")
                 .isEqualTo(OPENAPI_FILE);
-        assertThat(editorPage.getOpenApiPropertyValue("Rules Module:"))
+        assertThat(editorPage.getOpenApiPropertyValue("Services module"))
                 .as("Rules Module should remain 'Algorithms_test'")
                 .isEqualTo("Algorithms_test");
-        assertThat(editorPage.getOpenApiPropertyValue("Data Module:"))
+        assertThat(editorPage.getOpenApiPropertyValue("Data types module"))
                 .as("Data Module should remain 'Models_test'")
                 .isEqualTo("Models_test");
     }

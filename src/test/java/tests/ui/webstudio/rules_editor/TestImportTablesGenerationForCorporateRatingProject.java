@@ -45,8 +45,12 @@ public class TestImportTablesGenerationForCorporateRatingProject extends BaseTes
         editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName);
 
+        // A template project keeps its workbooks in its root; the settings are offered once they are moved.
+
+        editorPage.migrateProject();
+
         ImportOpenApiDialogComponent importDialog = editorPage.openImportOpenApiDialog();
-        importDialog.selectUploadInRepository();
+        importDialog.waitForFilePathField();
         importDialog.setOpenApiFilePath(OPENAPI_FILE);
         importDialog.selectTablesGenerationMode();
         importDialog.clickImportTablesGeneration();
@@ -74,10 +78,10 @@ public class TestImportTablesGenerationForCorporateRatingProject extends BaseTes
         assertThat(modules).as("Corporate Rating should still be present").contains("Corporate Rating");
         assertThat(modules).as("Algorithms module should be created").contains("Algorithms");
 
-        assertThat(editorPage.getOpenApiPropertyValue("Mode:")).isEqualTo("Tables generation");
-        assertThat(editorPage.getOpenApiPropertyValue("OpenAPI File:")).isEqualTo(OPENAPI_FILE);
-        assertThat(editorPage.getOpenApiPropertyValue("Rules Module:")).isEqualTo("Algorithms");
-        assertThat(editorPage.getOpenApiPropertyValue("Data Module:")).isEqualTo("Models");
+        assertThat(editorPage.getOpenApiMode()).isEqualTo("Tables generation");
+        assertThat(editorPage.getOpenApiPropertyValue("File")).isEqualTo(OPENAPI_FILE);
+        assertThat(editorPage.getOpenApiPropertyValue("Services module")).isEqualTo("Algorithms");
+        assertThat(editorPage.getOpenApiPropertyValue("Data types module")).isEqualTo("Models");
 
         // Verify Algorithms module content and compilation
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Algorithms");

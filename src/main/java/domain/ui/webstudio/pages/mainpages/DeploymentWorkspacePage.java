@@ -26,10 +26,10 @@ public class DeploymentWorkspacePage extends BasePage {
     }
 
     private void initializeComponents() {
-        workspaceRoot = new WebElement(page, "[data-testid=deployment-workspace]", "deploymentWorkspace");
-        title = new WebElement(page, "[data-testid=deployment-title]", "deploymentTitle");
-        tabs = new WebElement(page, "[data-testid=deployment-tabs]", "deploymentTabs");
-        projectsTable = new WebElement(page, "[data-testid=deployment-projects-table]", "deploymentProjectsTable");
+        workspaceRoot = new WebElement(page, "xpath=//*[@data-testid='deployment-workspace']", "deploymentWorkspace");
+        title = new WebElement(page, "xpath=//*[@data-testid='deployment-title']", "deploymentTitle");
+        tabs = new WebElement(page, "xpath=//*[@data-testid='deployment-tabs']", "deploymentTabs");
+        projectsTable = new WebElement(page, "xpath=//*[@data-testid='deployment-projects-table']", "deploymentProjectsTable");
         projectRowTemplate = new WebElement(page,
                 "xpath=//tr[@data-testid='deployment-project-row-%s']", "deploymentProjectRow");
         notFoundPage = new WebElement(page,

@@ -44,7 +44,7 @@ public class TestNewRecordWhenRegeneratingFromDifferentFile extends BaseTest {
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName);
 
         ImportOpenApiDialogComponent importDialog = editorPage.openImportOpenApiDialog();
-        importDialog.selectUploadInRepository();
+        importDialog.waitForFilePathField();
         importDialog.setOpenApiFilePath(OPENAPI_FILE_2);
         importDialog.selectTablesGenerationMode();
         importDialog.clickImportTablesGeneration();
@@ -56,7 +56,7 @@ public class TestNewRecordWhenRegeneratingFromDifferentFile extends BaseTest {
 
         editorPage.getEditorToolbarPanelComponent().navigateToProjectRoot(projectName);
         importDialog = editorPage.openImportOpenApiDialog();
-        importDialog.selectUploadInRepository();
+        importDialog.waitForFilePathField();
         importDialog.setOpenApiFilePath(OPENAPI_FILE_1);
         importDialog.selectTablesGenerationMode();
         importDialog.clickImportTablesGeneration();

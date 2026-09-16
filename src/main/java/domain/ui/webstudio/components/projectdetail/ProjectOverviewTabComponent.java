@@ -31,37 +31,37 @@ public class ProjectOverviewTabComponent extends BaseComponent {
     private final WebElement matchedModuleRows;
 
     public ProjectOverviewTabComponent(Page page) {
-        this(new WebElement(page, "[data-testid=overview-panel]", "overviewPanel"));
+        this(new WebElement(page, "xpath=//*[@data-testid='overview-panel']", "overviewPanel"));
     }
 
     public ProjectOverviewTabComponent(WebElement rootLocator) {
         super(rootLocator);
-        branchLabel = createScopedElement("[data-testid=overview-branch]", "branchLabel");
-        branchSwitcherTrigger = createScopedElement("[data-testid=overview-branch-trigger]", "branchSwitcherTrigger");
+        branchLabel = createScopedElement("xpath=.//*[@data-testid='overview-branch']", "branchLabel");
+        branchSwitcherTrigger = createScopedElement("xpath=.//*[@data-testid='overview-branch-trigger']", "branchSwitcherTrigger");
         branchMenuItem = new WebElement(page, "xpath=//div[contains(@class,'ant-dropdown')][not(contains(@class,'ant-dropdown-hidden'))]//li[contains(@class,'ant-dropdown-menu-item')][@data-menu-id='rc-menu-uuid-%s' or .//*[normalize-space()='%s']]", "branchMenuItem");
         modifiedValue = createScopedElement("xpath=.//*[@data-testid='overview-right']//div[./span[normalize-space()='Modified']]/following-sibling::div[1]", "modifiedValue");
         modifiedDate = createScopedElement("xpath=.//*[@data-testid='overview-right']//div[./span[normalize-space()='Modified']]/following-sibling::div[1]/div[last()]", "modifiedDate");
         tagValueForType = createScopedElement("xpath=.//*[@data-testid='project-tags']/span[normalize-space()='%s']/following-sibling::span[1]", "tagValueForType");
-        overviewRight = createScopedElement("[data-testid=overview-right]", "overviewRight");
+        overviewRight = createScopedElement("xpath=.//*[@data-testid='overview-right']", "overviewRight");
         moduleRows = createScopedElement(
                 "xpath=.//li[starts-with(@data-testid,'module-')]"
                         + "[not(starts-with(@data-testid,'module-filter-'))]"
                         + "[not(starts-with(@data-testid,'module-matched-'))]"
                         + "[not(starts-with(@data-testid,'module-unmatched-'))]",
                 "overviewModuleRows");
-        editBtn = createScopedElement("[data-testid=overview-edit]", "overviewEditBtn");
-        saveBtn = createScopedElement("[data-testid=overview-save]", "overviewSaveBtn");
-        descriptionInput = createScopedElement("[data-testid=edit-description]", "overviewDescriptionInput");
-        migrateBtn = createScopedElement("[data-testid=overview-migrate]", "overviewMigrateBtn");
+        editBtn = createScopedElement("xpath=.//*[@data-testid='overview-edit']", "overviewEditBtn");
+        saveBtn = createScopedElement("xpath=.//*[@data-testid='overview-save']", "overviewSaveBtn");
+        descriptionInput = createScopedElement("xpath=.//*[@data-testid='edit-description']", "overviewDescriptionInput");
+        migrateBtn = createScopedElement("xpath=.//*[@data-testid='overview-migrate']", "overviewMigrateBtn");
         migrateConfirmOkBtn = new WebElement(page,
                 "xpath=//div[contains(@class,'ant-modal-confirm')]//div[contains(@class,'ant-modal-confirm-btns')]//button[contains(@class,'ant-btn-primary')]",
                 "migrateConfirmOkBtn");
         descriptorActionsMarker = createScopedElement(
-                "[data-testid=overview-edit], [data-testid=overview-migrate]", "descriptorActionsMarker");
+                "xpath=.//*[@data-testid='overview-edit'] | .//*[@data-testid='overview-migrate']", "descriptorActionsMarker");
         matchedModuleToggles = createScopedElement(
                 "button[data-testid^='module-matched-']:not([data-testid^='module-matched-item-'])",
                 "matchedModuleToggles");
-        matchedModuleRows = createScopedElement("li[data-testid^='module-matched-item-']", "matchedModuleRows");
+        matchedModuleRows = createScopedElement("xpath=.//li[starts-with(@data-testid,'module-matched-item-')]", "matchedModuleRows");
     }
 
     public String getCurrentBranch() {

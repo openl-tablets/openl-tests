@@ -2,67 +2,63 @@ package domain.ui.webstudio.components.editortabcomponents.toolbar;
 
 import com.microsoft.playwright.Page;
 import configuration.core.ui.WebElement;
-import domain.ui.webstudio.components.BaseComponent;
+import helpers.utils.WaitUtil;
 
 import java.util.List;
 
-public class TraceMenuComponent extends BaseComponent implements ITraceMenu {
+/**
+ * The Trace launcher of the table toolbar: the input the rule is traced with, whether the trace is followed
+ * step by step, and the buttons that start it. The trace itself opens in a window of its own.
+ */
+public class TraceMenuComponent extends TableInputLauncherComponent implements ITraceMenu {
 
-    private final WebElement traceInsideMenuBtn;
+    private static final int POPUP_TIMEOUT_MS = 60000;
+
+    private final WebElement traceBtn;
     private final WebElement traceIntoFileBtn;
-    private final WebElement factorTextFieldForTrace;
-    private final WebElement jsonRadioBtn;
-    private final WebElement jsonTextField;
-    private final WebElement selectTypeDropdown;
+    private final WebElement advancedCheckbox;
+    private final WebElement jsonModeBtn;
+    private final WebElement jsonEditor;
 
     public TraceMenuComponent(Page page) {
-        this(new WebElement(page, "xpath=//form[@id='inputArgsForm']", "inputArgsForm"));
-    }
-
-    public TraceMenuComponent(WebElement rootLocator) {
-        super(rootLocator);
-        traceInsideMenuBtn = createScopedElement("xpath=.//input[@id='inputArgsForm:traceButton']", "traceInsideMenuBtn");
-        traceIntoFileBtn = createScopedElement("xpath=.//input[@id='inputArgsForm:traceIntoFileButton']", "traceIntoFileBtn");
-        factorTextFieldForTrace = createScopedElement("xpath=.//span[text()='factor = ']/input", "factorTextFieldForTrace");
-        jsonRadioBtn = createScopedElement("xpath=.//input[@type='radio' and@value='TEXT']", "jsonRadioBtn");
-        jsonTextField = createScopedElement("xpath=.//textarea[contains(@id, 'jsonInput')]", "jsonTextField");
-        selectTypeDropdown = createScopedElement("xpath=.//div[contains(@id, 'input')]//select", "selectTypeDropdown");
+        super(page, "trace-start");
+        traceBtn = buttonOf("trace-start");
+        traceIntoFileBtn = buttonOf("trace-download");
+        advancedCheckbox = new WebElement(page, "xpath=//input[@data-testid='trace-advanced']", "advancedCheckbox");
+        jsonModeBtn = new WebElement(page, "xpath=//label[contains(@class,'ant-radio-button-wrapper')][normalize-space()='JSON']", "jsonModeBtn");
+        jsonEditor = new WebElement(page, "xpath=//div[@data-testid='input-json']//div[contains(@class,'cm-content')]", "jsonEditor");
     }
 
     @Override
     public ITraceMenu setFactorTextField(String text) {
-        if (factorTextFieldForTrace.isVisible()) {
-            factorTextFieldForTrace.fill(text);
-        }
-        return this;
+        return setParameterField("factor", text);
     }
 
     @Override
     public ITraceMenu setParameterField(String parameterName, String value) {
-        createScopedElement("xpath=.//span[text()='" + parameterName + " = ']/input", "traceParameterField")
-                .waitForVisible(DEFAULT_TIMEOUT_MS)
-                .fill(value);
+        writeField(parameterName, value);
         return this;
     }
 
-    @Override
-    public ITraceWindow clickTraceInsideMenuBusiness() {
-        traceInsideMenuBtn.waitForVisible();
-        Page popup = page.waitForPopup(new Page.WaitForPopupOptions().setTimeout(60000), () -> traceInsideMenuBtn.click());
-        popup.waitForLoadState();
-        popup.waitForSelector("xpath=//div[@id='trace-view']", new Page.WaitForSelectorOptions().setTimeout(10000));
-        return new TraceWindowComponent(popup);
-    }
-
+    /**
+     * Writes the whole input as the JSON a service takes, which the launcher offers instead of the fields.
+     * The text is typed into the editor, which holds no value of its own to be filled.
+     */
     @Override
     public ITraceMenu selectJSONTrace(String json) {
-        jsonRadioBtn.click();
-        jsonTextField.fill(json);
+        jsonModeBtn.waitForVisible(DEFAULT_TIMEOUT_MS);
+        jsonModeBtn.click();
+        jsonEditor.waitForVisible(DEFAULT_TIMEOUT_MS);
+        jsonEditor.click();
+        page.keyboard().press("ControlOrMeta+a");
+        page.keyboard().press("Delete");
+        page.keyboard().insertText(json);
         return this;
     }
 
     @Override
     public ITraceMenu clickTraceIntoFile() {
+        traceIntoFileBtn.waitForVisible(DEFAULT_TIMEOUT_MS);
         traceIntoFileBtn.click();
         return this;
     }
@@ -72,26 +68,52 @@ public class TraceMenuComponent extends BaseComponent implements ITraceMenu {
         return clickTraceInsideMenu(true);
     }
 
+    /** Follows the trace step by step, which the launcher does only when it is asked to. */
     @Override
     public ITraceWindow clickTraceInsideMenu(boolean isPopupExpected) {
-        traceInsideMenuBtn.waitForVisible();
-        if (isPopupExpected) {
-            boolean switchSet = AdvancedTracerSupport.requestAdvancedTracer(page);
-            Page popup = page.waitForPopup(new Page.WaitForPopupOptions().setTimeout(60000), () -> traceInsideMenuBtn.click());
-            popup.waitForLoadState();
-            popup.waitForSelector("xpath=//div[@id='trace-view']", new Page.WaitForSelectorOptions().setTimeout(10000));
-            if (!switchSet) {
-                AdvancedTracerSupport.reopenInAdvancedTracer(popup);
-            }
-            return new TraceWindowComponent(popup);
-        } else {
-            traceInsideMenuBtn.click();
-            return null;
-        }
+        requestAdvancedTrace();
+        return startTrace(isPopupExpected);
+    }
+
+    /** Reads the trace as the rules read: which rule fired, and on what. */
+    @Override
+    public ITraceWindow clickTraceInsideMenuBusiness() {
+        return startTrace(true);
     }
 
     @Override
     public List<String> getAliasDropdownValues() {
-        return selectTypeDropdown.getSelectValues();
+        return fieldOptions(firstElementPath());
+    }
+
+    /** The trace is followed step by step only when the launcher is asked for it before it starts. */
+    private void requestAdvancedTrace() {
+        advancedCheckbox.waitForVisible(DEFAULT_TIMEOUT_MS);
+        if (!advancedCheckbox.isChecked()) {
+            advancedCheckbox.click();
+            WaitUtil.requireCondition(advancedCheckbox::isChecked, DEFAULT_TIMEOUT_MS, 100,
+                    "Waiting for the trace to be asked to run step by step");
+        }
+    }
+
+    private ITraceWindow startTrace(boolean isPopupExpected) {
+        traceBtn.waitForVisible(DEFAULT_TIMEOUT_MS);
+        if (!isPopupExpected) {
+            traceBtn.click();
+            return null;
+        }
+        Page popup = page.waitForPopup(new Page.WaitForPopupOptions().setTimeout(POPUP_TIMEOUT_MS), traceBtn::click);
+        popup.waitForLoadState();
+        popup.waitForSelector("xpath=//div[@id='trace-view']", new Page.WaitForSelectorOptions().setTimeout(DEFAULT_TIMEOUT_MS));
+        return new TraceWindowComponent(popup);
+    }
+
+    /** The first element of the first collection the launcher holds, which is written as {@code name[0]}. */
+    private String firstElementPath() {
+        waitForFields();
+        return writablePaths().stream()
+                .filter(path -> path.endsWith("]"))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("The launcher holds no element of a collection"));
     }
 }

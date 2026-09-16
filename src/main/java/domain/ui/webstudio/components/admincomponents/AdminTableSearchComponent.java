@@ -12,7 +12,7 @@ public class AdminTableSearchComponent extends BaseComponent {
     public AdminTableSearchComponent(String searchTestId) {
         super(DriverPool.getPage());
         searchInput = new WebElement(DriverPool.getPage(),
-                "css=[data-testid=" + searchTestId + "] input, input[data-testid=" + searchTestId + "]",
+                "xpath=//*[@data-testid='" + searchTestId + "']//input | //input[@data-testid='" + searchTestId + "']",
                 searchTestId);
     }
 

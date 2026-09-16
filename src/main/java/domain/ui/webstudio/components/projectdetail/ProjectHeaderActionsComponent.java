@@ -13,13 +13,13 @@ public class ProjectHeaderActionsComponent extends BaseComponent {
     private final WebElement overflowItem;
 
     public ProjectHeaderActionsComponent(Page page) {
-        this(new WebElement(page, "[data-testid=project-actions]", "projectHeaderActions"));
+        this(new WebElement(page, "xpath=//*[@data-testid='project-actions']", "projectHeaderActions"));
     }
 
     public ProjectHeaderActionsComponent(WebElement rootLocator) {
         super(rootLocator);
         actionByLabel = createScopedElement("xpath=.//button[starts-with(@data-testid,'%s-')]", "headerAction");
-        moreBtn = createScopedElement("[data-testid=project-actions-more]", "headerMoreBtn");
+        moreBtn = createScopedElement("xpath=.//*[@data-testid='project-actions-more']", "headerMoreBtn");
         overflowItem = new WebElement(page, "xpath=//div[contains(@class,'ant-dropdown')][not(contains(@class,'ant-dropdown-hidden'))]//button[normalize-space()='%s']", "headerOverflowItem");
     }
 

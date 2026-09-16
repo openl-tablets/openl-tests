@@ -153,7 +153,7 @@ public class SearchFilterComponent extends BaseComponent {
 
     public String getNoResultsMessage() {
         WebElement empty = new WebElement(page,
-                "xpath=//div[contains(@class,'ant-modal-content')][.//div[@data-testid='table-search-form']]"
+                "xpath=//div[contains(@class,'ant-modal-container')][.//div[@data-testid='table-search-form']]"
                         + "//div[contains(@class,'ant-empty-description')]", "noSearchResults");
         return empty.isVisible(PROBE_MS) ? empty.getText().trim() : "";
     }

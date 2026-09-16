@@ -56,7 +56,7 @@ public class ResolveConflictsDialogComponent extends BaseComponent {
         uploadMergedRadio = createScopedElement("xpath=.//input[@type='radio' and @value='CUSTOM']", "uploadMergedRadio");
         saveButton = createScopedElement("xpath=.//button[contains(@class, 'ant-btn-primary') and contains(., 'Save and Resolve')]", "saveButton");
         cancelButton = createScopedElement("xpath=.//button[contains(@class, 'ant-btn-default') and contains(., 'Cancel')]", "cancelButton");
-        compareLink = new WebElement(page, "button:has-text('Compare File Versions')", "compareLink");
+        compareLink = new WebElement(page, "xpath=//button[contains(normalize-space(.),'Compare File Versions')]", "compareLink");
     }
 
     // Availability is reported per file, not per revision, so every lookup is scoped to the row of that file.

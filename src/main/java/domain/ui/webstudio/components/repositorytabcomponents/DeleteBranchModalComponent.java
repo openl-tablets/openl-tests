@@ -22,7 +22,7 @@ public class DeleteBranchModalComponent extends BaseComponent {
         modalBody = new WebElement(DriverPool.getPage(),
                 "xpath=" + modalRoot, "deleteBranchModalBody");
         lastBranchWarning = new WebElement(DriverPool.getPage(),
-                "[data-testid=delete-branch-last-branch-warning]", "deleteBranchLastBranchWarning");
+                "xpath=//*[@data-testid='delete-branch-last-branch-warning']", "deleteBranchLastBranchWarning");
         confirmBtn = new WebElement(DriverPool.getPage(),
                 "xpath=" + modalRoot + "//div[contains(@class,'ant-modal-footer')]//button[contains(@class,'ant-btn-dangerous')]",
                 "deleteBranchConfirmBtn");

@@ -56,7 +56,7 @@ public class TestWebservicesSwaggerUi extends BaseTest {
                 .as(DEPLOYMENT3 + " should be visible").isTrue();
 
         // Step 1: Verify alphabetical ordering of deployments (EPBDS-13121)
-        List<String> deploymentNames = DriverPool.getPage().locator("h3").allTextContents()
+        List<String> deploymentNames = DriverPool.getPage().locator("xpath=//h3").allTextContents()
                 .stream()
                 .map(String::trim)
                 .filter(name -> name.startsWith("deployment"))
@@ -78,17 +78,17 @@ public class TestWebservicesSwaggerUi extends BaseTest {
         // The select#select-api options are populated asynchronously by Swagger UI JavaScript
         assertThat(WaitUtil.waitForCondition(
                 () -> !DriverPool.getPage().locator("xpath=//select[@id='select-api']")
-                        .locator("option").allTextContents().isEmpty(),
+                        .locator("xpath=.//option").allTextContents().isEmpty(),
                 15000, 1000, "Waiting for API selector options to be populated"))
                 .as("API selector (select#select-api) should list at least one deployed service").isTrue();
 
         // Step 5: Verify JSON/YAML spec download options are visible in Swagger UI
         // OpenL renders button text via CSS pseudo-elements; use Playwright text= selector
         assertThat(WaitUtil.waitForCondition(
-                () -> DriverPool.getPage().locator("text=Download OpenAPI spec").isVisible(),
+                () -> DriverPool.getPage().locator("xpath=//*[contains(text(),'Download OpenAPI spec')]").isVisible(),
                 15000, 1000, "Waiting for 'Download OpenAPI spec' button to appear"))
                 .as("Swagger UI should show 'Download OpenAPI spec' button (JSON spec available)").isTrue();
-        assertThat(DriverPool.getPage().locator("text=View OpenAPI spec (New Tab)").isVisible())
+        assertThat(DriverPool.getPage().locator("xpath=//*[contains(text(),'View OpenAPI spec (New Tab)')]").isVisible())
                 .as("Swagger UI should show 'View OpenAPI spec (New Tab)' button (spec viewable in browser)").isTrue();
     }
 }

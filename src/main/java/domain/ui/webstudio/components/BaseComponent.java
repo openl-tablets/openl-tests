@@ -35,7 +35,7 @@ public abstract class BaseComponent extends CoreComponent {
     private void initializeElements() {
         contentLoadingSpinner = new WebElement(page, "xpath=//div[@id='loadingPanel']", "contentLoadingSpinner");
         messages = createComponentList(MessageComponent.class, "xpath=//div[contains(@class,'ant-notification-notice-wrapper')]", "Studio Messages");
-        modalOkBtn = new WebElement(page, "xpath=//div[@class='ant-modal-container']//button[./span[contains(text(),'OK')]]", "applyChangesBtn");
+        modalOkBtn = new WebElement(page, "xpath=//div[contains(@class,'ant-modal-container')]//button[./span[contains(text(),'OK')]]", "applyChangesBtn");
         notificationPanel = new WebElement(page, "xpath=//div[@data-show='true' and contains(@class, 'ant-alert-banner')]", "Notification Panel");
     }
 
@@ -63,23 +63,20 @@ public abstract class BaseComponent extends CoreComponent {
     /**
      * Picks a value from an Ant Design Select, whatever screen it stands on.
      *
-     * <p>The list a Select opens is drawn outside it, and the Select says which list is its own through
-     * {@code aria-controls}, so the value is looked for in that list rather than in whatever list is open.
-     * A Select that takes typing is narrowed by the value first, because a long list is drawn a screenful at
-     * a time and the value may not be drawn yet.
+     * <p>A Select that takes typing is narrowed by the value first: a long list is drawn a screenful at a
+     * time, so the value may not be drawn until it is the only one left.
      */
     protected void pickInSelect(WebElement selectInput, String value) {
         WaitUtil.requireCondition(() -> {
-            selectInput.click();
-            String listId = selectInput.getAttribute("aria-controls");
-            if (listId == null || listId.isBlank()) {
-                return false;
+            // Pressing an open list closes it again, so it is opened only while it stands closed.
+            if (!"true".equals(selectInput.getAttribute("aria-expanded"))) {
+                selectInput.click();
             }
             if (selectInput.getAttribute("readonly") == null) {
                 selectInput.fill("");
                 page.keyboard().type(value);
             }
-            WebElement option = optionOf(listId, value);
+            WebElement option = optionOf(value);
             if (!option.isVisible(SELECT_OPTION_PROBE_MS)) {
                 return false;
             }
@@ -88,9 +85,15 @@ public abstract class BaseComponent extends CoreComponent {
         }, DEFAULT_TIMEOUT_MS, SELECT_SETTLE_MS, "Picking '" + value + "' from the list");
     }
 
-    private WebElement optionOf(String listId, String value) {
-        return new WebElement(page, "xpath=//div[@id=\"" + listId + "\"]//div[contains(@class,'ant-select-item-option')]"
-                + "[@title=\"" + value + "\"]", "selectOption[" + value + "]");
+    /**
+     * The value in the list that stands open. The list is drawn outside the Select, and a list closed before
+     * it stays in the page marked as hidden, so only a list that is not hidden is read.
+     */
+    private WebElement optionOf(String value) {
+        return new WebElement(page, "xpath=(//div[contains(@class,'ant-select-dropdown')]"
+                + "[not(contains(@class,'ant-select-dropdown-hidden'))]"
+                + "//div[contains(@class,'ant-select-item-option')][@title=\"" + value + "\"])[1]",
+                "selectOption[" + value + "]");
     }
 
     public List<String> getAllMessages() {

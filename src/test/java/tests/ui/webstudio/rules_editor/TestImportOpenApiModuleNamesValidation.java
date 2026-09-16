@@ -44,10 +44,14 @@ public class TestImportOpenApiModuleNamesValidation extends BaseTest {
         editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName);
 
+        // A template project keeps its workbooks in its root; the settings are offered once they are moved.
+
+        editorPage.migrateProject();
+
         ImportOpenApiDialogComponent importDialog = editorPage.openImportOpenApiDialog();
 
         // Step 3: Select "Uploaded in Repository", set file, Tables generation, same module names
-        importDialog.selectUploadInRepository();
+        importDialog.waitForFilePathField();
         importDialog.setOpenApiFilePath(OPENAPI_FILE);
         importDialog.selectTablesGenerationMode();
         importDialog.setRulesModuleName("SameModule");

@@ -48,7 +48,7 @@ public class SyncUpdatesDialogComponent extends BaseComponent {
     // the check would then pass or fail on the presence of that hook rather than on the layout.
     private static final String DIALOG_JS =
             "const anchor = document.querySelector('[data-testid=merge-target-branch]');"
-                    + "const dialog = anchor ? anchor.closest('.ant-modal-content') || anchor.closest('.ant-modal')"
+                    + "const dialog = anchor ? anchor.closest('.ant-modal-container') || anchor.closest('.ant-modal')"
                     + " : null;";
 
     // How far the dialog body overflows its own box, in pixels. Returns -1 when the dialog cannot be found,

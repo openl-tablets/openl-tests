@@ -15,7 +15,7 @@ public class ProjectHistoryTabComponent extends BaseComponent {
     private final WebElement revisionEntries;
 
     public ProjectHistoryTabComponent(Page page) {
-        this(new WebElement(page, "[data-testid=project-detail]", "projectDetail"));
+        this(new WebElement(page, "xpath=//*[@data-testid='project-detail']", "projectDetail"));
     }
 
     public ProjectHistoryTabComponent(WebElement rootLocator) {

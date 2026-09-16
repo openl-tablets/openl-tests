@@ -46,40 +46,40 @@ public class CreateTableDialogComponent extends BaseComponent {
 
     private void initializeElements() {
         modal = new WebElement(page, "xpath=" + MODAL, "createTableModal");
-        typeSelect = new WebElement(page, "css=[data-testid=create-table-type]", "createTableType");
+        typeSelect = new WebElement(page, "xpath=//*[@data-testid='create-table-type']", "createTableType");
         nameInput = new WebElement(page,
-                "css=[data-testid=create-table-name] input, input[data-testid=create-table-name]", "createTableName");
+                "xpath=//*[@data-testid='create-table-name']//input | //input[@data-testid='create-table-name']", "createTableName");
         moduleInput = new WebElement(page,
-                "css=[data-testid=create-table-module] input, input[data-testid=create-table-module]", "createTableModule");
+                "xpath=//*[@data-testid='create-table-module']//input | //input[@data-testid='create-table-module']", "createTableModule");
         sheetInput = new WebElement(page,
-                "css=[data-testid=create-table-sheet] input, input[data-testid=create-table-sheet]", "createTableSheet");
+                "xpath=//*[@data-testid='create-table-sheet']//input | //input[@data-testid='create-table-sheet']", "createTableSheet");
         resultTypeInput = new WebElement(page,
-                "css=[data-testid=create-table-result-type] input, input[data-testid=create-table-result-type]",
+                "xpath=//*[@data-testid='create-table-result-type']//input | //input[@data-testid='create-table-result-type']",
                 "createTableResultType");
-        headerPreview = new WebElement(page, "css=[data-testid=create-table-header]", "createTableHeader");
+        headerPreview = new WebElement(page, "xpath=//*[@data-testid='create-table-header']", "createTableHeader");
         createButton = new WebElement(page,
                 "xpath=" + MODAL + "//div[contains(@class,'ant-modal-footer')]//button[.//span[normalize-space()='Create']]",
                 "createTableSubmit");
         argumentTypeTemplate = new WebElement(page,
-                "css=[data-testid=create-table-argument-type-%1$s] input, input[data-testid=create-table-argument-type-%1$s]",
+                "xpath=//*[@data-testid='create-table-argument-type-%1$s']//input | //input[@data-testid='create-table-argument-type-%1$s']",
                 "createTableArgumentType");
         argumentNameTemplate = new WebElement(page,
-                "css=[data-testid=create-table-argument-name-%1$s] input, input[data-testid=create-table-argument-name-%1$s]",
+                "xpath=//*[@data-testid='create-table-argument-name-%1$s']//input | //input[@data-testid='create-table-argument-name-%1$s']",
                 "createTableArgumentName");
         argumentRowTemplate = new WebElement(page,
-                "css=[data-testid=create-table-argument-row-%s]", "createTableArgumentRow");
+                "xpath=//*[@data-testid='create-table-argument-row-%s']", "createTableArgumentRow");
         insertArgumentTemplate = new WebElement(page,
-                "css=[data-testid=create-table-argument-row-%s] button[aria-label='Insert Argument']",
+                "xpath=//*[@data-testid='create-table-argument-row-%s']//button[@aria-label='Insert Argument']",
                 "createTableInsertArgument");
         cellTemplate = new WebElement(page,
-                "css=[data-testid=create-table-cell-%1$s-%2$s] input, input[data-testid=create-table-cell-%1$s-%2$s]",
+                "xpath=//*[@data-testid='create-table-cell-%1$s-%2$s']//input | //input[@data-testid='create-table-cell-%1$s-%2$s']",
                 "createTableCell");
         rowTemplate = new WebElement(page,
-                "css=[data-testid=create-table-cell-%s-0] input, input[data-testid=create-table-cell-%s-0]",
+                "xpath=//*[@data-testid='create-table-cell-%s-0']//input | //input[@data-testid='create-table-cell-%s-0']",
                 "createTableRow");
-        blockedHint = new WebElement(page, "css=[data-testid=create-table-blocked]", "createTableBlockedHint");
+        blockedHint = new WebElement(page, "xpath=//*[@data-testid='create-table-blocked']", "createTableBlockedHint");
         transposedToggle = new WebElement(page,
-                "css=[data-testid=create-table-transposed] input, [data-testid=create-table-transposed]",
+                "xpath=//*[@data-testid='create-table-transposed']//input | //*[@data-testid='create-table-transposed']",
                 "createTableTransposed");
     }
 
@@ -176,8 +176,8 @@ public class CreateTableDialogComponent extends BaseComponent {
         }
         option.click(DEFAULT_TIMEOUT_MS / 2);
         WebElement selected = new WebElement(page,
-                "css=[data-testid=create-table-cell-" + row + "-" + column + "] .ant-select-content,"
-                        + " [data-testid=create-table-cell-" + row + "-" + column + "] .ant-select-selection-item",
+                "xpath=//*[@data-testid='create-table-cell-" + row + "-" + column + "']//*[contains(@class,'ant-select-content')]"
+                        + " | //*[@data-testid='create-table-cell-" + row + "-" + column + "']//*[contains(@class,'ant-select-selection-item')]",
                 "createTableCellSelection");
         boolean set = WaitUtil.waitForCondition(() -> selected.exists() && value.equals(selected.getText(false)),
                 DEFAULT_TIMEOUT_MS / 2, 200, "Waiting for the create table cell to hold '" + value + "'");
@@ -189,7 +189,7 @@ public class CreateTableDialogComponent extends BaseComponent {
 
     private boolean isSuggest(int row, int column) {
         return new WebElement(page,
-                "css=[data-testid=create-table-cell-" + row + "-" + column + "].ant-select",
+                "xpath=//*[@data-testid='create-table-cell-" + row + "-" + column + "'][contains(@class,'ant-select')]",
                 "createTableSuggestCell").exists();
     }
 
@@ -321,7 +321,7 @@ public class CreateTableDialogComponent extends BaseComponent {
 
     private WebElement openDropdownOption(String text) {
         return new WebElement(page,
-                "css=.ant-select-dropdown:not(.ant-select-dropdown-hidden) .ant-select-item-option[title='" + text + "']",
+                "xpath=//div[contains(@class,'ant-select-dropdown')][not(contains(@class,'ant-select-dropdown-hidden'))]//div[contains(@class,'ant-select-item-option')][@title='" + text + "']",
                 "createTableDropdownOption");
     }
 

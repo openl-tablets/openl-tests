@@ -230,9 +230,7 @@ public class MyProfilePageComponent extends BaseComponent {
     }
 
     public MyProfilePageComponent setDisplayNamePattern(String pattern) {
-        displayNamePatternDropdown.click();
-        WebElement option = new WebElement(page, String.format("xpath=.//div[@class='rc-virtual-list']//div[contains(@class,'ant-select-item-option') and @title='%s']", pattern), "displayNamePatternOption");
-        option.click();
+        pickInSelect(displayNamePatternDropdown, pattern);
         return this;
     }
 

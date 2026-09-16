@@ -22,7 +22,7 @@ public class RangeEditorComponent extends BaseComponent {
     private void initializeElements() {
         doneBtn = createScopedElement("xpath=.//button[@data-testid='range-write']", "Range Editor Done Button");
         discardChangesBtn = new WebElement(page,
-                "xpath=//div[contains(@class,'ant-modal-content')]//button[@data-testid='table-edit-discard']",
+                "xpath=//div[contains(@class,'ant-modal-container')]//button[@data-testid='table-edit-discard']",
                 "Discard Changes Button");
     }
 

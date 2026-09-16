@@ -1,24 +1,30 @@
 package domain.ui.webstudio.components.editortabcomponents;
 
 import com.microsoft.playwright.Locator;
-import domain.ui.webstudio.components.BaseComponent;
 import configuration.core.ui.WebElement;
 import configuration.driver.DriverPool;
+import domain.ui.webstudio.components.BaseComponent;
 import helpers.utils.WaitUtil;
 
 import java.util.List;
 
+/**
+ * What the module screen reports about the table on it: the errors and warnings raised against that table,
+ * listed under it. Errors are listed before warnings, and each list is left out when it would be empty.
+ */
 public class EditorMainContentProblemsPanelComponent extends BaseComponent {
 
-    private WebElement problemsPanel;
-    private WebElement errorsTab;
-    private WebElement warningsTab;
-    private WebElement closeBtn;
+    private static final String PANEL = "xpath=//section[@data-testid='table-problems']";
+    private static final String BODY = PANEL + "//div[@data-testid='table-problems-body']";
+    private static final int PROBE_MS = 1000;
 
+    private WebElement problemsPanel;
+    private WebElement toggle;
+    private WebElement errorsCounter;
+    private WebElement warningsCounter;
     private List<WebElement> errorMessages;
-    private List<WebElement> warningMessages;
-    private WebElement hideProblemsBtn;
-    private WebElement showProblemsBtn;
+    private List<WebElement> warningsAfterErrors;
+    private List<WebElement> warningsAlone;
 
     public EditorMainContentProblemsPanelComponent() {
         super(DriverPool.getPage());
@@ -31,124 +37,156 @@ public class EditorMainContentProblemsPanelComponent extends BaseComponent {
     }
 
     private void initializeElements() {
-        problemsPanel = createScopedElement("xpath=.//div[@id='editor-main-content-problems-panel']", "problemsPanel");
-        errorsTab = createScopedElement("xpath=.//div[contains(@class,'tab') and contains(text(),'Errors')]", "errorsTab");
-        warningsTab = createScopedElement("xpath=.//div[contains(@class,'tab') and contains(text(),'Warnings')]", "warningsTab");
-        closeBtn = createScopedElement("xpath=.//button[@title='Close'] | .//span[contains(@class,'close')]", "closeBtn");
-
-        errorMessages = createScopedElementList("xpath=.//div[@class='problem-error']", "errorMessages");
-        warningMessages = createScopedElementList("xpath=.//div[@class='problem-warning']", "warningMessages");
-        hideProblemsBtn = createScopedElement("xpath=.//img[@title='Hide Problems']", "hideProblemsBtn");
-        showProblemsBtn = createScopedElement("xpath=.//img[@title='Show Problems']", "showProblemsBtn");
+        problemsPanel = new WebElement(page, PANEL, "tableProblemsPanel");
+        toggle = new WebElement(page, PANEL + "//button[@data-testid='table-problems-toggle']", "tableProblemsToggle");
+        errorsCounter = new WebElement(page, PANEL + "//span[@data-testid='table-problems-errors']", "tableProblemsErrors");
+        warningsCounter = new WebElement(page, PANEL + "//span[@data-testid='table-problems-warnings']", "tableProblemsWarnings");
+        errorMessages = createElementList(BODY + "/ul[1]/li", "tableErrorMessages");
+        warningsAfterErrors = createElementList(BODY + "/ul[2]/li", "tableWarningMessagesAfterErrors");
+        warningsAlone = createElementList(BODY + "/ul[1]/li", "tableWarningMessages");
     }
 
+    /** Opens the panel, which a reader may have folded away. */
+    private void openPanel() {
+        if (problemsPanel.isVisible(PROBE_MS) && !warningsCounter.isVisible(PROBE_MS / 4)
+                && !errorsCounter.isVisible(PROBE_MS / 4)) {
+            return;
+        }
+        if (problemsPanel.isVisible(PROBE_MS) && !new WebElement(page, BODY, "tableProblemsBody").isVisible(PROBE_MS / 2)) {
+            toggle.click();
+        }
+    }
+
+    /**
+     * Opens the panel. The panel used to keep its errors and its warnings behind a tab each and now lists
+     * both at once, so reaching either is the same thing: opening the panel.
+     */
     public EditorMainContentProblemsPanelComponent clickErrorsTab() {
-        errorsTab.click();
+        openPanel();
         return this;
     }
 
+    /** @see #clickErrorsTab() */
     public EditorMainContentProblemsPanelComponent clickWarningsTab() {
-        warningsTab.click();
+        openPanel();
         return this;
     }
 
     public EditorMainContentProblemsPanelComponent closePanel() {
-        closeBtn.click();
+        if (problemsPanel.isVisible(PROBE_MS)) {
+            toggle.click();
+        }
         return this;
     }
 
     public boolean isProblemsPanelVisible() {
-        return problemsPanel.isVisible();
+        return problemsPanel.isVisible(PROBE_MS);
     }
 
+    /** Whether the panel reports errors — what the Errors tab used to stand for. */
     public boolean isErrorsTabActive() {
-        return errorsTab.getAttribute("class").contains("active");
+        return errorsCounter.isVisible(PROBE_MS);
     }
 
+    /** Whether the panel reports warnings — what the Warnings tab used to stand for. */
     public boolean isWarningsTabActive() {
-        return warningsTab.getAttribute("class").contains("active");
+        return warningsCounter.isVisible(PROBE_MS);
     }
 
     public EditorMainContentProblemsPanelComponent clickHideProblemsBtn() {
-        hideProblemsBtn.click();
-        return this;
+        return closePanel();
     }
 
     public EditorMainContentProblemsPanelComponent clickShowProblemsBtn() {
-        showProblemsBtn.click();
+        openPanel();
         return this;
     }
 
+    /** Opens what stands behind a message: the stack trace it was raised with. */
     public EditorMainContentProblemsPanelComponent expandProblemDescription(int elementPosition) {
-        // Click until shown: a concurrent panel reload on table switch can undo a single click
-        WaitUtil.waitForCondition(() -> {
-            try {
-                if (errorMessages.size() <= elementPosition) {
-                    return false;
-                }
-                Locator error = errorMessages.get(elementPosition).getLocator();
-                if (error.locator("xpath=.//span[@class='stacktrace-panels']").isVisible()) {
-                    WaitUtil.sleep(250, "Waiting for expanded problem description to stabilize");
-                    return error.locator("xpath=.//span[@class='stacktrace-panels']").isVisible();
-                }
-                Locator toggle = error.locator("xpath=.//div[@class='stacktrace-hidden']");
-                if (toggle.count() == 0) {
-                    return false;
-                }
-                toggle.first().click();
-                WaitUtil.sleep(250, "Waiting for problem description to expand");
-                return error.locator("xpath=.//span[@class='stacktrace-panels']").isVisible();
-            } catch (Exception e) {
+        openPanel();
+        WaitUtil.requireCondition(() -> {
+            if (errorMessages.size() <= elementPosition) {
                 return false;
             }
-        }, 10000, 250, "Waiting for problem description at position " + elementPosition + " to expand");
+            Locator message = errorMessages.get(elementPosition).getLocator();
+            if (isStacktraceShown(message)) {
+                return true;
+            }
+            Locator stacktraceToggle = message.locator("xpath=.//button[contains(@data-testid,'-toggle')]");
+            if (stacktraceToggle.count() == 0) {
+                return false;
+            }
+            stacktraceToggle.first().click();
+            return WaitUtil.waitForCondition(() -> isStacktraceShown(message), DEFAULT_TIMEOUT_MS / 4, 250,
+                    "Waiting for the stack trace of the message to be read");
+        }, DEFAULT_TIMEOUT_MS, 250, "Opening the description of problem " + elementPosition);
         return this;
     }
 
     public EditorMainContentProblemsPanelComponent hideProblemDescription(int elementPosition) {
-        WaitUtil.waitForCondition(() -> {
-            try {
-                if (errorMessages.size() <= elementPosition) {
-                    return false;
-                }
-                Locator error = errorMessages.get(elementPosition).getLocator();
-                if (!error.locator("xpath=.//span[@class='stacktrace-panels']").isVisible()) {
-                    return true;
-                }
-                Locator toggle = error.locator("xpath=.//div[@class='arrow-top']//div[@class='stacktrace-showed']");
-                if (toggle.count() == 0) {
-                    return false;
-                }
-                toggle.first().click();
-                return !error.locator("xpath=.//span[@class='stacktrace-panels']").isVisible();
-            } catch (Exception e) {
+        openPanel();
+        WaitUtil.requireCondition(() -> {
+            if (errorMessages.size() <= elementPosition) {
                 return false;
             }
-        }, 10000, 250, "Waiting for problem description at position " + elementPosition + " to hide");
+            Locator message = errorMessages.get(elementPosition).getLocator();
+            if (!isStacktraceShown(message)) {
+                return true;
+            }
+            Locator stacktraceToggle = message.locator("xpath=.//button[contains(@data-testid,'-toggle')]");
+            if (stacktraceToggle.count() == 0) {
+                return false;
+            }
+            stacktraceToggle.first().click();
+            return !isStacktraceShown(message);
+        }, DEFAULT_TIMEOUT_MS, 250, "Closing the description of problem " + elementPosition);
         return this;
     }
 
     public boolean isProblemDescriptionVisible(int elementPosition) {
-        return WaitUtil.waitForCondition(() -> errorMessages.get(elementPosition).getLocator().locator("xpath=.//span[@class='stacktrace-panels']").isVisible(), 1000, 100, "Waiting for ProblemDescription to be visible...");
+        return WaitUtil.waitForCondition(
+                () -> elementPosition < errorMessages.size()
+                        && isStacktraceShown(errorMessages.get(elementPosition).getLocator()),
+                PROBE_MS, 100, "Checking whether the description of problem " + elementPosition + " is open");
     }
 
+    /** The trace is drawn below the message, in a box of its own, only while it is open. */
+    private boolean isStacktraceShown(Locator message) {
+        return message.locator("xpath=.//div[starts-with(@data-testid,'table-message-')]").count() > 0;
+    }
+
+    /**
+     * Whether the table reports errors. Warnings are listed where the errors would be when there are none,
+     * so what is asked first is whether any errors are reported at all.
+     */
     public boolean isErrorMessageListPresent() {
-        return WaitUtil.isListNotEmpty(() -> errorMessages, 10000, 250, "Waiting for error messages to appear in problems panel");
+        openPanel();
+        return errorsCounter.isVisible(PROBE_MS)
+                && WaitUtil.isListNotEmpty(() -> errorMessages, DEFAULT_TIMEOUT_MS, 250,
+                        "Waiting for the errors of the table to be listed");
     }
 
     public List<String> getErrorMessages() {
-        WaitUtil.sleep(500, "Waiting for inline error panel to fully render");
-        WaitUtil.waitForListNotEmpty(() -> errorMessages, 20000, 1000, "Waiting for error messages to load");
-        return errorMessages.stream()
-                .map(e -> e.getText().trim())
-                .toList();
+        openPanel();
+        if (!errorsCounter.isVisible(PROBE_MS)) {
+            throw new AssertionError("The table reports no errors: " + problemsPanel.getText().trim());
+        }
+        WaitUtil.waitForListNotEmpty(() -> errorMessages, DEFAULT_TIMEOUT_MS, 250,
+                "Waiting for the errors of the table to be listed");
+        return errorMessages.stream().map(e -> e.getText().trim()).toList();
     }
 
     public List<String> getWarningMessages() {
-        WaitUtil.sleep(500, "Waiting for inline error panel to fully render");
-        WaitUtil.waitForListNotEmpty(() -> warningMessages, 20000, 1000, "Waiting for error messages to load");
-        return warningMessages.stream()
-                .map(e -> e.getText().trim())
-                .toList();
+        openPanel();
+        List<WebElement> warnings = warningMessages();
+        WaitUtil.waitForListNotEmpty(this::warningMessages, DEFAULT_TIMEOUT_MS, 250,
+                "Waiting for the warnings of the table to be listed");
+        return warnings.stream().map(e -> e.getText().trim()).toList();
+    }
+
+    /** Warnings are listed after the errors, so which list holds them depends on whether there are errors. */
+    private List<WebElement> warningMessages() {
+        return errorsCounter.isVisible(PROBE_MS / 4) ? warningsAfterErrors : warningsAlone;
     }
 }
