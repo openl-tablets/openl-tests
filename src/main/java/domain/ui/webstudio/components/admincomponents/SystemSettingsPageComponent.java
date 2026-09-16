@@ -13,6 +13,7 @@ public class SystemSettingsPageComponent extends BaseComponent {
     private WebElement verifyOnEditCheckbox;
     private WebElement testThreadCountField;
     private WebElement projectHistoryCountField;
+    private WebElement detectProjectsByExcelFilesCheckbox;
     private WebElement clearAllHistoryBtn;
     private WebElement cancelModalBtn;
     private WebElement applyButton;
@@ -43,6 +44,7 @@ public class SystemSettingsPageComponent extends BaseComponent {
         verifyOnEditCheckbox = createScopedElement("#autoCompile", "verifyOnEditCheckbox");
         testThreadCountField = createScopedElement("#testRunThreadCount", "testThreadCountField");
         projectHistoryCountField = createScopedElement("#projectHistoryCount", "projectHistoryCountField");
+        detectProjectsByExcelFilesCheckbox = createScopedElement("#detectProjectsByExcelFiles", "detectProjectsByExcelFilesCheckbox");
         clearAllHistoryBtn = createScopedElement("xpath=.//button[./span[text()='Clear All History']]", "clearAllHistoryBtn");
         cancelModalBtn = new WebElement(page, "xpath=//div[@class='ant-modal-container']//button[./span[contains(text(),'Cancel')]]", "cancelModalBtn");
         applyButton = createScopedElement("xpath=.//button[./span[text()='Apply Changes'] or ./span[text()='Apply']]", "applyButton");
@@ -149,5 +151,15 @@ public class SystemSettingsPageComponent extends BaseComponent {
     public void cancelClearAllHistory() {
         clearAllHistoryBtn.click();
         cancelModalBtn.waitForVisible().click();
+    }
+
+    public void setDetectProjectsByExcelFiles(boolean enable) {
+        if (enable != detectProjectsByExcelFilesCheckbox.isChecked()) {
+            detectProjectsByExcelFilesCheckbox.click();
+        }
+    }
+
+    public boolean isDetectProjectsByExcelFilesEnabled() {
+        return detectProjectsByExcelFilesCheckbox.isChecked();
     }
 }
