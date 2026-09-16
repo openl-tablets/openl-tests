@@ -29,8 +29,8 @@ public class TestAddDeleteRowWithoutSaving extends BaseTest {
                 .selectModule(projectName, "Tutorial6 - Intro to Spreadsheet Tables");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Decision")
-                .selectItemInFolder("Decision", "LossFreeDiscount");
+                .expandFolderInTree("Rules")
+                .selectItemInFolder("Rules", "LossFreeDiscount");
 
         editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
         TableComponent table = editorPage.getCenterTable();

@@ -47,7 +47,7 @@ public class TestGitBranchSwitching extends BaseTest {
                 .isEqualTo(COPY_BRANCH_NAME);
 
         // Switch to Editor tab and select project
-        editorPage = repositoryPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(PROJECT_NAME);
 
         // Verify breadcrumb shows the custom branch

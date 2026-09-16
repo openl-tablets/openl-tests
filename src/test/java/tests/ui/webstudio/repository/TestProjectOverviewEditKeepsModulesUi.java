@@ -58,7 +58,7 @@ public class TestProjectOverviewEditKeepsModulesUi extends BaseTest {
                 .as("Saving the Overview tab must not empty the module list")
                 .anyMatch(name -> name.contains(MODULE_NAME));
 
-        editorPage = repositoryPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         List<String> modulesInEditor = editorPage.getEditorLeftProjectModuleSelectorComponent()
                 .getAllModuleNames(projectName);
         assertThat(modulesInEditor)

@@ -36,8 +36,7 @@ public class TestImportOpenApiDialogDefaultStateForNonOpenApiProject extends Bas
                 .selectTab(TabSwitcherComponent.TabName.REPOSITORY);
         repositoryPage.createProject(CreateNewProjectComponent.TabName.TEMPLATE, projectName, TEMPLATE_NAME);
 
-        editorPage = repositoryPage.getTabSwitcherComponent()
-                .selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName);
 
         // Step 8: Open dialog and immediately cancel

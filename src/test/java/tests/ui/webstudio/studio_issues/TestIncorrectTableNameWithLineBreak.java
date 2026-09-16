@@ -29,7 +29,7 @@ public class TestIncorrectTableNameWithLineBreak extends BaseTest {
 
         EditorLeftRulesTreeComponent tree = editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Decision");
+                .expandFolderInTree("Rules");
 
         // EPBDS-13819: The table title is "SmartRules String FamilyDeductibleConversion (String \nparam)"
         // with a line break before "param)".

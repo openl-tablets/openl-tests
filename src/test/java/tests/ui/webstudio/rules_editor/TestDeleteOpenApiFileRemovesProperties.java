@@ -40,7 +40,7 @@ public class TestDeleteOpenApiFileRemovesProperties extends BaseTest {
 
         repositoryPage.openProjectsList().openProjectDetail(projectName).deleteFile("openapi.yml");
 
-        editorPage = repositoryPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName);
 
         assertThat(editorPage.isOpenApiPropertiesSectionEmpty())

@@ -124,7 +124,7 @@ public class TestACLProjectLevelRoles extends BaseTest {
         if (repositoryPage.isProjectActionAvailable(project1Name, "Open")) {
             repositoryPage.openProject(project1Name);
         }
-        editorPage = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent()
                 .selectModule(project1Name, "Bank Rating");
         editorPage.getEditorLeftRulesTreeComponent()
@@ -171,7 +171,7 @@ public class TestACLProjectLevelRoles extends BaseTest {
         if (repositoryPage.isProjectActionAvailable(project1Name, "Open")) {
             repositoryPage.openProject(project1Name);
         }
-        editorPage = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
 
         // Open project and select a module (Example 1 - Bank Rating has "Bank Rating" module)
         editorPage.getEditorLeftProjectModuleSelectorComponent()

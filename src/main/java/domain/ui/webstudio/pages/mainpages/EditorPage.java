@@ -72,17 +72,17 @@ public class EditorPage extends BasePage {
     }
 
     private void initializeComponents() {
-        editorLeftProjectModuleSelectorComponent = createScopedComponent(EditorLeftProjectModuleSelectorComponent.class, "xpath=//div[@id='projects']", "editorLeftProjectModuleSelectorComponent");
-        editorLeftRulesTreeComponent = createScopedComponent(EditorLeftRulesTreeComponent.class, "xpath=//div[@id='left']", "editorLeftRulesTreeComponent");
-        rightTableDetailsComponent = createScopedComponent(RightTableDetailsComponent.class, "xpath=//div[@id='right']", "rightTableDetailsComponent");
+        editorLeftProjectModuleSelectorComponent = new EditorLeftProjectModuleSelectorComponent();
+        editorLeftRulesTreeComponent = new EditorLeftRulesTreeComponent();
+        rightTableDetailsComponent = createScopedComponent(RightTableDetailsComponent.class, "xpath=//aside[@data-testid='table-details']", "rightTableDetailsComponent");
         tabSwitcherComponent = createScopedComponent(TabSwitcherComponent.class, "xpath=//ul[@role='menu' and contains(@class,'ant-menu-horizontal')]", "tabSwitcherComponent");
-        centerTable = createScopedComponent(TableComponent.class, "xpath=//table[@class='te_table']", "centerTable");
+        centerTable = createScopedComponent(TableComponent.class, "xpath=//table[@data-testid='module-table']", "centerTable");
         editorToolbarPanelComponent = createScopedComponent(EditorToolbarPanelComponent.class, "xpath=//div[@id='tableToolbarPanel']", "editorToolbarPanelComponent");
         testResultValidationComponent = createScopedComponent(TestResultValidationComponent.class, "xpath=//div[@id='content' and contains(@class,'ui-layout-center')]", "testResultValidationComponent");
-        problemsPanelComponent = createScopedComponent(ProblemsPanelComponent.class, "xpath=//div[@id='bottom']", "problemsPanelComponent");
+        problemsPanelComponent = createScopedComponent(ProblemsPanelComponent.class, "xpath=//section[@data-testid='compile-problems']", "problemsPanelComponent");
         projectDetailsComponent = createScopedComponent(ProjectDetailsComponent.class, "xpath=//div[@class='page']", "projectDetailsComponent");
         addModulePopupComponent = createScopedComponent(AddModuleComponent.class, "xpath=//div[@id='editModulePopup_container']", "addModulePopupComponent");
-        editorTableActionsPanelComponent = createScopedComponent(EditorTableActionsPanelComponent.class, "xpath=//div[@class='te_toolbar']", "editorTableActionsPanelComponent");
+        editorTableActionsPanelComponent = createScopedComponent(EditorTableActionsPanelComponent.class, "xpath=//div[@data-testid='table-edit-toolbar']", "editorTableActionsPanelComponent");
         editorMainContentProblemsPanelComponent = createScopedComponent(EditorMainContentProblemsPanelComponent.class, "xpath=//div[@id='content']", "editorMainContentProblemsPanelComponent");
         projectModuleDetailsComponent = createScopedComponent(ProjectModuleDetailsComponent.class, "xpath=//div[contains(@class, 'ui-layout-center') and @id='content']", "projectModuleDetailsComponent");
         syncChangesDialogComponent = createScopedComponent(SyncChangesDialogComponent.class, "xpath=//div[@role='dialog' and .//form[@id='merge_branches_form']]", "syncChangesDialogComponent");

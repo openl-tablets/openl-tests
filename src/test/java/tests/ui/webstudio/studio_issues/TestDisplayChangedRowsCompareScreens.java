@@ -40,8 +40,8 @@ public class TestDisplayChangedRowsCompareScreens extends BaseTest {
                 .selectModule(projectName, "Bank Rating");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Decision")
-                .selectItemInFolder("Decision", "BankLimitIndex");
+                .expandFolderInTree("Rules")
+                .selectItemInFolder("Rules", "BankLimitIndex");
 
         editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
         editorPage.getCenterTable().editCell(7, 5, "10");

@@ -197,12 +197,12 @@ public class TestAdminUserSettings extends BaseTest {
 
         // Scenario 8: Verify Table Settings (from JIRA scenario 8)
         String projectNameTest1 = WorkflowService.loginCreateProjectFromExcelFile(ADMIN, "Test1.xlsx");
-        editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectNameTest1, "Test1");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Decision")
-                .selectItemInFolder("Decision", "CapitalAdequacyScore");
+                .expandFolderInTree("Rules")
+                .selectItemInFolder("Rules", "CapitalAdequacyScore");
 
         TableComponent tableComponent = editorPage.getCenterTable();
         assertThat(tableComponent.getCellText(3, 2)).as("Cell content should be '2500'").isEqualTo("2500");
@@ -214,12 +214,12 @@ public class TestAdminUserSettings extends BaseTest {
         mySettingsComponent.setShowFormulas(true).setShowHeader(false).saveSettings();
 
         // Return to table and verify
-        editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectNameTest1, "Test1");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Decision")
-                .selectItemInFolder("Decision", "CapitalAdequacyScore");
+                .expandFolderInTree("Rules")
+                .selectItemInFolder("Rules", "CapitalAdequacyScore");
         assertThat(tableComponent.getRowsCount()).as("Table should have 7 rows").isEqualTo(7);
         assertThat(tableComponent.getCellText(2, 2)).as("Formula should be visible").isEqualTo("=50*45/D8");
 
@@ -234,12 +234,12 @@ public class TestAdminUserSettings extends BaseTest {
         if (repositoryPage.isProjectActionAvailable(projectNameTest1, "Open")) {
             repositoryPage.openProject(projectNameTest1);
         }
-        repositoryPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectNameTest1, "Test1"); //User1 is NOT admin
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Decision")
-                .selectItemInFolder("Decision", "CapitalAdequacyScore");
+                .expandFolderInTree("Rules")
+                .selectItemInFolder("Rules", "CapitalAdequacyScore");
 
         // User1 should see different table format (8 rows instead of 7) due to different settings
         TableComponent tableComponentUser1 = editorPage.getCenterTable();
@@ -261,7 +261,7 @@ public class TestAdminUserSettings extends BaseTest {
 
         // Scenario 10: Verify settings in TestRunDropDown (lines 177-184 from original)
         // Reuse already created projectNameTemplate from Scenario 7
-        editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectNameTemplate, "Bank Rating");
 
         // Verify test execution settings in dropdown
@@ -293,7 +293,7 @@ public class TestAdminUserSettings extends BaseTest {
         editorPage.openUserMenu().signOut();
         editorPage = loginService.login(UserService.getUser(User.ADMIN));
 
-        editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectNameTest1, "Test1");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
@@ -323,7 +323,7 @@ public class TestAdminUserSettings extends BaseTest {
                 .navigateToMySettingsPage();
         mySettingsComponent.setShowNumbersWithoutFormatting(true).saveSettings();
 
-        editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectNameTest1, "Test1");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)

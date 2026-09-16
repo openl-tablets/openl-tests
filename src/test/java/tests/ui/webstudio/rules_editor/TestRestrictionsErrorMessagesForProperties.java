@@ -41,8 +41,7 @@ public class TestRestrictionsErrorMessagesForProperties extends BaseTest {
         repositoryPage.createProject(CreateNewProjectComponent.TabName.EXCEL_FILES,
                 PROJECT_NAME, "TestRestrictionsErrorMessagesForProperties.xlsx");
 
-        editorPage = repositoryPage.getTabSwitcherComponent()
-                .selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
 
         editorPage.getEditorLeftProjectModuleSelectorComponent()
                 .selectModule(PROJECT_NAME, PROJECT_NAME);
@@ -72,21 +71,21 @@ public class TestRestrictionsErrorMessagesForProperties extends BaseTest {
     private Map<List<String>, String[]> getTableTypeWithErrorMessagesMap() {
         Map<List<String>, String[]> testData = new HashMap<>();
 
-        testData.put(Arrays.asList("Decision", "CarPrice"), new String[]{
+        testData.put(Arrays.asList("Rules", "CarPrice"), new String[]{
                 "Property 'autoType' cannot be defined in 'Decision' table",
                 "Property 'datatypePackage' cannot be defined in 'Decision' table",
                 "Property 'scope' cannot be defined in 'Decision' table",
                 "Property 'precision' cannot be defined in 'Decision' table"
         });
 
-        testData.put(Arrays.asList("Decision", "DriverPremium3"), new String[]{
+        testData.put(Arrays.asList("Rules", "DriverPremium3"), new String[]{
                 "Property 'autoType' cannot be defined in 'Decision' table",
                 "Property 'datatypePackage' cannot be defined in 'Decision' table",
                 "Property 'scope' cannot be defined in 'Decision' table",
                 "Property 'precision' cannot be defined in 'Decision' table"
         });
 
-        testData.put(Arrays.asList("Decision", "DriverPremium4"), new String[]{
+        testData.put(Arrays.asList("Rules", "DriverPremium4"), new String[]{
                 "Property 'autoType' cannot be defined in 'Decision' table",
                 "Property 'datatypePackage' cannot be defined in 'Decision' table",
                 "Property 'scope' cannot be defined in 'Decision' table",
@@ -178,7 +177,7 @@ public class TestRestrictionsErrorMessagesForProperties extends BaseTest {
                 "Property 'autoType' cannot be defined in 'Method' table"
         });
 
-        testData.put(Arrays.asList("Configuration", "Environment"), new String[]{
+        testData.put(Arrays.asList("Environment", "Environment"), new String[]{
                 "Property 'validateDT' cannot be defined in 'Environment' table",
                 "Property 'failOnMiss' cannot be defined in 'Environment' table",
                 "Property 'scope' cannot be defined in 'Environment' table",

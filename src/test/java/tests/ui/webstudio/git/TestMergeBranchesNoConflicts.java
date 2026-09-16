@@ -65,7 +65,7 @@ public class TestMergeBranchesNoConflicts extends BaseTest {
         projectDetail.uploadFile(TestDataUtil.getFilePathFromResources("TestMergeBranchesNoConflicts_Module6.xlsx"));
         repositoryPage.openProjectsList().saveProject(PROJECT_NAME, "MyBranch: Module4 -> Module6");
 
-        editorPage = repositoryPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         EditorToolbarPanelComponent editorToolbar = editorPage.getEditorToolbarPanelComponent();
         editSpreadsheetCell(editorPage, "Module2", "MySpr2");
         editorToolbar.clickSave();
@@ -94,7 +94,7 @@ public class TestMergeBranchesNoConflicts extends BaseTest {
                 "TestMergeBranchesNoConflicts_Module5.xlsx", "TestMergeBranchesNoConflicts_Module6.xlsx");
         assertAbsent(projectDetail, "Module3.xlsx", "Module4.xlsx");
 
-        editorPage = repositoryPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.reloadPage();
         assertSpreadsheetEdited(editorPage, "Module2", "MySpr2");
         editorPage.getEditorToolbarPanelComponent().getBreadcrumbsAllProjects().click();

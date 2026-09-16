@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class TestCopyTableStylePreservedUi extends BaseTest {
 
     private static final String MODULE = "Main";
-    private static final String TABLE_FOLDER = "Decision";
+    private static final String TABLE_FOLDER = "Rules";
     private static final String TABLE_NAME = "Hello";
     private static final String COPY_NAME = "HelloStyledCopy";
 

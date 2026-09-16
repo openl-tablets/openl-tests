@@ -45,7 +45,7 @@ public class TestDatatypeRoundTripUi extends BaseTest {
                 .selectTab(TabSwitcherComponent.TabName.REPOSITORY);
         repositoryPage.createProject(CreateNewProjectComponent.TabName.EXCEL_FILES, PROJECT, FIXTURE_XLSX);
 
-        editorPage = repositoryPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(PROJECT, MODULE);
         openDatatype(editorPage);
 
@@ -66,7 +66,7 @@ public class TestDatatypeRoundTripUi extends BaseTest {
         editorPage.getProblemsPanelComponent().checkNoProblems();
 
         repositoryPage = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.REPOSITORY);
-        editorPage = repositoryPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(PROJECT, MODULE);
         openDatatype(editorPage);
 

@@ -19,10 +19,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class TestViewStackTraceFunctionality extends BaseTest {
 
     private static final List<List<String>> CATALOG_AND_TABLE_NAMES = Arrays.asList(
-            Arrays.asList("Decision", "SimpleLookupTable"),
-            Arrays.asList("Decision", "SimpleRulesTable"),
-            Arrays.asList("Decision", "SmartLookup1"),
-            Arrays.asList("Decision", "SmartRules1"),
+            Arrays.asList("Rules", "SimpleLookupTable"),
+            Arrays.asList("Rules", "SimpleRulesTable"),
+            Arrays.asList("Rules", "SmartLookup1"),
+            Arrays.asList("Rules", "SmartRules1"),
             Arrays.asList("Spreadsheet", "SpreadsheetTable"),
             Arrays.asList("TBasic", "TBasicTable"),
             Arrays.asList("Column Match", "ColumnMatchTable"),

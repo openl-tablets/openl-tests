@@ -59,6 +59,13 @@ public class WaitUtil {
         return false;
     }
 
+    /** Waits for the condition and fails the test when it is not met, instead of reporting it as a boolean. */
+    public static void requireCondition(Supplier<Boolean> conditionSupplier, long timeoutMs, long pollingIntervalMs, String description) {
+        if (!waitForCondition(conditionSupplier, timeoutMs, pollingIntervalMs, description)) {
+            throw new RuntimeException("Condition not met after " + timeoutMs + "ms timeout: " + description);
+        }
+    }
+
     public static <T> Optional<T> waitForResult(Supplier<Optional<T>> supplier, long timeoutMs, long intervalMs, String description) {
         LOGGER.info("Waiting for result (timeout: {}ms, polling: {}ms): {}", timeoutMs, intervalMs, description);
         long startTime = System.currentTimeMillis();

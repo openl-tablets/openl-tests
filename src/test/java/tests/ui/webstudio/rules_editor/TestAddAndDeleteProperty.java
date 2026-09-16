@@ -42,8 +42,8 @@ public class TestAddAndDeleteProperty extends BaseTest {
                 .selectModule(PROJECT_NAME, PROJECT_NAME);
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Decision")
-                .selectItemInFolder("Decision", "MyRules2");
+                .expandFolderInTree("Rules")
+                .selectItemInFolder("Rules", "MyRules2");
 
         addAndCheckProperty(editorPage, "Category", "category", "MyCategory");
         addAndCheckProperty(editorPage, "Description", "description", "TestDescription");
@@ -73,7 +73,7 @@ public class TestAddAndDeleteProperty extends BaseTest {
         addAndCheckDropdownProperty(editorPage, "Empty Result Processing", "emptyResultProcessing", "Return");
 
         editorPage.getEditorLeftRulesTreeComponent()
-                .selectItemInFolder("Decision", "MyRules1");
+                .selectItemInFolder("Rules", "MyRules1");
 
         deletePropertyAndCheck(editorPage, "Category", "category");
         deletePropertyAndCheck(editorPage, "Description", "description");
@@ -110,7 +110,7 @@ public class TestAddAndDeleteProperty extends BaseTest {
 
         repositoryPage.createProject(CreateNewProjectComponent.TabName.EXCEL_FILES, PROJECT_NAME, EXCEL_FILE);
 
-        return repositoryPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        return new EditorPage();
     }
 
     private void editAndCheckProperty(EditorPage editorPage, String propertyName, String propertyTableName, String newValue) {

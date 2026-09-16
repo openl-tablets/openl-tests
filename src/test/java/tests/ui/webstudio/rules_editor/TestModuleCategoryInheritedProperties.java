@@ -110,8 +110,8 @@ public class TestModuleCategoryInheritedProperties extends BaseTest {
 
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Decision");
-        selectTable(editorPage, "Decision", "MyRules1");
+                .expandFolderInTree("Rules");
+        selectTable(editorPage, "Rules", "MyRules1");
         verifyPropertiesInTableDetails(editorPage, valuesModuleProperties);
 
         verifyBlueArrowWork(editorPage);
@@ -126,14 +126,14 @@ public class TestModuleCategoryInheritedProperties extends BaseTest {
         assertThat(editorPage.getRightTableDetailsComponent().getPropertyValue("Precision"))
                 .contains("1");
 
-        selectTable(editorPage, "Decision", "MyRules2");
+        selectTable(editorPage, "Rules", "MyRules2");
         verifyPropertiesInTableDetails(editorPage, valuesModuleOverwrittenByTableProperties);
 
         selectTable(editorPage, "Test", "MyRules1Test");
         assertThat(editorPage.getRightTableDetailsComponent().getPropertyValue("Precision"))
                 .contains("2");
 
-        selectTable(editorPage, "Decision", "MyRules3");
+        selectTable(editorPage, "Rules", "MyRules3");
         verifyPropertiesInTableDetails(editorPage, valuesCategoryProperties);
 
         verifyBlueArrowWork(editorPage);
@@ -146,7 +146,7 @@ public class TestModuleCategoryInheritedProperties extends BaseTest {
         assertThat(editorPage.getRightTableDetailsComponent().getPropertyValue("Precision"))
                 .contains("3");
 
-        selectTable(editorPage, "Decision", "MyRules4");
+        selectTable(editorPage, "Rules", "MyRules4");
         verifyPropertiesInTableDetails(editorPage, valuesCategoryOverwrittenByTableProperties);
 
         selectTable(editorPage, "Spreadsheet", "MyRules8");
@@ -157,7 +157,7 @@ public class TestModuleCategoryInheritedProperties extends BaseTest {
         assertThat(editorPage.getRightTableDetailsComponent().getPropertyValue("Precision"))
                 .contains("4");
 
-        selectTable(editorPage, "Decision", "MyRules5");
+        selectTable(editorPage, "Rules", "MyRules5");
         verifyPropertiesInTableDetails(editorPage, valuesCategoryProperties);
     }
 

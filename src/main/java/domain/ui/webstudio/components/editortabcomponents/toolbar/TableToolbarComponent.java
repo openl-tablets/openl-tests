@@ -35,30 +35,30 @@ public class TableToolbarComponent extends BaseComponent {
     private final WebElement withinCurrentModuleOnlyTestTables;
 
     public TableToolbarComponent(Page page) {
-        this(new WebElement(page, "xpath=//div[@id='tableToolbarPanel']", "tableToolbarPanel"));
+        this(new WebElement(page, "xpath=//div[@data-testid='table-toolbar']", "tableToolbarPanel"));
     }
 
     public TableToolbarComponent(WebElement rootLocator) {
         super(rootLocator);
-        runBtn = createScopedElement("xpath=.//img[contains(@src, 'run')]", "runBtn");
-        runDropdownBtn = createScopedElement("xpath=.//a[@id='runLink']//td[@class='arrow']", "runDropdownBtn");
-        traceBtn = createScopedElement("xpath=.//img[contains(@src, 'trace')]", "traceBtn");
-        traceDropdownBtn = createScopedElement("xpath=.//a[@id='traceLink']//td[@class='arrow']", "traceDropdownBtn");
-        benchmarkBtn = createScopedElement("xpath=.//span[contains(text(), 'Benchmark')]", "benchmarkBtn");
-        benchmarkDropdownBtn = createScopedElement("xpath=.//a[@id='benchmarkLink']//td[@class='arrow']", "benchmarkDropdownBtn");
-        editTableBtn = createScopedElement("xpath=.//a[@class='toolbarButton' and ./img[contains(@src,'editTable')]]", "editBtn");
-        copyTableBtn = createScopedElement("xpath=.//a[@class='toolbarButton' and ./img[contains(@src,'copyTable')]]", "copyBtn");
-        removeBtn = createScopedElement("xpath=.//a[@class='toolbarButton' and ./span[@class='delete-icon']]", "removeBtn");
-        createTestBtn = createScopedElement("xpath=.//a[@title='Create a new Test table']", "createTestBtn");
-        targetTableLink = createScopedElement("xpath=.//section[@id='targetTablesSection']//a", "targetTableLink");
-        availableTestRunsLink = createScopedElement("xpath=.//section[@id='testsSection']", "availableTestRunsLink");
-        availableTestRunsInlineLink = createScopedElement("xpath=.//section[@id='testsSection']//span//a[not(@title='Other Available Tests/Runs')]", "availableTestRunsInlineLink");
-        availableTestRunsExpandLink = createScopedElement("xpath=.//section[@id='testsSection']//a[@title='Other Available Tests/Runs']", "availableTestRunsExpandLink");
-        availableTestRunsPopup = createScopedElement("xpath=.//*[@id='tests-section-available-tests-id']", "availableTestRunsPopup");
-        tableActionsTestBtn = createScopedElement("xpath=.//span[text()='Test']", "tableActionsTestBtn");
-        tableActionsTestDropdownBtn = createScopedElement("xpath=.//a[.//span[text()='Test']]//td[@class='arrow']", "tableActionsTestDropdownBtn");
-        withinCurrentModuleOnlyInputArgs = new WebElement(page, "xpath=//input[@id='runTestModuleOnlyInputArgs']", "withinCurrentModuleOnlyInputArgs");
-        withinCurrentModuleOnlyTestTables = new WebElement(page, "xpath=//input[@id='runTestModuleOnly']", "withinCurrentModuleOnlyTestTables");
+        runBtn = createScopedElement("xpath=.//button[@data-testid='table-run']", "runBtn");
+        runDropdownBtn = createScopedElement("xpath=.//button[@data-testid='table-run']", "runDropdownBtn");
+        traceBtn = createScopedElement("xpath=.//button[@data-testid='table-trace']", "traceBtn");
+        traceDropdownBtn = createScopedElement("xpath=.//button[@data-testid='table-trace']", "traceDropdownBtn");
+        benchmarkBtn = createScopedElement("xpath=.//button[@data-testid='table-benchmark']", "benchmarkBtn");
+        benchmarkDropdownBtn = createScopedElement("xpath=.//button[@data-testid='table-benchmark']", "benchmarkDropdownBtn");
+        editTableBtn = createScopedElement("xpath=.//button[@data-testid='table-edit']", "editBtn");
+        copyTableBtn = createScopedElement("xpath=.//button[@data-testid='table-copy']", "copyBtn");
+        removeBtn = createScopedElement("xpath=.//button[@data-testid='table-remove']", "removeBtn");
+        createTestBtn = createScopedElement("xpath=.//button[@data-testid='table-createTest']", "createTestBtn");
+        targetTableLink = createScopedElement("xpath=.//div[@data-testid='table-target-tables']//button[starts-with(@data-testid,'table-target-')]", "targetTableLink");
+        availableTestRunsLink = createScopedElement("xpath=.//div[@data-testid='table-available-tests']", "availableTestRunsLink");
+        availableTestRunsInlineLink = createScopedElement("xpath=.//div[@data-testid='table-available-tests']//button[starts-with(@data-testid,'table-test-')]", "availableTestRunsInlineLink");
+        availableTestRunsExpandLink = createScopedElement("xpath=.//button[@data-testid='table-available-tests-more']", "availableTestRunsExpandLink");
+        availableTestRunsPopup = new WebElement(page, "xpath=//div[contains(@class,'ant-dropdown')][not(contains(@class,'ant-dropdown-hidden'))]//ul[contains(@class,'ant-dropdown-menu')]", "availableTestRunsPopup");
+        tableActionsTestBtn = createScopedElement("xpath=.//button[@data-testid='table-tests']", "tableActionsTestBtn");
+        tableActionsTestDropdownBtn = createScopedElement("xpath=.//button[@data-testid='table-tests']", "tableActionsTestDropdownBtn");
+        withinCurrentModuleOnlyInputArgs = new WebElement(page, "xpath=//input[@data-testid='launch-module-only']", "withinCurrentModuleOnlyInputArgs");
+        withinCurrentModuleOnlyTestTables = new WebElement(page, "xpath=//input[@data-testid='launch-module-only']", "withinCurrentModuleOnlyTestTables");
     }
 
     // ========== Launchers ==========
@@ -95,16 +95,18 @@ public class TableToolbarComponent extends BaseComponent {
         benchmarkBtn.click();
     }
 
+    /**
+     * Opens the Run launcher. The settings the old toolbar kept behind a caret beside Run are inside the
+     * launcher itself now, so opening it is the same press as running.
+     */
     public void clickRunDropdown() {
         runBtn.waitForVisible();
-        runBtn.hover();
-        runDropdownBtn.click();
+        runBtn.click();
     }
 
     public void clickBenchmarkDropdown() {
         benchmarkBtn.waitForVisible();
-        benchmarkBtn.hover();
-        benchmarkDropdownBtn.click();
+        benchmarkBtn.click();
     }
 
     public boolean isRunButtonVisible() {
@@ -143,8 +145,7 @@ public class TableToolbarComponent extends BaseComponent {
 
     public void clickTableActionsTestDropdown() {
         tableActionsTestBtn.waitForVisible();
-        tableActionsTestBtn.hover();
-        tableActionsTestDropdownBtn.click();
+        tableActionsTestBtn.click();
     }
 
     // ========== Target table and available test runs ==========

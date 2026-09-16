@@ -41,8 +41,7 @@ public class TestImportOpenApiModuleNamesValidation extends BaseTest {
         uploadFileToProject(repositoryPage, projectName, OPENAPI_FILE);
 
         // Step 2: Navigate to Editor and open Import OpenAPI dialog
-        editorPage = repositoryPage.getTabSwitcherComponent()
-                .selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName);
 
         ImportOpenApiDialogComponent importDialog = editorPage.openImportOpenApiDialog();

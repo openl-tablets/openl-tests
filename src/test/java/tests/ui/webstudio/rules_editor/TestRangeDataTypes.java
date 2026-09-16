@@ -36,10 +36,10 @@ public class TestRangeDataTypes extends BaseTest {
                 .selectModule(projectName, MODULE_NAME);
         rulesTree.setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE);
 
-        validateRangeEditorOpensAndCloses(editorPage, rulesTree, "Decision", "SimpleLookupTable", 3, 2);
-        validateRangeEditorOpensAndCloses(editorPage, rulesTree, "Decision", "SimpleRulesTable", 3, 2);
-        validateRangeEditorOpensAndCloses(editorPage, rulesTree, "Decision", "SmartLookup1", 3, 1);
-        validateRangeEditorOpensAndCloses(editorPage, rulesTree, "Decision", "SmartRules1", 5, 1);
+        validateRangeEditorOpensAndCloses(editorPage, rulesTree, "Rules", "SimpleLookupTable", 3, 2);
+        validateRangeEditorOpensAndCloses(editorPage, rulesTree, "Rules", "SimpleRulesTable", 3, 2);
+        validateRangeEditorOpensAndCloses(editorPage, rulesTree, "Rules", "SmartLookup1", 3, 1);
+        validateRangeEditorOpensAndCloses(editorPage, rulesTree, "Rules", "SmartRules1", 5, 1);
         validateRangeEditorOpensAndCloses(editorPage, rulesTree, "Data", "DataTable1", 4, 2);
         validateRangeEditorOpensAndCloses(editorPage, rulesTree, "Run", "RunTable", 4, 2);
         validateRangeEditorOpensAndCloses(editorPage, rulesTree, "Test", "Test2", 4, 2);

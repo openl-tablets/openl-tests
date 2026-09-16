@@ -31,9 +31,7 @@ public class TestNullPointerExceptionDataTableBugFix extends BaseTest {
     public void testNullPointerExceptionBugFix() {
         // Step 1 & 2: Login and create project from Excel file with incorrect datatype
         String projectName = WorkflowService.loginCreateProjectFromExcelFile(User.ADMIN, TEST_FILE);
-        EditorPage editorPage = new EditorPage()
-                .getTabSwitcherComponent()
-                .selectTab(TabSwitcherComponent.TabName.EDITOR);
+        EditorPage editorPage = new EditorPage();
 
         String moduleName = TEST_FILE.replace(".xlsx", "");
         editorPage.getEditorLeftProjectModuleSelectorComponent()

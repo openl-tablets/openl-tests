@@ -37,8 +37,7 @@ public class TestReactMergeSmoke extends BaseTest {
         repositoryPage.openProjectsList().saveProject(projectName, "MyBranch: add module");
 
         // Switch back to master (which lacks the new module) via the editor.
-        EditorPage editorPage = repositoryPage.getTabSwitcherComponent()
-                .selectTab(TabSwitcherComponent.TabName.EDITOR);
+        EditorPage editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName);
         editorPage.getEditorToolbarPanelComponent().switchBranch(MASTER);
 

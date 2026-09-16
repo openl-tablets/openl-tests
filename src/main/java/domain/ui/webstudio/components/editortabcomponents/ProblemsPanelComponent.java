@@ -7,48 +7,36 @@ import helpers.utils.WaitUtil;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
+/**
+ * The compilation problems of the project, as the module and project screens show them.
+ *
+ * <p>The panel is drawn only while the project has something to report: a project that compiles clean carries
+ * no panel at all, which is what "no problems" looks like on these screens. Errors are listed before warnings,
+ * and each list is paged, so reading them all means opening the panel and asking for the rest of each page.
+ */
 public class ProblemsPanelComponent extends BaseComponent {
 
-    private static final String COMPILATION_COMPLETE = "Loaded 100%";
-    private static final Pattern PROGRESS_BAR_TEXT = Pattern.compile("Loaded \\d+% \\((\\d+)/(\\d+)\\)");
+    private static final String PANEL = "xpath=//section[@data-testid='compile-problems']";
+    private static final String BODY = PANEL + "//div[@data-testid='compile-problems-body']";
+    private static final String COMPILING_LABEL = "Compiling";
     private static final Set<String> FINISHED_STATES = Set.of("ok", "warnings", "errors");
-    private static final int QUIET_POLLS_BEFORE_COMPILED = 4;
     private static final long COMPILATION_TIMEOUT_MS = 30000;
-    private static final long COMPILATION_POLL_MS = 250;
-    private static final String SERVER_STATUS_SCRIPT = """
-            async () => {
-                const api = globalThis.openl && globalThis.openl.projectStatus;
-                const id = globalThis.projectId;
-                if (!api || !id) {
-                    return null;
-                }
-                const status = await api.fetch(id);
-                const compilation = status.compilation || {};
-                const messages = compilation.messages || {};
-                const modules = compilation.modules || {};
-                return {
-                    compileState: status.compileState || '',
-                    errors: messages.errors || 0,
-                    warnings: messages.warnings || 0,
-                    compiled: modules.compiled || 0,
-                    total: modules.total || 0
-                };
-            }
-            """;
+    private static final int COMPILATION_POLL_MS = 250;
+    private static final int PROBE_MS = 1000;
+    private static final int PAGE_PROBE_MS = 500;
+    private static final int MAX_PAGES = 100;
 
-    private WebElement showProblemsLink;
-    private WebElement hideProblemPanelLink;
+    private WebElement panel;
+    private WebElement header;
     private WebElement errorsCounter;
     private WebElement warningsCounter;
-    private WebElement compilationProgressBar;
-    private WebElement compilationProgressBarNotSavedProject;
-    private List<WebElement> errorElements;
-    private List<WebElement> warningElements;
+    private WebElement body;
+    private WebElement compileState;
+    private WebElement compilingScreen;
+    private List<WebElement> messageLists;
+    private WebElement showMoreBtn;
 
     public ProblemsPanelComponent() {
         super(DriverPool.getPage());
@@ -61,16 +49,18 @@ public class ProblemsPanelComponent extends BaseComponent {
     }
 
     private void initializeElements() {
-        showProblemsLink = createScopedElement(".//div[@class='ui-layout-toggler ui-layout-toggler-south ui-layout-toggler-closed ui-layout-toggler-south-closed' and @title='Open']", "showProblemsLink");
-        hideProblemPanelLink = createScopedElement(".//div[@id='bottom']//span[@id='south-closer']", "hideProblemPanelLink");
-        errorsCounter = createScopedElement("#errors-count", "errorsCounter");
-        warningsCounter = createScopedElement("#warnings-count", "warningsCounter");
-        compilationProgressBar = createScopedElement("xpath=.//div[@class='panel']//div[@id='progress-info-panel']", "compilationProgressBar");
-        compilationProgressBarNotSavedProject = new WebElement(page, "xpath=//div[contains(@class,'ui-layout-resizer')]//div[@class='messagePanel']", "compilationProgressBarNotSavedProject");
-        errorElements = createScopedElementList("xpath=.//div[@id='errors-panel']//a", "errorElements");
-        warningElements = createScopedElementList("xpath=.//div[@id='warnings-panel']//a", "warningElements");
+        panel = new WebElement(page, PANEL, "problemsPanel");
+        header = new WebElement(page, PANEL + "//button[@data-testid='compile-problems-header']", "problemsPanelHeader");
+        errorsCounter = new WebElement(page, PANEL + "//span[@data-testid='compile-problems-errors']", "errorsCounter");
+        warningsCounter = new WebElement(page, PANEL + "//span[@data-testid='compile-problems-warnings']", "warningsCounter");
+        body = new WebElement(page, BODY, "problemsPanelBody");
+        compileState = new WebElement(page, "xpath=//span[@data-testid='module-compile-state']", "compileStateIndicator");
+        compilingScreen = new WebElement(page, "xpath=//div[@data-testid='module-compiling']", "moduleCompilingScreen");
+        messageLists = createElementList(BODY + "/ul", "problemLists");
+        showMoreBtn = new WebElement(page, BODY + "//button[.//span[starts-with(normalize-space(),'Show')][contains(normalize-space(),'more')]]", "showMoreProblemsBtn");
     }
 
+    /** What the compilation indicator reports, read from the screen rather than from the server. */
     public record ServerCompileStatus(String compileState, int errors, int warnings, int compiled, int total) {
         public boolean isCompiling() {
             return "compiling".equals(compileState);
@@ -82,55 +72,59 @@ public class ProblemsPanelComponent extends BaseComponent {
     }
 
     public void showProblemsPanel() {
-        if (showProblemsLink.isVisible()) {
-            showProblemsLink.click();
+        if (!panel.isVisible(PROBE_MS)) {
+            return;
+        }
+        if (!"true".equals(header.getAttribute("aria-expanded"))) {
+            header.click();
+            body.waitForVisible(DEFAULT_TIMEOUT_MS);
         }
     }
 
     public void hideProblemsPanel() {
-        if (hideProblemPanelLink.isVisible()) {
-            hideProblemPanelLink.click();
+        if (panel.isVisible(PROBE_MS) && "true".equals(header.getAttribute("aria-expanded"))) {
+            header.click();
         }
     }
 
     public int getErrorsCount() {
-        showProblemsPanel();
         waitForCompilationToComplete();
-        return parseCounter(errorsCounter.sleep(200).getText());
+        return counterValue(errorsCounter);
     }
 
     public int getWarningsCount() {
-        showProblemsPanel();
         waitForCompilationToComplete();
-        return parseCounter(warningsCounter.getText());
+        return counterValue(warningsCounter);
     }
 
-    private static int parseCounter(String text) {
-        return text != null && !text.isBlank() ? Integer.parseInt(text.trim()) : 0;
+    /** The count the panel shows, or none at all — the panel leaves out a counter that would read zero. */
+    private int counterValue(WebElement counter) {
+        if (!panel.isVisible(PROBE_MS) || !counter.isVisible(PROBE_MS)) {
+            return 0;
+        }
+        String text = counter.getText().replaceAll("\\D+", "");
+        return text.isEmpty() ? 0 : Integer.parseInt(text);
     }
 
     public boolean isCompilationInProgress() {
-        return !getCompilationProgressBarText().contains(COMPILATION_COMPLETE);
-    }
-
-    private boolean areAllModulesCompiled() {
-        Matcher matcher = PROGRESS_BAR_TEXT.matcher(getCompilationProgressBarText());
-        return matcher.find() && matcher.group(1).equals(matcher.group(2));
+        return compilingScreen.isVisible(PROBE_MS / 4)
+                || (compileState.isVisible(PROBE_MS / 4)
+                    && String.valueOf(compileState.getAttribute("aria-label")).contains(COMPILING_LABEL));
     }
 
     public ServerCompileStatus fetchServerCompileStatusViaPage() {
-        try {
-            Object result = page.evaluate(SERVER_STATUS_SCRIPT);
-            if (!(result instanceof Map<?, ?> map)) {
-                return null;
-            }
-            return new ServerCompileStatus(String.valueOf(map.get("compileState")),
-                    ((Number) map.get("errors")).intValue(), ((Number) map.get("warnings")).intValue(),
-                    ((Number) map.get("compiled")).intValue(), ((Number) map.get("total")).intValue());
-        } catch (RuntimeException e) {
-            LOGGER.warn("Could not read the project status from the server: {}", e.getMessage());
+        if (!compileState.isVisible(PROBE_MS)) {
             return null;
         }
+        String label = String.valueOf(compileState.getAttribute("aria-label"));
+        String state = label.contains(COMPILING_LABEL) ? "compiling"
+                : label.contains("Errors") ? "errors"
+                : label.contains("Warnings") ? "warnings"
+                : label.contains("Compiled") ? "ok"
+                : "idle";
+        int errors = counterValue(errorsCounter);
+        int warnings = counterValue(warningsCounter);
+        return new ServerCompileStatus(state, errors, warnings, 1, 1);
     }
 
     public boolean hasErrors() {
@@ -142,7 +136,7 @@ public class ProblemsPanelComponent extends BaseComponent {
     }
 
     public boolean isProblemsPanelVisible() {
-        return hideProblemPanelLink.isVisible();
+        return panel.isVisible(PROBE_MS);
     }
 
     public String getProblemsInfo() {
@@ -150,44 +144,67 @@ public class ProblemsPanelComponent extends BaseComponent {
     }
 
     public void checkNoProblems() {
-        showProblemsPanel();
         boolean compiled = waitForCompilationToComplete(COMPILATION_TIMEOUT_MS, COMPILATION_POLL_MS);
         if (!compiled) {
-            throw new AssertionError("Compilation did not finish within " + COMPILATION_TIMEOUT_MS + " ms, progress bar: '"
-                    + getCompilationProgressBarText() + "', server status: " + fetchServerCompileStatusViaPage());
+            throw new AssertionError("Compilation did not finish within " + COMPILATION_TIMEOUT_MS + " ms, state: "
+                    + fetchServerCompileStatusViaPage());
         }
         boolean noProblems = WaitUtil.waitForCondition(
                 () -> {
                     try {
-                        return parseCounter(errorsCounter.getText()) == 0 && parseCounter(warningsCounter.getText()) == 0;
-                    } catch (RuntimeException e) {
+                        return counterValue(errorsCounter) == 0 && counterValue(warningsCounter) == 0;
+                    } catch (RuntimeException panelIsBeingRedrawn) {
                         return false;
                     }
                 },
                 DEFAULT_TIMEOUT_MS, 500, "Waiting for the problems panel to report no errors and no warnings");
         if (!noProblems) {
-            throw new AssertionError("Expected no problems but found: " + getProblemsInfo());
-        }
-        ServerCompileStatus server = fetchServerCompileStatusViaPage();
-        if (server != null && !server.isCompiling() && (server.errors() != 0 || server.warnings() != 0)) {
-            throw new AssertionError("The problems panel shows no problems but the server reports " + server);
+            throw new AssertionError("Expected no problems but found: " + getProblemsInfo()
+                    + ", errors: " + getAllErrors() + ", warnings: " + getAllWarnings());
         }
     }
 
     public List<String> getAllErrors() {
-        showProblemsPanel();
-        waitForCompilationToComplete();
-        return errorElements.stream()
-                .map(WebElement::getText)
-                .toList();
+        return readMessages(true);
     }
 
     public List<String> getAllWarnings() {
-        showProblemsPanel();
+        return readMessages(false);
+    }
+
+    /**
+     * The messages of one severity, as the panel lists them.
+     *
+     * <p>The panel lists errors first and warnings after, each in a list of its own and each list left out
+     * when it would be empty, so which list is which is decided by the counts in the panel's header.
+     */
+    private List<String> readMessages(boolean errors) {
         waitForCompilationToComplete();
-        return warningElements.stream()
-                .map(WebElement::getText)
-                .toList();
+        if (!panel.isVisible(PROBE_MS)) {
+            return List.of();
+        }
+        showProblemsPanel();
+        expandAllPages();
+        int errorCount = counterValue(errorsCounter);
+        int warningCount = counterValue(warningsCounter);
+        if ((errors && errorCount == 0) || (!errors && warningCount == 0)) {
+            return List.of();
+        }
+        int listIndex = errors || errorCount == 0 ? 0 : 1;
+        if (messageLists.size() <= listIndex) {
+            return List.of();
+        }
+        List<String> messages = new ArrayList<>();
+        messageLists.get(listIndex).getLocator().locator("xpath=./li").allInnerTexts()
+                .forEach(text -> messages.add(text.trim()));
+        return messages;
+    }
+
+    /** Asks each list for the rest of its messages, so what is read is everything the panel holds. */
+    private void expandAllPages() {
+        for (int page = 0; page < MAX_PAGES && showMoreBtn.isVisible(PAGE_PROBE_MS); page++) {
+            showMoreBtn.click();
+        }
     }
 
     public void waitForCompilationToComplete() {
@@ -195,48 +212,18 @@ public class ProblemsPanelComponent extends BaseComponent {
     }
 
     public boolean waitForCompilationToComplete(long timeoutMillis, long pollIntervalMillis) {
-        long deadline = System.currentTimeMillis() + timeoutMillis;
-        int quietPolls = 0;
-        int allCompiledPolls = 0;
-        while (System.currentTimeMillis() < deadline) {
-            if (!isCompilationInProgress()) {
-                allCompiledPolls = 0;
-                if (++quietPolls >= QUIET_POLLS_BEFORE_COMPILED) {
-                    LOGGER.info("Compilation completed");
-                    return true;
-                }
-            } else {
-                quietPolls = 0;
-                if (areAllModulesCompiled()) {
-                    if (++allCompiledPolls >= QUIET_POLLS_BEFORE_COMPILED && isFinishedOnServer()) {
-                        return true;
-                    }
-                } else {
-                    allCompiledPolls = 0;
-                }
-            }
-            WaitUtil.sleep((int) pollIntervalMillis, "Waiting for project compilation to complete (polling)");
+        boolean finished = WaitUtil.waitForCondition(() -> !isCompilationInProgress(),
+                timeoutMillis, (int) pollIntervalMillis, "Waiting for the project compilation to complete");
+        if (!finished) {
+            LOGGER.warn("Compilation timeout reached, state: {}", fetchServerCompileStatusViaPage());
         }
-        LOGGER.warn("Compilation timeout reached, progress bar: '{}'", getCompilationProgressBarText());
-        return false;
-    }
-
-    private boolean isFinishedOnServer() {
-        ServerCompileStatus server = fetchServerCompileStatusViaPage();
-        if (server == null || !server.isFinished()) {
-            return false;
-        }
-        LOGGER.warn("Progress bar is stuck at '{}' although the server reports {}; the terminal status push was not delivered to the page",
-                getCompilationProgressBarText(), server);
-        return true;
+        return finished;
     }
 
     public void selectProblemByText(String text) {
         showProblemsPanel();
-        waitForCompilationToComplete();
-        List<WebElement> allProblems = new ArrayList<>();
-        allProblems.addAll(errorElements);
-        allProblems.addAll(warningElements);
+        expandAllPages();
+        List<WebElement> allProblems = createElementList(BODY + "//li", "problemRows");
         allProblems.stream()
                 .filter(element -> element.getText().contains(text))
                 .findFirst()
@@ -245,65 +232,49 @@ public class ProblemsPanelComponent extends BaseComponent {
 
     public void selectProblemByIndex(int index) {
         showProblemsPanel();
-        waitForCompilationToComplete();
-        if (index > 0 && index <= errorElements.size()) {
-            errorElements.get(index - 1).click();
+        expandAllPages();
+        List<WebElement> errorRows = createElementList(BODY + "/ul[1]/li", "errorRows");
+        if (index > 0 && index <= errorRows.size()) {
+            errorRows.get(index - 1).click();
         }
     }
 
     public boolean isErrorPresent(String errorMessage) {
-        showProblemsPanel();
-        waitForCompilationToComplete();
-        return errorElements.stream()
-                .map(WebElement::getText)
-                .anyMatch(error -> error.contains(errorMessage));
+        return getAllErrors().stream().anyMatch(error -> error.contains(errorMessage));
     }
 
     public boolean isWarningPresent(String warningMessage) {
-        showProblemsPanel();
-        waitForCompilationToComplete();
-        return warningElements.stream()
-                .map(WebElement::getText)
-                .anyMatch(warning -> warning.contains(warningMessage));
+        return getAllWarnings().stream().anyMatch(warning -> warning.contains(warningMessage));
     }
 
     public boolean isCompilationProgressBarVisible() {
-        return compilationProgressBar.isVisible(1000);
+        return compilingScreen.isVisible(PROBE_MS);
     }
 
     public boolean isCompilationProgressBarNotSavedProjectVisible() {
-        return compilationProgressBarNotSavedProject.isVisible(1000);
+        return compileState.isVisible(PROBE_MS);
     }
 
     public String getCompilationProgressBarText() {
-        try {
-            return compilationProgressBar.getText();
-        } catch (Exception e) {
-            LOGGER.warn("Compilation progress bar is not present, treating the compilation as finished");
-            return COMPILATION_COMPLETE;
+        if (!compilingScreen.isVisible(PROBE_MS)) {
+            return "";
         }
+        return compilingScreen.getText();
     }
 
     public String getCompilationProgressBarNotSavedProjectText() {
-        try {
-            return compilationProgressBarNotSavedProject.getText();
-        } catch (Exception e) {
+        if (!compileState.isVisible(PROBE_MS)) {
             return "";
         }
+        return String.valueOf(compileState.getAttribute("aria-label"));
     }
 
     public void waitForCompilationProgressBarToContain(String text, long timeoutMs) {
         WaitUtil.waitForCondition(
-                () -> {
-                    try {
-                        String barText = compilationProgressBarNotSavedProject.getText();
-                        return barText != null && barText.contains(text);
-                    } catch (Exception e) {
-                        return false;
-                    }
-                },
+                () -> getCompilationProgressBarText().contains(text)
+                        || getCompilationProgressBarNotSavedProjectText().contains(text),
                 timeoutMs, 1000,
-                "Waiting for compilation progress bar to contain: " + text
+                "Waiting for the compilation indicator to report: " + text
         );
     }
 }

@@ -25,8 +25,8 @@ public class TableComponent extends BaseComponent {
     }
 
     private void initializeElements() {
-        editorWrapper = new WebElement(page, "xpath=//*[@id='t_te_editorWrapper']", "editorWrapper");
-        inputLocator = new WebElement(page, "xpath=//*[@id='_t_te_editorWrapper']", "inputLocator");
+        editorWrapper = new WebElement(page, "xpath=//*[@data-testid='table-cell-input']", "editorWrapper");
+        inputLocator = new WebElement(page, "xpath=//*[@data-testid='table-cell-input']", "inputLocator");
         rows = createScopedComponentList(PlaywrightTableRowComponent.class, "xpath=.//tbody/tr", "rowSelectorTemplate");
         propertyValueTemplate = createScopedElement("xpath=//tr/td[text()='%s']/following-sibling::td[1]", "propertyValue");
     }
@@ -57,20 +57,7 @@ public class TableComponent extends BaseComponent {
 
     public void doubleClickCell(int rowIndex, int columnIndex) {
         waitUntilSpinnerLoaded();
-        WebElement cell = getCell(rowIndex, columnIndex);
-        // OpenL keeps a floating keyboard-catcher input (`_t_te_editorWrapper`) over the
-        // currently selected cell. It intercepts pointer events for the underlying <td>,
-        // making a real dblclick on the same cell impossible. A single click on any other
-        // cell moves the overlay away (selection follows the click), restoring dblclick on
-        // the original cell.
-        String cssClass = cell.getLocator().getAttribute("class");
-        if (cssClass != null && cssClass.contains("te_selected")) {
-            int anchorRow = rowIndex == 1 ? 2 : 1;
-            List<WebElement> anchorCells = rows.get(anchorRow - 1).getCells();
-            int anchorCol = anchorCells.size() > 1 && columnIndex == 1 ? 2 : 1;
-            clickCell(anchorRow, anchorCol);
-        }
-        cell.doubleClick();
+        getCell(rowIndex, columnIndex).doubleClick();
     }
 
     public void editCell(int rowIndex, int columnIndex, String text, boolean pressEnter) {
@@ -87,12 +74,14 @@ public class TableComponent extends BaseComponent {
             return true;
         }, 10000, 500, "Activating cell editor for cell [" + rowIndex + "," + columnIndex + "]");
 
-        boolean isSelectEditor = inputLocator.getLocator().locator("xpath=self::select").count() > 0;
+        boolean isSelectEditor = inputLocator.getLocator().locator("xpath=self::div[contains(@class,'ant-select')]").count() > 0;
         if (isSelectEditor) {
-            inputLocator.selectByVisibleText(text);
-            if (pressEnter) {
-                inputLocator.press("Enter");
-            }
+            // A cell offering a list of values is written by picking from it, not by typing over it.
+            inputLocator.click();
+            WebElement option = new WebElement(page,
+                    String.format("xpath=//div[contains(@class,'ant-select-item-option')][@title=\'%s\']", text), "cellValueOption");
+            option.waitForVisible(DEFAULT_TIMEOUT_MS);
+            option.click();
         } else {
             inputLocator.press("Control+A");
             inputLocator.press("Delete");
@@ -161,7 +150,7 @@ public class TableComponent extends BaseComponent {
         }
 
         private void initializeElements() {
-            cells = createScopedElementList("xpath=./td", "cells");
+            cells = createScopedElementList("xpath=./td[@data-cell]", "cells");
         }
 
         public  List<WebElement> getCells() {

@@ -117,7 +117,7 @@ public class TestLocalChangesModuleScopeUi extends BaseTest {
         RepositoryPage repositoryPage = editorPage.getTabSwitcherComponent()
                 .selectTab(TabSwitcherComponent.TabName.REPOSITORY);
         repositoryPage.createProject(CreateNewProjectComponent.TabName.ZIP_ARCHIVE, PROJECT, ARCHIVE);
-        return repositoryPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        return new EditorPage();
     }
 
     // Before any module is open the breadcrumbs are absent and only the project tree can select a module;

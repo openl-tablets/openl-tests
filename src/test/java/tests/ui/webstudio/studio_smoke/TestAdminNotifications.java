@@ -62,7 +62,7 @@ public class TestAdminNotifications extends BaseTest {
         RepositoryPage repositoryPage = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.REPOSITORY);
         assertThat(repositoryPage.isNotificationVisible()).isTrue();
 
-        editorPage = repositoryPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         assertThat(editorPage.isNotificationVisible()).isTrue();
 
         notificationComponent = editorPage.openUserMenu()

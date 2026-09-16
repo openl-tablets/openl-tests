@@ -36,11 +36,11 @@ public class TestArrayOfAliasValuesInRunTrace extends BaseTest {
         // Set the filter and expand the folder once before iterating through tables
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Decision");
+                .expandFolderInTree("Rules");
 
         tables.forEach(tableName -> {
             // Select the item from the already expanded folder
-            editorPage.getEditorLeftRulesTreeComponent().selectItemInFolder("Decision", tableName);
+            editorPage.getEditorLeftRulesTreeComponent().selectItemInFolder("Rules", tableName);
 
             IRunMenu runMenu = editorPage.getEditorToolbarPanelComponent().clickRun();
             runMenu.clickCreateItem()

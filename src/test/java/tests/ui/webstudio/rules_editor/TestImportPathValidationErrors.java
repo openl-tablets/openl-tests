@@ -41,8 +41,7 @@ public class TestImportPathValidationErrors extends BaseTest {
         repositoryPage.createProject(CreateNewProjectComponent.TabName.TEMPLATE, projectName, TEMPLATE_NAME);
         uploadFileToProject(repositoryPage, projectName, OPENAPI_FILE);
 
-        editorPage = repositoryPage.getTabSwitcherComponent()
-                .selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName);
         ImportOpenApiDialogComponent importDialog = editorPage.openImportOpenApiDialog();
         importDialog.selectUploadInRepository();

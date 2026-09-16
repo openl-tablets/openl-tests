@@ -143,8 +143,7 @@ public class TestNewDeployPopup extends BaseTest {
         // STEP 4: Edit project table, save — new revision
         // Legacy steps: 13
         // =========================================================================
-        editorPage = repositoryPage.getTabSwitcherComponent()
-                .selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editProjectCell(editorPage, nameProject, "1000");
 
         repositoryPage = editorPage.getTabSwitcherComponent()
@@ -172,8 +171,7 @@ public class TestNewDeployPopup extends BaseTest {
         // Legacy steps: 15 (conflict arose from DC save changing repo state;
         // in new flow conflict may not occur — we handle both cases)
         // =========================================================================
-        editorPage = repositoryPage.getTabSwitcherComponent()
-                .selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editProjectCell(editorPage, nameProject, "2000");
 
         repositoryPage = editorPage.getTabSwitcherComponent()
@@ -271,8 +269,8 @@ public class TestNewDeployPopup extends BaseTest {
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Bank Rating");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Decision")
-                .selectItemInFolder("Decision", "CapitalDynamicScore");
+                .expandFolderInTree("Rules")
+                .selectItemInFolder("Rules", "CapitalDynamicScore");
         editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
         editorPage.getCenterTable().editCell(6, 2, value);
         editorPage.getEditorTableActionsPanelComponent().clickSaveChanges();

@@ -38,8 +38,7 @@ public class TestOpenApiReconciliationDatatypeErrors extends BaseTest {
                 .selectTab(TabSwitcherComponent.TabName.REPOSITORY);
         repositoryPage.createProject(CreateNewProjectComponent.TabName.ZIP_ARCHIVE, projectName, ZIP_RECONCILIATION);
 
-        editorPage = repositoryPage.getTabSwitcherComponent()
-                .selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "validationTest");
 
         editorPage.getEditorLeftRulesTreeComponent()

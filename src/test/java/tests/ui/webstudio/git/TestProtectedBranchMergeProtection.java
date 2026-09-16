@@ -64,7 +64,7 @@ public class TestProtectedBranchMergeProtection extends BaseTest {
 
         repositoryPage = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.REPOSITORY);
         // The project is already open on the new branch (createBranch switched onto it), so go straight to the editor.
-        EditorPage editor = repositoryPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        EditorPage editor = new EditorPage();
         editor.getEditorLeftProjectModuleSelectorComponent().selectProject(PROJECT_NAME);
         assertThat(editor.getEditorToolbarPanelComponent().isSyncButtonVisible())
                 .as("Sync button should be visible after branching")

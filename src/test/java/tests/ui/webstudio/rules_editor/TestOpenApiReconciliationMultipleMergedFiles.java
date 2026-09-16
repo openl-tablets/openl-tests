@@ -40,8 +40,7 @@ public class TestOpenApiReconciliationMultipleMergedFiles extends BaseTest {
                 .selectTab(TabSwitcherComponent.TabName.REPOSITORY);
         repositoryPage.createProject(CreateNewProjectComponent.TabName.ZIP_ARCHIVE, jsonProjectName, ZIP_CORPORATE_JSON);
 
-        editorPage = repositoryPage.getTabSwitcherComponent()
-                .selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(jsonProjectName, "Corporate Rating");
 
         editorPage.getEditorLeftRulesTreeComponent()
@@ -77,8 +76,7 @@ public class TestOpenApiReconciliationMultipleMergedFiles extends BaseTest {
                 .selectTab(TabSwitcherComponent.TabName.REPOSITORY);
         repositoryPage.createProject(CreateNewProjectComponent.TabName.ZIP_ARCHIVE, yamlProjectName, ZIP_CORPORATE_YAML);
 
-        editorPage = repositoryPage.getTabSwitcherComponent()
-                .selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(yamlProjectName, "Corporate Rating");
 
         editorPage.getEditorLeftRulesTreeComponent()

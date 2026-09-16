@@ -68,7 +68,7 @@ public class TestACLRunBenchmarkSystemAction extends BaseTest {
 
         // A freshly-logged-in user has the project CLOSED in their workspace — open it so the editor tree shows it.
         repositoryPage.openProject(projectName);
-        editorPage = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent()
                 .selectModule(projectName, "Bank Rating");
         editorPage.getEditorLeftRulesTreeComponent()
@@ -131,7 +131,7 @@ public class TestACLRunBenchmarkSystemAction extends BaseTest {
 
         // A freshly-logged-in user has the project CLOSED in their workspace — open it so the editor tree shows it.
         repositoryPage.openProject(projectName);
-        editorPage = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent()
                 .selectModule(projectName, "Bank Rating");
         editorPage.getEditorLeftRulesTreeComponent()
@@ -192,7 +192,7 @@ public class TestACLRunBenchmarkSystemAction extends BaseTest {
 
         // A freshly-logged-in user has the project CLOSED in their workspace — open it so the editor tree shows it.
         repositoryPage.openProject(projectName);
-        editorPage = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent()
                 .selectModule(projectName, "Bank Rating");
         editorPage.getEditorLeftRulesTreeComponent()

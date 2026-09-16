@@ -48,8 +48,7 @@ public class TestImportModuleNamesRetentionOnModeSwitching extends BaseTest {
         repositoryPage.fillCommitInfo();
         repositoryPage.waitUntilSpinnerLoaded();
 
-        editorPage = repositoryPage.getTabSwitcherComponent()
-                .selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName);
 
         // Step 1.1: Open dialog, switch to Tables Generation mode, verify pre-populated names

@@ -53,7 +53,7 @@ public class TestMergeConflictDeletedFileUi extends BaseTest {
         ProjectDetailPage detail = repositoryPage.openProjectDetail(PROJECT);
         detail.createBranch(SIDE_BRANCH, true);
 
-        editorPage = repositoryPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         EditorToolbarPanelComponent toolbar = editorPage.getEditorToolbarPanelComponent();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(PROJECT, CONFLICTED_MODULE);
         editorPage.getEditorLeftRulesTreeComponent()
@@ -76,7 +76,7 @@ public class TestMergeConflictDeletedFileUi extends BaseTest {
 
         // Deleting a file only changes the workspace copy. Until the project is saved it stays in editing
         // state, and merging is refused with "the project is not in a valid state for merging".
-        editorPage = repositoryPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(PROJECT);
         editorPage.getEditorToolbarPanelComponent().clickSave();
         editorPage.getSaveChangesComponent().clickSave();

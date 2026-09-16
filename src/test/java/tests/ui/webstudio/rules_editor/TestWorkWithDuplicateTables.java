@@ -39,12 +39,12 @@ public class TestWorkWithDuplicateTables extends BaseTest {
                 NAME_PROJECT_SAME_MODULE, NAME_PROJECT_SAME_MODULE + ".zip");
 
         // Section 1: Same module duplicate tables — select table with error
-        editorPage = repositoryPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(NAME_PROJECT_SAME_MODULE, "module_AZ");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Decision")
-                .selectItemInFolderByIndex("Decision", "someLookupBig2", 1);
+                .expandFolderInTree("Rules")
+                .selectItemInFolderByIndex("Rules", "someLookupBig2", 1);
         assertThat(editorPage.getProblemsPanelComponent().getAllErrors())
                 .as("Error message for duplicated table in same module")
                 .contains("Found duplicated table 'SmartLookup Double someLookupBig2( String param1, Integer param2)'.");
@@ -66,7 +66,7 @@ public class TestWorkWithDuplicateTables extends BaseTest {
                 .isFalse();
 
         // Section 3: Select duplicate table WITHOUT error, check Run/Trace/Test dropdowns
-        editorPage.getEditorLeftRulesTreeComponent().selectItemInFolderByIndex("Decision", "someLookupBig2", 2);
+        editorPage.getEditorLeftRulesTreeComponent().selectItemInFolderByIndex("Rules", "someLookupBig2", 2);
         editorPage.getEditorToolbarPanelComponent().clickRun();
         assertThat(editorPage.getEditorToolbarPanelComponent().isWithinCurrentModuleOnlyInputArgsChecked())
                 .as("WithinCurrentModuleOnly should be unchecked after Run click (same module)")
@@ -132,12 +132,12 @@ public class TestWorkWithDuplicateTables extends BaseTest {
         repositoryPage.createProject(CreateNewProjectComponent.TabName.ZIP_ARCHIVE,
                 NAME_PROJECT_DIFF_MODULES, NAME_PROJECT_DIFF_MODULES + ".zip");
 
-        editorPage = repositoryPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(NAME_PROJECT_DIFF_MODULES, "module_AZ");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Decision")
-                .selectItemInFolder("Decision", "someLookupBig2");
+                .expandFolderInTree("Rules")
+                .selectItemInFolder("Rules", "someLookupBig2");
         assertThat(editorPage.getProblemsPanelComponent().getAllErrors())
                 .as("Error message for duplicate table in different modules")
                 .contains("There can be only one active table.");
@@ -171,7 +171,7 @@ public class TestWorkWithDuplicateTables extends BaseTest {
                 .isEqualTo("100");
 
         // Section 7: Test dropdown for decision table (diff modules) — WithinCurrentModuleOnly checked & disabled
-        editorPage.getEditorLeftRulesTreeComponent().selectItemInFolder("Decision", "someLookupBig2");
+        editorPage.getEditorLeftRulesTreeComponent().selectItemInFolder("Rules", "someLookupBig2");
         editorPage.getEditorToolbarPanelComponent().clickTableActionsTestDropdown();
         assertThat(editorPage.getEditorToolbarPanelComponent().isWithinCurrentModuleOnlyInputArgsChecked())
                 .as("WithinCurrentModuleOnly should be checked in TestDropdown (diff modules)")
@@ -186,7 +186,7 @@ public class TestWorkWithDuplicateTables extends BaseTest {
                 .isTrue();
 
         // Section 8: Top Panel Test — WithinCurrentModuleOnly unchecked & enabled, then set and run
-        editorPage.getEditorLeftRulesTreeComponent().selectItemInFolder("Decision", "someLookupBig2");
+        editorPage.getEditorLeftRulesTreeComponent().selectItemInFolder("Rules", "someLookupBig2");
         editorPage.getEditorToolbarPanelComponent().clickTopPanelTestDropdown();
         editorPage.getEditorToolbarPanelComponent().setTopPanelWithinCurrentModuleOnly(false);
         assertThat(editorPage.getEditorToolbarPanelComponent().isTopPanelWithinCurrentModuleOnlyChecked())
@@ -241,12 +241,12 @@ public class TestWorkWithDuplicateTables extends BaseTest {
         repositoryPage.createProject(CreateNewProjectComponent.TabName.ZIP_ARCHIVE,
                 NAME_PROJECT_DEPENDENT, NAME_PROJECT_DEPENDENT + ".zip");
 
-        editorPage = repositoryPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(NAME_PROJECT_WITH_DEPENDENCY, "module_AZ");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Decision")
-                .selectItemInFolder("Decision", "someLookupBig2");
+                .expandFolderInTree("Rules")
+                .selectItemInFolder("Rules", "someLookupBig2");
         assertThat(editorPage.getProblemsPanelComponent().getAllErrors())
                 .as("Error message for duplicate table across projects with dependency")
                 .contains("Method 'someLookupBig2(String param1," +
@@ -309,8 +309,8 @@ public class TestWorkWithDuplicateTables extends BaseTest {
         editorPage.getEditorToolbarPanelComponent().selectBreadcrumbModule(NAME_PROJECT_DEPENDENT, "module_KS");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Decision")
-                .selectItemInFolder("Decision", "someLookupBig2");
+                .expandFolderInTree("Rules")
+                .selectItemInFolder("Rules", "someLookupBig2");
         assertThat(editorPage.getTopProblemsPanelComponent().isAbsent())
                 .as("No errors should be shown for decision table in dependent project")
                 .isTrue();

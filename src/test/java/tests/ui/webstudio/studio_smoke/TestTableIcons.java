@@ -32,7 +32,7 @@ public class TestTableIcons extends BaseTest {
     private static final String MODULE_NAME = "All_tables_type";
 
     private static final List<String> CATALOG_NAMES = Arrays.asList(
-            "Decision", "Spreadsheet", "TBasic", "Column Match",
+            "Rules", "Spreadsheet", "TBasic", "Column Match",
             "Data", "Run", "Test", "Datatype", "Method", "Constants"
     );
 
@@ -67,7 +67,7 @@ public class TestTableIcons extends BaseTest {
         repositoryPage.createProject(CreateNewProjectComponent.TabName.ZIP_ARCHIVE, PROJECT_NAME, ZIP_FILE_NAME);
 
         // Switch to Editor tab and select module
-        editorPage = repositoryPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(PROJECT_NAME, MODULE_NAME);
 
         // Expand all catalog folders

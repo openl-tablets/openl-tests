@@ -38,8 +38,7 @@ public class TestImportForProjectCreatedFromTwoOpenApiFiles extends BaseTest {
 
         uploadFileToProject(repositoryPage, projectName, OPENAPI_FILE_1);
 
-        editorPage = repositoryPage.getTabSwitcherComponent()
-                .selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName);
 
         ImportOpenApiDialogComponent importDialog = editorPage.openImportOpenApiDialog();

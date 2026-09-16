@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class TestTraceDebuggerNeverHitRuleUi extends BaseTest {
 
     private static final String MODULE = "Main";
-    private static final String TABLE_FOLDER = "Decision";
+    private static final String TABLE_FOLDER = "Rules";
     private static final String TABLE_NAME = "Hello";
     private static final String FIRED_RULE = "R10";
     private static final String NEVER_FIRED_RULE = "R40";

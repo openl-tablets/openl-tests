@@ -46,7 +46,7 @@ public class TestMigrateBlockedByUndeclaredWorkbookUi extends BaseTest {
                 .as("Migrate must be withheld while an undeclared workbook would become a module (EPBDS-16363)")
                 .isFalse();
 
-        editorPage = repositoryPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(PROJECT, "MainModule");
         editorPage.getEditorToolbarPanelComponent().navigateToProjectRoot(PROJECT);
         editorPage.getEditorToolbarPanelComponent().clickExport();

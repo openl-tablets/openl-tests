@@ -30,8 +30,8 @@ public class TestCompareSelectedVersions extends BaseTest {
 
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Decision")
-                .selectItemInFolder("Decision", "Hello");
+                .expandFolderInTree("Rules")
+                .selectItemInFolder("Rules", "Hello");
 
         TableComponent table = editorPage.getCenterTable();
         table.editCell(8, 2, "5");

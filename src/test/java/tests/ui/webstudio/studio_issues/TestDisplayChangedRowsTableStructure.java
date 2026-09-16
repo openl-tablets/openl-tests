@@ -30,8 +30,8 @@ public class TestDisplayChangedRowsTableStructure extends BaseTest {
                 .selectModule(projectName, "Bank Rating");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Decision")
-                .selectItemInFolder("Decision", "BankLimitIndex");
+                .expandFolderInTree("Rules")
+                .selectItemInFolder("Rules", "BankLimitIndex");
 
         editorPage.getEditorToolbarPanelComponent().copyTableAsNew("newTable", "");
         editorPage.waitUntilSpinnerLoaded();
@@ -79,8 +79,8 @@ public class TestDisplayChangedRowsTableStructure extends BaseTest {
                 .selectModule(projectName, "Main");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Decision")
-                .selectItemInFolder("Decision", "Hello");
+                .expandFolderInTree("Rules")
+                .selectItemInFolder("Rules", "Hello");
 
         editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
         editorPage.getCenterTable().editCell(2, 1, "changedValue");
@@ -146,8 +146,8 @@ public class TestDisplayChangedRowsTableStructure extends BaseTest {
                 .selectModule(projectName, "Main");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Decision")
-                .selectItemInFolder("Decision", "Hello");
+                .expandFolderInTree("Rules")
+                .selectItemInFolder("Rules", "Hello");
 
         editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
         editorPage.getCenterTable().clickCell(2, 2);

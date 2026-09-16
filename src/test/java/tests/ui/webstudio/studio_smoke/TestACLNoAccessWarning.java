@@ -70,8 +70,7 @@ public class TestACLNoAccessWarning extends BaseTest {
                 .isZero();
 
         // ============ STEP 2: Verify Editor tab — no projects in workspace ============
-        editorPage = repositoryPage.getTabSwitcherComponent()
-                .selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
 
         Locator emptyWorkspaceMessage = DriverPool.getPage()
                 .locator("xpath=//*[contains(text(),'No Projects in the Workspace')]");

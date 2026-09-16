@@ -68,20 +68,20 @@ public class EditorToolbarPanelComponent extends BaseComponent {
     }
 
     private void initializeElements() {
-        exportBtn = new WebElement(page, "xpath=//a[@id='exportProjectButton']", "exportBtn");
-        verifyBtn = new WebElement(page, "//a[@id='verifyButton']", "verifyBtn");
-        saveBtn = new WebElement(page, "//a[@id='saveProjectButton']", "saveBtn");
-        refreshProjectBtn = new WebElement(page, "xpath=//a[@id='refreshBtn']", "refreshProjectBtn");
-        copyProjectBtn = new WebElement(page, "xpath=//a[@id='copyProjectButton']", "copyProjectBtn");
-        createTableBtn = new WebElement(page, "xpath=//a[@title='Create new table']", "createTableBtn");
-        syncBtn = new WebElement(page, "xpath=//div//a[text()='Sync']", "syncBtn");
-        allTopToolbarLinks = new WebElement(page, "xpath=//form[@id='headerForm']//a", "allTopToolbarLinks");
-        factorTextField = new WebElement(page, "xpath=//div[contains(@id, 'input')]//input[@type='text']", "factorTextField");
+        exportBtn = new WebElement(page, "xpath=//button[@data-testid='module-export']", "exportBtn");
+        verifyBtn = new WebElement(page, "xpath=//button[@data-testid='module-verify']", "verifyBtn");
+        saveBtn = new WebElement(page, "xpath=//button[@data-testid='module-save']", "saveBtn");
+        refreshProjectBtn = new WebElement(page, "xpath=//button[@data-testid='module-refresh']", "refreshProjectBtn");
+        copyProjectBtn = new WebElement(page, "xpath=//button[@data-testid='module-copy']", "copyProjectBtn");
+        createTableBtn = new WebElement(page, "xpath=//button[@data-testid='module-createTable']", "createTableBtn");
+        syncBtn = new WebElement(page, "xpath=//button[@data-testid='module-sync']", "syncBtn");
+        allTopToolbarLinks = new WebElement(page, "xpath=//div[@data-testid='module-actions']//button", "allTopToolbarLinks");
+        factorTextField = new WebElement(page, "xpath=//div[@data-testid='table-input-anchor']//input[@type='text']", "factorTextField");
 
         breadcrumbs = new EditorBreadcrumbsComponent(page);
         runTestsMenu = new RunTestsMenuComponent(page);
         // EditorPage passes div#tableToolbarPanel as this component's root — reuse it for the table toolbar.
-        tableToolbar = hasRootLocator() ? new TableToolbarComponent(getRootLocator()) : new TableToolbarComponent(page);
+        tableToolbar = new TableToolbarComponent(page);
     }
 
     // ========== Top line toolbar ==========
@@ -195,7 +195,7 @@ public class EditorToolbarPanelComponent extends BaseComponent {
             breadcrumbs.selectModuleInDropdown(moduleName);
         } else if (!actualProject.equals(projectName)) {
             navigateToProjectRoot(projectName);
-            new EditorLeftProjectModuleSelectorComponent(new WebElement(page, "xpath=//div[@id='projects']")).selectModule(projectName, moduleName);
+            new EditorLeftProjectModuleSelectorComponent().selectModule(projectName, moduleName);
         }
         WaitUtil.waitForCondition(
                 () -> moduleName.equals(getBreadcrumbsModuleName().trim()),
@@ -204,10 +204,8 @@ public class EditorToolbarPanelComponent extends BaseComponent {
                 "Waiting for breadcrumb module to become " + moduleName);
         page.waitForLoadState(LoadState.NETWORKIDLE);
         waitUntilSpinnerLoaded();
-        new ProblemsPanelComponent(new WebElement(page, "xpath=//div[@id='bottom']"))
-                .waitForCompilationToComplete(60000, 250);
-        new EditorLeftRulesTreeComponent(new WebElement(page, "xpath=//div[@id='left']"))
-                .waitForTreeFoldersToLoad();
+        new ProblemsPanelComponent().waitForCompilationToComplete(60000, 250);
+        new EditorLeftRulesTreeComponent().waitForTreeFoldersToLoad();
     }
 
     public void selectProjectBreadcrumbs(String projectName) {

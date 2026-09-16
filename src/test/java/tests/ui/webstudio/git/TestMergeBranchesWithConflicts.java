@@ -102,7 +102,7 @@ public class TestMergeBranchesWithConflicts extends BaseTest {
         editSpreadsheetCell(editorPage, BRANCH_1_VALUE);
 
         // Branch2 must branch off master (not Branch1) so the two diverge on the same cell.
-        editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        new EditorPage();
         editorPage.getEditorToolbarPanelComponent().switchBranch(MASTER_BRANCH);
         repositoryPage = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.REPOSITORY);
         projectDetail = repositoryPage.openProjectDetail(PROJECT_NAME);
@@ -112,7 +112,7 @@ public class TestMergeBranchesWithConflicts extends BaseTest {
     }
 
     private void editSpreadsheetCell(EditorPage editorPage, String value) {
-        EditorPage edit = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        EditorPage edit = new EditorPage();
         edit.getEditorLeftProjectModuleSelectorComponent().selectModule(PROJECT_NAME, MODULE_NAME);
         edit.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
@@ -131,7 +131,7 @@ public class TestMergeBranchesWithConflicts extends BaseTest {
             repo.openProject(PROJECT_NAME);
             repo.waitUntilSpinnerLoaded();
         }
-        EditorPage edit = repo.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        EditorPage edit = new EditorPage();
         // Reload so the editor reflects the post-merge workspace, then select the project so the branch
         // breadcrumb appears before switching to the target branch.
         edit.reloadPage();

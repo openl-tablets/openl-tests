@@ -54,8 +54,7 @@ public class TestImportTablesGenerationOverwriteWarning extends BaseTest {
         // Step 2: Upload openapi2.json and do Reconciliation import
         uploadFileToProject(repositoryPage, projectName, OPENAPI_FILE);
 
-        editorPage = repositoryPage.getTabSwitcherComponent()
-                .selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName);
         ImportOpenApiDialogComponent importDialog = editorPage.openImportOpenApiDialog();
         importDialog.selectUploadInRepository();

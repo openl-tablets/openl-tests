@@ -38,8 +38,7 @@ public class TestOpenApiReconciliationSpreadsheetErrors extends BaseTest {
                 .selectTab(TabSwitcherComponent.TabName.REPOSITORY);
         repositoryPage.createProject(CreateNewProjectComponent.TabName.ZIP_ARCHIVE, projectName, ZIP_OPEN_API_BBB);
 
-        editorPage = repositoryPage.getTabSwitcherComponent()
-                .selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Algorithm");
 
         editorPage.getEditorLeftRulesTreeComponent()

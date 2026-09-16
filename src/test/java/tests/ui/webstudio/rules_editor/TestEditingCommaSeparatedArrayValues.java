@@ -128,25 +128,25 @@ public class TestEditingCommaSeparatedArrayValues extends BaseTest {
         editorPage.getEditorTableActionsPanelComponent().clickSaveChanges();
 
         // 2.1-2.2 — Decision/SimpleLookupTable: 6 chosen US states; add Florida → AK,CT,DC,DE,FL,GA,WY
-        chooseTableAndVerifyCell(editorPage, table, multiselect, "Decision", "SimpleLookupTable",
+        chooseTableAndVerifyCell(editorPage, table, multiselect, "Rules", "SimpleLookupTable",
                 Arrays.asList("Alaska", "Connecticut", "District of Columbia", "Delaware", "Georgia", "Wyoming"));
         multiselect.selectValues("Florida");
         verifyValuesAfterDoneAndAfterSave(editorPage, "AK,CT,DC,DE,FL,GA,WY", 2, 3);
 
         // 2.3-2.4 — Decision/SimpleRulesTable: Alaska, Alabama; add Florida → AL,AK,FL
-        chooseTableAndVerifyCell(editorPage, table, multiselect, "Decision", "SimpleRulesTable",
+        chooseTableAndVerifyCell(editorPage, table, multiselect, "Rules", "SimpleRulesTable",
                 Arrays.asList("Alaska", "Alabama"));
         multiselect.selectValues("Florida");
         verifyValuesAfterDoneAndAfterSave(editorPage, "AL,AK,FL", 2, 3);
 
         // 2.5-2.6 — Decision/SmartLookup1: Americas; add European Union → NCSA,EU
-        chooseTableAndVerifyCell(editorPage, table, multiselect, "Decision", "SmartLookup1",
+        chooseTableAndVerifyCell(editorPage, table, multiselect, "Rules", "SmartLookup1",
                 Collections.singletonList("Americas"));
         multiselect.selectValues("European Union");
         verifyValuesAfterDoneAndAfterSave(editorPage, "NCSA,EU", 2, 3);
 
         // 2.7-2.8 — Decision/SmartRules1: Île-du-Prince-Édouard; add Ontario → PE,ON
-        chooseTableAndVerifyCell(editorPage, table, multiselect, "Decision", "SmartRules1",
+        chooseTableAndVerifyCell(editorPage, table, multiselect, "Rules", "SmartRules1",
                 Collections.singletonList("Île-du-Prince-Édouard"));
         multiselect.selectValues("Ontario");
         verifyValuesAfterDoneAndAfterSave(editorPage, "PE,ON", 2, 3);

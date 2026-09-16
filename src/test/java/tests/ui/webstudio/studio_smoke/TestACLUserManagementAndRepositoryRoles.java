@@ -138,7 +138,7 @@ public class TestACLUserManagementAndRepositoryRoles extends BaseTest {
         if (repositoryPage.isProjectActionAvailable(projectName, "Open")) {
             repositoryPage.openProject(projectName);
         }
-        editorPage = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent()
                 .selectModule(projectName, "Bank Rating");
         editorPage.getEditorLeftRulesTreeComponent()
@@ -185,7 +185,7 @@ public class TestACLUserManagementAndRepositoryRoles extends BaseTest {
         if (repositoryPage.isProjectActionAvailable(projectName, "Open")) {
             repositoryPage.openProject(projectName);
         }
-        editorPage = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
 
         // Open project and select a module (Example 1 - Bank Rating has "Bank Rating" module)
         editorPage.getEditorLeftProjectModuleSelectorComponent()

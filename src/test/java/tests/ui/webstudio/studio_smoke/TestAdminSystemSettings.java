@@ -42,14 +42,14 @@ public class TestAdminSystemSettings extends BaseTest {
         systemSettings.setVerifyOnEdit(true);
         systemSettings.applySettingsAndRelogin(User.ADMIN);
 
-        editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent()
                 .selectModule(projectNameForVerification, "Main");
 
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Decision")
-                .selectItemInFolder("Decision", "Hello");
+                .expandFolderInTree("Rules")
+                .selectItemInFolder("Rules", "Hello");
 
         editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
         editorPage.getCenterTable().editCell(6, 2, "1000", true);
@@ -61,14 +61,14 @@ public class TestAdminSystemSettings extends BaseTest {
         systemSettings.setVerifyOnEdit(false);
         systemSettings.applySettingsAndRelogin(User.ADMIN);
 
-        editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent()
                 .selectModule(projectNameForVerification, "Main");
 
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Decision")
-                .selectItemInFolder("Decision", "Hello");
+                .expandFolderInTree("Rules")
+                .selectItemInFolder("Rules", "Hello");
 
         editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
         editorPage.getCenterTable().editCell(4, 2, "Integer aaa", true);
@@ -103,7 +103,7 @@ public class TestAdminSystemSettings extends BaseTest {
         systemSettings.setDispatchingValidation(false);
         systemSettings.applySettingsAndRelogin(User.ADMIN);
 
-        editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent()
                 .selectModule(projectNameForDispatch, "TestSystemSettings");
 

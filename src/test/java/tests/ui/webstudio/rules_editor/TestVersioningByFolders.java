@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class TestVersioningByFolders extends BaseTest {
 
     private static final String MODULE_NAME = "TestModuleCategoryInheritedProperties";
-    private static final String BASE_FOLDER = "Decision";
+    private static final String BASE_FOLDER = "Rules";
     private static final String VERSION_FOLDER = "MyRules1";
     private static final String VERSIONED_TABLE_1 = "MyRules1 [0.0.1]";
     private static final String VERSIONED_TABLE_2 = "MyRules1 [0.0.2]";

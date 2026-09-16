@@ -38,8 +38,7 @@ public class TestOpenApiReconciliationDependentProject extends BaseTest {
         repositoryPage.createProject(CreateNewProjectComponent.TabName.ZIP_ARCHIVE, projectName2, ZIP_ARR_VALIDATION_DATATYPE);
         repositoryPage.createProject(CreateNewProjectComponent.TabName.ZIP_ARCHIVE, projectName3, ZIP_ARR_VALIDATION_123);
 
-        editorPage = repositoryPage.getTabSwitcherComponent()
-                .selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName3);
 
         editorPage.openManageDependenciesDialog().addDependency(projectName2, true);

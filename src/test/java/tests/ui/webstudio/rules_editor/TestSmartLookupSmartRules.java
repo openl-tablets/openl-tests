@@ -33,8 +33,8 @@ public class TestSmartLookupSmartRules extends BaseTest {
                 .selectModule(projectName, MODULE_NAME);
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Decision")
-                .selectItemInFolder("Decision", "MySmarRule");
+                .expandFolderInTree("Rules")
+                .selectItemInFolder("Rules", "MySmarRule");
 
         TableComponent table = editorPage.getCenterTable();
         assertThat(table.getColumn(1)).isEqualTo(List.of(
@@ -69,13 +69,13 @@ public class TestSmartLookupSmartRules extends BaseTest {
         editorPage.waitUntilSpinnerLoaded();
         assertThat(table.getRow(2).getValue()).containsAll(List.of("properties", "country", "FR"));
 
-        editorPage.getEditorLeftRulesTreeComponent().selectItemInFolder("Decision", "MySmarRule");
+        editorPage.getEditorLeftRulesTreeComponent().selectItemInFolder("Rules", "MySmarRule");
         editorPage.getEditorToolbarPanelComponent().removeCurrentTable();
         editorPage.getEditorLeftRulesTreeComponent()
-                .expandFolderInTree("Decision")
-                .checkRulesTableAbsent("Decision", "MySmarRule [county=FR]");
+                .expandFolderInTree("Rules")
+                .checkRulesTableAbsent("Rules", "MySmarRule [county=FR]");
 
-        editorPage.getEditorLeftRulesTreeComponent().selectItemInFolder("Decision", "MySmartLookup");
+        editorPage.getEditorLeftRulesTreeComponent().selectItemInFolder("Rules", "MySmartLookup");
         editorPage.getProblemsPanelComponent().checkNoProblems();
         assertThat(table.getColumn(1)).isEqualTo(List.of(
                 "SmartLookup Double MySmartLookup(Gender gender, Date dateOfBirth, Married status )", "Gender",

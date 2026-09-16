@@ -131,7 +131,7 @@ public class TestRepositoryBrowsingFilterStatus extends BaseTest {
                 .as("Newly created project status should be 'No Changes'").isEqualTo(STATUS_OPENED);
 
         // ===== Step 9-10: Put project into "Editing" via the editor edit-project dialog =====
-        editorPage = repositoryPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(PROJECT_1);
         editorPage.openEditProjectDialog(PROJECT_1).setDescription("test edit").clickUpdateButton();
         editorPage.waitUntilSpinnerLoaded();
@@ -157,7 +157,7 @@ public class TestRepositoryBrowsingFilterStatus extends BaseTest {
                 .as("Project status should be 'No Changes' after opening").isEqualTo(STATUS_OPENED);
 
         // ===== Step 17: Multi-user workspace isolation (React removed the per-user "locked" status) =====
-        editorPage = repositoryPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(PROJECT_1);
         editorPage.openEditProjectDialog(PROJECT_1).setDescription("isolation test").clickUpdateButton();
         editorPage.waitUntilSpinnerLoaded();

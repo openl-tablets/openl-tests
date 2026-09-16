@@ -30,8 +30,8 @@ public class TestArrayDeclarationIsLink extends BaseTest {
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "TestArrayDeclarationIsLink");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Decision")
-                .selectItemInFolder("Decision", "DetermineStatusByCodeRule");
+                .expandFolderInTree("Rules")
+                .selectItemInFolder("Rules", "DetermineStatusByCodeRule");
 
         // Find procedure links with title-datatype class
         WaitUtil.waitForCondition(() -> editorPage.getCenterTable().isVisible(), 5000, 100, "Waiting for table to be visible...");

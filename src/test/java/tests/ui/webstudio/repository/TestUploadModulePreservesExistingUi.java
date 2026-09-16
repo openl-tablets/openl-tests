@@ -33,8 +33,7 @@ public class TestUploadModulePreservesExistingUi extends BaseTest {
         ProjectDetailPage projectDetail = repositoryPage.openProjectDetail(projectName);
         projectDetail.uploadFile(TestDataUtil.getFilePathFromResources(UPLOAD_MODULE));
 
-        EditorPage editorPage = projectDetail.getTabSwitcherComponent()
-                .selectTab(TabSwitcherComponent.TabName.EDITOR);
+        EditorPage editorPage = new EditorPage();
 
         assertThat(editorPage.getEditorLeftProjectModuleSelectorComponent().getAllModuleNames(projectName))
                 .as("Existing module '%s' must remain in the module list after uploading another Excel module", EXISTING_MODULE)

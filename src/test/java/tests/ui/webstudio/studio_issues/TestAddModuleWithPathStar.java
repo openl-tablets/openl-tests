@@ -25,8 +25,8 @@ public class TestAddModuleWithPathStar extends BaseTest {
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Bank Rating");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Decision")
-                .selectItemInFolder("Decision", "EquityScore");
+                .expandFolderInTree("Rules")
+                .selectItemInFolder("Rules", "EquityScore");
 
         assertThat(editorPage.getCenterTable().getCellText(1, 1)).contains("SimpleLookup");
         assertThat(String.join("", editorPage.getProblemsPanelComponent().getAllErrors())).contains("ExcelParseException: Unknown file format");

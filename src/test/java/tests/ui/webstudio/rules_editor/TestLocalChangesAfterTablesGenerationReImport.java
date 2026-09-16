@@ -42,8 +42,7 @@ public class TestLocalChangesAfterTablesGenerationReImport extends BaseTest {
         repositoryPage.createProjectFromOpenApi(OPENAPI_FILE_1, projectName);
         uploadFileToProject(repositoryPage, projectName, OPENAPI_FILE_2, OPENAPI_FILE_2);
 
-        editorPage = repositoryPage.getTabSwitcherComponent()
-                .selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName);
 
         ImportOpenApiDialogComponent importDialog = editorPage.openImportOpenApiDialog();

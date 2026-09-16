@@ -36,8 +36,7 @@ public class TestConstructorNotFoundInDependentTable extends BaseTest {
         repositoryPage.createProject(CreateNewProjectComponent.TabName.ZIP_ARCHIVE, "SomeTransProject", "EPBDS-12848_SomeTransProject.zip");
 
         // Step 1: Open DoliMy → module DoliMy → table mySpr3 — should have no errors
-        editorPage = repositoryPage.getTabSwitcherComponent()
-                .selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent()
                 .selectModule("DoliMy", "DoliMy");
         editorPage.getEditorLeftRulesTreeComponent()
@@ -54,8 +53,8 @@ public class TestConstructorNotFoundInDependentTable extends BaseTest {
                 .selectModule("TheProejct", "TheModel");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Decision")
-                .selectItemInFolder("Decision", "someRule");
+                .expandFolderInTree("Rules")
+                .selectItemInFolder("Rules", "someRule");
         editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
         editorPage.getCenterTable().editCell(1, 1, "someRuleModified");
         editorPage.getEditorTableActionsPanelComponent().clickSaveChanges();

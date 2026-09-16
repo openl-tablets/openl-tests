@@ -48,14 +48,13 @@ public class TestACLLockUnlockDeprecated extends BaseTest {
                 .noneMatch(action -> action.toLowerCase().contains(LOCK) || action.toLowerCase().contains(UNLOCK));
 
         // ============ STEP 3: Check Editor toolbar — no Lock/Unlock actions ============
-        editorPage = editorPage.getTabSwitcherComponent()
-                .selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent()
                 .selectModule(projectName, "Bank Rating");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Decision")
-                .selectItemInFolder("Decision", "CapitalDynamicScore");
+                .expandFolderInTree("Rules")
+                .selectItemInFolder("Rules", "CapitalDynamicScore");
 
         EditorToolbarPanelComponent toolbar = editorPage.getEditorToolbarPanelComponent();
         List<String> toolbarActions = toolbar.getAllVisibleTopToolbarActions();

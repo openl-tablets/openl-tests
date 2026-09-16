@@ -28,8 +28,8 @@ public class TestAddPropertyExtraStateAppears extends BaseTest {
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Test Project-CW-20200101-20200101");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Decision")
-                .selectItemInFolder("Decision", "MyDatatype");
+                .expandFolderInTree("Rules")
+                .selectItemInFolder("Rules", "MyDatatype");
         editorPage.getRightTableDetailsComponent()
                 .addProperty(RightTableDetailsComponent.DropdownOptions.DESCRIPTION.getValue())
                 .setProperty(RightTableDetailsComponent.DropdownOptions.DESCRIPTION.getValue(), "Description details")

@@ -85,8 +85,7 @@ public class TestProtectedBranchBypassGroupMembershipUi extends AbstractSsoUiTes
         RepositoryPage repositoryPage = editorPage.getTabSwitcherComponent()
                 .selectTab(TabSwitcherComponent.TabName.REPOSITORY);
         repositoryPage.openProject(PROJECT_NAME);
-        EditorPage editor = repositoryPage.getTabSwitcherComponent()
-                .selectTab(TabSwitcherComponent.TabName.EDITOR);
+        EditorPage editor = new EditorPage();
         editor.getEditorLeftProjectModuleSelectorComponent().selectProject(PROJECT_NAME);
 
         SyncChangesDialogComponent syncDialog = repositoryPage.getSyncChangesDialogComponent();

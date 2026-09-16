@@ -32,8 +32,8 @@ public class TestLocalChangesLifecycleAndSettings extends BaseTest {
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Main");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Decision")
-                .selectItemInFolder("Decision", "Hello");
+                .expandFolderInTree("Rules")
+                .selectItemInFolder("Rules", "Hello");
 
         editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
         editorPage.getCenterTable().editCell(6, 4, "Good Morning1");
@@ -50,12 +50,12 @@ public class TestLocalChangesLifecycleAndSettings extends BaseTest {
         repositoryPage.openProjectsList().openProject(projectName);
         repositoryPage.waitUntilSpinnerLoaded();
 
-        editorPage = repositoryPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Main");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Decision")
-                .selectItemInFolder("Decision", "Hello");
+                .expandFolderInTree("Rules")
+                .selectItemInFolder("Rules", "Hello");
 
         assertThat(editorPage.getCenterTable().getCellText(6, 4))
                 .as("Cell value should be reverted to original after close and reopen")
@@ -69,8 +69,8 @@ public class TestLocalChangesLifecycleAndSettings extends BaseTest {
                 .isEqualTo("No changes in history");
 
         editorPage.getEditorLeftRulesTreeComponent()
-                .expandFolderInTree("Decision")
-                .selectItemInFolder("Decision", "Hello");
+                .expandFolderInTree("Rules")
+                .selectItemInFolder("Rules", "Hello");
 
         editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
         editorPage.getCenterTable().editCell(7, 4, "Good Afternoon1");
@@ -104,8 +104,8 @@ public class TestLocalChangesLifecycleAndSettings extends BaseTest {
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Main");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Decision")
-                .selectItemInFolder("Decision", "Hello");
+                .expandFolderInTree("Rules")
+                .selectItemInFolder("Rules", "Hello");
 
         editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
         editorPage.getCenterTable().editCell(6, 4, "Good Morning1");
@@ -114,14 +114,14 @@ public class TestLocalChangesLifecycleAndSettings extends BaseTest {
         AdminPage adminPage = editorPage.openUserMenu().navigateToAdministration();
         SystemSettingsPageComponent systemSettings = adminPage.navigateToSystemSettingsPage();
         systemSettings.cancelClearAllHistory();
-        adminPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        new EditorPage();
 
         editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Main");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Decision")
-                .selectItemInFolder("Decision", "Hello");
+                .expandFolderInTree("Rules")
+                .selectItemInFolder("Rules", "Hello");
 
         ChangesDialogComponent changesDialog = editorPage.getEditorToolbarPanelComponent()
                 .clickMore()
@@ -139,14 +139,14 @@ public class TestLocalChangesLifecycleAndSettings extends BaseTest {
         adminPage = editorPage.openUserMenu().navigateToAdministration();
         systemSettings = adminPage.navigateToSystemSettingsPage();
         systemSettings.clearAllHistory();
-        adminPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        new EditorPage();
 
         editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Main");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Decision")
-                .selectItemInFolder("Decision", "Hello");
+                .expandFolderInTree("Rules")
+                .selectItemInFolder("Rules", "Hello");
 
         changesDialog = editorPage.getEditorToolbarPanelComponent()
                 .clickMore()
@@ -160,12 +160,12 @@ public class TestLocalChangesLifecycleAndSettings extends BaseTest {
         systemSettings.setProjectHistoryCount("0");
         systemSettings.applySettingsAndRelogin(User.ADMIN);
 
-        editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Main");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Decision")
-                .selectItemInFolder("Decision", "Hello");
+                .expandFolderInTree("Rules")
+                .selectItemInFolder("Rules", "Hello");
 
         editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
         editorPage.getCenterTable().editCell(7, 4, "Good Afternoon1");
@@ -183,12 +183,12 @@ public class TestLocalChangesLifecycleAndSettings extends BaseTest {
         systemSettings.setProjectHistoryCount("10");
         systemSettings.applySettingsAndRelogin(User.ADMIN);
 
-        editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Main");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Decision")
-                .selectItemInFolder("Decision", "Hello");
+                .expandFolderInTree("Rules")
+                .selectItemInFolder("Rules", "Hello");
 
         editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
         editorPage.getCenterTable().editCell(8, 4, "Good Evening3");

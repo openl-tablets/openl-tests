@@ -111,7 +111,7 @@ public class TestExportProjectFunctionality extends BaseTest {
                 .isNotBlank();
         repositoryPage.openProjectsList();
 
-        editorPage = repositoryPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(PROJECT_NAME);
 
         editorPage.getEditorToolbarPanelComponent().clickExport();
@@ -174,8 +174,7 @@ public class TestExportProjectFunctionality extends BaseTest {
 
         repositoryPage = editorPage.getTabSwitcherComponent()
                 .selectTab(TabSwitcherComponent.TabName.REPOSITORY);
-        editorPage = repositoryPage.getTabSwitcherComponent()
-                .selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(PROJECT_NAME);
 
         editorPage.getEditorToolbarPanelComponent().clickExport();
@@ -209,8 +208,7 @@ public class TestExportProjectFunctionality extends BaseTest {
         repositoryPage.openProjectsList().openProjectDetail(PROJECT_NAME).openRevisionByPosition(2);
         repositoryPage.openProjectsList();
 
-        editorPage = repositoryPage.getTabSwitcherComponent()
-                .selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(PROJECT_NAME);
 
         editorPage.getEditorToolbarPanelComponent().clickExport();
@@ -279,8 +277,7 @@ public class TestExportProjectFunctionality extends BaseTest {
         exportAndVerifyDownload(repoExportDialog, "branch export",
                 "file1.xls", "file2.xlsx", "file4.xls", "pic.png", "rules.xml", "dir1/file3.xlsx");
 
-        editorPage = repositoryPage.getTabSwitcherComponent()
-                .selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent()
                 .selectModule(PROJECT_NAME, MODULE_FILE1);
 
@@ -303,8 +300,7 @@ public class TestExportProjectFunctionality extends BaseTest {
 
         repositoryPage = editorPage.getTabSwitcherComponent()
                 .selectTab(TabSwitcherComponent.TabName.REPOSITORY);
-        editorPage = repositoryPage.getTabSwitcherComponent()
-                .selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(PROJECT_NAME);
 
         editorPage.getEditorToolbarPanelComponent().clickExport();
@@ -328,7 +324,7 @@ public class TestExportProjectFunctionality extends BaseTest {
                 "Empty Project"
         );
 
-        editorPage = repositoryPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(SAMPLE_PROJECT);
 
         editorPage.getEditorToolbarPanelComponent().clickExport();
@@ -357,7 +353,7 @@ public class TestExportProjectFunctionality extends BaseTest {
                 .selectTab(TabSwitcherComponent.TabName.REPOSITORY);
         repositoryPage.openProject(SAMPLE_PROJECT);
 
-        editorPage = repositoryPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(SAMPLE_PROJECT);
 
         editorPage.getEditorToolbarPanelComponent().clickExport();
@@ -385,7 +381,7 @@ public class TestExportProjectFunctionality extends BaseTest {
         editorPage.openUserMenu().signOut();
         editorPage = loginService.login(UserService.getUser(User.ADMIN));
 
-        editorPage = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(SAMPLE_PROJECT);
 
         editorPage.getEditorToolbarPanelComponent().clickExport();

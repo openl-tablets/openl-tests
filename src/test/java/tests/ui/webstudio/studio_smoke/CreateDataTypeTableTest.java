@@ -41,7 +41,7 @@ public class CreateDataTypeTableTest extends BaseTest {
         repositoryPage.createProject(CreateNewProjectComponent.TabName.EXCEL_FILES, PROJECT_NAME, XLS_FILE);
 
         // 3. Navigate back to Editor and select project
-        editorPage = repositoryPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent()
                 .selectModule(PROJECT_NAME, "CreateDataTypeTableTest.Main");
 

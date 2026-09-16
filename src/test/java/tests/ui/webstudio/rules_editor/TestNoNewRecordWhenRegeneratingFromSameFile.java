@@ -39,8 +39,7 @@ public class TestNoNewRecordWhenRegeneratingFromSameFile extends BaseTest {
         repositoryPage.createProjectFromOpenApi(OPENAPI_FILE_2, projectName);
         uploadFileToProject(repositoryPage, projectName, OPENAPI_FILE_2, "openapi2-copy.json");
 
-        editorPage = repositoryPage.getTabSwitcherComponent()
-                .selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName);
 
         ImportOpenApiDialogComponent importDialog = editorPage.openImportOpenApiDialog();

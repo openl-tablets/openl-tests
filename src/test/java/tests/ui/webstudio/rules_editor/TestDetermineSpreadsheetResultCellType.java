@@ -40,8 +40,7 @@ public class TestDetermineSpreadsheetResultCellType extends BaseTest {
         repositoryPage.createProject(CreateNewProjectComponent.TabName.EXCEL_FILES,
                 PROJECT_NAME, "TestDetermineSpreadsheetResultCellType.xlsx");
 
-        editorPage = repositoryPage.getTabSwitcherComponent()
-                .selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
 
         editorPage.getEditorLeftProjectModuleSelectorComponent()
                 .selectModule(PROJECT_NAME, PROJECT_NAME);

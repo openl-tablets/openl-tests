@@ -36,8 +36,7 @@ public class TestDefaultProperties extends BaseTest {
         repositoryPage.createProject(CreateNewProjectComponent.TabName.EXCEL_FILES,
                 PROJECT_NAME, "TestDefaultProperties.xlsx");
 
-        editorPage = repositoryPage.getTabSwitcherComponent()
-                .selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
 
         editorPage.getEditorLeftProjectModuleSelectorComponent()
                 .selectModule(PROJECT_NAME, "TestDefaultProperties");

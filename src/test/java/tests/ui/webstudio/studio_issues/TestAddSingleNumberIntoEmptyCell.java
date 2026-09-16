@@ -26,8 +26,8 @@ public class TestAddSingleNumberIntoEmptyCell extends BaseTest {
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Bank Rating");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Decision")
-                .selectItemInFolder("Decision", "BankLimitIndex");
+                .expandFolderInTree("Rules")
+                .selectItemInFolder("Rules", "BankLimitIndex");
         editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
         editorPage.getCenterTable().clickCell(10, 1);
         editorPage.getEditorTableActionsPanelComponent().clickInsertRowAfter();

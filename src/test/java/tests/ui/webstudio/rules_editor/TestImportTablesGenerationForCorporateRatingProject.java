@@ -42,8 +42,7 @@ public class TestImportTablesGenerationForCorporateRatingProject extends BaseTes
         repositoryPage.createProject(CreateNewProjectComponent.TabName.TEMPLATE, projectName, TEMPLATE_CORPORATE);
         uploadFileToProject(repositoryPage, projectName, OPENAPI_FILE);
 
-        editorPage = repositoryPage.getTabSwitcherComponent()
-                .selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName);
 
         ImportOpenApiDialogComponent importDialog = editorPage.openImportOpenApiDialog();
@@ -87,7 +86,7 @@ public class TestImportTablesGenerationForCorporateRatingProject extends BaseTes
 
         assertThat(editorPage.getEditorLeftRulesTreeComponent().isFolderExistsInTree("Spreadsheet"))
                 .as("Algorithms should contain Spreadsheet tables").isTrue();
-        assertThat(editorPage.getEditorLeftRulesTreeComponent().isFolderExistsInTree("Configuration"))
+        assertThat(editorPage.getEditorLeftRulesTreeComponent().isFolderExistsInTree("Environment"))
                 .as("Algorithms should contain Configuration tables").isTrue();
     }
 

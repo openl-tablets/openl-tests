@@ -93,8 +93,8 @@ public class TestDisplayChangedRowsResolveConflicts extends BaseTest {
                 .selectModule(projectName, "Bank Rating");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Decision")
-                .selectItemInFolder("Decision", "BankLimitIndex");
+                .expandFolderInTree("Rules")
+                .selectItemInFolder("Rules", "BankLimitIndex");
 
         editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
         editorPage.getEditorTableActionsPanelComponent().clickInsertRowAfter();
@@ -153,8 +153,8 @@ public class TestDisplayChangedRowsResolveConflicts extends BaseTest {
                 .selectModule(projectName, "Bank Rating");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Decision")
-                .selectItemInFolder("Decision", "BankLimitIndex");
+                .expandFolderInTree("Rules")
+                .selectItemInFolder("Rules", "BankLimitIndex");
 
         editorPage.getEditorToolbarPanelComponent().removeCurrentTable();
         editorPage.waitUntilSpinnerLoaded();

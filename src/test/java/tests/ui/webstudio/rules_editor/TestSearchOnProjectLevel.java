@@ -41,7 +41,7 @@ public class TestSearchOnProjectLevel extends BaseTest {
         repositoryPage.createProject(CreateNewProjectComponent.TabName.ZIP_ARCHIVE,
                 nameProjectExample1BankRating, "RulesEditor.TestSearchOnProjectLevel.Example1BankRating.zip");
 
-        repositoryPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        new EditorPage();
         editorPage = new EditorPage();
         SearchFilterComponent search = editorPage.getSearchFilterComponent();
 
@@ -153,7 +153,7 @@ public class TestSearchOnProjectLevel extends BaseTest {
         repositoryPage.createProject(CreateNewProjectComponent.TabName.ZIP_ARCHIVE,
                 nameProjectExample1BankRating, "RulesEditor.TestSearchOnProjectLevel.Example1BankRating.zip");
 
-        repositoryPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        new EditorPage();
         editorPage = new EditorPage();
         SearchFilterComponent search = editorPage.getSearchFilterComponent();
 

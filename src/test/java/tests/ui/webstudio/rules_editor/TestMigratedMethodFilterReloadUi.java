@@ -60,8 +60,8 @@ public class TestMigratedMethodFilterReloadUi extends BaseTest {
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, MODULE_NAME);
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Decision")
-                .selectItemInFolder("Decision", TABLE_NAME);
+                .expandFolderInTree("Rules")
+                .selectItemInFolder("Rules", TABLE_NAME);
 
         editorPage.getEditorToolbarPanelComponent().clickProjectRefresh();
 

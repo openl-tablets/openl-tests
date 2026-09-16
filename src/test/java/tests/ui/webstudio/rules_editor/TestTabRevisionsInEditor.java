@@ -41,8 +41,8 @@ public class TestTabRevisionsInEditor extends BaseTest {
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Main");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Decision")
-                .selectItemInFolder("Decision", "Hello");
+                .expandFolderInTree("Rules")
+                .selectItemInFolder("Rules", "Hello");
 
         editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
         editorPage.getCenterTable().editCell(6, 2, "100");
@@ -62,7 +62,7 @@ public class TestTabRevisionsInEditor extends BaseTest {
         // projects tree (arriving on the Editor tab shows the tree, as later in this test).
         editorPage.reloadPage();
         RepositoryPage repositoryPage = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.REPOSITORY);
-        editorPage = repositoryPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Main");
         editorPage.getEditorToolbarPanelComponent().clickMore().clickRevisions();
 
@@ -81,7 +81,7 @@ public class TestTabRevisionsInEditor extends BaseTest {
         repositoryPage = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.REPOSITORY);
         int repositoryRevisionCount = repositoryPage.openProjectDetail(projectName).getRevisionsCount();
 
-        editorPage = repositoryPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Main");
         editorPage.getEditorToolbarPanelComponent().clickMore().clickRevisions();
         revisionsTab.waitForTableToLoad();
@@ -92,8 +92,8 @@ public class TestTabRevisionsInEditor extends BaseTest {
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Main");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Decision")
-                .selectItemInFolder("Decision", "Hello");
+                .expandFolderInTree("Rules")
+                .selectItemInFolder("Rules", "Hello");
         editorPage.getEditorToolbarPanelComponent().clickMore().clickRevisions();
 
         revisionsTab.waitForTableToLoad();
@@ -110,7 +110,7 @@ public class TestTabRevisionsInEditor extends BaseTest {
         repositoryPage.openProject(projectName);
         repositoryPage.waitUntilSpinnerLoaded();
         repositoryPage.waitUntilAppIdle();
-        editorPage = repositoryPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
 
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Main");
         editorPage.getEditorToolbarPanelComponent().clickMore().clickRevisions();
@@ -122,8 +122,8 @@ public class TestTabRevisionsInEditor extends BaseTest {
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Main");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Decision")
-                .selectItemInFolder("Decision", "Hello");
+                .expandFolderInTree("Rules")
+                .selectItemInFolder("Rules", "Hello");
 
         assertThat(editorPage.getCenterTable().getCellText(6, 2))
                 .as("Cell value should be the original value before the edit when viewing old revision")

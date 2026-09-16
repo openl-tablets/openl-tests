@@ -57,7 +57,7 @@ public class TestCreateProjectFromOpenApiJsonFile extends BaseTest {
                 .as("rules-deploy.xml should be present in the project files").isTrue();
         repositoryPage.openProjectsList();
 
-        editorPage = repositoryPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName);
 
         assertThat(editorPage.getOpenApiPropertyValue("OpenAPI File:"))
@@ -73,7 +73,7 @@ public class TestCreateProjectFromOpenApiJsonFile extends BaseTest {
         editorPage.getEditorLeftRulesTreeComponent().setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE);
         assertThat(editorPage.getEditorLeftRulesTreeComponent().isFolderExistsInTree("Spreadsheet"))
                 .as("Algorithms module should have Spreadsheet folder").isTrue();
-        assertThat(editorPage.getEditorLeftRulesTreeComponent().isFolderExistsInTree("Configuration"))
+        assertThat(editorPage.getEditorLeftRulesTreeComponent().isFolderExistsInTree("Environment"))
                 .as("Algorithms module should have Configuration folder").isTrue();
         assertThat(editorPage.getEditorLeftRulesTreeComponent().isFolderExistsInTree("Datatype"))
                 .as("Algorithms module should NOT have Datatype folder").isFalse();
@@ -99,7 +99,7 @@ public class TestCreateProjectFromOpenApiJsonFile extends BaseTest {
 
         editorPage.reloadPage();
         editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.REPOSITORY);
-        editorPage = new EditorPage().getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName);
 
         editorPage.getEditorToolbarPanelComponent().clickExport();
@@ -171,7 +171,7 @@ public class TestCreateProjectFromOpenApiJsonFile extends BaseTest {
                 .as("rules.xlsx should be present in the project files after upload").isTrue();
         repositoryPage.openProjectsList().saveProject(projectName, "Uploaded rules.xlsx");
 
-        EditorPage editorPageAfterUpload = repositoryPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        EditorPage editorPageAfterUpload = new EditorPage();
         editorPageAfterUpload.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName);
 
         assertThat(editorPageAfterUpload.getEditorLeftProjectModuleSelectorComponent().getAllModuleNames(projectName))

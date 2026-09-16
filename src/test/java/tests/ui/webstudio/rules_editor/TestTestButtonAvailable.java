@@ -38,7 +38,7 @@ public class TestTestButtonAvailable extends BaseTest {
                 .selectTab(TabSwitcherComponent.TabName.REPOSITORY);
         repositoryPage.createProject(CreateNewProjectComponent.TabName.TEMPLATE, nameExample3Project, "Example 3 - Auto Policy Calculation");
 
-        editorPage = repositoryPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(nameExample3Project, "AutoPolicyCalculation");
         EditorPage editorPageRef = editorPage;
         WaitUtil.waitForCondition(
@@ -50,15 +50,15 @@ public class TestTestButtonAvailable extends BaseTest {
 
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Decision")
-                .selectItemInFolder("Decision", "AccidentPremium");
+                .expandFolderInTree("Rules")
+                .selectItemInFolder("Rules", "AccidentPremium");
         editorPage.getEditorToolbarPanelComponent().runAllTests();
         editorPage.getTestResultValidationComponent().checkAllTablesPassed();
 
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Decision")
-                .selectItemInFolder("Decision", "AccidentPremium");
+                .expandFolderInTree("Rules")
+                .selectItemInFolder("Rules", "AccidentPremium");
         DriverPool.getPage().reload();
         editorPage = new EditorPage();
         editorPage.getProblemsPanelComponent().waitForCompilationToComplete();
@@ -133,7 +133,7 @@ public class TestTestButtonAvailable extends BaseTest {
         repositoryPage = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.REPOSITORY);
         repositoryPage.createProject(CreateNewProjectComponent.TabName.ZIP_ARCHIVE, NAME_PROJECT_MY, "MyProject.zip");
 
-        editorPage = repositoryPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(nameExample3Project);
         DriverPool.getPage().goBack();
         // Going back restores the previous view without rebuilding the projects tree, so its nodes stay

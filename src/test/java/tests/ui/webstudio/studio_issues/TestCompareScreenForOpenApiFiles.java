@@ -56,13 +56,12 @@ public class TestCompareScreenForOpenApiFiles extends BaseTest {
         repositoryPage.openProjectsList().openProjectDetail(projectName).openRevisionByPosition(2);
 
         // In Editor: select Bank Rating module, navigate to MaxLimit table, edit a cell
-        EditorPage editorPage = repositoryPage.getTabSwitcherComponent()
-                .selectTab(TabSwitcherComponent.TabName.EDITOR);
+        EditorPage editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Bank Rating");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Decision")
-                .selectItemInFolder("Decision", "MaxLimit");
+                .expandFolderInTree("Rules")
+                .selectItemInFolder("Rules", "MaxLimit");
 
         // Click Edit - this will trigger an alert about editing an old revision
         editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();

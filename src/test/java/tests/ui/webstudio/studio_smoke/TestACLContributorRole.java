@@ -81,7 +81,7 @@ public class TestACLContributorRole extends BaseTest {
         // ============ Verify Contributor CAN edit tables in Editor (E permission) ============
         // A freshly-logged-in user has the project CLOSED in their workspace, so open it before the editor.
         repositoryPage.openProject(projectName);
-        editorPage = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent()
                 .selectModule(projectName, "Bank Rating");
         editorPage.getEditorLeftRulesTreeComponent()
@@ -154,7 +154,7 @@ public class TestACLContributorRole extends BaseTest {
 
         // Verify Contributor CAN edit in Editor
         repositoryPage.openProject(projectName);
-        editorPage = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Bank Rating");
         editorPage.getEditorLeftRulesTreeComponent()
                 .expandFolderInTree("Rating Algorithm")
@@ -182,7 +182,7 @@ public class TestACLContributorRole extends BaseTest {
 
         // Verify Viewer CANNOT edit in Editor
         repositoryPage.openProject(projectName);
-        editorPage = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Bank Rating");
         editorPage.getEditorLeftRulesTreeComponent()
                 .expandFolderInTree("Rating Algorithm")
@@ -256,7 +256,7 @@ public class TestACLContributorRole extends BaseTest {
 
         // Verify Contributor CAN edit in Editor
         repositoryPage.openProject(project1Name);
-        editorPage = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(project1Name, "Bank Rating");
         editorPage.getEditorLeftRulesTreeComponent()
                 .expandFolderInTree("Rating Algorithm")

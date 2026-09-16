@@ -31,8 +31,8 @@ public class TestLocalChangesCoreMechanics extends BaseTest {
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Main");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Decision")
-                .selectItemInFolder("Decision", "Hello");
+                .expandFolderInTree("Rules")
+                .selectItemInFolder("Rules", "Hello");
 
         ChangesDialogComponent changesDialog = editorPage.getEditorToolbarPanelComponent()
                 .clickMore()
@@ -42,8 +42,8 @@ public class TestLocalChangesCoreMechanics extends BaseTest {
                 .isEqualTo("No changes in history");
 
         editorPage.getEditorLeftRulesTreeComponent()
-                .expandFolderInTree("Decision")
-                .selectItemInFolder("Decision", "Hello");
+                .expandFolderInTree("Rules")
+                .selectItemInFolder("Rules", "Hello");
 
         editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
         editorPage.getCenterTable().editCell(6, 4, "Good Morning1");
@@ -57,8 +57,8 @@ public class TestLocalChangesCoreMechanics extends BaseTest {
                 .isEqualTo("No changes in history");
 
         editorPage.getEditorLeftRulesTreeComponent()
-                .expandFolderInTree("Decision")
-                .selectItemInFolder("Decision", "Hello");
+                .expandFolderInTree("Rules")
+                .selectItemInFolder("Rules", "Hello");
 
         editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
         editorPage.getCenterTable().editCell(6, 4, "Good Morning1");
@@ -99,8 +99,8 @@ public class TestLocalChangesCoreMechanics extends BaseTest {
         compareDialog.close();
 
         editorPage.getEditorLeftRulesTreeComponent()
-                .expandFolderInTree("Decision")
-                .selectItemInFolder("Decision", "Hello");
+                .expandFolderInTree("Rules")
+                .selectItemInFolder("Rules", "Hello");
 
         editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
         editorPage.getCenterTable().editCell(7, 4, "Good Afternoon1");
@@ -145,12 +145,12 @@ public class TestLocalChangesCoreMechanics extends BaseTest {
                 .as(".history folder should not be visible in repository while local changes exist (not committed)")
                 .isFalse();
 
-        editorPage = repositoryPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Main");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Decision")
-                .selectItemInFolder("Decision", "Hello");
+                .expandFolderInTree("Rules")
+                .selectItemInFolder("Rules", "Hello");
 
         editorPage.getEditorToolbarPanelComponent().clickMore().clickChanges();
         changesDialog.clickRestoreAtRow(2);
@@ -158,8 +158,8 @@ public class TestLocalChangesCoreMechanics extends BaseTest {
 
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Decision")
-                .selectItemInFolder("Decision", "Hello");
+                .expandFolderInTree("Rules")
+                .selectItemInFolder("Rules", "Hello");
 
         assertThat(editorPage.getCenterTable().getCellText(6, 4))
                 .as("Cell (6,4) should still have the first edit value after restoring to row 2")
@@ -180,8 +180,8 @@ public class TestLocalChangesCoreMechanics extends BaseTest {
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Main");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Decision")
-                .selectItemInFolder("Decision", "Hello");
+                .expandFolderInTree("Rules")
+                .selectItemInFolder("Rules", "Hello");
 
         editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
         editorPage.getCenterTable().editCell(6, 4, "Good Morning1");
@@ -213,8 +213,8 @@ public class TestLocalChangesCoreMechanics extends BaseTest {
 
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Decision")
-                .selectItemInFolder("Decision", "Hello");
+                .expandFolderInTree("Rules")
+                .selectItemInFolder("Rules", "Hello");
 
         assertThat(editorPage.getCenterTable().getCellText(6, 4))
                 .as("Cell (6,4) should retain first edit value after restoring to row 2")
@@ -234,8 +234,8 @@ public class TestLocalChangesCoreMechanics extends BaseTest {
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Main");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Decision")
-                .selectItemInFolder("Decision", "Hello");
+                .expandFolderInTree("Rules")
+                .selectItemInFolder("Rules", "Hello");
 
         changesDialog = editorPage.getEditorToolbarPanelComponent()
                 .clickMore()
@@ -256,12 +256,12 @@ public class TestLocalChangesCoreMechanics extends BaseTest {
                 .as(".history folder should not be visible in the repository tree after save")
                 .isFalse();
 
-        editorPage = repositoryPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Main");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Decision")
-                .selectItemInFolder("Decision", "Hello");
+                .expandFolderInTree("Rules")
+                .selectItemInFolder("Rules", "Hello");
 
         editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
         editorPage.getCenterTable().editCell(6, 4, "Good Morning2");

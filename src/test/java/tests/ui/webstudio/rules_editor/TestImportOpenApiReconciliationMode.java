@@ -43,8 +43,7 @@ public class TestImportOpenApiReconciliationMode extends BaseTest {
         uploadFileToProject(repositoryPage, projectName, OPENAPI_FILE);
 
         // Step 3: Navigate to Editor tab and select project
-        editorPage = repositoryPage.getTabSwitcherComponent()
-                .selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName);
 
         // Step 4: Open dialog, select "Uploaded in the Repository", enter path, import in Reconciliation mode

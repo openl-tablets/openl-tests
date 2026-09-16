@@ -80,7 +80,7 @@ public class TestCreateProjectFromOpenApiYamlWithCustomModuleNames extends BaseT
         assertThat(projectFiles.isFilePresent("new_openapi_1.yaml"))
                 .as("new_openapi_1.yaml should be present in the project files").isTrue();
 
-        editorPage = repositoryPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName);
 
         assertThat(editorPage.getOpenApiPropertyValue("OpenAPI File:")).isEqualTo("new_openapi_1.yaml");

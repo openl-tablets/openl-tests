@@ -40,8 +40,7 @@ public class TestImportCycleThroughModesForOpenApiProject extends BaseTest {
         repositoryPage.createProjectFromOpenApi(OPENAPI_FILE_3, projectName);
 
         // Step 6: Verify initial OpenAPI properties after creation from openapi3.json
-        editorPage = repositoryPage.getTabSwitcherComponent()
-                .selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName);
 
         assertThat(editorPage.getOpenApiPropertyValue("Mode:")).isEqualTo("Tables generation");
@@ -67,8 +66,7 @@ public class TestImportCycleThroughModesForOpenApiProject extends BaseTest {
                 .selectTab(TabSwitcherComponent.TabName.REPOSITORY);
         uploadFileToProject(repositoryPage, projectName, OPENAPI_FILE);
 
-        editorPage = repositoryPage.getTabSwitcherComponent()
-                .selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName);
 
         importDialog = editorPage.openImportOpenApiDialog();
@@ -137,7 +135,7 @@ public class TestImportCycleThroughModesForOpenApiProject extends BaseTest {
         assertThat(editorPage.getEditorLeftRulesTreeComponent().isFolderExistsInTree("Spreadsheet"))
                 .as("Algorithms should contain Spreadsheet tables after openapi3.json import")
                 .isTrue();
-        assertThat(editorPage.getEditorLeftRulesTreeComponent().isFolderExistsInTree("Configuration"))
+        assertThat(editorPage.getEditorLeftRulesTreeComponent().isFolderExistsInTree("Environment"))
                 .as("Algorithms should contain Configuration tables after openapi3.json import")
                 .isTrue();
         editorPage.getProblemsPanelComponent().checkNoProblems();

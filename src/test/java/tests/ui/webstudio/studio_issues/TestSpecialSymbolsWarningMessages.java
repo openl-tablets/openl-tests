@@ -30,7 +30,7 @@ public class TestSpecialSymbolsWarningMessages extends BaseTest {
     public void testSpecialSymbolsWarningMessages() {
         // Step 1: Login and open test project
         String projectName = WorkflowService.loginCreateProjectFromExcelFile(User.ADMIN, TEST_FILE);
-        EditorPage editorPage = new EditorPage().getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        EditorPage editorPage = new EditorPage();
         String moduleName = TEST_FILE.replace(".xlsx", "");
         editorPage.getEditorLeftProjectModuleSelectorComponent()
                 .selectModule(projectName, moduleName);

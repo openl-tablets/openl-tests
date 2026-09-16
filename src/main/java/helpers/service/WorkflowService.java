@@ -16,7 +16,6 @@ public class WorkflowService {
         RepositoryPage repositoryPage = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.REPOSITORY);
         String projectName = StringUtil.generateUniqueName("project");
         repositoryPage.createProject(projectType, projectName, sourceName);
-        repositoryPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
         return projectName;
     }
 

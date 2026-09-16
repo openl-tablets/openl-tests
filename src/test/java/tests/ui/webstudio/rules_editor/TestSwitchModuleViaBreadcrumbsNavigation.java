@@ -47,7 +47,7 @@ public class TestSwitchModuleViaBreadcrumbsNavigation extends BaseTest {
         repositoryPage.createProject(CreateNewProjectComponent.TabName.ZIP_ARCHIVE, NAME_PROJECT_FIRST, ZIP_FILE_FIRST);
         repositoryPage.createProject(CreateNewProjectComponent.TabName.ZIP_ARCHIVE, NAME_PROJECT_SECOND, ZIP_FILE_SECOND);
 
-        editorPage = repositoryPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(NAME_PROJECT_FIRST, "module_AR");
         editorPage.getEditorToolbarPanelComponent().selectProjectBreadcrumbs(NAME_PROJECT_SECOND);
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(NAME_PROJECT_SECOND, "module_AZ");
@@ -74,8 +74,8 @@ public class TestSwitchModuleViaBreadcrumbsNavigation extends BaseTest {
         long startTime = System.currentTimeMillis();
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Decision")
-                .selectItemInFolder("Decision", "SmartRule1");
+                .expandFolderInTree("Rules")
+                .selectItemInFolder("Rules", "SmartRule1");
         long elapsedTime = System.currentTimeMillis() - startTime;
         assertThat(elapsedTime)
                 .as("Expanding and selecting tree item should fit into the framework's default wait")
@@ -97,8 +97,7 @@ public class TestSwitchModuleViaBreadcrumbsNavigation extends BaseTest {
         String projectName = "Example3_" + System.currentTimeMillis();
         repositoryPage.createProject(CreateNewProjectComponent.TabName.TEMPLATE, projectName, "Example 3 - Auto Policy Calculation");
 
-        editorPage = repositoryPage.getTabSwitcherComponent()
-                .selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent()
                 .selectModule(projectName, "AutoPolicyTests");
 

@@ -37,8 +37,8 @@ public class TestSimpleLookupSimpleRules extends BaseTest {
         editorPage.getEditorLeftProjectModuleSelectorComponent()
                 .selectModule(projectName, MODULE_NAME);
         rulesTree.setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Decision")
-                .selectItemInFolder("Decision", "SimpleREx1");
+                .expandFolderInTree("Rules")
+                .selectItemInFolder("Rules", "SimpleREx1");
 
         TableComponent table = editorPage.getCenterTable();
         assertThat(table.getColumn(1)).isEqualTo(List.of(
@@ -50,8 +50,8 @@ public class TestSimpleLookupSimpleRules extends BaseTest {
         editorPage.getProblemsPanelComponent().checkNoProblems();
 
         editorPage.getEditorToolbarPanelComponent().removeCurrentTable();
-        rulesTree.expandFolderInTree("Decision")
-                .checkRulesTableAbsent("Decision", "SimpleREx1");
+        rulesTree.expandFolderInTree("Rules")
+                .checkRulesTableAbsent("Rules", "SimpleREx1");
 
         editorPage.getEditorToolbarPanelComponent().clickCreateTable();
         CreateTableDialogComponent createTableDialog = editorPage.getCreateTableDialogComponent();
@@ -71,7 +71,7 @@ public class TestSimpleLookupSimpleRules extends BaseTest {
         assertThat(editorPage.getTestResultValidationComponent().getTestResult(1))
                 .isEqualTo(List.of("1", "20", "female", "0.2"));
 
-        rulesTree.selectItemInFolder("Decision", "SimpleREx1");
+        rulesTree.selectItemInFolder("Rules", "SimpleREx1");
         table.doubleClickCell(2, 2);
         editorPage.getEditorTableActionsPanelComponent().clickInsertColumnBefore();
         table.editCell(2, 2, "Status");
@@ -92,7 +92,7 @@ public class TestSimpleLookupSimpleRules extends BaseTest {
         editorPage.getEditorToolbarPanelComponent().copyTableAsBusinessDimension("Countries", "Australia");
         editorPage.waitUntilSpinnerLoaded();
         assertThat(rulesTree.getSelectedItemText()).isEqualTo("SimpleREx1 [country=AU]");
-        rulesTree.checkRulesTablePresent("Decision", "SimpleREx1");
+        rulesTree.checkRulesTablePresent("Rules", "SimpleREx1");
         assertThat(table.getColumn(1)).isEqualTo(List.of(
                 "SimpleRules Double SimpleREx1 (Integer age, Marital_Status Status, Gender gender)",
                 "properties", "age", "18-30", "18-30", "31-60"));
@@ -100,7 +100,7 @@ public class TestSimpleLookupSimpleRules extends BaseTest {
         assertThat(table.getColumn(3)).isEqualTo(List.of("AU", "gender", "male", "female", "male"));
         assertThat(table.getColumn(4)).containsAll(List.of("Output", "0.1", "0.2", "0.3"));
 
-        rulesTree.selectItemInFolder("Decision", "SimpleLEx2");
+        rulesTree.selectItemInFolder("Rules", "SimpleLEx2");
         editorPage.getProblemsPanelComponent().checkNoProblems();
         assertThat(normalizeNonBreakingSpaces(table.getColumn(1))).isEqualTo(List.of(
                 "SimpleLookup Double SimpleLEx2 (Gender gender, Marital_Status status)",
@@ -112,12 +112,12 @@ public class TestSimpleLookupSimpleRules extends BaseTest {
         assertThat(editorPage.getTestResultValidationComponent().getTestResult(1))
                 .isEqualTo(List.of("1", "female", "Single", "350"));
 
-        rulesTree.selectItemInFolder("Decision", "SimpleLEx2");
+        rulesTree.selectItemInFolder("Rules", "SimpleLEx2");
         runSimpleLookup(editorPage, null, "Married");
         assertThat(editorPage.getTestResultValidationComponent().getTestResult(1))
                 .isEqualTo(List.of("1", "Empty", "Married", "500"));
 
-        rulesTree.selectItemInFolder("Decision", "SimpleLEx2");
+        rulesTree.selectItemInFolder("Rules", "SimpleLEx2");
         table.doubleClickCell(4, 1);
         editorPage.getEditorTableActionsPanelComponent().clickInsertRowBefore();
         table.editCell(5, 1, "male");

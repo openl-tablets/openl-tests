@@ -40,7 +40,7 @@ public class TestGitCopyProjectIntoExistingBranchViaEditorTab extends BaseTest {
         repositoryPage.createProject(CreateNewProjectComponent.TabName.TEMPLATE, PROJECT_NAME, "Sample Project");
         repositoryPage.createProject(CreateNewProjectComponent.TabName.TEMPLATE, SECOND_PROJECT_NAME, "Sample Project");
 
-        editorPage = repositoryPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(PROJECT_NAME);
         assertThat(editorPage.getEditorToolbarPanelComponent().isCopyProjectBtnVisible())
                 .as("Copy button must be present in the Editor toolbar")

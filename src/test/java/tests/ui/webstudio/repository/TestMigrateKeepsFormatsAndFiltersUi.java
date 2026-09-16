@@ -54,7 +54,7 @@ public class TestMigrateKeepsFormatsAndFiltersUi extends BaseTest {
                 .as("The declared .xls workbook must still be reachable after the migration")
                 .isTrue();
 
-        editorPage = repositoryPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(PROJECT, "LegacyOld");
         editorPage.getEditorToolbarPanelComponent().navigateToProjectRoot(PROJECT);
         editorPage.getEditorToolbarPanelComponent().clickExport();

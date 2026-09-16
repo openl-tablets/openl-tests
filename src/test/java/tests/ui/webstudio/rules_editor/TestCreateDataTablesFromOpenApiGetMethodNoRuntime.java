@@ -41,7 +41,7 @@ public class TestCreateDataTablesFromOpenApiGetMethodNoRuntime extends BaseTest 
 
         repositoryPage.createProjectFromOpenApi(fileName, projectName);
 
-        editorPage = repositoryPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Algorithms");
 
         editorPage.getEditorLeftRulesTreeComponent().setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE);

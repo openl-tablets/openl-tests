@@ -41,7 +41,7 @@ public class TestReactMergeConflictSmoke extends BaseTest {
         detail.createBranch(BRANCH, true);
 
         // MyBranch: edit MySpr1 cell, commit.
-        editorPage = repositoryPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         EditorToolbarPanelComponent toolbar = editorPage.getEditorToolbarPanelComponent();
         editMySpr1(editorPage, "TheirValue");
         toolbar.clickSave();
@@ -65,7 +65,7 @@ public class TestReactMergeConflictSmoke extends BaseTest {
         repositoryPage.waitUntilSpinnerLoaded();
 
         // master must keep its own (yours) value.
-        editorPage = repositoryPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.reloadPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(PROJECT, "Module1");
         editorPage.getEditorLeftRulesTreeComponent()

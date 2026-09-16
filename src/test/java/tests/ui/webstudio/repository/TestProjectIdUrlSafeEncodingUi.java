@@ -65,7 +65,7 @@ public class TestProjectIdUrlSafeEncodingUi extends BaseTest {
                 .as("The Revisions tab must load the history when the project id needs URL-safe encoding")
                 .isGreaterThanOrEqualTo(1);
 
-        editorPage = repositoryPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(PROJECT, MODULE);
         assertThat(editorPage.getEditorLeftRulesTreeComponent().waitForTreeFoldersToLoad().getAllEndNodesNames())
                 .as("The editor must open the module of the project whose id needs URL-safe encoding")

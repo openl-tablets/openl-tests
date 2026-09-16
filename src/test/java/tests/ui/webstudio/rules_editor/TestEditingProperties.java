@@ -40,8 +40,8 @@ public class TestEditingProperties extends BaseTest {
                 .selectModule(PROJECT_NAME, PROJECT_NAME);
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Decision")
-                .selectItemInFolder("Decision", "MyRules1");
+                .expandFolderInTree("Rules")
+                .selectItemInFolder("Rules", "MyRules1");
 
         editAndCheckProperty(editorPage, "Category", "category", "cat2");
         editAndCheckProperty(editorPage, "Description", "description", "Hello Kitty2");
@@ -80,7 +80,7 @@ public class TestEditingProperties extends BaseTest {
 
         repositoryPage.createProject(CreateNewProjectComponent.TabName.EXCEL_FILES, PROJECT_NAME, EXCEL_FILE);
 
-        return repositoryPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.EDITOR);
+        return new EditorPage();
     }
 
     private void editAndCheckProperty(EditorPage editorPage, String propertyName, String propertyTableName, String newValue) {
