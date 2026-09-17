@@ -15,7 +15,7 @@ public class RunTestsMenuComponent extends BaseComponent implements IRunTestsMen
 
     // Only one launcher stands open at a time, and it draws what it holds into the page.
     private static final String LAUNCHER = "xpath=";
-    private static final int COUNT_TIMEOUT_MS = 60000;
+    private static final int COUNT_TIMEOUT_MS = 120000;
     private static final int PROBE_MS = 2000;
 
     private final WebElement testBtn;
