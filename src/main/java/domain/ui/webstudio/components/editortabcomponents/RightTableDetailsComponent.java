@@ -58,7 +58,7 @@ public class RightTableDetailsComponent extends BaseComponent {
         propertyInputTemplate = new WebElement(page, ROW_BY_LABEL + "//input[not(@type='checkbox')]", "propertyInput");
         propertyCheckboxTemplate = new WebElement(page, ROW_BY_LABEL + "//input[@type='checkbox']", "propertyCheckbox");
         propertySelectTemplate = new WebElement(page, ROW_BY_LABEL + "//div[contains(@class,'ant-select')]//input", "propertySelect");
-        propertyClearTemplate = new WebElement(page, ROW_BY_LABEL + "//span[contains(@class,'ant-select-clear')]", "propertyClearBtn");
+        propertyClearTemplate = new WebElement(page, ROW_BY_LABEL + "//*[contains(@class,'ant-select-clear')]", "propertyClearBtn");
         propertyDeleteTemplate = new WebElement(page, ROW_BY_LABEL + "//button[starts-with(@data-testid,'table-details-remove-')]", "propertyDeleteBtn");
         inheritedSourceTemplate = new WebElement(page, ROW_BY_LABEL + "//button[starts-with(@data-testid,'table-details-source-')]", "inheritedSourceBtn");
         propertyLabels = createElementList(PANEL + "//tr[contains(@class,'ant-descriptions-row')]/th", "propertyLabels");

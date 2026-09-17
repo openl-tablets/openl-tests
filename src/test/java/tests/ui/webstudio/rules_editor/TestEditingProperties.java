@@ -68,7 +68,8 @@ public class TestEditingProperties extends BaseTest {
         editAndCheckCheckboxProperty(editorPage, "US Region", "usregion", "NE", "Northeast");
         editAndCheckCheckboxProperty(editorPage, "US States", "state", "WA,WV", "Washington", "West Virginia");
 
-        editAndCheckBooleanProperty(editorPage, "Cacheable", "cacheable", false);
+        // The table already reads false here, and the panel offers to keep only what was changed.
+        editAndCheckBooleanProperty(editorPage, "Cacheable", "cacheable", true);
 
         editAndCheckDropdownProperty(editorPage, "Origin", "origin", "Deviation");
         editAndCheckDropdownProperty(editorPage, "Recalculate", "recalculate", "Analyze");

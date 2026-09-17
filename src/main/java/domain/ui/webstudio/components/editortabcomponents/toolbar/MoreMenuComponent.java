@@ -50,6 +50,9 @@ public class MoreMenuComponent extends BaseComponent implements IMoreMenu {
      * the press is made only where the menu is, and each action finds its own way from whichever screen.
      */
     public MoreMenuComponent open() {
+        // The history stands in a window over the screen and covers the toolbar this menu hangs from, so a
+        // reader closes it before reaching for the menu again.
+        new ChangesDialogComponent().closeIfOpen();
         WaitUtil.sleep(1000, "Waiting before opening the More menu");
         if (toggle.isVisible(MENU_ITEM_VISIBLE_TIMEOUT_MS * 2)) {
             toggle.click();

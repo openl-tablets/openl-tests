@@ -72,6 +72,7 @@ public class EditorLeftProjectModuleSelectorComponent extends BaseComponent {
     public void selectProject(String projectName) {
         waitUntilSpinnerLoaded();
         if (isCardOf(projectName)) {
+            showOverview();
             return;
         }
         // A window a reader opened over the screen — the module's local history — is closed before they
@@ -86,11 +87,11 @@ public class EditorLeftProjectModuleSelectorComponent extends BaseComponent {
         WaitUtil.requireCondition(() -> isCardOf(projectName), DEFAULT_TIMEOUT_MS, MODULE_READY_POLL_MS,
                 "Waiting for the card of project '" + projectName + "' to open");
         waitUntilSpinnerLoaded();
+        showOverview();
     }
 
     public void selectModule(String projectName, String projectModuleName) {
         selectProject(projectName);
-        showModules();
         WebElement moduleLink = moduleOpenTemplate.format(projectModuleName);
         moduleLink.waitForVisible(DEFAULT_TIMEOUT_MS);
         moduleLink.click();
@@ -104,7 +105,6 @@ public class EditorLeftProjectModuleSelectorComponent extends BaseComponent {
      */
     public void selectFirstModule(String projectName) {
         selectProject(projectName);
-        showModules();
         WaitUtil.waitForListNotEmpty(() -> moduleOpenLinks, DEFAULT_TIMEOUT_MS, MODULE_READY_POLL_MS,
                 "Waiting for the modules of '" + projectName + "' to be listed");
         moduleOpenLinks.get(0).click();
@@ -113,7 +113,6 @@ public class EditorLeftProjectModuleSelectorComponent extends BaseComponent {
 
     public List<String> getAllModuleNames(String projectName) {
         selectProject(projectName);
-        showModules();
         WaitUtil.waitForListNotEmpty(() -> moduleOpenLinks, DEFAULT_TIMEOUT_MS, MODULE_READY_POLL_MS,
                 "Waiting for the modules of '" + projectName + "' to be listed");
         return moduleOpenLinks.stream()
@@ -124,10 +123,11 @@ public class EditorLeftProjectModuleSelectorComponent extends BaseComponent {
     }
 
     /**
-     * Shows the side of the card its modules are listed on. The card keeps its files, its history and its
-     * settings on sides of their own, and a reader who was last on one of those is still on it.
+     * Shows the side of the card the project itself is on, where its modules are listed and its settings are
+     * written. The card keeps its files and its history on sides of their own, and a reader who was last on
+     * one of those is still on it.
      */
-    private void showModules() {
+    private void showOverview() {
         if (!moduleOpenLinks.isEmpty() && moduleOpenLinks.get(0).isVisible(PROBE_MS)) {
             return;
         }

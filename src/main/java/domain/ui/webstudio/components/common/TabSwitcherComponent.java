@@ -1,7 +1,9 @@
 package domain.ui.webstudio.components.common;
 
 import domain.ui.webstudio.components.BaseComponent;
+import com.microsoft.playwright.PlaywrightException;
 import configuration.core.ui.WebElement;
+import domain.ui.webstudio.components.editortabcomponents.ChangesDialogComponent;
 import configuration.driver.DriverPool;
 import domain.ui.webstudio.pages.BasePage;
 import domain.ui.webstudio.pages.mainpages.RepositoryPage;
@@ -13,6 +15,7 @@ import java.util.List;
 public class TabSwitcherComponent extends BaseComponent {
 
     private static final int LIST_PROBE_MS = 1500;
+    private static final int TAB_CLICK_MS = 3000;
 
     private WebElement tabLabelTemplate;
     private WebElement projectsList;
@@ -61,10 +64,16 @@ public class TabSwitcherComponent extends BaseComponent {
             if (projectsList.isVisible(LIST_PROBE_MS)) {
                 return true;
             }
-            if (tabLabel.isVisible(LIST_PROBE_MS)) {
-                tabLabel.click();
-            } else if (projectsCrumb.isVisible(LIST_PROBE_MS)) {
-                projectsCrumb.click();
+            // The history stands in a window over the screen, and the header cannot be reached through one.
+            new ChangesDialogComponent().closeIfOpen();
+            try {
+                if (tabLabel.isVisible(LIST_PROBE_MS)) {
+                    tabLabel.click(TAB_CLICK_MS);
+                } else if (projectsCrumb.isVisible(LIST_PROBE_MS)) {
+                    projectsCrumb.click(TAB_CLICK_MS);
+                }
+            } catch (PlaywrightException covered) {
+                return false;
             }
             return projectsList.isVisible(LIST_PROBE_MS);
         }, DEFAULT_TIMEOUT_MS, 500, "Going to '" + tabName.getValue() + "'");
