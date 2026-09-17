@@ -24,8 +24,7 @@ public class ProjectsTableComponent extends BaseComponent {
     // Short enough that a row lost to a re-render is retried instead of waited out.
     private static final int ACTION_CLICK_TIMEOUT_MS = DEFAULT_TIMEOUT_MS / 2;
 
-    private static final int LISTING_TIMEOUT_MS = 60000;
-
+    private final WebElement listBeingRead;
     private final WebElement rowByName;
     private final WebElement nameInRow;
     private final WebElement branchInRow;
@@ -45,6 +44,9 @@ public class ProjectsTableComponent extends BaseComponent {
 
     public ProjectsTableComponent(WebElement rootLocator) {
         super(rootLocator);
+        listBeingRead = new WebElement(page,
+                "xpath=//*[@data-testid='projects-home-loading'] | //*[@data-testid='projects-loading-overlay']",
+                "projectsListBeingRead");
         rowByName = createScopedElement("xpath=.//tr[starts-with(@data-testid,'project-row')][.//span[normalize-space()='%s']]", "projectRow");
         // Click the name, not the row: a row also holds a branch switcher, and a row-wide click can hit it.
         nameInRow = createScopedElement("xpath=.//tr[starts-with(@data-testid,'project-row')]//span[normalize-space()='%s']", "projectNameInRow");
@@ -65,14 +67,12 @@ public class ProjectsTableComponent extends BaseComponent {
     }
 
     /**
-     * Waits for the list to hold what it is going to hold. A repository being read through says so in place
-     * of the list, and a project made a moment ago is in it only once that reading has ended.
+     * Waits for the list to hold what it is going to hold. While it is being read the screen draws the
+     * reading in place of the list, and over a list it already has it draws a veil, so a project made a
+     * moment ago — or one just deleted — is looked for once that reading has ended.
      */
     private void waitUntilTheListIsDrawn() {
-        WebElement reading = new WebElement(page,
-                "xpath=//*[@data-testid='projects-indexing'] | //*[@data-testid='projects-home-loading']",
-                "projectsListBeingRead");
-        WaitUtil.waitForCondition(() -> !reading.exists(), LISTING_TIMEOUT_MS, 250,
+        WaitUtil.waitForCondition(() -> !listBeingRead.exists(), DEFAULT_TIMEOUT_MS, 250,
                 "Waiting for the list of projects to be drawn");
     }
 

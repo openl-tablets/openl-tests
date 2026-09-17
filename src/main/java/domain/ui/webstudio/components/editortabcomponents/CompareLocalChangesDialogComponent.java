@@ -59,11 +59,6 @@ public class CompareLocalChangesDialogComponent extends BaseComponent {
                 "compareTreeSwitcher");
     }
 
-    /** Used where the comparison is drawn in the page itself rather than in a window of its own. */
-    public CompareLocalChangesDialogComponent(Page page, boolean inlineModal) {
-        this(page);
-    }
-
     public CompareLocalChangesDialogComponent waitForDialogToAppear() {
         WaitUtil.requireCondition(this::isComparisonDrawn, COMPARISON_TIMEOUT_MS, 250,
                 "Waiting for the comparison to be drawn");
@@ -83,7 +78,7 @@ public class CompareLocalChangesDialogComponent extends BaseComponent {
     }
 
     public CompareLocalChangesDialogComponent waitForTextCompareToAppear() {
-        conflictText.waitForVisible(DEFAULT_TIMEOUT_MS);
+        conflictText.waitForVisible(COMPARISON_TIMEOUT_MS);
         return this;
     }
 

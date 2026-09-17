@@ -157,6 +157,7 @@ public class ProblemsPanelComponent extends BaseComponent {
 
     public void checkNoProblems() {
         boolean compiled = waitForCompilationToComplete(COMPILATION_TIMEOUT_MS, COMPILATION_POLL_MS);
+        waitUntilThePanelHasSettled();
         if (!compiled) {
             throw new AssertionError("Compilation did not finish within " + COMPILATION_TIMEOUT_MS + " ms, state: "
                     + fetchServerCompileStatusViaPage());
@@ -207,6 +208,7 @@ public class ProblemsPanelComponent extends BaseComponent {
      */
     private List<String> readMessages(boolean errors) {
         waitForCompilationToComplete();
+        waitUntilThePanelHasSettled();
         if (!panel.isVisible(PROBE_MS)) {
             return List.of();
         }
@@ -233,6 +235,26 @@ public class ProblemsPanelComponent extends BaseComponent {
 
     public void waitForCompilationToComplete() {
         waitForCompilationToComplete(COMPILATION_TIMEOUT_MS, COMPILATION_POLL_MS);
+    }
+
+    /**
+     * Waits for the panel to hold what it is going to hold. A module reports what it found as it goes, and
+     * the indicator names the state it is in only once it is drawn, so what the panel says is taken when it
+     * has said the same thing twice over.
+     */
+    private void waitUntilThePanelHasSettled() {
+        String[] last = {null};
+        WaitUtil.waitForCondition(() -> {
+            if (isCompilationInProgress()) {
+                last[0] = null;
+                return false;
+            }
+            String said = counterValue(errorsCounter) + "/" + counterValue(warningsCounter) + "/"
+                    + (compileState.isVisible(PROBE_MS / 4) ? String.valueOf(compileState.getAttribute("aria-label")) : "");
+            boolean settled = said.equals(last[0]);
+            last[0] = said;
+            return settled;
+        }, COMPILATION_TIMEOUT_MS, COMPILATION_POLL_MS * 2, "Waiting for the problems panel to settle");
     }
 
     public boolean waitForCompilationToComplete(long timeoutMillis, long pollIntervalMillis) {
