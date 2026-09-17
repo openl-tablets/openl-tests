@@ -587,6 +587,48 @@ now takes anything typed into the box.
 of picking them from lists; what the run returns is still checked in full. Picking them from a list is the
 coverage to restore with the fix.
 
+## 23. Generating tables lays a second module beside the one the project already has
+
+**What happens.** A project whose modules come from patterns — every project made from a template; the
+descriptor of *Example 3 - Auto Policy Calculation* is `<project/>`, so the defaults `rules/**/*.xlsx` and
+`tests/**/*.xlsx` apply — is asked to generate tables into a module it already has. `AutoPolicyTests` reads
+`tests/AutoPolicyTests.xlsx`, and the plan answers
+`{"name":"AutoPolicyTests","path":"rules/AutoPolicyTests.xlsx","declared":true}`: a workbook that does not
+exist, announced as one about to be replaced. The generation writes it, and the project is left with two
+modules named `AutoPolicyTests`, one under `rules/` and one under `tests/`. Read off the running application:
+`GET /projects/{id}/openapi/generation`, then the generation, then `GET /projects/{id}/modules`.
+
+**Where it comes from.** `ProjectOpenApiGenerationService.targetOf` looks for the module among the
+declarations that are **not** patterns (`.filter(module -> !module.isModuleWithWildcard())`, line 121),
+although the documentation directly above it promises the opposite — *"where a wildcard already matches the
+workbook and names the module after it. The generation writes over the workbook such a module reads rather
+than laying a second one beside it"*. It also reads the declared `rules.xml` rather than the resolved
+descriptor, so the patterns are never expanded into the files they matched. The `declared` flag then comes
+from `ProjectDescriptorManager.isNamedByWildcard`, which answers about the path the generation invented
+rather than about a module that exists: `rules/AutoPolicyTests.xlsx` falls under `rules/**/*.xlsx` and its
+base name is the module name, so the answer is yes. The screen sends that path straight back
+(`openApiActions.tsx`), so nothing downstream can correct it.
+
+**Why it matters.** Two modules of one name are one module to the engine — a module is told by
+`<project>/<name>`, the two dependency loaders compare equal and the set keeps the first — so only the
+workbook whose path sorts first, the generated one under `rules/`, is compiled. The project's own module is
+dropped from every compilation with nothing said about it. The product refuses this state everywhere else:
+the descriptor validator answers *More than one module is named 'X'.* and adding a module answers *The
+module 'X' already exists.*; the generation is the one writer that never asks. Afterwards every lookup of a
+module by name reaches only one of the two, so Local Changes, a restore and a comparison address the wrong
+workbook or none.
+
+The old wizard did not do this: it found the module through the resolved descriptor, showed its real path
+read-only, said *Import and overwrite*, deleted that workbook and wrote the generated one in its place
+(`ProjectBean.getModulesInfo` and `regenerateOpenAPI`, deleted in `7ab8ab2570`). Nothing in the commit that
+replaced it records a decision to change this.
+
+**Blocked tests.**
+- `tests.ui.webstudio.rules_editor.TestLocalChangesAfterReImportForTemplateProject` — the scenario stops with
+  `SkipException` where it turns to `AutoPolicyTests`: the module it lands on was created rather than
+  replaced, so it has no local history at all, and the tree now offers two modules of that name. What runs
+  before it — the re-import itself and the local change it leaves on the module of rules — still runs.
+
 ---
 
 ## Renamings that are not bugs
