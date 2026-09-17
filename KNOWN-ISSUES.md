@@ -33,6 +33,8 @@ model; only the way to ask for it was removed.
 
 ## 2. The "Vocabulary" group disappeared from the tables tree
 
+**Filed as EPBDS-16654** (*Grouping by table type doesn't work properly for Vocabularies*, 17 Sep 2026).
+
 **What changed.** In the JSF tree's *By Type* view, alias datatypes were grouped under their own
 `Vocabulary` node (`TableTreeNodeBuilder`, see `git show 6.4.0:.../ui/tree/TableTreeNodeBuilder.java`). The
 React tree groups by the `kind` field of the tables API (`TableKind`), which has no `Vocabulary` constant, so
@@ -176,6 +178,8 @@ the project reloads once and settles, with the table still there.
 ---
 
 ## 9. "Compare Excel files" no longer opens the comparison of two Excel files
+
+**Filed as EPBDS-16655** (*The feature "Compare Excel Files" disappeared*, 17 Sep 2026).
 
 **What happens.** The module's More menu offers **Compare Excel files**. Pressing it opens the comparison of
 the *project* against one of its own revisions — the revision picker — not the screen that takes two
@@ -498,6 +502,10 @@ Reproduced on `ghcr.io/openl-tablets/webstudio:6.5.0-b48c86279338`:
 
 ## 20. Migrating a project that declares nothing always fails, and leaves it broken
 
+**Of the same family as EPBDS-16638, EPBDS-16639 and EPBDS-16641** — a project left without a descriptor
+while *Detect projects by Excel files* is off also answers 404 on its Management tab, refuses a copy to a
+branch and is not deployed. This one is the migrate.
+
 **What happens.** For a project with no `rules.xml` — workbooks lying in its root, which is what a migration
 is for — `POST /web/projects/{id}/migrate?scope=rulesXml` answers HTTP 400
 `openl.error.file.descriptor.name.required.message` (*The project name is required.*) **after** it has already
@@ -535,6 +543,9 @@ Reproduced on `ghcr.io/openl-tablets/webstudio:6.5.0-b48c86279338`: upload `Migr
 ---
 
 ## 21. The OpenAPI section keeps a specification that has been deleted
+
+**Filed as EPBDS-16656** (*The message "The project declares no OpenAPI specification." is displayed when
+openAPI file was generated*, 17 Sep 2026) — the same section reading its files once.
 
 **What happens.** A project made from a specification declares none in its descriptor: the file lying in the
 project under the name its format reads as is what is read against, and the card names it, marked
