@@ -203,8 +203,13 @@ public class EditorToolbarPanelComponent extends BaseComponent {
         return breadcrumbs.getAllProjectsLink();
     }
 
+    /**
+     * Goes to the project's own screen. Only a module screen carries a switcher to walk projects with; the
+     * project's screen has none, because it is already the project — so the way there is the way a reader
+     * takes it, whichever screen they stand on.
+     */
     public void navigateToProjectRoot(String projectName) {
-        breadcrumbs.navigateToProjectRoot(projectName);
+        new EditorLeftProjectModuleSelectorComponent().selectProject(projectName);
     }
 
     public void switchBranch(String branchName) {

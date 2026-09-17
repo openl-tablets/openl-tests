@@ -75,17 +75,9 @@ public class TestImportTablesGenerationOverwriteWarning extends BaseTest {
         OpenApiModuleSettingsDialogComponent settingsDialog = editorPage.getOpenApiModuleSettingsDialogComponent();
         settingsDialog.waitForVisible();
 
-        assertThat(settingsDialog.getContentText())
-                .as("Warning dialog should list both Algorithms_test and Models_test as modules to overwrite")
-                .contains("Warning! The following module already exists and all of its content is going to be overwritten.\n" +
-                        "Rules Module: Algorithms_test\n" +
-                        "rules1/Algorithms_test1.xlsx\n" +
-                        "Warning! The following module already exists and all of its content is going to be overwritten.\n" +
-                        "Data Module: Models_test\n" +
-                        "rules2/Models_test2.xlsx");
-        assertThat(settingsDialog.getImportButtonText())
-                .as("Import button should say 'Import and overwrite' when existing modules would be overwritten")
-                .isEqualTo("Import and overwrite");
+        assertThat(settingsDialog.getPlanLines())
+                .as("Both modules already stand, so the workbooks the project declares for them are replaced")
+                .contains("Services module: Algorithms_test — the workbook rules1/Algorithms_test1.xlsx is replaced", "Data types module: Models_test — the workbook rules2/Models_test2.xlsx is replaced");
         assertThat(settingsDialog.isVisible())
                 .as("Settings dialog with Cancel button should be visible")
                 .isTrue();

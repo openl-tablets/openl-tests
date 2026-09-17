@@ -75,14 +75,12 @@ public class TestImportTablesGenerationForNonOpenApiProject extends BaseTest {
 
         OpenApiModuleSettingsDialogComponent settingsDialog = editorPage.getOpenApiModuleSettingsDialogComponent();
         settingsDialog.waitForVisible();
-        assertThat(settingsDialog.getContentText())
-                .as("Warning should show Bank Rating overwrite and Models creation")
-                .contains("Warning! The following module already exists and all of its content is going to be overwritten.\n" +
-                        "Rules Module: Bank Rating\n" +
-                        "Bank Rating.xlsx")
-                .contains("The following module doesn't exist and is going to be created:\n" +
-                        "Data Module: Models\n" +
-                        "rules/Models.xlsx");
+        assertThat(settingsDialog.getPlanLines())
+                .as("Bank Rating is a workbook the project already reads, so it is written over")
+                .contains("Services module: Bank Rating — the workbook Bank Rating.xlsx is replaced");
+        assertThat(settingsDialog.getPlanLines())
+                .as("The data types are written into Models, in the workbook the project names for it")
+                .anySatisfy(line -> assertThat(line).contains("Data types module: Models", "rules/Models.xlsx"));
         settingsDialog.clickImportAndOverride();
 
         editorPage.waitUntilAppIdle();

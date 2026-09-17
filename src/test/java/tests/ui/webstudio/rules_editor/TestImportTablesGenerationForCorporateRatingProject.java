@@ -58,15 +58,11 @@ public class TestImportTablesGenerationForCorporateRatingProject extends BaseTes
         OpenApiModuleSettingsDialogComponent settingsDialog = editorPage.getOpenApiModuleSettingsDialogComponent();
         settingsDialog.waitForVisible();
 
-        assertThat(settingsDialog.getContentText())
-                .as("Algorithms and Models should be created as new modules (Corporate Rating does not have them)")
-                .contains("The following module doesn't exist and is going to be created:\n" +
-                        "Rules Module: Algorithms\n" +
-                        "rules/Algorithms.xlsx")
-                .contains("The following module doesn't exist and is going to be created:\n" +
-                        "Data Module: Models\n" +
-                        "rules/Models.xlsx");
-        assertThat(settingsDialog.getImportButtonText()).isEqualTo("Import");
+        assertThat(settingsDialog.getPlanLines())
+                .as("The plan must write the services into Algorithms and the data types into Models, each "
+                        + "into the workbook the project names for it")
+                .anySatisfy(line -> assertThat(line).contains("Services module: Algorithms", "rules/Algorithms.xlsx"))
+                .anySatisfy(line -> assertThat(line).contains("Data types module: Models", "rules/Models.xlsx"));
 
         settingsDialog.clickImportAndOverride();
         editorPage.waitUntilSpinnerLoaded();

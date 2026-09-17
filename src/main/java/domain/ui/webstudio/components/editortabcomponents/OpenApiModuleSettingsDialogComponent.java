@@ -64,10 +64,15 @@ public class OpenApiModuleSettingsDialogComponent extends BaseComponent {
         return generateBtn.getText().trim();
     }
 
-    /** Goes ahead with the writing the plan describes. */
+    /**
+     * Goes ahead with the writing the plan describes, and waits for the question to be done with: the plan
+     * stands over the project's screen, which cannot be read while it is there.
+     */
     public void clickImportAndOverride() {
         generateBtn.waitForVisible(DEFAULT_TIMEOUT_MS);
         generateBtn.click();
+        WaitUtil.requireCondition(() -> !generateBtn.isVisible(PROBE_MS), DEFAULT_TIMEOUT_MS * 2, 250,
+                "Waiting for the tables the specification describes to be written");
         waitUntilSpinnerLoaded();
     }
 

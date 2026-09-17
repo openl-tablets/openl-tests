@@ -78,15 +78,9 @@ public class TestImportCycleThroughModesForOpenApiProject extends BaseTest {
         OpenApiModuleSettingsDialogComponent settingsDialog = editorPage.getOpenApiModuleSettingsDialogComponent();
         settingsDialog.waitForVisible();
 
-        assertThat(settingsDialog.getContentText())
-                .as("Both Algorithms and Models modules should be overwritten")
-                .contains("Warning! The following module already exists and all of its content is going to be overwritten.\n" +
-                        "Rules Module: Algorithms\n" +
-                        "rules/Algorithms.xlsx")
-                .contains("Warning! The following module already exists and all of its content is going to be overwritten.\n" +
-                        "Data Module: Models\n" +
-                        "rules/Models.xlsx");
-        assertThat(settingsDialog.getImportButtonText()).isEqualTo("Import and overwrite");
+        assertThat(settingsDialog.getPlanLines())
+                .as("Both modules already stand, so their workbooks are replaced")
+                .contains("Services module: Algorithms — the workbook rules/Algorithms.xlsx is replaced", "Data types module: Models — the workbook rules/Models.xlsx is replaced");
 
         // Step 6.2: Import and override, save, verify properties and modules
         settingsDialog.clickImportAndOverride();

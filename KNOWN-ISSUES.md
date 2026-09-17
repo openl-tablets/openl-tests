@@ -104,11 +104,12 @@ is both labelled and implemented as "before", so only the row action is affected
 and writes it from the row above, which reaches the same table and keeps the assertion. Nothing covers
 "insert above" any more, because the product no longer does it.
 
-## 7. Half the table properties cannot be added: the panel asks for the wrong dictionary
+## 7. Half the table properties cannot be added: the screens ask for the wrong dictionary
 
-**What changed.** The table details panel offers "Add a property" from a dictionary it reads with
-`getProjectProperties(projectId)` — without a table type (`TableDetailsPanel.tsx`, the effect that fills
-`dictionary`). The endpoint answers differently depending on that argument: with a table type it returns the
+**What changed.** Two screens read the dictionary of properties the same wrong way. The table details panel
+offers "Add a property" from a dictionary it reads with `getProjectProperties(projectId)` — without a table
+type (`TableDetailsPanel.tsx`, the effect that fills `dictionary`) — and the extended search reads the
+property it can narrow by exactly the same way (`TableSearchModal.tsx`, the effect that fills `properties`). The endpoint answers differently depending on that argument: with a table type it returns the
 properties a *table* may declare (`InheritanceLevel.TABLE`), and without one the properties a *Properties
 table* may declare at Global, Module or Category scope (`ProjectMetadataService.PROPERTIES`). The panel then
 offers the intersection of that wrong dictionary with the table's own `available` list, so every property that
@@ -121,12 +122,18 @@ exists only at table scope is silently dropped from the list.
 `active`. In the UI, typing "Desc" into "Add a property" shows "No data" — the property cannot be added at
 all, although the server would accept it.
 
-**Effect:** `description`, `tags`, `id` and `active` cannot be set on a table through the properties panel.
+**Effect:** `description`, `tags`, `id` and `active` cannot be set on a table through the properties panel,
+and the extended search cannot narrow by any of them either — a search by Description or by Tags, which the
+old editor offered, has no property to pick.
 
 **Blocked tests.**
 - `tests.ui.webstudio.rules_editor.TestAddAndDeleteProperty#testAddAndDeleteProperty` — adds Description,
   Tags and ID among others. The scenario now stops with `SkipException` after the properties that can still
   be added; the Category part still runs and passes.
+- `tests.ui.webstudio.rules_editor.TestSearchOnProjectLevel#testAdvancedSearchOnProjectLevel` — the three
+  cases that narrowed the search by Description and by Tags are gone from it; everything else it asked — the
+  scopes, the table kinds, the name, the header, the counts, opening a table from the results — still runs.
+  The three are the coverage to restore when the search reads the dictionary for a table.
 
 ---
 
@@ -188,20 +195,32 @@ The comparison of a project against its own revisions is a different screen and 
 ## 10. Where a generated module is written can no longer be chosen
 
 **What changed.** Generating tables from an OpenAPI specification used to ask where each module goes: the
-dialog showed the path of the rules module and of the data module, each could be typed over and reset back,
-and the server refused a path already taken by a file or a path shared by both modules. The React card names
-only the modules; the path each is written to is computed by the project and shown, not offered — the
-confirmation lists `<module> — the workbook <path> is replaced` or `a workbook is added at <path>`.
+dialog showed the path of the rules module and of the data module, each could be typed over and reset back.
+The React card names only the modules; the path each is written to is computed by the project and shown, not
+offered — the confirmation lists `<module> — the workbook <path> is replaced` or `a workbook is added at
+<path>`.
 
-The capability is gone from the screen. Whether it should come back is a product question: the plan does say
-what will happen to every workbook, which is what the paths were read for. Recorded here rather than papered
-over, because two refusals that the old screen could provoke — "File with such name already exists." and
-"Module paths cannot be the same" — can no longer be reached by any path through the UI.
+**Why this is a defect and not a simplification.** The capability is intact everywhere but the screen: the
+request the browser sends still carries `algorithmModulePath` and `modelModulePath` as required fields, the
+service still honours a caller-supplied path, and the published API documentation still describes it as the
+path *"used for a module the project does not declare yet"*. The screen sends the server its own answer
+back. The neighbouring flow still asks: creating a project from a specification offers both module paths
+(`new-project-openapi-rules-path`, `new-project-openapi-data-path`). And the commit that built the new flow
+documents every other narrowing it made and says nothing about this one.
+
+**One validation is gone outright.** Of the six refusals the old dialog could raise, three survive
+server-side in new wording and two are unreachable in their old form; but the rule that a generated module
+must be written to an Excel workbook has no successor anywhere — neither the screen nor the service checks
+the extension now, so a caller can have a workbook written to `rules/Alg.txt` and declared as a module.
+
+**Detour for a user who needs a particular path.** Declare the module at that path in the project's
+descriptor first; the generation then writes into the workbook the descriptor names.
 
 **Tests changed rather than blocked.** `TestImportNewModulesWithPathEditingAndMixedScenarios` keeps what it
-can still ask — which module is replaced, which is added, and that the module names survive a cancel — and no
-longer types paths. `TestImportPathValidationErrors` keeps its other eleven steps and no longer provokes the
-two path refusals.
+can still ask — which module is replaced, which is added, that the module names survive a cancel, and where
+the project itself writes them — and no longer types paths. `TestImportPathValidationErrors` keeps the two
+refusals that still exist by provoking them the way the new screen allows: both modules named the same, and
+a workbook already standing at the path the project computes.
 
 ---
 
@@ -218,6 +237,28 @@ whatever else is asked. A free-form table is thus unfindable by search as well a
 
 **Tests changed rather than blocked.** `TestSearchOnProjectLevel` no longer asserts that a leading space and
 a trailing space find different numbers of tables; it asserts what the search still answers.
+
+---
+
+## 12. The generation plan says a workbook is replaced when none stands there
+
+**What happens.** Before writing the tables a specification describes, the project shows what it will do to
+each module: `the workbook <path> is replaced`, or `a workbook is added at <path>`. Which of the two it says
+is decided by whether the project's descriptor already *leads to* that path — which, for a project that
+finds its modules by a pattern (`rules/**/*.xlsx`, the layout every project created from a template has),
+it always does. So a module that does not exist, whose workbook does not exist either, is announced as a
+workbook about to be replaced.
+
+The service itself is careful about this: it computes "whether the project already leads to it" and its own
+documentation says the generation "writes over the workbook such a module reads rather than laying a second
+one beside it". The screen turns that into a sentence about a workbook being replaced, which for a path
+nothing stands at is not true. A user is told they are about to lose something that does not exist.
+
+Narrow, and nothing is lost by it — but it is the one line the user reads before agreeing to a write.
+
+**Tests changed rather than blocked.** The generation tests state which module is written into which
+workbook, which is what the plan is for and what it gets right. They no longer state which of the two
+sentences the plan uses, except where the workbook genuinely stands there already.
 
 ---
 

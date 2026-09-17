@@ -70,9 +70,19 @@ public class SearchFilterComponent extends BaseComponent {
      * the cells; the name beside it is a narrower question the old box could not ask.
      */
     public SearchFilterComponent typeSearchAndEnter(String text) {
-        openAdvancedSearch();
-        textInput.fill(text);
-        performSearch();
+        // The screen may still be settling on the table just opened, and a search opened onto a screen that
+        // is being replaced goes away with it — so what was typed is checked to be still there before the
+        // search is run, and the whole of it is done again when it is not.
+        WaitUtil.requireCondition(() -> {
+            openAdvancedSearch();
+            textInput.fill(text);
+            if (!form.isVisible(PROBE_MS)) {
+                return false;
+            }
+            searchBtn.click();
+            return true;
+        }, DEFAULT_TIMEOUT_MS, SETTLE_MS, "Searching for '" + text + "'");
+        waitForSearchResult();
         return this;
     }
 
@@ -90,11 +100,21 @@ public class SearchFilterComponent extends BaseComponent {
         return this;
     }
 
+    /**
+     * Opens the extended search. The button stands in the tables rail, which is drawn anew whenever the
+     * module screen shows another table — opening one from the results is how the search ends — so a press
+     * can land on a rail that is being replaced and open nothing.
+     */
     public SearchFilterComponent openAdvancedSearch() {
-        if (!form.isVisible(PROBE_MS)) {
-            openExtendedSearchBtn.click();
-            form.waitForVisible(DEFAULT_TIMEOUT_MS);
-        }
+        WaitUtil.requireCondition(() -> {
+            if (form.isVisible(PROBE_MS)) {
+                return true;
+            }
+            if (openExtendedSearchBtn.isVisible(PROBE_MS)) {
+                openExtendedSearchBtn.click();
+            }
+            return form.isVisible(PROBE_MS);
+        }, DEFAULT_TIMEOUT_MS, SETTLE_MS, "Opening the extended search");
         return this;
     }
 

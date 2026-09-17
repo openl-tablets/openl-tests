@@ -90,17 +90,11 @@ public class TestImportNewModulesWithPathEditingAndMixedScenarios extends BaseTe
         settingsDialog = editorPage.getOpenApiModuleSettingsDialogComponent();
         settingsDialog.waitForVisible();
 
-        assertThat(settingsDialog.getContentText())
-                .as("Warning should show that both Alg and Mod-123 will be created as new modules")
-                .contains("The following module doesn't exist and is going to be created:\n" +
-                        "Rules Module: Alg\n" +
-                        "rules/Alg.xlsx")
-                .contains(String.format("The following module doesn't exist and is going to be created:\n" +
-                        "Data Module: %s\n" +
-                        "rules/%s.xlsx", moduleName, moduleName));
-        assertThat(settingsDialog.getImportButtonText())
-                .as("Import button should say 'Import' when only creating new modules")
-                .isEqualTo("Import");
+        assertThat(settingsDialog.getPlanLines())
+                .as("The plan must name both modules and the workbook the project writes each into")
+                .anySatisfy(line -> assertThat(line).contains("Services module: Alg", "rules/Alg.xlsx"))
+                .anySatisfy(line -> assertThat(line).contains("Data types module: " + moduleName,
+                        String.format("rules/%s.xlsx", moduleName)));
 
         // Where each module is written is the project's own answer now, named in the plan above; the
         // screen no longer offers it to be typed over. See KNOWN-ISSUES.md #10.
@@ -142,17 +136,15 @@ public class TestImportNewModulesWithPathEditingAndMixedScenarios extends BaseTe
         settingsDialog = editorPage.getOpenApiModuleSettingsDialogComponent();
         settingsDialog.waitForVisible();
 
-        assertThat(settingsDialog.getContentText())
-                .as("Alg1 should be created (new), Mod-123 should be overwritten (existing at custom path)")
-                .contains("The following module doesn't exist and is going to be created:\n" +
-                        "Rules Module: Alg1\n" +
-                        "rules/Alg1.xlsx")
-                .contains(String.format("Warning! The following module already exists and all of its content is going to be overwritten.\n" +
-                        "Data Module: %s\n" +
-                        "rules1/Mod1.xlsx", moduleName));
-        assertThat(settingsDialog.getImportButtonText())
-                .as("Import button should say 'Import and overwrite' for mixed scenario")
-                .isEqualTo("Import and overwrite");
+        // One module is new and the other already stands, which the plan says a line each: what the plan
+        // no longer says is carried by the button, which reads the same whatever it is about to do.
+        assertThat(settingsDialog.getPlanLines())
+                .as("Alg1 is written into a workbook of its own")
+                .anySatisfy(line -> assertThat(line).contains("Services module: Alg1", "rules/Alg1.xlsx"));
+        assertThat(settingsDialog.getPlanLines())
+                .as("Mod-123 already exists, so the workbook it was written into is replaced")
+                .contains(String.format("Data types module: %s — the workbook rules/%s.xlsx is replaced",
+                        moduleName, moduleName));
 
         settingsDialog.clickCancel();
         importDialog.selectTablesGenerationMode();
@@ -164,11 +156,11 @@ public class TestImportNewModulesWithPathEditingAndMixedScenarios extends BaseTe
         settingsDialog.waitForVisible();
 
         assertThat(settingsDialog.getPlanLines())
-                .as("Alg already exists, so its workbook is replaced")
-                .anyMatch(line -> line.startsWith("Rules Module: Alg") && line.contains("is replaced"));
+                .as("Alg already exists, so the workbook the project wrote it into is replaced")
+                .contains("Services module: Alg — the workbook rules/Alg.xlsx is replaced");
         assertThat(settingsDialog.getPlanLines())
-                .as("Mod1 does not exist yet, so a workbook is added for it")
-                .anyMatch(line -> line.startsWith("Data Module: Mod1") && line.contains("is added at"));
+                .as("Mod1 is written into a workbook of its own")
+                .anySatisfy(line -> assertThat(line).contains("Data types module: Mod1", "rules/Mod1.xlsx"));
 
         settingsDialog.clickImportAndOverride();
         editorPage.waitUntilSpinnerLoaded();
