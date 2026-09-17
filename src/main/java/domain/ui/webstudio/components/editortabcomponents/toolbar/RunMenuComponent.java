@@ -40,12 +40,15 @@ public class RunMenuComponent extends TableInputLauncherComponent implements IRu
         return this;
     }
 
-    /** Folds open the first parameter that holds anything, so what it holds can be written. */
+    /**
+     * Folds open the collection of the launcher, so the elements it was grown by can be written. The row of
+     * a collection is the one that offers to grow it, which is what tells it from the rest.
+     */
     @Override
     public IRunMenu clickExpandCollection() {
         waitForFields();
         List<WebElement> switchers = createElementList(
-                "xpath=//div[contains(@class,'ant-tree-treenode')]"
+                "xpath=//div[contains(@class,'ant-tree-treenode')][.//button[starts-with(@data-testid,'add-')]]"
                         + "/span[contains(@class,'ant-tree-switcher') and not(contains(@class,'ant-tree-switcher-noop'))"
                         + " and not(contains(@class,'ant-tree-switcher_open'))]", "collectionSwitchers");
         if (!switchers.isEmpty()) {

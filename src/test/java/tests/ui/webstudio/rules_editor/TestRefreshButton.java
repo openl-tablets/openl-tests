@@ -34,11 +34,13 @@ public class TestRefreshButton extends BaseTest {
                 .as("Bad project should produce expected compilation error")
                 .isTrue();
 
+        // A project made from a workbook carries the standard layout, so the workbook it was made from lies
+        // under rules/ — that is the file the module reads and the one to write over.
         AppContainerFileService.copyFileToProjectWorkspace(
                 User.ADMIN.getValue(),
                 projectName,
                 TestDataUtil.getFilePathFromResources(GOOD_EXCEL_FILE),
-                BAD_EXCEL_FILE);
+                "rules/" + BAD_EXCEL_FILE);
 
         editorPage.refresh();
 
