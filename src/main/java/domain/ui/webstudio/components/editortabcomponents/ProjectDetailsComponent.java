@@ -15,6 +15,7 @@ public class ProjectDetailsComponent extends BaseComponent {
     private WebElement removeModuleIconTemplate;
     // Offered only while the project still carries module-level method filters to convert.
     private WebElement migrateMethodFiltersBtn;
+    private WebElement migrateConfirmBtn;
 
     public ProjectDetailsComponent() {
         super(DriverPool.getPage());
@@ -27,7 +28,8 @@ public class ProjectDetailsComponent extends BaseComponent {
     }
 
     private void initializeElements() {
-        migrateMethodFiltersBtn = new WebElement(page, "xpath=//input[@id='migrateMethodFiltersBtn']", "migrateMethodFiltersBtn");
+        migrateMethodFiltersBtn = new WebElement(page, "xpath=//button[@data-testid='overview-migrate']", "migrateMethodFiltersBtn");
+        migrateConfirmBtn = new WebElement(page, "xpath=//div[contains(@class,'ant-modal-confirm')]//button[normalize-space()='Migrate']", "migrateConfirmBtn");
         modulesHeaderElement = createScopedElement("xpath=.//h3/span[text()='Modules']", "modulesHeaderElement");
         addModuleBtn = createScopedElement("xpath=.//h3/span[text()='Modules']/following-sibling::a[@title='Add Module']", "addModuleBtn");
         editModuleHoverTemplate = createScopedElement("xpath=.//div[@class='list-item editable-inner']//a[contains(text(), '%s')]/../..", "editModuleHoverTemplate");
@@ -36,14 +38,19 @@ public class ProjectDetailsComponent extends BaseComponent {
         removeModuleIconTemplate = createScopedElement("xpath=.//div[@class='list list-modules']//a[contains(text(), '%s')]/../..//a[contains(@onclick, 'removeModule')]", "removeModuleIconTemplate");
     }
 
+    /**
+     * Whether the project offers to be brought to the form its descriptor is written in today. The move
+     * that turned a module's method filters into the project's own exposed methods is part of that one
+     * rewrite now, rather than an action of its own.
+     */
     public boolean isMigrateMethodFiltersVisible() {
         return migrateMethodFiltersBtn.isVisible(DEFAULT_TIMEOUT_MS / 2);
     }
 
-    /** Converts module-level method filters into project-level exposed methods; the button asks to confirm. */
+    /** Rewrites the descriptor, which the project asks about before it does. */
     public void clickMigrateMethodFilters() {
-        page.onDialog(Dialog::accept);
         migrateMethodFiltersBtn.waitForVisible(DEFAULT_TIMEOUT_MS).click();
+        migrateConfirmBtn.waitForVisible(DEFAULT_TIMEOUT_MS).click();
         waitUntilSpinnerLoaded();
     }
 

@@ -153,7 +153,10 @@ Confirm with development whether editing an explicitly declared module is meant 
 - `tests.ui.webstudio.studio_issues.TestAddModuleWithPathExistingModule`
 - `tests.ui.webstudio.rules_editor.TestCreateProjectFromOpenApiYamlWithCustomModuleNames`
 - `tests.ui.webstudio.rules_editor.TestCreateProjectFromOpenApiJsonFile`
-- `tests.ui.webstudio.rules_editor.TestMigratedMethodFilterReloadUi`
+- `tests.ui.webstudio.rules_editor.TestMigratedMethodFilterReloadUi` — its setup needs a module carrying a
+  method filter of its own. Note that what this test watched for — an endless re-POST after a JSF view
+  expired — cannot happen on a screen that holds no JSF view; what is worth restoring with the capability is
+  the rest of it: the screen settles after the descriptor is rewritten, and the table stays.
 
 ---
 
