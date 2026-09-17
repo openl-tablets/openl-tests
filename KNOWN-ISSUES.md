@@ -24,7 +24,7 @@ internal search by name. So utility tables are hidden and nobody can ask to see 
 **Why it matters.** A rule author can no longer see utility tables at all. The information exists in the
 model; only the way to ask for it was removed.
 
-**Blocked tests.**
+**Blocked tests** (the scenario stops half way, having run the rest).
 - `tests.ui.webstudio.rules_editor.TestOrderingModeTableList#testTableListOrdering2` — the first half
   (ordering with utility tables hidden) still runs and passes; the scenario then stops with `SkipException`,
   because the second half needs the filter turned off.
@@ -48,11 +48,15 @@ Worth settling in the same ticket: the way a vocabulary is recognised also chang
 `<`…`>` in the table header (`OpenLTableUtils.isVocabularyTable`). Development should say which is
 authoritative.
 
-**Blocked tests.**
-- `tests.ui.webstudio.rules_editor.TestOrderingModeDefaults#testDefaultOrderForMultiUser` — step 2.7 expects
-  a `Vocabulary` group in the Type view.
-- `tests.ui.webstudio.rules_editor.TestRangeDataTypes` — selects `Vocabulary1` inside the `Vocabulary` folder.
-- `tests.ui.webstudio.studio_smoke.TestTableIcons` — expects a distinct icon for a vocabulary table.
+**Coverage dropped; the tests run.**
+- `tests.ui.webstudio.rules_editor.TestOrderingModeDefaults#testDefaultOrderForMultiUser` — step 2.7 asked for
+  a `Vocabulary` group in the Type view; it asks for the groups the view draws instead.
+- `tests.ui.webstudio.rules_editor.TestRangeDataTypes` — reaches `Vocabulary1` under the group the tree puts it
+  in now, in place of a `Vocabulary` folder.
+- `tests.ui.webstudio.studio_smoke.TestTableIcons` — expects the icon a vocabulary table wears now, which is
+  the datatype icon.
+What is not asked any more, and is the coverage to restore with the fix: that a vocabulary is told apart from
+a datatype anywhere in the tree.
 
 ---
 
@@ -72,7 +76,7 @@ issue 1, and because a search option that cannot return a result misleads the us
 **What changed.** Creating a project whose name holds a forbidden character used to be refused with a message
 naming the problem. It now answers `Something went wrong on API server!`, which says nothing about the name.
 
-**Blocked tests.**
+**Tests that report this as a known issue (they run and fail against it).**
 - `tests.ui.webstudio.repository.TestProjectNameValidationUi#testSlashNameShowsSpecificValidationMessage` —
   already carries `@KnownIssue("EPBDS-16439")`.
 
@@ -84,7 +88,7 @@ naming the problem. It now answers `Something went wrong on API server!`, which 
 been successfully added.`, although the feature it names was removed from the product. A deployment refused
 because of a forbidden character in its name answers with an empty message.
 
-**Blocked tests.**
+**Tests that report this as a known issue (they run and fail against it).**
 - `tests.ui.webstudio.repository.TestDeployProjectMessagesAndValidationUi#testDeploySuccessMessageNamesTheProject`
   — carries `@KnownIssue("EPBDS-16273")`.
 - `tests.ui.webstudio.repository.TestDeployProjectMessagesAndValidationUi#testDeploymentNameRejectsForbiddenCharacters`
@@ -129,8 +133,10 @@ old editor offered, has no property to pick.
 
 **Blocked tests.**
 - `tests.ui.webstudio.rules_editor.TestAddAndDeleteProperty#testAddAndDeleteProperty` — adds Description,
-  Tags and ID among others. The scenario now stops with `SkipException` after the properties that can still
-  be added; the Category part still runs and passes.
+  Tags and ID among others. The scenario stops with `SkipException` after the properties that can still be
+  added; the Category part runs before it.
+
+**Coverage dropped; the tests run.**
 - `tests.ui.webstudio.studio_issues.TestAddProperty` and
   `tests.ui.webstudio.studio_issues.TestAddPropertyExtraStateAppears` — both added Description; both now add
   Category, which the panel still offers. What each guards — the write on a two-column table, and that only
@@ -198,9 +204,10 @@ The tests do not use it: a screen a user cannot reach is a screen the tests must
 
 **Blocked tests.**
 - `tests.ui.webstudio.rules_editor.TestCompareExcelFiles`
+- `tests.ui.webstudio.studio_issues.TestDisplayChangedRowsCompareScreens#testDisplayChangedRowsUploadedFilesCompareScreen`
 
-The comparison of a project against its own revisions is a different screen and still reachable, so
-`tests.ui.webstudio.git.TestGitSortingExcelFilesInComparePopUp`, which uses that one, is not blocked by this.
+**Not this issue.** The comparison of a project against its own revisions is a different screen and still
+reachable, so `TestGitSortingExcelFilesInComparePopUp`, which uses that one, runs.
 
 ---
 
@@ -354,8 +361,9 @@ kept that order; the picture in the guide still shows it.
 **Why it matters.** Where a table sits in a workbook is the one thing this view was for: it is how an author
 finds the table they are looking at in Excel, and how they see that an insert landed where they meant it to.
 
-**Blocked tests.** `tests.ui.webstudio.rules_editor.TestOrderingModeTableList` — both scenarios are about
-that order. What each still asks is kept: that the view opens on Excel Sheet, that every sheet of the
+**Coverage dropped; the tests run.** `tests.ui.webstudio.rules_editor.TestOrderingModeTableList` — both
+scenarios are about that order (the second of them also stops half way, for issue 1). What each still asks
+is kept: that the view opens on Excel Sheet, that every sheet of the
 workbook is a group of its own, that both versions of an overloaded table are drawn, that a row inserted
 lands where it was meant to, and that a table created or removed appears and disappears. Only the sequences
 — the sheets in workbook order, the tables in the order they sit on the sheet, the order changing after a
@@ -395,7 +403,7 @@ other dimension property they differ entirely — `CaRegionsEnum` declares `QC("
 table written the way the panel *shows* the values cannot be opened at all. Every table read this way is
 open to it, not only properties tables.
 
-**Blocked tests.**
+**Coverage dropped; the test runs.**
 - `tests.ui.webstudio.rules_editor.TestModuleCategoryInheritedProperties` — the step that follows the panel's
   arrow to the properties table the value is inherited from. Everything the panel itself answers — the
   inherited values, which are overwritten at the table, where each value comes from — still runs.
@@ -629,6 +637,18 @@ replaced it records a decision to change this.
   `SkipException` where it turns to `AutoPolicyTests`: the module it lands on was created rather than
   replaced, so it has no local history at all, and the tree now offers two modules of that name. What runs
   before it — the re-import itself and the local change it leaves on the module of rules — still runs.
+
+---
+
+## Open tickets the suite already carries
+
+Two scenarios fail against bugs raised before this migration and carry the ticket, so they report as known
+issues rather than as failures. They are listed here so the count of what is red and why is complete.
+
+| Ticket | Test | What it is about |
+|---|---|---|
+| EPBDS-15703 | `tests.ui.webstudio.studio_smoke.TestAdminNotifications` | the notification sent to every user |
+| EPBDS-15704 | `tests.ui.webstudio.studio_smoke.TestAdminSystemSettings` | the refusal a thread count that is not a positive number should be given |
 
 ---
 
