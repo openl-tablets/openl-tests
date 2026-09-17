@@ -29,6 +29,7 @@ public class CompareLocalChangesDialogComponent extends BaseComponent {
     private final WebElement showEqualRowsCheckbox;
     private final WebElement showEqualElementsCheckbox;
     private final WebElement conflictText;
+    private final WebElement errorNotice;
     private final WebElement treeNodeTemplate;
     private final WebElement treeSwitcherTemplate;
 
@@ -42,10 +43,16 @@ public class CompareLocalChangesDialogComponent extends BaseComponent {
         showEqualRowsCheckbox = new WebElement(getPage(), "xpath=//input[@data-testid='compare-show-equal-rows']", "showEqualRows");
         showEqualElementsCheckbox = new WebElement(getPage(), "xpath=//input[@data-testid='compare-show-equal-elements']", "showEqualElements");
         conflictText = new WebElement(getPage(), "xpath=//*[@data-testid='compare-conflict-text']", "compareConflictText");
-        treeNodeTemplate = new WebElement(getPage(), "xpath=" + TREE_NODE
-                + "[.//span[contains(@class,'ant-tree-title')][contains(normalize-space(),\"%s\")]]", "compareTreeNode");
-        treeSwitcherTemplate = new WebElement(getPage(), "xpath=" + TREE_NODE
-                + "[.//span[contains(@class,'ant-tree-title')][contains(normalize-space(),\"%s\")]]"
+        errorNotice = new WebElement(getPage(), "xpath=//*[@data-testid='compare-error']", "compareError");
+        // An element is named exactly where it can be, and by what its name starts with where the tree adds
+        // to it — a table is listed under its header and then what changed about it. The first of the rows
+        // that answer is the one meant: the tree lists a name once.
+        String named = "[.//span[contains(@class,'ant-tree-title')]"
+                + "[normalize-space()=\"%1$s\" or starts-with(normalize-space(),\"%1$s\")]]";
+        treeNodeTemplate = new WebElement(getPage(),
+                "xpath=(" + TREE_NODE + named + ")[1]", "compareTreeNode");
+        treeSwitcherTemplate = new WebElement(getPage(),
+                "xpath=(" + TREE_NODE + named + ")[1]"
                 + "/span[contains(@class,'ant-tree-switcher') and not(contains(@class,'ant-tree-switcher-noop'))]",
                 "compareTreeSwitcher");
     }
@@ -61,9 +68,16 @@ public class CompareLocalChangesDialogComponent extends BaseComponent {
         return this;
     }
 
-    /** Whether the window is showing a comparison: what differs, or that nothing does. */
+    /**
+     * Whether the comparison has answered. The box the answer is drawn in appears as soon as the comparison
+     * starts, so its presence says nothing; what says the comparison is done is the answer itself — what
+     * differs, that nothing does, or why it could not be made.
+     */
     protected boolean isComparisonDrawn() {
-        return tree.isVisible(PROBE_MS) || identicalNotice.isVisible(PROBE_MS);
+        if (errorNotice.isVisible(PROBE_MS / 2)) {
+            throw new AssertionError("The comparison could not be made: " + errorNotice.getText().trim());
+        }
+        return identicalNotice.isVisible(PROBE_MS / 2) || !treeTitles().isEmpty();
     }
 
     public CompareLocalChangesDialogComponent waitForTextCompareToAppear() {
@@ -87,17 +101,43 @@ public class CompareLocalChangesDialogComponent extends BaseComponent {
         return createElementList("xpath=" + TREE_NODE + "//span[contains(@class,'ant-tree-title')]", "compareTreeTitles");
     }
 
+    /**
+     * Opens what the named element holds. The element may itself be held by another — a workbook holds its
+     * sheets and a sheet its tables — and the tree draws only what is open, so the way down to it is opened
+     * first: every folded row is unfolded until the element is drawn, and then the element itself.
+     */
     public void openTreeNode(String nodeName) {
         WaitUtil.requireCondition(() -> {
+            if (!treeNodeTemplate.format(nodeName).isVisible(PROBE_MS)) {
+                return unfoldOne();
+            }
             WebElement switcher = treeSwitcherTemplate.format(nodeName);
             if (!switcher.isVisible(PROBE_MS)) {
-                return treeNodeTemplate.format(nodeName).isVisible(PROBE_MS);
+                return true;
             }
             if (!switcher.getAttribute("class").contains("ant-tree-switcher_open")) {
                 switcher.click();
             }
             return switcher.getAttribute("class").contains("ant-tree-switcher_open");
-        }, DEFAULT_TIMEOUT_MS, 250, "Opening '" + nodeName + "' in the comparison tree");
+        }, DEFAULT_TIMEOUT_MS * 2, 250,
+                "Opening '" + nodeName + "' in the comparison tree, which lists " + drawnTitles());
+    }
+
+    /** What the tree draws right now, for saying what was there when something looked-for was not. */
+    private List<String> drawnTitles() {
+        return treeTitles().stream().map(WebElement::getText).map(String::trim).toList();
+    }
+
+    /** Unfolds the first row that is still folded, so the tree is walked down one step. */
+    private boolean unfoldOne() {
+        List<WebElement> folded = createElementList("xpath=" + TREE_NODE
+                + "/span[contains(@class,'ant-tree-switcher') and not(contains(@class,'ant-tree-switcher-noop'))"
+                + " and not(contains(@class,'ant-tree-switcher_open'))]", "foldedRows");
+        if (folded.isEmpty()) {
+            return false;
+        }
+        folded.get(0).click();
+        return false;
     }
 
     public void clickTreeNode(String nodeName) {

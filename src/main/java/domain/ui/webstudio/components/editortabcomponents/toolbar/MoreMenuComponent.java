@@ -59,11 +59,20 @@ public class MoreMenuComponent extends BaseComponent implements IMoreMenu {
     @Override
     public ChangesDialogComponent clickChanges() {
         waitUntilSpinnerLoaded();
+        // The history of a module is behind this menu and nowhere else, so the menu is waited for rather
+        // than passed over: a module screen still settling has not drawn it yet.
+        toggle.waitForVisible(DEFAULT_TIMEOUT_MS);
         ChangesDialogComponent changes = new ChangesDialogComponent();
         boolean opened = WaitUtil.retryAction(() -> {
             clickMenuItem(changesBtn, "Local Changes");
             if (!changes.isViewShown(DEFAULT_TIMEOUT_MS)) {
                 throw new IllegalStateException("Local Changes view did not open after clicking the menu item");
+            }
+            // The module screen finishes what the save left it doing and draws itself anew, which takes the
+            // history away with it. It is opened again rather than read while it is going.
+            WaitUtil.sleep(1000, "Letting the module screen settle under the history");
+            if (!changes.isViewShown(MENU_ITEM_VISIBLE_TIMEOUT_MS * 2)) {
+                throw new IllegalStateException("Local Changes closed again while the module screen settled");
             }
         }, MENU_RETRY_TIMEOUT_MS + DEFAULT_TIMEOUT_MS, 500, "Opening Local Changes from the More menu");
         if (!opened) {
