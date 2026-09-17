@@ -13,6 +13,8 @@ Nothing here is a JIRA ticket yet. Raise them, then replace the references in th
 
 ## 1. "Hide Utility Tables" is gone and the setting cannot be reached
 
+**Filed as EPBDS-16665.**
+
 **What changed.** The JSF tables tree had a filter dialog with a *Hide Utility Tables* checkbox, on by
 default. `EPBDS-16599` deleted the dialog together with the tree, and the React module screen offers no
 replacement: its extended search filters by scope, kind, name, header, text and properties, and carries no
@@ -34,6 +36,8 @@ model; only the way to ask for it was removed.
 ## 2. The "Vocabulary" group disappeared from the tables tree
 
 **Filed as EPBDS-16654** (*Grouping by table type doesn't work properly for Vocabularies*, 17 Sep 2026).
+`TestOrderingModeDefaults#testDefaultOrderForMultiUser` asks the Type view for a Vocabulary group again and
+carries `@KnownIssue("EPBDS-16654")`.
 
 **What changed.** In the JSF tree's *By Type* view, alias datatypes were grouped under their own
 `Vocabulary` node (`TableTreeNodeBuilder`, see `git show 6.4.0:.../ui/tree/TableTreeNodeBuilder.java`). The
@@ -113,6 +117,8 @@ and writes it from the row above, which reaches the same table and keeps the ass
 
 ## 7. Half the table properties cannot be added: the screens ask for the wrong dictionary
 
+**Filed as EPBDS-16664.**
+
 **What changed.** Two screens read the dictionary of properties the same wrong way. The table details panel
 offers "Add a property" from a dictionary it reads with `getProjectProperties(projectId)` — without a table
 type (`TableDetailsPanel.tsx`, the effect that fills `dictionary`) — and the extended search reads the
@@ -179,7 +185,9 @@ the project reloads once and settles, with the table still there.
 
 ## 9. "Compare Excel files" no longer opens the comparison of two Excel files
 
-**Filed as EPBDS-16655** (*The feature "Compare Excel Files" disappeared*, 17 Sep 2026).
+**Filed as EPBDS-16655** (*The feature "Compare Excel Files" disappeared*, 17 Sep 2026). The two scenarios
+are no longer stopped: each asks the action to open the comparison of two uploaded workbooks and carries
+`@KnownIssue("EPBDS-16655")`, so they report the ticket until the way in returns.
 
 **What happens.** The module's More menu offers **Compare Excel files**. Pressing it opens the comparison of
 the *project* against one of its own revisions — the revision picker — not the screen that takes two
@@ -462,6 +470,8 @@ withheld for a table of twenty cases or fewer — is the coverage to restore wit
 
 ## 19. A table without a body takes the whole module's tables listing down with it
 
+**Filed as EPBDS-16662.**
+
 **What happens.** A module holding a table whose header stands alone — `Spreadsheet ` in a cell with nothing
 written under it — cannot be opened at all. `GET /web/projects/{id}/tables?module={name}` answers HTTP 500
 with `Cannot invoke "org.openl.rules.table.ITable.getHeight()" because "table" is null`, and the module
@@ -501,6 +511,8 @@ Reproduced on `ghcr.io/openl-tablets/webstudio:6.5.0-b48c86279338`:
 ---
 
 ## 20. Migrating a project that declares nothing always fails, and leaves it broken
+
+**Filed as EPBDS-16666.**
 
 **Of the same family as EPBDS-16638, EPBDS-16639 and EPBDS-16641** — a project left without a descriptor
 while *Detect projects by Excel files* is off also answers 404 on its Management tab, refuses a copy to a
@@ -546,6 +558,8 @@ Reproduced on `ghcr.io/openl-tablets/webstudio:6.5.0-b48c86279338`: upload `Migr
 
 **Filed as EPBDS-16656** (*The message "The project declares no OpenAPI specification." is displayed when
 openAPI file was generated*, 17 Sep 2026) — the same section reading its files once.
+`TestGenerateOpenApiDefaultDate#testCardNamesTheSpecificationJustGenerated` asks the card to name the
+specification a generation has just written and carries `@KnownIssue("EPBDS-16656")`.
 
 **What happens.** A project made from a specification declares none in its descriptor: the file lying in the
 project under the name its format reads as is what is read against, and the card names it, marked
@@ -596,6 +610,8 @@ that traces this is filed under EPBDS-7796, which is the ticket the array case w
 now takes anything typed into the box.
 
 **Blocked tests.**
+**Filed as EPBDS-16660.**
+
 - `tests.ui.webstudio.studio_issues.TestArrayOfAliasValuesInRunTrace#testArrayOfAliasValuesInRunTrace` — the
   scenario stops with `SkipException` before it runs. Its assertion `containsExactly("bla1", "bla2", "bla3")`
   is what catches the defect and is kept in the source word for word, but it is not carried out while the
@@ -608,6 +624,8 @@ of picking them from lists; what the run returns is still checked in full. Picki
 coverage to restore with the fix.
 
 ## 23. Generating tables lays a second module beside the one the project already has
+
+**Filed as EPBDS-16661.**
 
 **What happens.** A project whose modules come from patterns — every project made from a template; the
 descriptor of *Example 3 - Auto Policy Calculation* is `<project/>`, so the defaults `rules/**/*.xlsx` and
@@ -648,6 +666,25 @@ replaced it records a decision to change this.
   `SkipException` where it turns to `AutoPolicyTests`: the module it lands on was created rather than
   replaced, so it has no local history at all, and the tree now offers two modules of that name. What runs
   before it — the re-import itself and the local change it leaves on the module of rules — still runs.
+
+---
+
+## Defects reported on 16-17 September, covered by tests of their own
+
+| Ticket | Test | State |
+|---|---|---|
+| EPBDS-16639 | `TestProjectWithoutDescriptorUi#testCopyToBranchWorksForAProjectWithoutDescriptor` | fails: *Failed to update project status.* |
+| EPBDS-16641 | `TestProjectWithoutDescriptorUi#testDeployWorksForAProjectWithoutDescriptor` | fails: the project is not offered to be deployed |
+| EPBDS-16652 | `TestProjectCreatedMessageUi#testProjectCreationSaysSo` | fails: creating a project says nothing |
+| EPBDS-16638 | `TestProjectWithoutDescriptorUi#testManagementTabOpensForAProjectWithoutDescriptor` | passes here: the 404 does not reproduce on the pinned build, so the test guards the behaviour |
+| EPBDS-16653 | `TestWithinCurrentModuleOnlyAfterModuleSwitch` | passes here: the box stays offered on this build, so the test guards the behaviour |
+
+**Not covered, and why.** EPBDS-16635 (an empty result from running a Run table) is reported against a
+project attached to the ticket, and a Run table cannot be built from the templates without guessing what
+that project holds. EPBDS-16650 needs a JDBC or S3 design repository, which this suite does not raise.
+EPBDS-16636 (409s in the browser console) and EPBDS-16634 (an XML parsing error in the browser log, raised
+against a JSF endpoint this build no longer has) are about what the browser logs rather than what the screen
+does.
 
 ---
 
