@@ -23,6 +23,8 @@ public class CompareLocalChangesDialogComponent extends BaseComponent {
     // The grid leads each row with the number of its line, which is not a cell of the table.
     private static final String CELL = "./td[not(.//span[@data-testid='table-line-number'])]";
     protected static final int PROBE_MS = 1000;
+    /** A comparison is worked out on the server, table by table, so it is waited for far longer than a screen. */
+    private static final int COMPARISON_TIMEOUT_MS = 90000;
 
     protected final WebElement tree;
     protected final WebElement identicalNotice;
@@ -63,7 +65,7 @@ public class CompareLocalChangesDialogComponent extends BaseComponent {
     }
 
     public CompareLocalChangesDialogComponent waitForDialogToAppear() {
-        WaitUtil.requireCondition(this::isComparisonDrawn, DEFAULT_TIMEOUT_MS * 2, 250,
+        WaitUtil.requireCondition(this::isComparisonDrawn, COMPARISON_TIMEOUT_MS, 250,
                 "Waiting for the comparison to be drawn");
         return this;
     }
@@ -87,7 +89,7 @@ public class CompareLocalChangesDialogComponent extends BaseComponent {
 
     /** What the comparison found, one line per element, as the tree lists them. */
     public List<String> getLeftModulesList() {
-        WaitUtil.waitForListNotEmpty(this::treeTitles, DEFAULT_TIMEOUT_MS, 250,
+        WaitUtil.waitForListNotEmpty(this::treeTitles, COMPARISON_TIMEOUT_MS, 250,
                 "Waiting for the comparison to list what differs");
         return treeTitles().stream().map(WebElement::getText).map(String::trim).toList();
     }
@@ -290,7 +292,7 @@ public class CompareLocalChangesDialogComponent extends BaseComponent {
      * the count is read once it stops changing: a count taken mid-redraw is the count of half a table.
      */
     public int getNumberOfRows(int fragment) {
-        WaitUtil.waitForCondition(() -> rowsOf(fragment).count() > 0, DEFAULT_TIMEOUT_MS, 250,
+        WaitUtil.waitForCondition(() -> rowsOf(fragment).count() > 0, COMPARISON_TIMEOUT_MS, 250,
                 "Waiting for the rows of version " + fragment);
         WaitUtil.waitForStableSize(() -> rowsOf(fragment).count(), DEFAULT_TIMEOUT_MS, 250,
                 "Waiting for the rows of version " + fragment + " to settle");
