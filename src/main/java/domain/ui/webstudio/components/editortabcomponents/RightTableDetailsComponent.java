@@ -95,11 +95,21 @@ public class RightTableDetailsComponent extends BaseComponent {
         return this;
     }
 
+    /**
+     * Whether the panel says the table carries that value. The panel is drawn again once the table has been
+     * read back, so what it says a moment after a change is still what it said before it.
+     */
     public boolean isPropertySet(String propertyName, String propertyValue) {
+        return WaitUtil.waitForCondition(() -> propertySaid(propertyName).contains(propertyValue),
+                DEFAULT_TIMEOUT_MS, SETTLE_MS, "Waiting for the panel to say '" + propertyName + "' is "
+                        + propertyValue);
+    }
+
+    private String propertySaid(String propertyName) {
         try {
-            return getPropertyValue(propertyName).contains(propertyValue);
+            return getPropertyValue(propertyName);
         } catch (RuntimeException propertyIsNotOnThePanel) {
-            return false;
+            return "";
         }
     }
 

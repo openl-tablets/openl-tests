@@ -124,19 +124,23 @@ public class TestDisplayChangedRowsResolveConflicts extends BaseTest {
         compareDialog.openTreeNode("Limit");
         compareDialog.clickTreeNode("Rules Double BankLimitIndex (Bank bank, RatingGroup bankRatingGroup)");
 
+        // A row added at the end leaves the rows before it where they were, so the two sides are drawn whole
+        // and the added row is the one the comparison marks — the side it was added to has that row more.
         compareDialog.setShowEqualRows(false);
-        assertThat(compareDialog.getNumberOfRows(1))
-                .as("Left fragment: 1 row (empty added row in original)")
+        int rowsBefore = compareDialog.getNumberOfRows(1);
+        int rowsAfterAdding = compareDialog.getNumberOfRows(2);
+        assertThat(rowsAfterAdding - rowsBefore)
+                .as("The version with the added row should hold one row more than the version before it")
                 .isEqualTo(1);
-        assertThat(compareDialog.getNumberOfRows(2))
-                .as("Right fragment: 1 row (the new row with value)")
-                .isEqualTo(1);
-        assertThat(compareDialog.isCellContainsExpectedValue(2, 1, "1", "Rule"))
-                .as("Added row in left fragment should be empty")
+        assertThat(compareDialog.getCellContent(2, rowsAfterAdding, 1))
+                .as("The added row should be the last of the version it was added to, carrying what was written")
+                .isEqualTo("changedValue");
+        assertThat(compareDialog.isRowHighlighted(2, rowsAfterAdding))
+                .as("The added row should be marked as the difference")
                 .isTrue();
-        assertThat(compareDialog.isCellContainsExpectedValue(2, 1, "2", "changedValue"))
-                .as("Added row in right fragment should contain 'changedValue'")
-                .isTrue();
+        assertThat(compareDialog.getCellContent(1, rowsBefore, 1))
+                .as("The row before the added one should read the same on both sides")
+                .isEqualTo(compareDialog.getCellContent(2, rowsBefore, 1));
 
         compareDialog.setShowEqualRows(true);
         assertThat(compareDialog.getNumberOfRows(1))
@@ -145,9 +149,9 @@ public class TestDisplayChangedRowsResolveConflicts extends BaseTest {
         assertThat(compareDialog.getNumberOfRows(2))
                 .as("Right fragment should have more than 1 row when equal rows shown")
                 .isGreaterThan(1);
-        assertThat(compareDialog.isCellContainsExpectedValue(2, 1, "2", "changedValue"))
+        assertThat(compareDialog.getCellContent(2, compareDialog.getNumberOfRows(2), 1))
                 .as("New row value in right fragment still present")
-                .isTrue();
+                .isEqualTo("changedValue");
 
         compareDialog.close();
     }

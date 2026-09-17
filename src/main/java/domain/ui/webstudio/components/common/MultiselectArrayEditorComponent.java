@@ -50,6 +50,23 @@ public class MultiselectArrayEditorComponent extends BaseComponent {
         return actionButtonTemplate.format("Done").isVisible(PROBE_MS);
     }
 
+    /**
+     * Opens the list of the cell being written, which is where its buttons are. The cell keeps the values it
+     * holds when the list is folded away, and folds it open again when the cell is pressed.
+     */
+    private void openList() {
+        if (isOpen()) {
+            return;
+        }
+        WebElement cellSelect = new WebElement(page,
+                "xpath=//*[@data-testid='table-cell-input'][contains(@class,'ant-select')]//div[contains(@class,'ant-select-content')]",
+                "cellMultiselect");
+        cellSelect.waitForVisible(DEFAULT_TIMEOUT_MS);
+        cellSelect.click();
+        WaitUtil.requireCondition(this::isOpen, DEFAULT_TIMEOUT_MS, 250,
+                "Waiting for the list of the cell to be folded open");
+    }
+
     /** Whether the value is among those the cell holds, which the list marks as chosen. */
     public boolean isValueChecked(String value) {
         WebElement option = narrowedTo(value);
@@ -128,6 +145,7 @@ public class MultiselectArrayEditorComponent extends BaseComponent {
      * after what pressing it would do, so what it is named is what it will do.
      */
     public void setAllValuesChosen(boolean chosen) {
+        openList();
         String asked = chosen ? "Select All" : "Deselect All";
         if (!actionButtonTemplate.format(asked).isVisible(PROBE_MS)) {
             throw new AssertionError("The list should offer '" + asked + "' and does not");

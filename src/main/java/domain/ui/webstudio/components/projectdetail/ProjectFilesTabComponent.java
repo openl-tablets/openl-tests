@@ -118,13 +118,25 @@ public class ProjectFilesTabComponent extends BaseComponent {
         return elapsed;
     }
 
+    /**
+     * What the file pane is showing, for the reader of a failure. It only ever describes, so a pane that is
+     * being redrawn while it is read is described as it was found rather than waited for.
+     */
     public String describeFilePaneState(String expectedFileName) {
         String pane = filePaneLoading.exists() ? "loading"
-                : filePreviewError.exists() ? "error: " + filePreviewError.getText().replaceAll("\\s+", " ").trim()
+                : filePreviewError.exists() ? "error: " + textOrNothing(filePreviewError)
                 : filePreviewEmpty.exists() ? "empty"
                 : "preview";
         return "tree lists '" + expectedFileName + "': " + fileNodeByName.format(expectedFileName).exists()
                 + ", file pane: " + pane + ", url file param: '" + selectedFileParam() + "'";
+    }
+
+    private String textOrNothing(WebElement element) {
+        try {
+            return element.getLocator().first().innerText().replaceAll("\\s+", " ").trim();
+        } catch (RuntimeException beingRedrawn) {
+            return "(gone while being read)";
+        }
     }
 
     public String selectedFileParam() {
