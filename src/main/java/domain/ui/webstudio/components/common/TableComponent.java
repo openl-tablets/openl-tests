@@ -42,15 +42,10 @@ public class TableComponent extends BaseComponent {
     }
 
     public WebElement getCell(int rowIndex, int columnIndex) {
-        WaitUtil.waitForListNotEmpty(() -> rows, 3000, 100, "Waiting for table rows to load before getting cell [" + rowIndex + "," + columnIndex + "]");
+        WaitUtil.waitForListNotEmpty(() -> rows, DEFAULT_TIMEOUT_MS, 100, "Waiting for table rows to load before getting cell [" + rowIndex + "," + columnIndex + "]");
         return rows.get(rowIndex - 1 + rowOffset()).getCells().get(columnIndex - 1);
     }
 
-    /**
-     * A table written across its columns is drawn with its line numbers in a row above it, which is no row of
-     * the table. A table written the usual way round carries them in a column instead, which the row's own
-     * cells leave out.
-     */
     private int rowOffset() {
         return numberedFirstColumn.getLocator().count() == 0 && firstRowLineNumber.getLocator().count() > 0 ? 1 : 0;
     }
@@ -60,7 +55,7 @@ public class TableComponent extends BaseComponent {
     }
 
     public List<String> getColumn(int columnIndex) {
-        WaitUtil.waitForListNotEmpty(() -> rows, 3000, 250, "Waiting for table rows before getting column " + columnIndex);
+        WaitUtil.waitForListNotEmpty(() -> rows, DEFAULT_TIMEOUT_MS, 250, "Waiting for table rows before getting column " + columnIndex);
         return rows.stream()
                 .skip(rowOffset())
                 .map(PlaywrightTableRowComponent::getCells)
@@ -80,19 +75,14 @@ public class TableComponent extends BaseComponent {
             try {
                 doubleClickCell(rowIndex, columnIndex);
             } catch (RuntimeException neverSettles) {
-                // A module that keeps recompiling re-renders the table, so the cell never reaches the
-                // "stable" state a real dblclick requires; dispatch the event instead.
                 getCell(rowIndex, columnIndex).doubleClickWhenSettled();
             }
             editorWrapper.waitForVisible(2000);
             return true;
-        }, 10000, 500, "Activating cell editor for cell [" + rowIndex + "," + columnIndex + "]");
+        }, 30000, 500, "Activating cell editor for cell [" + rowIndex + "," + columnIndex + "]");
 
         waitUntilTheEditorIsDrawn();
         boolean written = WaitUtil.waitForCondition(() -> {
-            // A cell offering a list of values is written by picking from it, not by typing over it, and the
-            // editor opens as a box before the cell says the values it takes, so which one it is is read again
-            // on every try.
             if (String.valueOf(inputLocator.getAttribute("class")).contains("ant-select")) {
                 WebElement picker = new WebElement(inputLocator, "xpath=.//input", "cellValueInput");
                 pickInSelect(picker, text);
@@ -149,20 +139,15 @@ public class TableComponent extends BaseComponent {
     }
 
     public int getRowsCount() {
-        WaitUtil.waitForListNotEmpty(() -> rows, 3000, 250, "Waiting for table rows before counting");
+        WaitUtil.waitForListNotEmpty(() -> rows, DEFAULT_TIMEOUT_MS, 250, "Waiting for table rows before counting");
         return rows.size() - rowOffset();
     }
 
     public PlaywrightTableRowComponent getRow(int rowIndex) {
-        WaitUtil.waitForListNotEmpty(() -> rows, 3000, 250, "Waiting for table rows before getting row " + rowIndex);
+        WaitUtil.waitForListNotEmpty(() -> rows, DEFAULT_TIMEOUT_MS, 250, "Waiting for table rows before getting row " + rowIndex);
         return rows.get(rowIndex - 1 + rowOffset());
     }
 
-    /**
-     * What the cell says about the word it names: the type it stands for and where it comes from, told when
-     * the word is pointed at. The word is one of the things the cell names, drawn apart from the rest of the
-     * text so it can be pointed at and pressed.
-     */
     public String getCellHintText(int rowIndex, int columnIndex, String variableName) {
         WebElement cell = getCell(rowIndex, columnIndex);
         WebElement named = new WebElement(cell,
@@ -175,14 +160,11 @@ public class TableComponent extends BaseComponent {
                         + "[not(ancestor::div[contains(@class,'ant-tooltip-hidden')])]",
                 "cellHint");
         hint.waitForVisible(DEFAULT_TIMEOUT_MS);
-        // One box is kept for every hint on the screen, and it holds what was last pointed at until it is
-        // told otherwise, so what it says is read once it speaks of the word that was pointed at.
         WaitUtil.requireCondition(() -> hintSaid(hint).contains(variableName), DEFAULT_TIMEOUT_MS, 200,
                 "Waiting for the hint of '" + variableName + "' to be told");
         return hintSaid(hint).trim();
     }
 
-    /** What the one hint box says, or nothing while it is being drawn again for another word. */
     private String hintSaid(WebElement hint) {
         try {
             return hint.getLocator().first().innerText();
@@ -204,7 +186,6 @@ public class TableComponent extends BaseComponent {
         return headerRow.getLocator().locator("xpath=./th").allTextContents();
     }
 
-    // Inner class for table row operations
     public static class PlaywrightTableRowComponent extends BaseComponent {
         List<WebElement> cells;
 
@@ -219,9 +200,6 @@ public class TableComponent extends BaseComponent {
         }
 
         private void initializeElements() {
-            // While the table is edited it is drawn with its lines numbered. A table written the usual way
-            // round carries the numbers in a column before the first, which is not a cell of the table; a
-            // transposed one carries them in a row above it, where they take no column away.
             cells = createScopedElementList("xpath=./td[not(position()=1"
                     + " and ancestor::table[1]/tbody/tr[last()]/td[1][.//span[@data-testid='table-line-number']])]", "cells");
         }

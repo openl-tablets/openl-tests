@@ -5,16 +5,6 @@ import com.microsoft.playwright.Locator;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * What the compilation says, read off the list the screens share.
- *
- * <p>A message stands in a line of its own together with what the screen offers to do about it: the rule it
- * was raised against, a word to ask the server for the stack by, a way to correct the cell it names. Those
- * are drawn beside the message, so the message alone is read.
- *
- * <p>A message too long to stand in the panel is cut, with a word to read the rest by written inside it.
- * That word is pressed before the message is read, so what is read is the whole of it.
- */
 final class CompileMessageReader {
 
     private static final String MESSAGE = "xpath=./*[@data-testid][1]";
@@ -24,7 +14,6 @@ final class CompileMessageReader {
     private CompileMessageReader() {
     }
 
-    /** Every message of one list, in the order the panel lists them. */
     static List<String> textsOf(Locator list) {
         Locator messages = list.locator(MESSAGES);
         if (messages.locator(OFFER).count() == 0) {
@@ -37,14 +26,13 @@ final class CompileMessageReader {
         return read;
     }
 
-    /** What one line of the list says. */
     static String textOf(Locator row) {
         return wholeOf(row.locator(MESSAGE));
     }
 
     private static String wholeOf(Locator message) {
         Locator offer = message.locator(OFFER);
-        if (offer.count() > 0) {
+        if (offer.count() > 0 && !"Show less".equals(offer.first().innerText().trim())) {
             offer.first().click();
         }
         String read = message.innerText().trim();

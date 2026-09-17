@@ -787,6 +787,23 @@ the build under test (`6.5.0-b48c86279338`) and against the screens themselves.
 | Writing the specification of a project's rules is offered beside the OpenAPI heading of the card as it is read (`openApiActions.tsx`, `openapi-write`); the settings the card is written through hold no such action. | `TestGenerateOpenApiDefaultDate` presses it on the card it is reading, without opening the card for writing. |
 | The wizard stays open on a name it refuses, holding what it was given, so the refusal can be read off it. | `CreateNewProjectComponent.submitExpectingRefusal` presses Create where a refusal is what the scenario is about, and `TestProjectNameValidationUi` reads the refusal from there. |
 
+## The compilation indicator and the panel of problems disagree
+
+The heading of a module names the state of the compilation from a reading of its own
+(`useModuleCompilation.ts`, `ModuleWorkspace.tsx`), while the panel of problems is drawn from the project's
+status the server pushes (`CompileProblemsPanel.tsx`). A push carrying the counts and the messages arrives
+while the heading still reads *Compiling 2 of 2*, so a reader — and a test — can be shown the whole of what
+the compilation found under a heading that says it is still going. Seen on the CI run of 17 September
+(shard-14, `TestWorkWithDuplicateTables`): the panel listed *There can be only one active table.* with the
+error count at 1, and the heading read *Compiling 2 of 2* for as long as the test waited.
+
+`ProblemsPanelComponent.errorsSaying` therefore reads the panel as it stands, taking what it says once two
+readings running say the same thing, instead of waiting for the heading to call the compilation finished.
+The rest of the class still waits for the heading, which is what a scenario about a finished compilation
+wants.
+
+---
+
 ## Class names of the component library, for whoever writes the next locator
 
 Ant Design 6 renamed containers that a great many locators were written against. Each was confirmed in the

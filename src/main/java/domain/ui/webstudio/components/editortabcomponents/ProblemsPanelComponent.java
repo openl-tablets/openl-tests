@@ -9,13 +9,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-/**
- * The compilation problems of the project, as the module and project screens show them.
- *
- * <p>The panel is drawn only while the project has something to report: a project that compiles clean carries
- * no panel at all, which is what "no problems" looks like on these screens. Errors are listed before warnings,
- * and each list is paged, so reading them all means opening the panel and asking for the rest of each page.
- */
 public class ProblemsPanelComponent extends BaseComponent {
 
     private static final String PANEL = "xpath=//section[@data-testid='compile-problems']";
@@ -60,7 +53,6 @@ public class ProblemsPanelComponent extends BaseComponent {
         showMoreBtn = new WebElement(page, BODY + "//button[.//span[starts-with(normalize-space(),'Show')][contains(normalize-space(),'more')]]", "showMoreProblemsBtn");
     }
 
-    /** What the compilation indicator reports, read from the screen rather than from the server. */
     public record ServerCompileStatus(String compileState, int errors, int warnings, int compiled, int total) {
         public boolean isCompiling() {
             return "compiling".equals(compileState);
@@ -97,7 +89,6 @@ public class ProblemsPanelComponent extends BaseComponent {
         return counterValue(warningsCounter);
     }
 
-    /** The count the panel shows, or none at all — the panel leaves out a counter that would read zero. */
     private int counterValue(WebElement counter) {
         if (!panel.isVisible(PROBE_MS) || !counter.isVisible(PROBE_MS)) {
             return 0;
@@ -111,11 +102,6 @@ public class ProblemsPanelComponent extends BaseComponent {
                 || (compileState.isVisible(PROBE_MS / 4) && compileIndicatorSays(COMPILING_LABEL));
     }
 
-    /**
-     * Whether the compilation indicator says the given word. The indicator names the state it is in only
-     * while it compiles; once it has raised something it says how many errors and warnings there are
-     * instead, and that is what its label reads too, so both what it draws and how it names itself are asked.
-     */
     private boolean compileIndicatorSays(String word) {
         return compileState.getText().contains(word)
                 || String.valueOf(compileState.getAttribute("aria-label")).contains(word);
@@ -127,8 +113,6 @@ public class ProblemsPanelComponent extends BaseComponent {
         }
         String said = compileState.getText();
         String label = String.valueOf(compileState.getAttribute("aria-label"));
-        // The indicator names its state while it compiles and says what it raised once it has, and it names
-        // the state either way when the counts have not reached the screen yet.
         String state = said.contains(COMPILING_LABEL) || label.contains(COMPILING_LABEL) ? "compiling"
                 : label.contains("Errors") || label.contains("error") ? "errors"
                 : label.contains("Warnings") || label.contains("warning") ? "warnings"
@@ -181,34 +165,38 @@ public class ProblemsPanelComponent extends BaseComponent {
         return readMessages(true);
     }
 
-    /**
-     * The errors of the table in hand, once the one looked for is among them. The panel is filled in as the
-     * module reports what it found, so a list read the moment the table is opened can still be empty while
-     * the module is answering.
-     */
     public List<String> errorsSaying(String said) {
-        List<String> errors = readMessages(true);
-        if (errors.stream().anyMatch(error -> error.contains(said))) {
-            return errors;
-        }
-        WaitUtil.waitForCondition(() -> readMessages(true).stream().anyMatch(error -> error.contains(said)),
-                COMPILATION_TIMEOUT_MS, COMPILATION_POLL_MS * 2, "Waiting for the panel to say '" + said + "'");
-        return readMessages(true);
+        List<String> matched = new ArrayList<>();
+        boolean shown = WaitUtil.waitForCondition(() -> {
+            List<String> now;
+            try {
+                now = messagesNow(true);
+            } catch (RuntimeException panelIsBeingRedrawn) {
+                return false;
+            }
+            if (now.stream().noneMatch(error -> error.contains(said))) {
+                matched.clear();
+                return false;
+            }
+            boolean readTwice = matched.equals(now);
+            matched.clear();
+            matched.addAll(now);
+            return readTwice;
+        }, COMPILATION_TIMEOUT_MS, COMPILATION_POLL_MS * 2, "Waiting for the panel to say '" + said + "'");
+        return shown ? List.copyOf(matched) : readMessages(true);
     }
 
     public List<String> getAllWarnings() {
         return readMessages(false);
     }
 
-    /**
-     * The messages of one severity, as the panel lists them.
-     *
-     * <p>The panel lists errors first and warnings after, each in a list of its own and each list left out
-     * when it would be empty, so which list is which is decided by the counts in the panel's header.
-     */
     private List<String> readMessages(boolean errors) {
         waitForCompilationToComplete();
         waitUntilThePanelHasSettled();
+        return messagesNow(errors);
+    }
+
+    private List<String> messagesNow(boolean errors) {
         if (!panel.isVisible(PROBE_MS)) {
             return List.of();
         }
@@ -226,7 +214,6 @@ public class ProblemsPanelComponent extends BaseComponent {
         return CompileMessageReader.textsOf(messageLists.get(listIndex).getLocator());
     }
 
-    /** Asks each list for the rest of its messages, so what is read is everything the panel holds. */
     private void expandAllPages() {
         for (int page = 0; page < MAX_PAGES && showMoreBtn.isVisible(PAGE_PROBE_MS); page++) {
             showMoreBtn.click();
@@ -237,11 +224,6 @@ public class ProblemsPanelComponent extends BaseComponent {
         waitForCompilationToComplete(COMPILATION_TIMEOUT_MS, COMPILATION_POLL_MS);
     }
 
-    /**
-     * Waits for the panel to hold what it is going to hold. A module reports what it found as it goes, and
-     * the indicator names the state it is in only once it is drawn, so what the panel says is taken when it
-     * has said the same thing twice over.
-     */
     private void waitUntilThePanelHasSettled() {
         String[] last = {null};
         WaitUtil.waitForCondition(() -> {
@@ -267,8 +249,6 @@ public class ProblemsPanelComponent extends BaseComponent {
     }
 
     public void selectProblemByText(String text) {
-        // A module still compiling reports what it has found so far, and a message cannot be followed while
-        // it does, so the reading is made once it has finished.
         waitForCompilationToComplete();
         showProblemsPanel();
         expandAllPages();

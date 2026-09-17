@@ -198,6 +198,10 @@ public class SearchFilterComponent extends BaseComponent {
                     + getTableNamesInSearchResults());
         }
         viewTableRows.get(index).click();
+        WebElement openedTable = new WebElement(page,
+                "xpath=//table[@data-testid='module-table']//tr[1]/td[1]", "openedTable");
+        WaitUtil.waitForCondition(() -> openedTable.isVisible(1000), DEFAULT_TIMEOUT_MS, 250,
+                "Waiting for the table '" + tableName + "' the search offered to be drawn");
         return this;
     }
 
