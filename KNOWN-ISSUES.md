@@ -272,22 +272,18 @@ sentences the plan uses, except where the workbook genuinely stands there alread
 
 ---
 
-## 13. A project can no longer be renamed
+## 13. A project is renamed by its descriptor, not from a dialog of its own
 
-**What changed.** The JSF project screen offered Edit Project, whose first field was the project's name: a
-project could be renamed where it stood. The React card offers what the descriptor says — the description,
-the modules, the dependencies, the OpenAPI settings — and the actions the project has
-(`PROJECT_ACTIONS`: save, open, close, copy, delete branch, open revision, sync, deploy, compare, export,
-delete, unlock). None of them renames it, and the only Rename in the whole application belongs to a file.
+**Resolved, and kept here for the record.** The JSF page renamed a project through the Edit Project dialog.
+A project is named by its descriptor now: write another `<name>` into `rules.xml` — on the Files tab, where
+the file is updated or edited — and the working copy is listed under that name at once, while the repository
+still holds the project under the name it was published with (`repositories.ts:509-511` says as much of the
+history call, which is asked by id for exactly this reason). Saving the project publishes the new name.
 
-Copying the project into one of another name is the nearest thing left, and it is not the same act: the
-history stays with the old name, and the old project stays behind to be deleted.
-
-**Blocked tests.**
-- `tests.ui.webstudio.studio_issues.TestRenameProjectFromOldRevisionConflictUi` — renames a project twice,
-  from an old revision, to check the conflict that used to raise.
-- `tests.ui.webstudio.repository.TestProjectDeleteUnsavedEditUi` — renames a project and then deletes it
-  while the rename is still unsaved, to check the row is found under the new name.
+**Tests.** `TestProjectDeleteUnsavedEditUi` writes the new name into the descriptor and deletes the project
+while the rename is unsaved; `TestRenameProjectFromOldRevisionConflictUi` renames it, saves, opens an older
+revision — which brings the descriptor of that revision back, so the project is listed under its first name
+again — renames it a second time and asks for the conflict.
 
 ---
 
