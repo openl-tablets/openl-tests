@@ -2,8 +2,6 @@ package domain.ui.webstudio.components.editortabcomponents.leftmenu;
 
 import com.microsoft.playwright.PlaywrightException;
 import domain.ui.webstudio.components.BaseComponent;
-import domain.ui.webstudio.components.editortabcomponents.ChangesDialogComponent;
-import domain.ui.webstudio.components.editortabcomponents.TestResultValidationComponent;
 import configuration.core.ui.WebElement;
 import configuration.driver.DriverPool;
 import helpers.utils.WaitUtil;
@@ -199,7 +197,7 @@ public class EditorLeftRulesTreeComponent extends BaseComponent {
 
     public EditorLeftRulesTreeComponent setViewFilter(FilterOptions filterOption) {
         waitUntilSpinnerLoaded();
-        clearWindowsOverTheRail();
+        closeWindowsOverTheScreen();
         WaitUtil.requireCondition(() -> {
             if (filterOption.getValue().equals(getViewFilterValue())) {
                 return true;
@@ -218,7 +216,7 @@ public class EditorLeftRulesTreeComponent extends BaseComponent {
 
     public EditorLeftRulesTreeComponent expandFolderInTree(String folderName) {
         waitUntilSpinnerLoaded();
-        clearWindowsOverTheRail();
+        closeWindowsOverTheScreen();
         WaitUtil.requireCondition(() -> {
             Optional<TreeRow> folder = findFolder(folderName);
             if (folder.isEmpty()) {
@@ -353,15 +351,6 @@ public class EditorLeftRulesTreeComponent extends BaseComponent {
         extendedSearchBtn.click();
     }
 
-    /**
-     * Puts away whatever the reader opened over the screen. The rail lies under it, and nothing on the rail
-     * can be pressed through a window: the history of the module and the report of a run both stand there.
-     */
-    private void clearWindowsOverTheRail() {
-        new ChangesDialogComponent().closeIfOpen();
-        new TestResultValidationComponent().closeResults();
-    }
-
     private Optional<TreeRow> findFolder(String folderName) {
         return readRows().stream()
                 .filter(row -> row.folder() && folderName.equals(row.title()))
@@ -420,7 +409,7 @@ public class EditorLeftRulesTreeComponent extends BaseComponent {
      * id it was read under.
      */
     private void clickNode(TreeRow row) {
-        clearWindowsOverTheRail();
+        closeWindowsOverTheScreen();
         WaitUtil.requireCondition(() -> {
             TreeRow current = rowStandingFor(row);
             if (current == null || !Boolean.TRUE.equals(page.evaluate(REVEAL_NODE_SCRIPT, current.nodeId()))) {

@@ -11,7 +11,6 @@ import domain.ui.webstudio.components.editortabcomponents.leftmenu.EditorLeftRul
 import domain.ui.webstudio.pages.mainpages.EditorPage;
 import helpers.service.WorkflowService;
 import helpers.utils.WaitUtil;
-import org.testng.SkipException;
 import org.testng.annotations.Test;
 import domain.ui.webstudio.components.editortabcomponents.toolbar.RunMenuComponent;
 import tests.BaseTest;
@@ -97,15 +96,6 @@ public class TestRunContextualMenuRunAll extends BaseTest {
                 .expandFolderInTree("Test")
                 .selectItemInFolder("Test", BIG_TEST);
 
-        // The rule the test table is written against does not compile — its own headings are read as data —
-        // so nothing offers to run either of them. See KNOWN-ISSUES.md #19.
-        throw new SkipException("KNOWN-ISSUES.md #19: the rule this test table is written against does not "
-                + "compile, because a rule table holding no data rows has its display names read as data. "
-                + "The launcher cannot be opened while the rule is in error; what this test asks of it is "
-                + "below, to be restored with the parsing.");
-    }
-
-    private void theRestOfTheScenario(EditorPage editorPage) {
         // ============ STEP 2: the launcher takes every case unless the reader picks some ============
         editorPage.getEditorToolbarPanelComponent().clickRun();
         RunMenuComponent launcher = editorPage.getEditorToolbarPanelComponent().getRunLauncher();
@@ -117,9 +107,10 @@ public class TestRunContextualMenuRunAll extends BaseTest {
         assertThat(launcher.isAllCasesChecked())
                 .as("C.9 — every case is taken unless the reader says otherwise")
                 .isTrue();
-        assertThat(launcher.getTotalCasesText())
-                .as("C.1 — the launcher must say how many cases the table holds")
-                .isEqualTo("Total test cases: 25");
+        // The cases are drawn a page at a time, twenty-five to a page, and this table holds exactly that.
+        assertThat(launcher.getDrawnCaseCount())
+                .as("C.1 — the launcher must list every case of the table")
+                .isEqualTo(25);
 
         // ============ STEP 3: picking one case is saying otherwise ============
         launcher.pickFirstCase();

@@ -1,8 +1,6 @@
 package domain.ui.webstudio.components.editortabcomponents.leftmenu;
 
 import domain.ui.webstudio.components.BaseComponent;
-import domain.ui.webstudio.components.editortabcomponents.ChangesDialogComponent;
-import domain.ui.webstudio.components.editortabcomponents.EditorRevisionsTabComponent;
 import configuration.core.ui.WebElement;
 import configuration.driver.DriverPool;
 import domain.ui.webstudio.components.common.TabSwitcherComponent;
@@ -73,13 +71,11 @@ public class EditorLeftProjectModuleSelectorComponent extends BaseComponent {
     public void selectProject(String projectName) {
         waitUntilSpinnerLoaded();
         if (isCardOf(projectName)) {
+            closeWindowsOverTheScreen();
             showOverview();
             return;
         }
-        // A window a reader opened over the screen — the module's local history, the project's revisions —
-        // is closed before they leave it, because the screen underneath cannot be reached while it stands.
-        new ChangesDialogComponent().closeIfOpen();
-        new EditorRevisionsTabComponent().closeIfOpen();
+        closeWindowsOverTheScreen();
         if (isModuleOf(projectName)) {
             projectCrumbFollow.click();
         } else {

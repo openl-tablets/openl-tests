@@ -40,8 +40,11 @@ public class TestArrayDeclarationIsLink extends BaseTest {
                 "xpath=//td//button[starts-with(@data-testid,'cell-usage-')][normalize-space()='Procedure']");
         assertThat(links.size()).as("Should find exactly 12 procedure links").isEqualTo(12);
 
-        links.forEach(link -> assertThat(link.getCssValue("cursor"))
-                .as("A procedure should read as something the reader can press")
-                .isEqualTo("pointer"));
+        // What marks it as a link at rest is the colour it is drawn in; the underline comes under the pointer.
+        String plain = editorPage.createElementList("xpath=//td[not(.//button)][normalize-space()!='']")
+                .get(0).getCssValue("color");
+        links.forEach(link -> assertThat(link.getCssValue("color"))
+                .as("A procedure should be drawn in the colour a link is drawn in, not as plain text")
+                .isNotEqualTo(plain));
     }
 }

@@ -15,6 +15,7 @@ public class RunTestsMenuComponent extends BaseComponent implements IRunTestsMen
 
     // Only one launcher stands open at a time, and it draws what it holds into the page.
     private static final String LAUNCHER = "xpath=";
+    private static final int PROBE_MS = 2000;
 
     private final WebElement testBtn;
     private final WebElement dropdownToggle;
@@ -55,8 +56,10 @@ public class RunTestsMenuComponent extends BaseComponent implements IRunTestsMen
      * than written into its words, so it is read on its own.
      */
     public String getTestCount() {
-        WebElement count = new WebElement(page, "xpath=//*[@data-testid='module-test-count']", "moduleTestCount");
-        return count.isVisible(2000) ? count.getText().trim() : "";
+        WebElement count = new WebElement(page,
+                "xpath=//*[@data-testid='module-test-count']//*[contains(@class,'ant-badge-count')][@title]",
+                "moduleTestCount");
+        return count.isVisible(PROBE_MS) ? String.valueOf(count.getAttribute("title")).trim() : "";
     }
 
     public boolean isTestButtonVisible() {

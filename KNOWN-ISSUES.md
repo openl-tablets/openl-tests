@@ -447,36 +447,6 @@ withheld for a table of twenty cases or fewer — is the coverage to restore wit
 
 ---
 
-## 19. A rule table with no rules in it does not compile: its own headings are read as data
-
-**What happens.** A `SimpleRules` table written the ordinary way — the signature, a row of technical names,
-a row of display names — and holding no data rows yet fails to compile. The display names are read as the
-first row of data:
-
-```
-Cannot parse cell value 'Input'.  Expected value of type 'IntRange'.   (B4)
-Cannot parse cell value 'Result'. Expected value of type 'Integer'.    (C4)
-```
-
-B4 and C4 are the display names of the two columns, which `B3`/`C3` name technically as `x` and `_return_`.
-
-**Verified against a running 6.5.0-SNAPSHOT** (`6.5.0-b48c86279338`) with
-`src/test/resources/test_data/TestRunContextualMenuRunAll/RunAllTestTable.zip`, whose `doubleIt` table is
-exactly that shape. Appending a single data row to it through
-`POST /web/projects/{id}/tables/{id}/actions` clears both errors at once, which is what pins the cause: the
-display-name row is taken for data only while no data row follows it.
-
-**What it costs.** The rule does not compile, so everything that depends on it goes with it — the test table
-written against it reports *Tested rules have errors*, and the table toolbar offers neither Run nor Trace
-nor Test for either of them.
-
-**Blocked tests.**
-- `tests.ui.webstudio.rules_editor.TestRunContextualMenuRunAll` — it opens the Run launcher of the test
-  table written against that rule. What it can still reach — the project, the module, the tables in the
-  rail — runs; the launcher cannot be opened at all while the rule is in error.
-
----
-
 ## Renamings that are not bugs
 
 For the record, so they are not raised twice. These are the same tree, named the way the tables API has named

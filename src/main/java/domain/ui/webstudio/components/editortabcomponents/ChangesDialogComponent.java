@@ -97,7 +97,6 @@ public class ChangesDialogComponent extends BaseComponent {
      */
     public ChangesDialogComponent closeIfOpen() {
         if (!view.isVisible(CLOSE_PROBE_MS)) {
-            forgetRequests();
             return this;
         }
         closeBtn.click();

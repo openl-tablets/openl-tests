@@ -45,16 +45,14 @@ public class EditorRevisionsTabComponent extends BaseComponent {
      * own card they are a side of it and there is nothing to close.
      */
     public void closeIfOpen() {
-        WebElement window = new WebElement(page,
-                "xpath=//div[contains(@class,'ant-modal-wrap')][.//ol[starts-with(@data-testid,'revisions-')]]",
-                "revisionsWindow");
-        if (!window.isVisible(CLOSE_PROBE_MS)) {
+        String window = "//div[contains(@class,'ant-modal-wrap')]"
+                + "[.//div[contains(@class,'ant-modal-title')][normalize-space()='Revisions']]";
+        WebElement standing = new WebElement(page, "xpath=" + window, "revisionsWindow");
+        if (!standing.isVisible(CLOSE_PROBE_MS)) {
             return;
         }
-        new WebElement(page, "xpath=//div[contains(@class,'ant-modal-wrap')]"
-                + "[.//ol[starts-with(@data-testid,'revisions-')]]//button[@aria-label='Close']",
-                "closeRevisionsBtn").click();
-        window.waitForHidden(DEFAULT_TIMEOUT_MS);
+        new WebElement(page, "xpath=" + window + "//button[@aria-label='Close']", "closeRevisionsBtn").click();
+        standing.waitForHidden(DEFAULT_TIMEOUT_MS);
     }
 
     public void waitForTableToLoad() {

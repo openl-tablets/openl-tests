@@ -3,8 +3,6 @@ package domain.ui.webstudio.components.common;
 import domain.ui.webstudio.components.BaseComponent;
 import com.microsoft.playwright.PlaywrightException;
 import configuration.core.ui.WebElement;
-import domain.ui.webstudio.components.editortabcomponents.ChangesDialogComponent;
-import domain.ui.webstudio.components.editortabcomponents.EditorRevisionsTabComponent;
 import configuration.driver.DriverPool;
 import domain.ui.webstudio.pages.BasePage;
 import domain.ui.webstudio.pages.mainpages.RepositoryPage;
@@ -66,10 +64,7 @@ public class TabSwitcherComponent extends BaseComponent {
             if (projectsList.isVisible(LIST_PROBE_MS)) {
                 return true;
             }
-            // The history and the revisions each stand in a window over the screen, and the header cannot
-            // be reached through one.
-            new ChangesDialogComponent().closeIfOpen();
-            new EditorRevisionsTabComponent().closeIfOpen();
+            closeWindowsOverTheScreen();
             try {
                 if (tabLabel.isVisible(LIST_PROBE_MS)) {
                     tabLabel.click(TAB_CLICK_MS);

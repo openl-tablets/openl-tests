@@ -64,6 +64,11 @@ public abstract class BaseComponent extends CoreComponent {
         }
     }
 
+    /** Puts away whatever the reader opened over the screen, so what is under it can be pressed. */
+    protected void closeWindowsOverTheScreen() {
+        ScreenWindows.closeAll(page);
+    }
+
     /**
      * Takes the pointer off whatever it was last left on. A label the screen shows under the pointer stays
      * drawn while it is there and lies over what is beside it, so a reader who is about to press something

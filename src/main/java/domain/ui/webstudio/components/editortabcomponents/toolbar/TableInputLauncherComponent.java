@@ -118,7 +118,20 @@ public abstract class TableInputLauncherComponent extends BaseComponent {
                 + " | //*[@data-testid='pick-case-" + caseId + "']//input", "pickCase[" + caseId + "]").isChecked();
     }
 
-    /** What the launcher says about how many cases the table holds, as it is written beside the pager. */
+    /** How many cases the launcher draws. They are drawn a page at a time, twenty-five to a page. */
+    public int getDrawnCaseCount() {
+        List<WebElement> boxes = createElementList(
+                "xpath=//*[@data-testid='test-cases']//input[@type='checkbox'][not(@data-testid='pick-all-cases')]",
+                "caseBoxes");
+        WaitUtil.waitForListNotEmpty(() -> boxes, DEFAULT_TIMEOUT_MS, 200,
+                "Waiting for the cases of the table to be listed");
+        return boxes.size();
+    }
+
+    /**
+     * What the launcher says about how many cases the table holds. It is written beside the pager, and the
+     * pager stands only where the cases do not all fit on one page.
+     */
     public String getTotalCasesText() {
         WebElement total = new WebElement(page,
                 "xpath=//*[@data-testid='test-cases']//li[contains(@class,'ant-pagination-total-text')]",

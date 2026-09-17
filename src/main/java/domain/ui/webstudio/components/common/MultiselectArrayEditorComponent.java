@@ -52,9 +52,29 @@ public class MultiselectArrayEditorComponent extends BaseComponent {
 
     /** Whether the value is among those the cell holds, which the list marks as chosen. */
     public boolean isValueChecked(String value) {
+        WebElement option = narrowedTo(value);
+        boolean chosen = String.valueOf(option.getAttribute("class")).contains("ant-select-item-option-selected");
+        widenAgain(value);
+        return chosen;
+    }
+
+    /**
+     * Narrows the list to the value and answers the one option left. A long list is drawn a screenful at a
+     * time, so a value far down it is not in the page until the list is narrowed — which is what a reader
+     * does by typing what they are looking for.
+     */
+    private WebElement narrowedTo(String value) {
+        page.keyboard().type(value);
         WebElement option = optionTemplate.format(value);
         option.waitForVisible(DEFAULT_TIMEOUT_MS);
-        return String.valueOf(option.getAttribute("class")).contains("ant-select-item-option-selected");
+        return option;
+    }
+
+    /** Takes back what was typed to narrow the list, so the next value is looked for in the whole of it. */
+    private void widenAgain(String value) {
+        for (int typed = 0; typed < value.length(); typed++) {
+            page.keyboard().press("Backspace");
+        }
     }
 
     public void verifyChosenValues(List<String> values) {
@@ -78,18 +98,29 @@ public class MultiselectArrayEditorComponent extends BaseComponent {
     /** Pressing a value that is already chosen would take it away, so only the ones missing are pressed. */
     public void selectValues(String... values) {
         for (String value : values) {
-            if (!isValueChecked(value)) {
-                optionTemplate.format(value).click();
-            }
+            press(value, false);
         }
     }
 
     public void deselectValues(String... values) {
         for (String value : values) {
-            if (isValueChecked(value)) {
-                optionTemplate.format(value).click();
-            }
+            press(value, true);
         }
+    }
+
+    /** Presses the value only when it stands the way it should not, since a press turns it the other way. */
+    private void press(String value, boolean chosenNow) {
+        WebElement option = narrowedTo(value);
+        boolean chosen = String.valueOf(option.getAttribute("class")).contains("ant-select-item-option-selected");
+        if (chosen == chosenNow) {
+            option.click();
+            // Choosing takes back what was typed by itself; taking a value away leaves it standing.
+            if (chosenNow) {
+                widenAgain(value);
+            }
+            return;
+        }
+        widenAgain(value);
     }
 
     /**
