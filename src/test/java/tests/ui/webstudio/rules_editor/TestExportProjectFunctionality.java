@@ -371,8 +371,10 @@ public class TestExportProjectFunctionality extends BaseTest {
                 .as("Should show In Editing after project edit")
                 .containsExactlyInAnyOrder("In Editing", revisionSampleProject);
 
+        // The templates the product ships carry the standard layout, so the workbook of a project made from
+        // one lies under rules/ rather than in the project's root.
         exportAndVerifyDownload(exportDialog, "edited Sample Project export",
-                "Main.xlsx", "rules.xml");
+                "rules/Main.xlsx", "rules.xml");
 
         editorPage.openUserMenu().signOut();
         editorPage = loginService.login(UserService.getUser(User.ADMIN));

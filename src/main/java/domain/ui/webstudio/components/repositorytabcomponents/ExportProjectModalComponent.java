@@ -78,16 +78,25 @@ public class ExportProjectModalComponent extends BaseComponent {
      * here: the dialog answers Escape by closing itself, and the list is then asked about a dialog that is
      * no longer there. Moving on from the select is what folds the list away.
      */
+    /**
+     * Folds the list of revisions away, so what stands under it can be pressed. The list closes when a
+     * revision is taken from it, so the one already taken is taken again: the list folds away and the
+     * dialog still stands at the revision it stood at. Escape is not used — the dialog answers it by
+     * closing itself.
+     */
     private void closeRevisionDropdown() {
         if (!openDropdown.exists()) {
             return;
         }
-        page.keyboard().press("Tab");
-        if (dropdownClosed()) {
-            return;
+        WebElement chosen = new WebElement(page,
+                "xpath=(" + OPEN_DROPDOWN.substring("xpath=".length())
+                        + "//div[contains(@class,'ant-select-item-option')][contains(@class,'ant-select-item-option-selected')])[1]",
+                "chosenRevision");
+        if (chosen.isVisible(DEFAULT_TIMEOUT_MS / 10)) {
+            chosen.click();
+        } else {
+            page.keyboard().press("Tab");
         }
-        LOGGER.warn("The revision list stayed open; pressing the select itself to fold it away");
-        revisionSelect.click();
         if (!dropdownClosed()) {
             LOGGER.warn("A select dropdown is still open and may cover the dialog buttons");
         }
