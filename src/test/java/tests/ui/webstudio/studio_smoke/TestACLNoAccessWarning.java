@@ -63,17 +63,15 @@ public class TestACLNoAccessWarning extends BaseTest {
                 .as("User with no roles should see no projects in Repository")
                 .isEmpty();
 
-        Locator createProjectLink = DriverPool.getPage()
-                .locator("xpath=//div[@id='top']//a[contains(text(), 'Create Project')]");
+        // The screen offers to create a project only where the reader may write to a repository, so a user
+        // who may write nowhere is offered nothing.
+        Locator createProjectLink = DriverPool.getPage().locator("xpath=//*[@data-testid='projects-new']");
         assertThat(createProjectLink.count())
                 .as("User with no roles should NOT see 'Create Project' link")
                 .isZero();
 
-        // ============ STEP 2: Verify Editor tab — no projects in workspace ============
-        editorPage = new EditorPage();
-
-        Locator emptyWorkspaceMessage = DriverPool.getPage()
-                .locator("xpath=//*[contains(text(),'No Projects in the Workspace')]");
+        // ============ STEP 2: The same screen says the workspace holds nothing ============
+        Locator emptyWorkspaceMessage = DriverPool.getPage().locator("xpath=//*[@data-testid='projects-empty']");
         assertThat(emptyWorkspaceMessage.isVisible())
                 .as("Editor should show the empty-workspace message for a user with no roles")
                 .isTrue();

@@ -24,6 +24,8 @@ public class ImportOpenApiDialogComponent extends BaseComponent {
     private WebElement importTablesGenerationBtn;
     private WebElement createOrUpdateSchemaBtn;
     private WebElement cancelBtn;
+    private WebElement editBtn;
+    private WebElement sectionHeader;
     private WebElement errorMsg;
     private WebElement anyErrorMsg;
     private List<WebElement> errorMsgs;
@@ -50,6 +52,8 @@ public class ImportOpenApiDialogComponent extends BaseComponent {
         importTablesGenerationBtn = new WebElement(page, "xpath=//button[@data-testid='openapi-generate']", "generateTablesBtn");
         createOrUpdateSchemaBtn = new WebElement(page, "xpath=//button[@data-testid='openapi-write']", "writeSchemaBtn");
         cancelBtn = new WebElement(page, OVERVIEW + "//button[@data-testid='overview-cancel']", "cancelBtn");
+        editBtn = new WebElement(page, OVERVIEW + "//button[@data-testid='overview-edit']", "overviewEditBtn");
+        sectionHeader = new WebElement(page, OVERVIEW + "//button[normalize-space()='OpenAPI']", "openApiSectionHeader");
         errorMsg = new WebElement(page, "xpath=(" + OVERVIEW.substring("xpath=".length())
                 + "//div[contains(@class,'ant-form-item-explain-error')]"
                 + " | //div[contains(@class,'ant-notification-notice-description')])[1]", "errorMsg");
@@ -87,11 +91,27 @@ public class ImportOpenApiDialogComponent extends BaseComponent {
         return selected.getText().trim();
     }
 
+    /**
+     * Opens the settings for writing, which the panel leaves as soon as an import is refused or kept. A
+     * reader who wants to name them again presses Edit again, and so does this.
+     */
+    private void openForWriting() {
+        if (editBtn.isVisible(CANCEL_PROBE_MS)) {
+            editBtn.click();
+        }
+        sectionHeader.waitForVisible(DEFAULT_TIMEOUT_MS);
+        if (!"true".equals(sectionHeader.getAttribute("aria-expanded"))) {
+            sectionHeader.click();
+        }
+    }
+
     public void selectReconciliationMode() {
+        openForWriting();
         reconciliationRadio.click();
     }
 
     public void selectTablesGenerationMode() {
+        openForWriting();
         generationRadio.click();
     }
 

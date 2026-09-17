@@ -108,18 +108,30 @@ public class ProblemsPanelComponent extends BaseComponent {
 
     public boolean isCompilationInProgress() {
         return compilingScreen.isVisible(PROBE_MS / 4)
-                || (compileState.isVisible(PROBE_MS / 4)
-                    && String.valueOf(compileState.getAttribute("aria-label")).contains(COMPILING_LABEL));
+                || (compileState.isVisible(PROBE_MS / 4) && compileIndicatorSays(COMPILING_LABEL));
+    }
+
+    /**
+     * Whether the compilation indicator says the given word. The indicator names the state it is in only
+     * while it compiles; once it has raised something it says how many errors and warnings there are
+     * instead, and that is what its label reads too, so both what it draws and how it names itself are asked.
+     */
+    private boolean compileIndicatorSays(String word) {
+        return compileState.getText().contains(word)
+                || String.valueOf(compileState.getAttribute("aria-label")).contains(word);
     }
 
     public ServerCompileStatus fetchServerCompileStatusViaPage() {
         if (!compileState.isVisible(PROBE_MS)) {
             return null;
         }
+        String said = compileState.getText();
         String label = String.valueOf(compileState.getAttribute("aria-label"));
-        String state = label.contains(COMPILING_LABEL) ? "compiling"
-                : label.contains("Errors") ? "errors"
-                : label.contains("Warnings") ? "warnings"
+        // The indicator names its state while it compiles and says what it raised once it has, and it names
+        // the state either way when the counts have not reached the screen yet.
+        String state = said.contains(COMPILING_LABEL) || label.contains(COMPILING_LABEL) ? "compiling"
+                : label.contains("Errors") || label.contains("error") ? "errors"
+                : label.contains("Warnings") || label.contains("warning") ? "warnings"
                 : label.contains("Compiled") ? "ok"
                 : "idle";
         int errors = counterValue(errorsCounter);
@@ -218,16 +230,22 @@ public class ProblemsPanelComponent extends BaseComponent {
     }
 
     public void selectProblemByText(String text) {
+        // A module still compiling reports what it has found so far, and a message cannot be followed while
+        // it does, so the reading is made once it has finished.
+        waitForCompilationToComplete();
         showProblemsPanel();
         expandAllPages();
         List<WebElement> allProblems = createElementList(BODY + "//li", "problemRows");
         allProblems.stream()
                 .filter(element -> element.getText().contains(text))
                 .findFirst()
-                .ifPresent(WebElement::click);
+                .orElseThrow(() -> new AssertionError("No problem says '" + text + "'; the panel says: "
+                        + allProblems.stream().map(WebElement::getText).toList()))
+                .click();
     }
 
     public void selectProblemByIndex(int index) {
+        waitForCompilationToComplete();
         showProblemsPanel();
         expandAllPages();
         List<WebElement> errorRows = createElementList(BODY + "/ul[1]/li", "errorRows");

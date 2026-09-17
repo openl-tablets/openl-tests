@@ -447,6 +447,46 @@ withheld for a table of twenty cases or fewer — is the coverage to restore wit
 
 ---
 
+## 19. A table without a body takes the whole module's tables listing down with it
+
+**What happens.** A module holding a table whose header stands alone — `Spreadsheet ` in a cell with nothing
+written under it — cannot be opened at all. `GET /web/projects/{id}/tables?module={name}` answers HTTP 500
+with `Cannot invoke "org.openl.rules.table.ITable.getHeight()" because "table" is null`, and the module
+screen draws nothing but the red box *Failed to load repositories* carrying that same sentence: no tables
+tree, no table, no problems panel.
+
+**Where it comes from.** `OpenLTableUtils.isSimpleSpreadsheet`
+(`STUDIO/org.openl.rules.webstudio/.../projects/service/tables/OpenLTableUtils.java:154-160`) hands
+`table.getSyntaxNode().getTableBody()` straight to `getHeightWithoutEmptyRows` (`:190-191`), and
+`TableSyntaxNode.getTableBody()` (`DEV/org.openl.rules/.../lang/xls/syntax/TableSyntaxNode.java:117-123`)
+returns `null` by contract for a table of one row. The listing
+(`WorkspaceProjectService.getTables`, `:1658-1661`) reads every table in one stream with nothing standing
+between them, so the one that cannot be read answers for all of them.
+
+**That a table can have no body is a state the compiler itself expects**: `SpreadsheetBoundNode`
+(`DEV/org.openl.rules/.../calc/SpreadsheetBoundNode.java:264-272`) raises *Table has no body. Try to merge
+header cell horizontally to identify table.* for exactly this shape, and that message is what the problems
+panel is meant to list. Four of the nine table readers of the sibling `...service/tables/read` package
+already guard the null (`DatatypeTableReader:34`, `VocabularyTableReader:33`, `DataTableReader:34`,
+`TestTableReader:34`); the rest do not, so the same 500 is reachable through
+`GET /{projectId}/tables/{tableId}` for a body-less `Rules`, `SmartRules` or `Lookup` table
+(`SimpleRulesTableReader:42`, `SmartRulesTableReader:44`, `LookupTableReader:41`). For a body-less
+`Spreadsheet` the fall is earlier still: `SimpleSpreadsheetReader.supports:26` and
+`SpreadsheetTableReader.supports:30` both ask `isSimpleSpreadsheet`, so no reader is even chosen.
+
+**Why it matters.** One malformed table — the very thing an author opens the editor to find and fix — hides
+every other table of the module and the messages that would say what is wrong.
+
+**Test blocked.** `tests.ui.webstudio.studio_issues.TestClickOnErrorFromTheBottom` (EPBDS-9309). Its project
+carries that table on purpose: the test is about clicking a compilation error in the bottom panel and *not*
+getting a server error. It now fails on opening the module, waiting for a tables tree that never appears.
+The workbook is left as it is — repairing it would delete the case the test exists for and hide a live 500.
+
+Reproduced on `ghcr.io/openl-tablets/webstudio:6.5.0-b48c86279338`:
+`curl -u admin:admin "http://localhost:18099/web/projects/{id}/tables?module=ContextDatatypes"` → 500.
+
+---
+
 ## Renamings that are not bugs
 
 For the record, so they are not raised twice. These are the same tree, named the way the tables API has named

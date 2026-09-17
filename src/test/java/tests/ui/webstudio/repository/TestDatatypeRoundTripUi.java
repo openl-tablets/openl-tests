@@ -14,6 +14,7 @@ import domain.ui.webstudio.pages.mainpages.EditorPage;
 import domain.ui.webstudio.pages.mainpages.RepositoryPage;
 import helpers.service.LoginService;
 import helpers.service.UserService;
+import helpers.utils.WaitUtil;
 import org.testng.annotations.Test;
 import tests.BaseTest;
 
@@ -31,6 +32,7 @@ public class TestDatatypeRoundTripUi extends BaseTest {
     private static final int LINKED_TYPE_ROW = 4;
     private static final int NAME_COLUMN = 1;
     private static final int TYPE_COLUMN = 2;
+    private static final long LINK_TIMEOUT_MS = 20000;
     private static final String RENAMED_FIELD = "renamedName";
 
     @Test
@@ -93,7 +95,13 @@ public class TestDatatypeRoundTripUi extends BaseTest {
         editorPage.waitUntilSpinnerLoaded();
     }
 
+    /**
+     * Whether the Type cell leads to the datatype it names. What a cell names is told by the reading of the
+     * table that follows the table itself, so the cell is plain text until that reading arrives.
+     */
     private boolean isTypeCellLinked(TableComponent table) {
+        WaitUtil.waitForCondition(() -> typeCellLinkText(table).equals("Address"), LINK_TIMEOUT_MS, 250,
+                "Waiting for the Type cell to lead to the datatype it names");
         return typeCellLinkText(table).equals("Address");
     }
 

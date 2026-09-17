@@ -28,11 +28,18 @@ public class EditorLeftRulesTreeComponent extends BaseComponent {
 
     private static final String TREE = "xpath=//div[@data-testid='module-tables-tree']";
     private static final String TREE_NODE = TREE + "//div[contains(@class,'ant-tree-treenode')]";
+    // A row carrying errors writes their number beside its name, so what a row is called is the innermost
+    // span of its title rather than everything the title holds.
+    private static final String ROW_NAME = "//span[contains(@class,'ant-tree-title')]"
+            + "//span[not(.//span)][not(@data-testid='module-table-errors')]";
     private static final int SETTLE_POLL_MS = 200;
     private static final int NODE_PROBE_MS = 1000;
     private static final int NODE_CLICK_MS = 3000;
     private static final int PROBE_MS = 1000;
     private static final long EXPAND_TIMEOUT_MS = 10000;
+    // The rail is emptied while the module compiles again after a change and drawn back with what the module
+    // then holds, so the tree is waited for as long as that compilation may take.
+    private static final long TREE_DRAWN_TIMEOUT_MS = 90000;
 
     private static final String READ_ROWS_SCRIPT = """
             async () => {
@@ -134,11 +141,11 @@ public class EditorLeftRulesTreeComponent extends BaseComponent {
         searchInput = new WebElement(page, "xpath=//input[@data-testid='module-tables-search']", "tablesSearchInput");
         extendedSearchBtn = new WebElement(page, "xpath=//button[@data-testid='module-tables-search-extended']", "extendedSearchBtn");
         tree = new WebElement(page, TREE, "tablesTree");
-        selectedNodeTitle = new WebElement(page, TREE + "//div[contains(@class,'ant-tree-treenode-selected')]//span[contains(@class,'ant-tree-title')]", "selectedNodeTitle");
+        selectedNodeTitle = new WebElement(page, TREE + "//div[contains(@class,'ant-tree-treenode-selected')]" + ROW_NAME, "selectedNodeTitle");
         // A group may be named after a table it gathers — the Constants group holds the Constants table — so
         // the row read here is the table's: a group's row is named after what it groups by.
         tableIconTemplate = new WebElement(page, TREE_NODE + "[not(contains(@id,'-grp-'))]"
-                + "[.//span[contains(@class,'ant-tree-title')][normalize-space()='%s']]"
+                + "[." + ROW_NAME + "[normalize-space()='%s']]"
                 + "//span[contains(@class,'ant-tree-iconEle')]", "tableIcon");
     }
 
@@ -404,9 +411,14 @@ public class EditorLeftRulesTreeComponent extends BaseComponent {
         return items;
     }
 
+    private void waitForTreeDrawn() {
+        WaitUtil.requireCondition(() -> tree.isVisible(SETTLE_POLL_MS), TREE_DRAWN_TIMEOUT_MS, SETTLE_POLL_MS,
+                "Waiting for the module tables tree to be drawn");
+    }
+
     @SuppressWarnings("unchecked")
     private List<TreeRow> readRows() {
-        tree.waitForVisible(DEFAULT_TIMEOUT_MS);
+        waitForTreeDrawn();
         Object read = page.evaluate(READ_ROWS_SCRIPT);
         List<TreeRow> rows = new ArrayList<>();
         if (!(read instanceof List<?> rowsRead)) {

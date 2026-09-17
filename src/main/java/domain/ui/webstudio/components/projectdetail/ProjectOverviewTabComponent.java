@@ -4,6 +4,7 @@ import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import configuration.core.ui.WebElement;
 import domain.ui.webstudio.components.BaseComponent;
+import helpers.utils.WaitUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,6 +13,7 @@ public class ProjectOverviewTabComponent extends BaseComponent {
 
     private static final String DEFAULT_BRANCH_TAG = "Default";
     private static final int PROBE_MS = DEFAULT_TIMEOUT_MS / 5;
+    private static final long MIGRATE_TIMEOUT_MS = 60000;
 
     private final WebElement branchLabel;
     private final WebElement branchSwitcherTrigger;
@@ -56,10 +58,14 @@ public class ProjectOverviewTabComponent extends BaseComponent {
         migrateConfirmOkBtn = new WebElement(page,
                 "xpath=//div[contains(@class,'ant-modal-confirm')]//div[contains(@class,'ant-modal-confirm-btns')]//button[contains(@class,'ant-btn-primary')]",
                 "migrateConfirmOkBtn");
+        // A legacy descriptor is offered both the writing and the move, so the first of the two is taken:
+        // either of them standing says the card has drawn what it knows about the descriptor.
         descriptorActionsMarker = createScopedElement(
-                "xpath=.//*[@data-testid='overview-edit'] | .//*[@data-testid='overview-migrate']", "descriptorActionsMarker");
+                "xpath=(.//*[@data-testid='overview-edit'] | .//*[@data-testid='overview-migrate'])[1]",
+                "descriptorActionsMarker");
         matchedModuleToggles = createScopedElement(
-                "button[data-testid^='module-matched-']:not([data-testid^='module-matched-item-'])",
+                "xpath=.//button[starts-with(@data-testid,'module-matched-')]"
+                        + "[not(starts-with(@data-testid,'module-matched-item-'))]",
                 "matchedModuleToggles");
         matchedModuleRows = createScopedElement("xpath=.//li[starts-with(@data-testid,'module-matched-item-')]", "matchedModuleRows");
     }
@@ -146,6 +152,13 @@ public class ProjectOverviewTabComponent extends BaseComponent {
     public void migrateAndWaitUntilEditable() {
         migrateBtn.waitForVisible(DEFAULT_TIMEOUT_MS).click();
         migrateConfirmOkBtn.waitForVisible(DEFAULT_TIMEOUT_MS).click();
+        // The question stands on the screen while the move is being made, and the card stops offering the
+        // move once it has been made, so both are waited out before the card is read again. The card offers
+        // to write the settings whether or not the move has been made, so that button says nothing about it.
+        WaitUtil.requireCondition(() -> !migrateConfirmOkBtn.isVisible(PROBE_MS), MIGRATE_TIMEOUT_MS, 250,
+                "Waiting for the move of the descriptor to be made");
+        WaitUtil.requireCondition(() -> !migrateBtn.isVisible(PROBE_MS), MIGRATE_TIMEOUT_MS, 250,
+                "Waiting for the card to stop offering a move it has already made");
         editBtn.waitForVisible(DEFAULT_TIMEOUT_MS);
         waitUntilSpinnerLoaded();
     }

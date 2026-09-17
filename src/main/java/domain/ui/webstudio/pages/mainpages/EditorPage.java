@@ -196,10 +196,11 @@ public class EditorPage extends BasePage {
      * on the button instead of offering it; that reason is reported rather than waited out.
      */
     public void migrateProject() {
-        if (importOpenApiImg.isVisible(OVERVIEW_PROBE_MS)) {
+        // The card offers the writing of the settings whether or not the move has been made, so what says
+        // the move is still to be made is the move being offered.
+        if (!migrateProjectBtn.isVisible(OVERVIEW_PROBE_MS)) {
             return;
         }
-        migrateProjectBtn.waitForVisible(DEFAULT_TIMEOUT_MS);
         if (!migrateProjectBtn.isEnabled()) {
             throw new AssertionError("The project card offers the move but refuses to make it: the project holds "
                     + "workbooks a descriptor may not name");
