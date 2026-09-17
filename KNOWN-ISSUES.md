@@ -284,6 +284,52 @@ history stays with the old name, and the old project stays behind to be deleted.
 
 ---
 
+## 14. The three category views of the tables tree draw one and the same tree
+
+**What happens.** The tables rail offers five ways of grouping what a module holds, three of them by the
+category a table declares: **Category**, **Category Detailed** (the first part of the category) and
+**Category Inversed** (the second part first). All three now draw the same tree, and the rail still offers
+all three; "Default Order" in the user's settings still offers all five.
+
+**Two causes, both in the client-side grouping.**
+1. *The part separator changed.* A category is written with a hyphen — `Calculaiton-Spreadsheet` — and is
+   what the product's own documentation still describes. The grouping cuts it on a dot instead, so the
+   second part is never found and the two detailed views fall back to the whole category, which is what the
+   plain Category view already shows.
+2. *The fallback to the sheet is gone.* A table that declares no category used to be filed under the sheet
+   it is written on. It is now left at the top level beside the groups. What is shipped to the screen is
+   also the table's own properties only, so a category inherited from the module or the category table is
+   not seen either.
+
+**What says the old behaviour was the intended one.** The hyphen is what the deleted builder cut on —
+`StringUtils.split(category, '-')` in `CategoryNTreeNodeBuilder`, recoverable with
+`git show 7ab8ab2570^:STUDIO/org.openl.rules.webstudio/src/org/openl/rules/ui/tree/CategoryNTreeNodeBuilder.java`
+— and the sheet fallback is what `CategoryTreeNodeBuilder` did and what the shipped documentation still
+describes: *"or, if the property is not defined, based on the Excel table sheet names"*
+(`Docs/user-guides/openl-studio/getting-started.md`, which names no separator, only "the first value" and
+"the second value"). Against that stands `tableGrouping.test.ts`, which pins the dot as intended and passes.
+Somebody wrote the dot on purpose, so which of the two is the product's answer is a call for development to
+make, not one to settle here.
+
+**Tests changed rather than blocked.** `TestOrderingModeDefaults` keeps everything the views still answer —
+the default order per user, the selector reflecting it, the Excel Sheet and Type views, and the categories
+themselves under the Category view. Steps 1.7, 1.9, 2.4 and 1.10 no longer name what the halves, the sheet
+fallback and the Default Order should produce; each only checks that the view drew something, with a pointer
+here. Those four are the coverage to restore with the grouping.
+
+**What is not covered by a test either way.** Nothing in `TestOrderingMode.zip` inherits a category from a
+module- or category-scope properties table, so the lost inherited category rests on reading the code.
+
+**A third loss, in the same screen.** The chosen view is now kept in the browser's own store
+(`tableGrouping.ts`, `openl.module.tableView`) and is read *in preference to* the user's Default Order, so a
+view chosen by hand once outranks that setting from then on — on that browser, for good. The setting is
+still offered in My Settings and still documented. Whether the old per-session behaviour or this one is
+right is the same call for development; until it is made, step 1.10 of `TestOrderingModeDefaults`, which
+reopened the browser to check that the Default Order applies again, only checks that a view is chosen at
+all.
+
+---
+
 ## Renamings that are not bugs
 
 For the record, so they are not raised twice. These are the same tree, named the way the tables API has named
