@@ -487,6 +487,44 @@ Reproduced on `ghcr.io/openl-tablets/webstudio:6.5.0-b48c86279338`:
 
 ---
 
+## 20. Migrating a project that declares nothing always fails, and leaves it broken
+
+**What happens.** For a project with no `rules.xml` — workbooks lying in its root, which is what a migration
+is for — `POST /web/projects/{id}/migrate?scope=rulesXml` answers HTTP 400
+`openl.error.file.descriptor.name.required.message` (*The project name is required.*) **after** it has already
+moved every workbook into `rules/`. Nothing is put back: the root is left holding neither the workbooks nor a
+descriptor, so the project stops resolving as a rules project at all and lists no modules.
+
+**Where it comes from.** `ProjectMigrationService.rulesXmlForMovedWorkbooks`
+(`STUDIO/org.openl.rules.webstudio/.../projects/service/ProjectMigrationService.java:175-188`) builds a
+`ProjectDescriptor` and never sets its `<name>`; writing it goes through `ProjectDescriptorValidator`
+(`.../projects/validator/file/ProjectDescriptorValidator.java:104-111`), which refuses a blank name because,
+with no `rules.xml` on disk, there is no stored name to match it against. The three other places that write a
+descriptor for such a project all set the name (`TableCreatorService:488`, `ProjectOpenApiService:193`,
+`ZipProjectSaveStrategy:165`), and the class comment of the migration service
+(`ProjectMigrationService.java:47-50`) says Studio never drops the project name — the code does.
+
+The move and the write are not one act: `ProjectMigrationService.java:154-166` moves every workbook in a loop
+and only then writes the descriptor, with nothing putting the moves back when the write is refused.
+
+`GET /web/projects/{id}/migration` still answers `migratable: true` for such a project, so the screen offers a
+migration that cannot succeed for any input.
+
+**Why it is not caught.** The unit tests mock `ProjectFilesService` whole
+(`ProjectMigrationServiceTest.java:40`), so the validator never runs; and the end-to-end case that covered
+this branch (`ITEST/itest.studio/repos/test-resources/task_EPBDS-16364-xls-loss`) was rewritten to expect
+`migratable: false` when EPBDS-16415 made the import write a descriptor of its own, so nothing exercises the
+branch any more.
+
+**Test blocked.** `TestMigrateLegacyProjectUi.testMigrateMovesRootWorkbookOfAProjectWithoutDescriptor` — the
+half of the scenario where the workbooks are moved. The other half, the rewrite of a legacy descriptor, runs.
+
+Reproduced on `ghcr.io/openl-tablets/webstudio:6.5.0-b48c86279338`: upload `MigrateXlsProject.zip`, open it,
+`DELETE /web/projects/{id}/files/rules.xml`, then `POST /web/projects/{id}/migrate?scope=rulesXml` → 400, and
+`GET /web/projects/{id}/files` → `rules/` alone.
+
+---
+
 ## Renamings that are not bugs
 
 For the record, so they are not raised twice. These are the same tree, named the way the tables API has named
@@ -525,6 +563,7 @@ the build under test (`6.5.0-b48c86279338`) and against the screens themselves.
 | The name a table goes by heads the properties panel instead of standing in it as a property of its own, so a table declaring nothing lists nothing. | The tests read the panel's heading for the name and expect no property row where the table declares none. |
 | The properties panel offers to keep what was written only once something has been changed; writing a property the value it already holds leaves nothing to keep. | Where a test wrote a value the workbook already carried, it writes one the table does not carry, so the step is the edit it was meant to be. |
 | Creating a project from an OpenAPI specification no longer writes an `openapi` block into `rules.xml`: the normalized file in the project root is reconciled against, and nothing is generated again over later edits. Deliberate, with the user guides changed in the same commit — `e3edf4a6e8`, EPBDS-16415, *"Default new OpenAPI projects to reconciliation"* (`repository-editor.md`, `rules-editor.md`). | A freshly created project is expected to read in **Reconciliation** and to name no module to write into; the import dialog starts empty. Where a test drove an overwrite, it now names the modules to write over, as a reader must, so the overwrite itself is still covered. Note the knock-on: a project that declares no module is drawn with its module list read-only even while the card is open for writing (`OverviewPanel.tsx`, `modulesEditable`), which puts the rename and copy steps of the two creation tests under issue 8. |
+| **Migrate** moves the workbooks under `rules/` only for a project that declares nothing; a project that already carries a `rules.xml` is migrated by rewriting that file into its minimal modern form, and its workbooks stay where the descriptor names them (`ProjectMigrationService.java:41-47,89-101,126-132`, EPBDS-16327 — the same as the `openl:migrate` goal, which moves nothing at all). Since EPBDS-16415 an archive taken in without a descriptor is given one on the spot, so a project that declares nothing is now made by deleting its `rules.xml`. | `TestMigrateLegacyProjectUi` asks each of the two: the rewrite keeps the workbook where it is and stops offering the migration, and the move is asked of a project whose descriptor was deleted first. |
 
 ## Class names of the component library, for whoever writes the next locator
 

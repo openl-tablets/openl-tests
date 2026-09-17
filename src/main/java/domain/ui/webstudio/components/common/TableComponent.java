@@ -121,14 +121,24 @@ public class TableComponent extends BaseComponent {
         return rows.get(rowIndex - 1 + rowOffset());
     }
 
+    /**
+     * What the cell says about the word it names: the type it stands for and where it comes from, told when
+     * the word is pointed at. The word is one of the things the cell names, drawn apart from the rest of the
+     * text so it can be pointed at and pressed.
+     */
     public String getCellHintText(int rowIndex, int columnIndex, String variableName) {
         WebElement cell = getCell(rowIndex, columnIndex);
-        WebElement variableSpan = new WebElement(cell, String.format("xpath=.//span[contains(text(), '%s')]", variableName), "variableSpan");
-        variableSpan.hover();
-        WaitUtil.sleep(200, "Waiting for hint tooltip to appear after hover");
-
-        WebElement hintElement = new WebElement(variableSpan, "xpath=.//em", "hintElement");
-        return hintElement.getText().trim();
+        WebElement named = new WebElement(cell,
+                String.format("xpath=(.//*[starts-with(@data-testid,'cell-usage-')][contains(normalize-space(.),'%s')])[1]",
+                        variableName),
+                "cellUsage");
+        named.hover();
+        WebElement hint = new WebElement(page,
+                "xpath=//div[contains(@class,'ant-tooltip')][not(contains(@class,'ant-tooltip-hidden'))]"
+                        + "//div[contains(@class,'ant-tooltip-inner')]",
+                "cellHint");
+        hint.waitForVisible(DEFAULT_TIMEOUT_MS);
+        return hint.getInnerText().trim();
     }
 
     public String getPropertyValue(String propertyName) {

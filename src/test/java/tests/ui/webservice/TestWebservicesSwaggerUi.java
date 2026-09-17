@@ -83,12 +83,9 @@ public class TestWebservicesSwaggerUi extends BaseTest {
                 .as("API selector (select#select-api) should list at least one deployed service").isTrue();
 
         // Step 5: Verify JSON/YAML spec download options are visible in Swagger UI
-        // OpenL renders button text via CSS pseudo-elements; use Playwright text= selector
-        assertThat(WaitUtil.waitForCondition(
-                () -> DriverPool.getPage().locator("xpath=//*[contains(text(),'Download OpenAPI spec')]").isVisible(),
-                15000, 1000, "Waiting for 'Download OpenAPI spec' button to appear"))
+        assertThat(servicePage.isSwaggerActionOffered("Download OpenAPI spec", 15000))
                 .as("Swagger UI should show 'Download OpenAPI spec' button (JSON spec available)").isTrue();
-        assertThat(DriverPool.getPage().locator("xpath=//*[contains(text(),'View OpenAPI spec (New Tab)')]").isVisible())
+        assertThat(servicePage.isSwaggerActionOffered("View OpenAPI spec (New Tab)", 5000))
                 .as("Swagger UI should show 'View OpenAPI spec (New Tab)' button (spec viewable in browser)").isTrue();
     }
 }

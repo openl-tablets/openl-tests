@@ -5,6 +5,7 @@ import configuration.core.ui.CorePage;
 import configuration.core.ui.WebElement;
 import configuration.driver.DriverPool;
 import domain.ui.webstudio.pages.BasePage;
+import helpers.utils.WaitUtil;
 import lombok.Getter;
 
 @Getter
@@ -167,4 +168,35 @@ public class ServicePage extends BasePage {
     public WebElement getProjectTitleLink(String projectName) {
         return projectTitleLink.format(projectName);
     }
+
+    /**
+     * Whether the specification viewer shows the given words on something to press.
+     *
+     * <p>The viewer is a component of its own and draws itself inside its own root, which no locator of the
+     * page reaches into, so the words are looked for from inside that root.
+     */
+    public boolean isSwaggerActionOffered(String words, long timeoutMs) {
+        return WaitUtil.waitForCondition(() -> Boolean.TRUE.equals(page.evaluate(SHADOW_TEXT_SCRIPT, words)),
+                timeoutMs, 1000, "Waiting for '" + words + "' to be offered by the specification viewer");
+    }
+
+    private static final String SHADOW_TEXT_SCRIPT = """
+            words => {
+                const viewer = document.getElementById('swagger-ui');
+                const root = viewer && viewer.shadowRoot;
+                if (!root) {
+                    return false;
+                }
+                // The root is a fragment, which XPath cannot be evaluated against, so it is walked instead:
+                // the words are read off whatever draws them, without anything else being read with them.
+                const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
+                for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+                    if (node.children.length === 0
+                            && (node.textContent || '').replace(/\\s+/g, ' ').trim().includes(words)
+                            && node.getClientRects().length > 0) {
+                        return true;
+                    }
+                }
+                return false;
+            }""";
 }

@@ -56,7 +56,9 @@ public class TestConstructorNotFoundInDependentTable extends BaseTest {
                 .expandFolderInTree("Rules")
                 .selectItemInFolder("Rules", "someRule");
         editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
-        editorPage.getCenterTable().editCell(1, 1, "someRuleModified");
+        // The first cell of a table is its header, so renaming the rule means writing the header again
+        // rather than writing the name alone over it, which would stop the cell being a table at all.
+        editorPage.getCenterTable().editCell(1, 1, "SimpleRules String someRuleModified()");
         editorPage.getEditorTableActionsPanelComponent().clickSaveChanges();
         editorPage.getEditorToolbarPanelComponent().clickSave();
         editorPage.getSaveChangesComponent().clickSave();

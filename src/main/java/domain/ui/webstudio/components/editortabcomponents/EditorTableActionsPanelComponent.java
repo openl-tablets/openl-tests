@@ -9,6 +9,9 @@ import helpers.utils.WaitUtil;
 
 public class EditorTableActionsPanelComponent extends BaseComponent {
 
+    private static final int SAVE_PROBE_MS = 1000;
+    private static final long SAVE_SETTLE_MS = 10000;
+
     private WebElement saveChangesBtn;
     private WebElement undoChangesBtn;
     private WebElement redoChangesBtn;
@@ -41,6 +44,10 @@ public class EditorTableActionsPanelComponent extends BaseComponent {
         WaitUtil.sleep(250, "Waiting for table panel action to complete and UI to update");
     }
 
+    /**
+     * Keeps what was written into the table, and says so when it was not kept: the screen offers to keep
+     * changes only while there are any, so a table that still has something to keep was refused.
+     */
     public void clickSaveChanges() {
         try {
             page.waitForResponse(
@@ -53,6 +60,21 @@ public class EditorTableActionsPanelComponent extends BaseComponent {
         waitWhileTablePanelActionExecuted();
         waitUntilSpinnerLoaded();
         page.waitForLoadState(LoadState.NETWORKIDLE, new Page.WaitForLoadStateOptions().setTimeout(5000));
+        boolean kept = WaitUtil.waitForCondition(
+                () -> !saveChangesBtn.isVisible(SAVE_PROBE_MS) || !saveChangesBtn.isEnabled(),
+                SAVE_SETTLE_MS, 250, "Waiting for the table changes to be kept");
+        if (!kept) {
+            throw new AssertionError("The table still has changes to keep, so keeping them was refused: "
+                    + refusalSaid());
+        }
+    }
+
+    /** What the screen says about a refusal, while it is still saying it. */
+    private String refusalSaid() {
+        WebElement notice = new WebElement(page,
+                "xpath=//div[contains(@class,'ant-notification-notice')] | //div[contains(@class,'ant-message-notice')]",
+                "saveRefusal");
+        return notice.isVisible(SAVE_PROBE_MS) ? notice.getInnerText().trim() : "the screen says nothing";
     }
 
     public void undoClickChanges() {
