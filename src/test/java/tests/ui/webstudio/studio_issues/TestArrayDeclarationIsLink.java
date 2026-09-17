@@ -33,24 +33,15 @@ public class TestArrayDeclarationIsLink extends BaseTest {
                 .expandFolderInTree("Rules")
                 .selectItemInFolder("Rules", "DetermineStatusByCodeRule");
 
-        // Find procedure links with title-datatype class
+        // A usage named in a cell is something to press, drawn in the colour a link is drawn in and
+        // underlined under the pointer rather than at rest.
         WaitUtil.waitForCondition(() -> editorPage.getCenterTable().isVisible(), 5000, 100, "Waiting for table to be visible...");
-        List<WebElement> links = editorPage.createElementList("xpath=//td//span[contains(@class,'title-datatype')]/a[text()='Procedure']");
+        List<WebElement> links = editorPage.createElementList(
+                "xpath=//td//button[starts-with(@data-testid,'cell-usage-')][normalize-space()='Procedure']");
         assertThat(links.size()).as("Should find exactly 12 procedure links").isEqualTo(12);
 
-        // Each procedure reads as a link: it points somewhere and is marked as one, by an underline or by a
-        // bottom border. The exact border style is not pinned down — it is a styling choice that changes.
-        links.forEach(link -> {
-            String borderBottom = link.getCssValue("border-bottom");
-            String textDecoration = link.getCssValue("text-decoration");
-            assertThat(borderBottom + " | " + textDecoration)
-                    .as("A procedure link should be marked as a link (underline or bottom border)")
-                    .satisfiesAnyOf(
-                            style -> assertThat(style).contains("underline"),
-                            style -> assertThat(style).contains("dotted"),
-                            style -> assertThat(style).contains("dashed"),
-                            style -> assertThat(style).contains("solid")
-                    );
-        });
+        links.forEach(link -> assertThat(link.getCssValue("cursor"))
+                .as("A procedure should read as something the reader can press")
+                .isEqualTo("pointer"));
     }
 }

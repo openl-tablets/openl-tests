@@ -84,7 +84,10 @@ public class EditorLeftProjectModuleSelectorComponent extends BaseComponent {
             tabSwitcher.selectTab(TabSwitcherComponent.TabName.REPOSITORY);
             projectsTable.clickProjectName(projectName);
         }
-        WaitUtil.requireCondition(() -> isCardOf(projectName), DEFAULT_TIMEOUT_MS, MODULE_READY_POLL_MS,
+        // The card is drawn from what the project holds, and a project that has just been written to is read
+        // again before it answers, so the card is given the time a module is given rather than the time a
+        // button is.
+        WaitUtil.requireCondition(() -> isCardOf(projectName), MODULE_READY_TIMEOUT_MS, MODULE_READY_POLL_MS,
                 "Waiting for the card of project '" + projectName + "' to open");
         waitUntilSpinnerLoaded();
         showOverview();

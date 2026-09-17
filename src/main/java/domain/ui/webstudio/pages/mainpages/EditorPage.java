@@ -209,12 +209,14 @@ public class EditorPage extends BasePage {
 
     public String getOpenApiPropertyValue(String propertyName) {
         waitUntilOverviewIsRead();
+        expandOpenApiSection();
         return openApiPropertyValueTemplate.format(propertyName).getText().trim();
     }
 
     /** Whether the card says anything under that name at all; a setting the project does not hold is left out. */
     public boolean hasOpenApiProperty(String propertyName) {
         waitUntilOverviewIsRead();
+        expandOpenApiSection();
         return openApiPropertyValueTemplate.format(propertyName).isVisible(OVERVIEW_PROBE_MS);
     }
 
@@ -237,6 +239,7 @@ public class EditorPage extends BasePage {
      */
     public String getOpenApiMode() {
         waitUntilOverviewIsRead();
+        expandOpenApiSection();
         WebElement shownMode = openApiPropertyValueTemplate.format("Mode");
         if (shownMode.isVisible(OVERVIEW_PROBE_MS)) {
             return shownMode.getText().trim();

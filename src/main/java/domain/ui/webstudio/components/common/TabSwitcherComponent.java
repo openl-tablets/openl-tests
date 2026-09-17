@@ -37,7 +37,8 @@ public class TabSwitcherComponent extends BaseComponent {
         // Inside a project the breadcrumb leads back to the list as well. The name of the application leads
         // there too, from every screen, so the one meant here is named inside the screen's own header.
         projectsCrumb = new WebElement(page, "xpath=//div[@data-testid='module-header']//a[@href='/projects']"
-                + " | //div[@data-testid='project-header']//a[@href='/projects']", "projectsCrumb");
+                + " | //div[@data-testid='project-header']//a[@href='/projects']"
+                + " | //div[@data-testid='project-detail']//a[@href='/projects']", "projectsCrumb");
     }
 
     public List<String> getVisibleTabNames() {
@@ -69,10 +70,17 @@ public class TabSwitcherComponent extends BaseComponent {
             try {
                 if (tabLabel.isVisible(LIST_PROBE_MS)) {
                     tabLabel.click(TAB_CLICK_MS);
-                } else if (projectsCrumb.isVisible(LIST_PROBE_MS)) {
+                }
+                if (projectsList.isVisible(LIST_PROBE_MS)) {
+                    return true;
+                }
+                // Inside a project the tab is already the one standing out, and pressing the one standing
+                // out does nothing; the breadcrumb is what leads back to the list from there.
+                if (projectsCrumb.isVisible(LIST_PROBE_MS)) {
                     projectsCrumb.click(TAB_CLICK_MS);
                 }
             } catch (PlaywrightException covered) {
+                LOGGER.info("The way back to the list could not be pressed, trying again: {}", covered.getMessage());
                 return false;
             }
             return projectsList.isVisible(LIST_PROBE_MS);

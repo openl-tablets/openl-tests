@@ -319,9 +319,14 @@ public class CreateTableDialogComponent extends BaseComponent {
         }
     }
 
+    /**
+     * The value in a list that stands open. A list closed a moment ago is left in the page until it has
+     * finished folding away, so more than one may carry the value; the one taken is the first drawn.
+     */
     private WebElement openDropdownOption(String text) {
         return new WebElement(page,
-                "xpath=//div[contains(@class,'ant-select-dropdown')][not(contains(@class,'ant-select-dropdown-hidden'))]//div[contains(@class,'ant-select-item-option')][@title='" + text + "']",
+                "xpath=(//div[contains(@class,'ant-select-dropdown')][not(contains(@class,'ant-select-dropdown-hidden'))]"
+                        + "//div[contains(@class,'ant-select-item-option')][@title='" + text + "'])[1]",
                 "createTableDropdownOption");
     }
 

@@ -421,6 +421,29 @@ holds. Showing a cell differently from Excel is exactly the difference they are 
 
 ---
 
+## 18. The Run menu no longer offers the test cases by range, nor a Run All box
+
+**What changed.** The contextual menu of Run / Test / Trace / Benchmark used to let a reader write which
+cases to run as a range — *2-4,7,10-12* or *id3-id7* — with a **Run All** box that filled the range with the
+whole table and locked it, and it refused to list the cases one by one for a table with more than twenty of
+them (EPBDS-14039).
+
+The React screen lists every case with a box beside it, a box at the head to tick them all
+(`TestCaseSelector.tsx`, `pick-all-cases` / `pick-case-<id>`), and pages through them, showing *Total test
+cases: N* beside the pager. There is no range to write, no Run All, and no limit: a table of a thousand
+cases is ticked a page at a time.
+
+**The capability behind it is still there.** The launcher sends `testRanges` to the server exactly as
+before — it just builds it from the ticked ids (`TableInputLauncher.tsx`, `caseIds.join(',')`) — and the
+server still reads a range expression. Only the way of writing one is gone.
+
+**Blocked tests.**
+- `tests.ui.webstudio.rules_editor.TestRunContextualMenuRunAll` — the whole of C.9-C.13: Run All filling and
+  locking the range, unticking itself when the reader switches to Test, Trace or Benchmark, and being absent
+  for a table of twenty cases or fewer.
+
+---
+
 ## Renamings that are not bugs
 
 For the record, so they are not raised twice. These are the same tree, named the way the tables API has named
@@ -450,6 +473,7 @@ the build under test (`6.5.0-b48c86279338`) and against the screens themselves.
 | The result of running a rule is a window of its own, with one column per input and one for the result. The row carries no number, and each value is shown as the literal its type reads as (`"Tom"`, not `Tom`). | The expected rows were rewritten to what the window shows, keeping the value equality the test was written for. |
 | Running anything opens a window that covers the screen, and the module cannot be worked on again until it is closed. | `TestResultValidationComponent.closeResults()` is pressed once the results have been read. |
 | A table is removed behind a question the screen asks in a window of its own, not behind the browser's own confirm dialog. | `removeCurrentTable()` answers the screen's window. |
+| A usage named inside a cell — the table a value comes from — is a button drawn in the colour a link is drawn in, underlined under the pointer, where the old editor drew an underlined anchor. | `TestArrayDeclarationIsLink` counts the buttons and checks that each reads as something to press. |
 | A value of a dimension property is offered by the name it is known by — *Québec*, *Washington*, *Yemen, Rials* — where the old list offered the code, and the code is what is still written down. | The tests name the value the way the screen offers it and expect the code in the table, so both halves are checked. |
 | The templates and examples the product ships now carry the standard layout — the workbook under `rules/` and a descriptor beside it — so a project made from one has nothing to move and is not offered **Migrate**. Checked through `GET /projects/{id}/migration` for Sample Project, Example 1, Example 2, Example 3 and Tutorial 1; Example 3 still offers the move for its *rules-deploy*, not for its descriptor. | A test that needs a project with a workbook in its root creates it from an archive that has one (`MigrateXlsProject.zip`). |
 | The name a table goes by heads the properties panel instead of standing in it as a property of its own, so a table declaring nothing lists nothing. | The tests read the panel's heading for the name and expect no property row where the table declares none. |
