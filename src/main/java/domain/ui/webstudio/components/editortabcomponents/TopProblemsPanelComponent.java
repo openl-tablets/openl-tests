@@ -32,7 +32,7 @@ public class TopProblemsPanelComponent extends BaseComponent {
         if (errorItems.isEmpty()) {
             return "";
         }
-        return errorItems.getFirst().getText().trim();
+        return CompileMessageReader.textOf(errorItems.getFirst().getLocator());
     }
 
     public boolean isVisible() {
@@ -44,10 +44,10 @@ public class TopProblemsPanelComponent extends BaseComponent {
     }
 
     public boolean containsError(String errorText) {
-        return errorItems.stream().anyMatch(item -> item.getText().contains(errorText));
+        return errorItems.stream().anyMatch(item -> CompileMessageReader.textOf(item.getLocator()).contains(errorText));
     }
 
     public List<String> getAllErrors() {
-        return errorItems.stream().map(item -> item.getText().trim()).toList();
+        return errorItems.stream().map(item -> CompileMessageReader.textOf(item.getLocator())).toList();
     }
 }

@@ -194,10 +194,7 @@ public class ProblemsPanelComponent extends BaseComponent {
         if (messageLists.size() <= listIndex) {
             return List.of();
         }
-        List<String> messages = new ArrayList<>();
-        messageLists.get(listIndex).getLocator().locator("xpath=./li").allInnerTexts()
-                .forEach(text -> messages.add(text.trim()));
-        return messages;
+        return CompileMessageReader.textsOf(messageLists.get(listIndex).getLocator());
     }
 
     /** Asks each list for the rest of its messages, so what is read is everything the panel holds. */

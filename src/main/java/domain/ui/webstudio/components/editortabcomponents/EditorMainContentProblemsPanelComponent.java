@@ -174,7 +174,7 @@ public class EditorMainContentProblemsPanelComponent extends BaseComponent {
         }
         WaitUtil.waitForListNotEmpty(() -> errorMessages, DEFAULT_TIMEOUT_MS, 250,
                 "Waiting for the errors of the table to be listed");
-        return errorMessages.stream().map(e -> e.getText().trim()).toList();
+        return errorMessages.stream().map(e -> CompileMessageReader.textOf(e.getLocator())).toList();
     }
 
     public List<String> getWarningMessages() {
@@ -182,7 +182,7 @@ public class EditorMainContentProblemsPanelComponent extends BaseComponent {
         List<WebElement> warnings = warningMessages();
         WaitUtil.waitForListNotEmpty(this::warningMessages, DEFAULT_TIMEOUT_MS, 250,
                 "Waiting for the warnings of the table to be listed");
-        return warnings.stream().map(e -> e.getText().trim()).toList();
+        return warnings.stream().map(e -> CompileMessageReader.textOf(e.getLocator())).toList();
     }
 
     /** Warnings are listed after the errors, so which list holds them depends on whether there are errors. */
