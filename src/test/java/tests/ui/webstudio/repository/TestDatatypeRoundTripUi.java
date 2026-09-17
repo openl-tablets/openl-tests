@@ -97,9 +97,10 @@ public class TestDatatypeRoundTripUi extends BaseTest {
         return typeCellLinkText(table).equals("Address");
     }
 
+    /** A type a cell names is drawn as something to press, which leads to the table that declares it. */
     private String typeCellLinkText(TableComponent table) {
         var link = table.getRow(LINKED_TYPE_ROW).getCells().get(TYPE_COLUMN - 1)
-                .getLocator().locator("xpath=.//a");
+                .getLocator().locator("xpath=.//button[starts-with(@data-testid,'cell-usage-')]");
         return link.count() == 0 ? "" : link.first().innerText().trim();
     }
 }
