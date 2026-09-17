@@ -77,8 +77,8 @@ public class TestNavigationToTable extends BaseTest {
         assertThat(appearedTable.isVisible())
                 .as("Center table should be visible after navigation to SpreadsheetTable3Run1")
                 .isTrue();
-        assertThat(appearedTable.getCellText(1, 2))
-                .as("Header cell of SpreadsheetTable3Run1 should reference SpreadsheetTable3")
+        assertThat(String.join(" ", appearedTable.getRow(1).getValue()))
+                .as("The line SpreadsheetTable3Run1 is headed by should name SpreadsheetTable3")
                 .contains("SpreadsheetTable3");
     }
 
@@ -102,8 +102,10 @@ public class TestNavigationToTable extends BaseTest {
         assertThat(appearedTable.isVisible())
                 .as("Center table should be visible after navigation from %s/%s", folderName, tableName)
                 .isTrue();
-        assertThat(appearedTable.getCellText(1, 2))
-                .as("Header cell of %s%s should reference %s", tableName, headerPostfix, tableName)
+        // A table is headed by one line, which the grid draws as a single cell spanning its width rather
+        // than as the several cells the old editor split it into.
+        assertThat(String.join(" ", appearedTable.getRow(1).getValue()))
+                .as("The line %s%s is headed by should name %s", tableName, headerPostfix, tableName)
                 .contains(tableName + headerPostfix);
     }
 }

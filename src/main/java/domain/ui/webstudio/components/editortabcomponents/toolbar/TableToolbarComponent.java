@@ -5,6 +5,8 @@ import configuration.core.ui.WebElement;
 import domain.ui.webstudio.components.BaseComponent;
 import helpers.utils.WaitUtil;
 
+import java.util.List;
+
 /**
  * The second-line (table) toolbar of the editor: Run / Trace / Benchmark launchers with their dropdown
  * arrows, the Edit / Copy / Remove / Create Test table actions and the target-table / available-test-runs
@@ -197,13 +199,39 @@ public class TableToolbarComponent extends BaseComponent {
         return availableTestRunsExpandLink.isVisible(1000);
     }
 
+    /**
+     * Opens what the band keeps behind its caret. The band names the first of the tables beside it and
+     * folds the rest away, so the caret stands there only while there is more than one.
+     */
     public void clickAvailableTestRunsExpandLink() {
-        availableTestRunsExpandLink.click();
-        WaitUtil.sleep(300, "Waiting for popup with all Tests/Runs to appear");
+        // The band shares its line with the panel of properties, which squeezes it when it is open. A
+        // reader who cannot see the end of the band folds that panel away, which is what is done here.
+        WebElement openProperties = new WebElement(page,
+                "xpath=//div[@data-testid='table-details-body']", "openPropertiesPanel");
+        if (openProperties.isVisible(1000)) {
+            new WebElement(page, "xpath=//button[@data-testid='table-details-toggle']", "foldPropertiesBtn").click();
+            openProperties.waitForHidden(DEFAULT_TIMEOUT_MS);
+        }
+        WaitUtil.retryOnException(() -> {
+            availableTestRunsExpandLink.click(DEFAULT_TIMEOUT_MS / 2);
+            availableTestRunsPopup.waitForVisible(DEFAULT_TIMEOUT_MS / 2);
+            return true;
+        }, DEFAULT_TIMEOUT_MS, 500, "Opening the rest of the tables beside this one");
     }
 
+    /**
+     * The tables the band folded away, one per line. The band names the first of them itself and keeps the
+     * rest behind the caret, so what is read here is the rest — as it was when the whole lot stood in a
+     * list of its own.
+     */
     public String getAvailableTestRunsPopupText() {
-        return availableTestRunsPopup.getText().trim().replaceAll("\\s*\\n\\s*", "\n");
+        List<WebElement> folded = createElementList(
+                "xpath=//div[contains(@class,'ant-dropdown')][not(contains(@class,'ant-dropdown-hidden'))]"
+                        + "//li[contains(@class,'ant-dropdown-menu-item')]", "foldedRelatedTables");
+        WaitUtil.waitForListNotEmpty(() -> folded, DEFAULT_TIMEOUT_MS, 200,
+                "Waiting for the tables the band folded away to be listed");
+        return folded.stream().map(WebElement::getText).map(String::trim)
+                .collect(java.util.stream.Collectors.joining("\n"));
     }
 
     // ========== Within Current Module Only (run/test dropdowns) ==========
