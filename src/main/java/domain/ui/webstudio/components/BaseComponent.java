@@ -89,10 +89,32 @@ public abstract class BaseComponent extends CoreComponent {
      * The value in the list that stands open. The list is drawn outside the Select, and a list closed before
      * it stays in the page marked as hidden, so only a list that is not hidden is read.
      */
+    /**
+     * The value in the list that stands open.
+     *
+     * <p>A list is drawn outside the box it belongs to, and a list that was open a moment ago is left in the
+     * page — unmarked — until it has finished folding away. So the value is looked for in every list drawn,
+     * and the one taken is the one a reader could point at.
+     *
+     * <p>A value is carried as the option's title where the list is written with plain words, and only as
+     * the words themselves where it is written with anything else. The box the words sit in reads as an
+     * option too, so it is left out.
+     */
     private WebElement optionOf(String value) {
-        return new WebElement(page, "xpath=(//div[contains(@class,'ant-select-dropdown')]"
-                + "[not(contains(@class,'ant-select-dropdown-hidden'))]"
-                + "//div[contains(@class,'ant-select-item-option')][@title=\"" + value + "\"])[1]",
+        String candidates = "xpath=//div[contains(@class,'ant-select-dropdown')]"
+                + "//div[contains(@class,'ant-select-item-option')]"
+                + "[not(contains(@class,'ant-select-item-option-content'))]"
+                + "[@title=\"" + value + "\" or normalize-space(.)=\"" + value + "\""
+                + " or contains(normalize-space(.),\"" + value + "\")]";
+        List<WebElement> drawn = createElementList(candidates, "selectOption[" + value + "]");
+        for (int index = 0; index < drawn.size(); index++) {
+            WebElement option = new WebElement(page, "xpath=(" + candidates.substring("xpath=".length()) + ")["
+                    + (index + 1) + "]", "selectOption[" + value + "][" + (index + 1) + "]");
+            if (option.isVisible(SELECT_OPTION_PROBE_MS / 4)) {
+                return option;
+            }
+        }
+        return new WebElement(page, "xpath=(" + candidates.substring("xpath=".length()) + ")[1]",
                 "selectOption[" + value + "]");
     }
 
