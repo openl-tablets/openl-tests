@@ -35,6 +35,8 @@ public class ProjectDetailPage extends BasePage {
     private WebElement overviewTab;
     private WebElement filesTab;
     private WebElement historyTab;
+    private WebElement managementTab;
+    private WebElement accessPanel;
     private ProjectHeaderActionsComponent headerActions;
     private ProjectOverviewTabComponent overview;
     private ProjectFilesTabComponent files;
@@ -63,6 +65,8 @@ public class ProjectDetailPage extends BasePage {
         overviewTab = new WebElement(page, "xpath=//div[@data-node-key='overview']", "overviewTab");
         filesTab = new WebElement(page, "xpath=//div[@data-node-key='files']", "filesTab");
         historyTab = new WebElement(page, "xpath=//div[@data-node-key='history']", "historyTab");
+        managementTab = new WebElement(page, "xpath=//div[@data-node-key='access']", "managementTab");
+        accessPanel = new WebElement(page, "xpath=//*[@data-testid='access-panel']", "accessPanel");
         headerActions = new ProjectHeaderActionsComponent(page);
         overview = new ProjectOverviewTabComponent(page);
         files = new ProjectFilesTabComponent(page);
@@ -86,6 +90,13 @@ public class ProjectDetailPage extends BasePage {
     public ProjectOverviewTabComponent getOverviewTab() {
         openOverviewTab();
         return overview;
+    }
+
+    /** Opens the Management tab and answers whether the roles of the project are drawn there. */
+    public boolean openManagementAndSeeRoles() {
+        managementTab.waitForVisible(DEFAULT_TIMEOUT_MS).click();
+        waitUntilSpinnerLoaded();
+        return accessPanel.isVisible(DEFAULT_TIMEOUT_MS);
     }
 
     public ProjectDetailPage openOverviewTab() {
