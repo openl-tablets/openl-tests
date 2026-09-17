@@ -84,6 +84,22 @@ public class ImportOpenApiDialogComponent extends BaseComponent {
         pickInSelect(openApiFilePathInput, path);
     }
 
+    /**
+     * The specifications the settings offer to point the project at, which are the ones it already holds.
+     * A project holding none offers none, and there is then no way to name a file through this screen.
+     */
+    public List<String> getOfferedSpecifications() {
+        openForWriting();
+        openApiFilePathInput.waitForVisible(DEFAULT_TIMEOUT_MS);
+        openApiFilePathInput.click();
+        WebElement offered = new WebElement(page,
+                "xpath=//div[contains(@class,'ant-select-dropdown')][not(contains(@class,'ant-select-dropdown-hidden'))]"
+                        + "//div[contains(@class,'ant-select-item-option-content')]",
+                "offeredSpecifications");
+        offered.isVisible(CANCEL_PROBE_MS);
+        return offered.getLocator().allInnerTexts().stream().map(String::trim).filter(text -> !text.isEmpty()).toList();
+    }
+
     /** The mode the settings currently stand at, as the switch shows it. */
     public String getSelectedMode() {
         WebElement selected = new WebElement(page, MODE + "//label[contains(@class,'ant-segmented-item-selected')]", "selectedMode");

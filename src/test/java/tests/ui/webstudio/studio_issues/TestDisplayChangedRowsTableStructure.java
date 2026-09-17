@@ -152,6 +152,9 @@ public class TestDisplayChangedRowsTableStructure extends BaseTest {
         editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
         editorPage.getCenterTable().clickCell(2, 2);
         editorPage.getEditorTableActionsPanelComponent().clickInsertColumnBefore();
+        // A column that was laid down and left empty is not kept: the screen refuses to keep a table with a
+        // blank line in it, so the new column is written in before the table is kept.
+        editorPage.getCenterTable().editCell(2, 2, "addedValue");
         editorPage.getEditorTableActionsPanelComponent().clickSaveChanges();
 
         ChangesDialogComponent changesDialog = editorPage.getEditorToolbarPanelComponent()
@@ -166,29 +169,31 @@ public class TestDisplayChangedRowsTableStructure extends BaseTest {
         compareDialog.openTreeNode("Rules");
         compareDialog.clickTreeNode("Rules String Hello (Integer hour)");
 
+        // The table is nine rows; the heading is one cell banked across it, so it reads the same on both
+        // sides and the eight rows under it are the ones that differ.
         compareDialog.setShowEqualRows(false);
         assertThat(compareDialog.getNumberOfRows(1))
-                .as("Left fragment (original): 9 rows")
-                .isEqualTo(9);
+                .as("Left fragment (original): the eight rows that differ")
+                .isEqualTo(8);
         assertThat(compareDialog.getNumberOfColumns(1))
                 .as("Left fragment (original): 4 columns")
                 .isEqualTo(4);
         assertThat(compareDialog.getNumberOfRows(2))
-                .as("Right fragment (column added): still 9 rows")
-                .isEqualTo(9);
+                .as("Right fragment (column added): the same eight rows")
+                .isEqualTo(8);
         assertThat(compareDialog.getNumberOfColumns(2))
                 .as("Right fragment (column added): 5 columns")
                 .isEqualTo(5);
 
         compareDialog.setShowEqualRows(true);
         assertThat(compareDialog.getNumberOfRows(1))
-                .as("Left fragment rows unchanged")
+                .as("Left fragment: all nine rows once the equal one is shown too")
                 .isEqualTo(9);
         assertThat(compareDialog.getNumberOfColumns(1))
                 .as("Left fragment columns unchanged")
                 .isEqualTo(4);
         assertThat(compareDialog.getNumberOfRows(2))
-                .as("Right fragment rows unchanged")
+                .as("Right fragment: all nine rows once the equal one is shown too")
                 .isEqualTo(9);
         assertThat(compareDialog.getNumberOfColumns(2))
                 .as("Right fragment columns unchanged")

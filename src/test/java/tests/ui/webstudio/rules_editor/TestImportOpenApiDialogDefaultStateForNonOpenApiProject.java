@@ -54,13 +54,12 @@ public class TestImportOpenApiDialogDefaultStateForNonOpenApiProject extends Bas
         importDialog.waitForFilePathField();
         importDialog.selectTablesGenerationMode();
 
-        // Step 8.2: Enter non-existent file path and verify file-not-found error
-        importDialog.setOpenApiFilePath("openapi_ex3_auto_r.json");
-        importDialog.clickImportTablesGeneration();
-
-        assertThat(importDialog.getAnyErrorMessage())
-                .as("Error should indicate the OpenAPI file was not found in the repository")
-                .isEqualTo("OpenAPI file with path: openapi_ex3_auto_r.json was not found.");
+        // Step 8.2: The settings point the project at a specification it already holds, chosen from the ones
+        // it holds, so a project holding none is offered none — a file that is not there cannot be named
+        // here at all, and the refusal the old dialog answered with has nothing left to refuse.
+        assertThat(importDialog.getOfferedSpecifications())
+                .as("A project holding no specification should be offered none to point at")
+                .isEmpty();
 
         importDialog.clickCancel();
     }

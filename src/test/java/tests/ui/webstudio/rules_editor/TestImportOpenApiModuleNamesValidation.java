@@ -9,6 +9,7 @@ import domain.serviceclasses.constants.User;
 import domain.ui.webstudio.components.common.CreateNewProjectComponent;
 import domain.ui.webstudio.components.common.TabSwitcherComponent;
 import domain.ui.webstudio.components.editortabcomponents.ImportOpenApiDialogComponent;
+import domain.ui.webstudio.components.editortabcomponents.OpenApiModuleSettingsDialogComponent;
 import domain.ui.webstudio.pages.mainpages.EditorPage;
 import domain.ui.webstudio.pages.mainpages.RepositoryPage;
 import helpers.service.LoginService;
@@ -56,12 +57,17 @@ public class TestImportOpenApiModuleNamesValidation extends BaseTest {
         importDialog.setDataModuleName("SameModule");
         importDialog.clickImportTablesGeneration();
 
-        // Step 4: Verify validation error for same module names
-        assertThat(importDialog.getErrorMessages())
-                .as("Error message should appear when Rules and Data module names are the same")
-                .contains("Module names cannot be the same.");
+        // Step 4: Two modules named the same are two workbooks named the same, which is what is refused —
+        // and it is refused when the generation is asked for, not while the names are being written.
+        OpenApiModuleSettingsDialogComponent settingsDialog = editorPage.getOpenApiModuleSettingsDialogComponent();
+        settingsDialog.waitForVisible();
+        settingsDialog.clickImportAndOverride();
 
-        importDialog.clickCancel();
+        assertThat(settingsDialog.getErrorMessages())
+                .as("The generation should be refused when the rules and the data types name one workbook")
+                .contains("The rules and the data types need a workbook each; one workbook cannot hold both.");
+
+        settingsDialog.clickCancel();
     }
 
     private void uploadFileToProject(RepositoryPage repositoryPage, String projectName, String fileName) {

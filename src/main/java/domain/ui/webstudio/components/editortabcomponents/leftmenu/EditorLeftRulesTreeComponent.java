@@ -205,6 +205,34 @@ public class EditorLeftRulesTreeComponent extends BaseComponent {
         return this;
     }
 
+    /**
+     * Opens the one table of that name in the folder that errors were raised about, which the rail marks by
+     * writing their number beside its name. Two tables of one name are told apart by that mark rather than
+     * by the order they happen to be drawn in.
+     */
+    public EditorLeftRulesTreeComponent selectItemInFolderRaisingErrors(String folderName, String itemName,
+                                                                       boolean raisingErrors) {
+        waitUntilSpinnerLoaded();
+        expandFolderInTree(folderName);
+        TreeRow item = WaitUtil.waitForResult(() -> itemsOfFolder(folderName).stream()
+                        .filter(row -> itemName.equals(row.title()))
+                        .filter(row -> raisesErrors(row) == raisingErrors)
+                        .findFirst(),
+                DEFAULT_TIMEOUT_MS, SETTLE_POLL_MS,
+                "Searching for the '" + itemName + "' of folder '" + folderName + "' that "
+                        + (raisingErrors ? "raised errors" : "raised none"))
+                .orElseThrow(() -> new AssertionError(String.format(
+                        "No table '%s' of folder '%s' %s errors", itemName, folderName,
+                        raisingErrors ? "raised" : "raised no")));
+        clickNode(item);
+        return this;
+    }
+
+    /** Whether the rail writes a number of errors beside the row's name. */
+    private boolean raisesErrors(TreeRow row) {
+        return row.node().getLocator().locator("xpath=.//*[@data-testid='module-table-errors']").count() > 0;
+    }
+
     public List<String> getAllEndNodesNames() {
         waitUntilSpinnerLoaded();
         return readRows().stream()
@@ -471,6 +499,9 @@ public class EditorLeftRulesTreeComponent extends BaseComponent {
             }
             return true;
         }, DEFAULT_TIMEOUT_MS, SETTLE_POLL_MS, "Selecting '" + row.title() + "' in the tables tree");
+        // Pressing a row puts the pointer on it, and the label naming the row then stands over whatever is
+        // beside the rail — the toolbar among it — until the pointer leaves again.
+        movePointerAway();
         waitUntilSpinnerLoaded();
     }
 

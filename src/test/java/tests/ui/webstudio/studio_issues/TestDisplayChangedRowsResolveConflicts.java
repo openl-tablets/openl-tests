@@ -101,6 +101,9 @@ public class TestDisplayChangedRowsResolveConflicts extends BaseTest {
                 .selectItemInFolder("Rules", "BankLimitIndex");
 
         editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
+        // A row is laid down after the one the reader is standing on, so a cell is picked before the row is
+        // asked for; the new row is then written in, because a blank line is not kept.
+        editorPage.getCenterTable().clickCell(1, 1);
         editorPage.getEditorTableActionsPanelComponent().clickInsertRowAfter();
         editorPage.getCenterTable().editCell(2, 1, "changedValue");
         editorPage.getEditorTableActionsPanelComponent().clickSaveChanges();

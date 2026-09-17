@@ -44,7 +44,7 @@ public class TestWorkWithDuplicateTables extends BaseTest {
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
                 .expandFolderInTree("Rules")
-                .selectItemInFolderByIndex("Rules", "someLookupBig2", 1);
+                .selectItemInFolderRaisingErrors("Rules", "someLookupBig2", true);
         assertThat(editorPage.getProblemsPanelComponent().getAllErrors())
                 .as("Error message for duplicated table in same module")
                 .contains("Found duplicated table 'SmartLookup Double someLookupBig2( String param1, Integer param2)'.");
@@ -66,7 +66,9 @@ public class TestWorkWithDuplicateTables extends BaseTest {
                 .isFalse();
 
         // Section 3: Select duplicate table WITHOUT error, check Run/Trace/Test dropdowns
-        editorPage.getEditorLeftRulesTreeComponent().selectItemInFolderByIndex("Rules", "someLookupBig2", 2);
+        // The two tables of one name are told apart by which of them errors were raised about, rather than
+        // by the order the rail happens to draw them in.
+        editorPage.getEditorLeftRulesTreeComponent().selectItemInFolderRaisingErrors("Rules", "someLookupBig2", false);
         editorPage.getEditorToolbarPanelComponent().clickRun();
         assertThat(editorPage.getEditorToolbarPanelComponent().isWithinCurrentModuleOnlyInputArgsChecked())
                 .as("WithinCurrentModuleOnly should be unchecked after Run click (same module)")

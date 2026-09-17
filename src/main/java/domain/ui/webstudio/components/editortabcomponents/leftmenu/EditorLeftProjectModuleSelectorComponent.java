@@ -55,7 +55,9 @@ public class EditorLeftProjectModuleSelectorComponent extends BaseComponent {
         projectCardName = new WebElement(page, "xpath=(//div[@data-testid='project-detail']//h3)[1]", "projectCardName");
         projectCrumb = new WebElement(page, "xpath=//span[@data-testid='crumb-project']", "projectCrumb");
         projectCrumbFollow = new WebElement(page, "xpath=//button[@data-testid='crumb-project-follow']", "projectCrumbFollow");
-        moduleOpenTemplate = new WebElement(page, "xpath=//a[@data-testid='module-open-%s']", "moduleOpenLink");
+        // A module a pattern matched is listed both as the declaration and as the file it matched, so the
+        // first of the two is taken: either leads to the same module.
+        moduleOpenTemplate = new WebElement(page, "xpath=(//a[@data-testid='module-open-%s'])[1]", "moduleOpenLink");
         moduleOpenLinks = createElementList("xpath=//a[starts-with(@data-testid,'module-open-')]", "moduleOpenLinks");
         moduleWorkspace = new WebElement(page, "xpath=//div[@data-testid='module-workspace']", "moduleWorkspace");
         moduleCompiling = new WebElement(page, "xpath=//div[@data-testid='module-compiling']", "moduleCompiling");

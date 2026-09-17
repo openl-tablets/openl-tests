@@ -133,9 +133,7 @@ public class TableComponent extends BaseComponent {
                         variableName),
                 "cellUsage");
         named.hover();
-        WebElement hint = new WebElement(page,
-                "xpath=//div[contains(@class,'ant-tooltip')][not(contains(@class,'ant-tooltip-hidden'))]"
-                        + "//div[contains(@class,'ant-tooltip-inner')]",
+        WebElement hint = new WebElement(page, "xpath=//div[@role='tooltip'][contains(@class,'ant-tooltip-container')]",
                 "cellHint");
         hint.waitForVisible(DEFAULT_TIMEOUT_MS);
         return hint.getInnerText().trim();

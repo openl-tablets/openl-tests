@@ -41,18 +41,20 @@ public class TestCreateProjectFromOpenApiFormValidation extends BaseTest {
         repositoryPage.getCreateProjectLink().click();
         CreateNewProjectComponent openApiComponent = repositoryPage.getCreateNewProjectComponent();
         openApiComponent.selectMethod(CreateNewProjectComponent.TabName.OPEN_API);
+        // A specification is kept under the name its format reads as rather than the one the file was
+        // called, so the characters the old wizard refused in that name cannot reach the repository at all
+        // (EPBDS-16415). The file is taken, and the project holds it as openapi.yaml.
         openApiComponent.uploadOpenApiSpec(INVALID_FILENAME_YAML);
-        openApiComponent.setProjectName("bla");
-        openApiComponent.clickCreate(false);
+        String oddlyNamedSpecProject = "oddSpecName_" + System.currentTimeMillis();
+        openApiComponent.setProjectName(oddlyNamedSpecProject);
+        openApiComponent.clickCreate();
         repositoryPage.fillCommitInfo();
-        // The wizard reports problems in its own error area now, and with a short message: where the old UI
-        // spelled out the forbidden characters, 6.4.0 just says the project could not be created.
-        assertThat(openApiComponent.getError())
-                .as("Creating with a forbidden character in the file name should be refused")
-                .contains("Failed to create the project");
+        assertThat(repositoryPage.openProjectsList().openProjectDetail(oddlyNamedSpecProject)
+                        .isFilePresent("openapi.yaml"))
+                .as("A specification whose file name carries forbidden characters is kept as openapi.yaml")
+                .isTrue();
 
-        // The wizard stays open after a refused create, so close it before starting the next one.
-        openApiComponent.cancelCreation();
+        repositoryPage.openProjectsList();
         repositoryPage.getCreateProjectLink().click();
         openApiComponent = repositoryPage.getCreateNewProjectComponent();
         openApiComponent.selectMethod(CreateNewProjectComponent.TabName.OPEN_API);

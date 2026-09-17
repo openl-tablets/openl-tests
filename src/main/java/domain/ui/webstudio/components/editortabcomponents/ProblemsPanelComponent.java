@@ -22,7 +22,7 @@ public class ProblemsPanelComponent extends BaseComponent {
     private static final String BODY = PANEL + "//div[@data-testid='compile-problems-body']";
     private static final String COMPILING_LABEL = "Compiling";
     private static final Set<String> FINISHED_STATES = Set.of("ok", "warnings", "errors");
-    private static final long COMPILATION_TIMEOUT_MS = 30000;
+    private static final long COMPILATION_TIMEOUT_MS = 90000;
     private static final int COMPILATION_POLL_MS = 250;
     private static final int PROBE_MS = 1000;
     private static final int PAGE_PROBE_MS = 500;

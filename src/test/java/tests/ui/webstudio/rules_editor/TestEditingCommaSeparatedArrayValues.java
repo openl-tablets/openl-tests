@@ -88,7 +88,7 @@ public class TestEditingCommaSeparatedArrayValues extends BaseTest {
 
         // 1.4 — Select All checks all 4 values
         table.doubleClickCell(4, 1);
-        multiselect.clickActionButton("Select All");
+        multiselect.setAllValuesChosen(true);
         multiselect.verifyChosenValues(Arrays.asList("0.001", "-333", "500", "1"));
 
         // 1.5 — Done + save: cell shows comma-separated joined value
@@ -96,7 +96,7 @@ public class TestEditingCommaSeparatedArrayValues extends BaseTest {
 
         // 1.6 — Deselect All unchecks all values
         table.doubleClickCell(4, 1);
-        multiselect.clickActionButton("Deselect All");
+        multiselect.setAllValuesChosen(false);
         multiselect.verifyNonChosenValues("0.001", "-333", "500", "1");
 
         // 1.7 — Done + save with no values selected leaves a single space cell
