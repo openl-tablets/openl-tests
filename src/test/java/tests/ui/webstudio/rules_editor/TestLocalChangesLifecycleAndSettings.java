@@ -211,8 +211,11 @@ public class TestLocalChangesLifecycleAndSettings extends BaseTest {
         compareDialog.openTreeNode("Rules");
         compareDialog.clickTreeNode("Rules String Hello (Integer hour)");
 
-        assertThat(compareDialog.isCellHighlighted(8, 4, 1))
-                .as("Cell (8,4) in fragment 1 should be highlighted in compare dialog")
+        // The value that was written is what the comparison must show as differing. Where it is drawn is
+        // the screen's business: the rows that read the same are left out, and a merged cell takes the
+        // place of the ones it covers.
+        assertThat(compareDialog.isDifferenceShown(2, "Good Evening3"))
+                .as("The value the edit wrote must be shown as a difference in the version that carries it")
                 .isTrue();
         compareDialog.close();
     }

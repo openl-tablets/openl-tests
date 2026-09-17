@@ -4,6 +4,7 @@ import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.BoundingBox;
 import configuration.core.ui.CorePage;
 import configuration.core.ui.WebElement;
+import domain.ui.webstudio.components.editortabcomponents.ChangesDialogComponent;
 import domain.ui.webstudio.components.common.MessageComponent;
 import domain.ui.webstudio.components.common.UserSlidingRightMenuComponent;
 import helpers.utils.WaitUtil;
@@ -38,7 +39,11 @@ public abstract class BasePage extends CorePage {
     }
 
     private void initializeComponents() {
-        userLogo = new WebElement(page, "xpath=//header//span[contains(@class,'ant-avatar')][.//span[@aria-label='user']]", "User Logo");
+        // The mark a reader opens their own menu by. The administration screens carry it without the
+        // banner the workspace screens put it in, and the menu it opens shows it again inside itself, so
+        // what is named is the one standing outside that menu.
+        userLogo = new WebElement(page, "xpath=//span[contains(@class,'ant-avatar')][.//span[@aria-label='user']]"
+                + "[not(ancestor::div[contains(@class,'ant-drawer')])]", "User Logo");
         messages = createComponentList(MessageComponent.class, "xpath=//div[contains(@class,'ant-notification-notice-wrapper')]", "Studio Messages");
         userMenuDrawer = new WebElement(page, "xpath=//div[contains(@class,'ant-drawer') and contains(@class,'ant-drawer-open')]//div[contains(@class,'ant-drawer-section')]", "User Menu Drawer");
         contentLoadingSpinner = new WebElement(page, "xpath=//div[@id='loadingPanel']", "contentLoadingSpinner");
@@ -95,6 +100,9 @@ public abstract class BasePage extends CorePage {
 
     public UserSlidingRightMenuComponent openUserMenu() {
         closeAllMessages();
+        // A window the reader opened over the screen keeps them from reaching their own menu, so it is
+        // closed first — which is what they would do.
+        new ChangesDialogComponent().closeIfOpen();
         userLogo.click();
         userMenuDrawer.waitForVisible();
         return new UserSlidingRightMenuComponent(userMenuDrawer);

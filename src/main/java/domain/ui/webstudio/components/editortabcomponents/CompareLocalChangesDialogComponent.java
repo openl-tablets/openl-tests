@@ -207,6 +207,23 @@ public class CompareLocalChangesDialogComponent extends BaseComponent {
         return false;
     }
 
+    /**
+     * Whether the version shows the given text as one of the things that differ. A cell is found by what it
+     * reads rather than by where it sits: which line a difference is drawn on depends on what the reader
+     * asked to be left out, and which column on how the table is drawn.
+     */
+    public boolean isDifferenceShown(int fragment, String text) {
+        String pane = String.format(PANE, fragment == 1 ? "first" : "second");
+        Locator cells = getPage().locator("xpath=" + pane + "//td[@data-cell][normalize-space()=\"" + text + "\"]");
+        for (int index = 0; index < cells.count(); index++) {
+            String colour = cells.nth(index).evaluate("node => getComputedStyle(node).backgroundColor").toString();
+            if (!"rgb(255, 255, 255)".equals(colour) && !"rgba(0, 0, 0, 0)".equals(colour)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /** How many cells of the version are painted, which is how many the two versions read differently. */
     public int getHighlightedCellCount(int fragment) {
         String pane = String.format(PANE, fragment == 1 ? "first" : "second");

@@ -1,6 +1,7 @@
 package domain.ui.webstudio.components.editortabcomponents.leftmenu;
 
 import domain.ui.webstudio.components.BaseComponent;
+import domain.ui.webstudio.components.editortabcomponents.ChangesDialogComponent;
 import configuration.core.ui.WebElement;
 import configuration.driver.DriverPool;
 import helpers.utils.WaitUtil;
@@ -368,6 +369,9 @@ public class EditorLeftRulesTreeComponent extends BaseComponent {
      * id it was read under.
      */
     private void clickNode(TreeRow row) {
+        // The rail lies under whatever window the reader opened over the screen, and a table cannot be
+        // opened through one.
+        new ChangesDialogComponent().closeIfOpen();
         WaitUtil.requireCondition(() -> {
             TreeRow current = rowStandingFor(row);
             if (current == null || !Boolean.TRUE.equals(page.evaluate(REVEAL_NODE_SCRIPT, current.nodeId()))) {
