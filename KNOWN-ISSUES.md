@@ -16,9 +16,10 @@ Nothing here is a JIRA ticket yet. Raise them, then replace the references in th
 **What changed.** The JSF tables tree had a filter dialog with a *Hide Utility Tables* checkbox, on by
 default. `EPBDS-16599` deleted the dialog together with the tree, and the React module screen offers no
 replacement: its extended search filters by scope, kind, name, header, text and properties, and carries no
-such option. The server side kept the behaviour but not the switch — `WorkspaceProjectService` always
-excludes `XLS_OTHER` from the table listing, and the `includeOther` flag is never bound from the request, so
-utility tables are now permanently hidden and nobody can show them.
+such option. The server kept the behaviour and the flag but not a way to ask for it —
+`ProjectTableCriteriaQuery` still has `includeOther`, and `WorkspaceProjectService.buildTableSelector` lets
+`XLS_OTHER` through when it is set, but nothing binds it from a request: the one place that sets it is an
+internal search by name. So utility tables are hidden and nobody can ask to see them.
 
 **Why it matters.** A rule author can no longer see utility tables at all. The information exists in the
 model; only the way to ask for it was removed.
@@ -155,8 +156,9 @@ beside the module list is offered in two places now, by how the project leads to
   that workbook on the **Files** tab.
 
 Its own method filter is declared in the descriptor beside the module and shown on the card
-(`module-filter-<path>`); the screen offers no form of its own for it, and the action that migrated such
-filters to the project is gone with the JSF page.
+(`module-filter-<path>`); the screen offers no form of its own for it, and **Migrate** lifts such a filter to
+the project's `<exposed-methods>` where every pattern of it reduces to a glob
+(`RulesXmlMigrations.methodFilter`, which keeps the filter where one does not).
 
 **Tests.** `TestAddModuleWithPathExistingModule` writes the duplicate path on the card and reads the refusal;
 `TestCreateProjectFromOpenApiJsonFile` renames and copies its modules by their workbooks;

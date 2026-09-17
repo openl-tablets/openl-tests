@@ -158,5 +158,18 @@ public class TestCreateProjectFromOpenApiYamlWithCustomModuleNames extends BaseT
         assertThat(ZipUtil.listFiles(exportedZipAfterDelete))
                 .as("The workbook of the removed module is left where it stands")
                 .contains("rules1/Data_Types_file.xlsx");
+
+        // The old dialog offered to take the workbook away with the module; the workbook is a file now, so
+        // it is deleted where the files are.
+        repository = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.REPOSITORY);
+        repository.openProjectsList().openProjectDetail(projectName).deleteFile("Data_Types_file.xlsx");
+
+        editorPage = new EditorPage();
+        editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName);
+        editorPage.getEditorToolbarPanelComponent().clickExport();
+        File exportedZipAfterFileDelete = editorPage.getExportProjectDialogComponent().clickExportAndDownload();
+        assertThat(ZipUtil.listFiles(exportedZipAfterFileDelete))
+                .as("The workbook is gone once it is deleted on the Files tab")
+                .doesNotContain("rules1/Data_Types_file.xlsx");
     }
 }

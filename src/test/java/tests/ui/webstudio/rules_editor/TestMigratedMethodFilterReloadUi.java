@@ -28,6 +28,10 @@ public class TestMigratedMethodFilterReloadUi extends BaseTest {
     private static final String MODULE_NAME = "Main";
     private static final String TABLE_NAME = "Hello";
     private static final int RELOAD_SETTLE_TIMEOUT_MS = 30000;
+    // A module's own filter is written the way the old descriptors wrote it: a regexp over the whole
+    // signature, which is what the migration lifts to the project as a glob over the method name.
+    private static final String INCLUDED_METHODS = ".+ helloWorld\\(.+\\)";
+    private static final String EXCLUDED_METHODS = ".+ internalOnly\\(.+\\)";
 
     @Test
     @TestCaseId("EPBDS-16275")
@@ -35,7 +39,8 @@ public class TestMigratedMethodFilterReloadUi extends BaseTest {
             + "loading overlay must reach a quiet window and the table must stay. Guards the reload loop of "
             + "EPBDS-16275, which the JSF shell fell into after its ViewState was evicted; the filter is "
             + "written into the descriptor, which is where a module's own filter is declared and where the "
-            + "card reads it from, the screen offering no form of its own for it.")
+            + "card reads it from; the card then lifts it to the project, which is the migration this "
+            + "scenario reloads after.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void testProjectReloadAfterMethodFilterMigration() throws IOException {
         String projectName = WorkflowService.loginCreateProjectFromTemplate(User.ADMIN, TEMPLATE_NAME);
@@ -48,7 +53,17 @@ public class TestMigratedMethodFilterReloadUi extends BaseTest {
 
         assertThat(card.getOverviewTab().moduleMethodFilter("rules/" + MODULE_NAME + ".xlsx"))
                 .as("The card should show the method filter the module declares")
-                .contains("a").contains("b");
+                .contains("helloWorld").contains("internalOnly");
+
+        // The filter of a module is lifted to the project by the same migration the card offers for the
+        // descriptor, and it is the reload after that migration this scenario is about.
+        assertThat(card.isOverviewMigrateOffered())
+                .as("The card should offer to migrate while a module still carries a filter of its own")
+                .isTrue();
+        card.migrateOverviewDescriptor();
+        assertThat(card.getOverviewTab().moduleMethodFilter("rules/" + MODULE_NAME + ".xlsx"))
+                .as("The module carries no filter of its own once it has been lifted to the project")
+                .isEmpty();
 
         EditorPage editor = new EditorPage();
         editor.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, MODULE_NAME);
@@ -92,10 +107,10 @@ public class TestMigratedMethodFilterReloadUi extends BaseTest {
                 + "            <rules-root path=\"rules/" + MODULE_NAME + ".xlsx\"/>\n"
                 + "            <method-filter>\n"
                 + "                <includes>\n"
-                + "                    <value>a</value>\n"
+                + "                    <value>" + INCLUDED_METHODS + "</value>\n"
                 + "                </includes>\n"
                 + "                <excludes>\n"
-                + "                    <value>b</value>\n"
+                + "                    <value>" + EXCLUDED_METHODS + "</value>\n"
                 + "                </excludes>\n"
                 + "            </method-filter>\n"
                 + "        </module>\n"

@@ -149,14 +149,7 @@ public class ProjectOverviewTabComponent extends BaseComponent {
     }
 
     public void addDeclaredModule(String moduleName, String path) {
-        openForWriting();
-        new WebElement(page, "xpath=//*[@data-testid='edit-module-add']", "addModuleRow")
-                .waitForVisible(DEFAULT_TIMEOUT_MS).click();
-        int added = declaredModuleFields().size() - 1;
-        new WebElement(page, "xpath=//*[@data-testid='edit-module-" + added + "']", "newModuleName")
-                .waitForVisible(DEFAULT_TIMEOUT_MS).fill(moduleName);
-        new WebElement(page, "xpath=//*[@data-testid='edit-module-" + added + "-path']", "newModulePath")
-                .waitForVisible(DEFAULT_TIMEOUT_MS).fill(path);
+        writeANewModuleRow(moduleName, path);
         keepWhatWasWritten();
     }
 
@@ -165,16 +158,23 @@ public class ProjectOverviewTabComponent extends BaseComponent {
      * The card stays open on what it was given, so the refusal can be read off the notice it raises.
      */
     public String addDeclaredModuleExpectingRefusal(String moduleName, String path) {
-        openForWriting();
-        new WebElement(page, "xpath=//*[@data-testid='edit-module-add']", "addModuleRow")
-                .waitForVisible(DEFAULT_TIMEOUT_MS).click();
-        int added = declaredModuleFields().size() - 1;
-        new WebElement(page, "xpath=//*[@data-testid='edit-module-" + added + "']", "newModuleName")
-                .waitForVisible(DEFAULT_TIMEOUT_MS).fill(moduleName);
-        new WebElement(page, "xpath=//*[@data-testid='edit-module-" + added + "-path']", "newModulePath")
-                .waitForVisible(DEFAULT_TIMEOUT_MS).fill(path);
+        writeANewModuleRow(moduleName, path);
         saveBtn.waitForVisible(DEFAULT_TIMEOUT_MS).click();
         return whyTheCardRefused();
+    }
+
+    /** Lays a row down and writes the module into it, once the card has drawn the row it laid down. */
+    private void writeANewModuleRow(String moduleName, String path) {
+        openForWriting();
+        int standing = declaredModuleFields().size();
+        new WebElement(page, "xpath=//*[@data-testid='edit-module-add']", "addModuleRow")
+                .waitForVisible(DEFAULT_TIMEOUT_MS).click();
+        WaitUtil.requireCondition(() -> declaredModuleFields().size() > standing, DEFAULT_TIMEOUT_MS, 200,
+                "Waiting for the card to draw the module row it was asked for");
+        new WebElement(page, "xpath=//*[@data-testid='edit-module-" + standing + "']", "newModuleName")
+                .waitForVisible(DEFAULT_TIMEOUT_MS).fill(moduleName);
+        new WebElement(page, "xpath=//*[@data-testid='edit-module-" + standing + "-path']", "newModulePath")
+                .waitForVisible(DEFAULT_TIMEOUT_MS).fill(path);
     }
 
     public void removeDeclaredModule(String moduleName) {
@@ -188,15 +188,9 @@ public class ProjectOverviewTabComponent extends BaseComponent {
     /** What the card says when it refuses to keep what was written into it, or nothing at all. */
     public String whyTheCardRefused() {
         WebElement refusal = new WebElement(page,
-                "xpath=(//div[contains(concat(' ',normalize-space(@class),' '),' ant-notification-notice-wrapper ')]"
-                        + " | //*[@data-testid='overview-error'])[1]", "cardRefusal");
+                "xpath=(//div[contains(concat(' ',normalize-space(@class),' '),' ant-notification-notice-wrapper ')])"
+                        + "[last()]", "cardRefusal");
         return refusal.isVisible(DEFAULT_TIMEOUT_MS / 4) ? refusal.getInnerText().trim().replace("\n", " ") : "";
-    }
-
-    public boolean areModulesWritable() {
-        openForWriting();
-        return new WebElement(page, "xpath=//*[@data-testid='edit-module-add']", "addModuleRow")
-                .isVisible(DEFAULT_TIMEOUT_MS / 4);
     }
 
     private void openForWriting() {
@@ -220,7 +214,8 @@ public class ProjectOverviewTabComponent extends BaseComponent {
 
     private WebElement declaredModuleField(String moduleName) {
         return new WebElement(page,
-                "xpath=//input[starts-with(@data-testid,'edit-module-')][@value=\"" + moduleName + "\"]",
+                "xpath=//input[starts-with(@data-testid,'edit-module-')][not(contains(@data-testid,'-path'))]"
+                        + "[not(contains(@data-testid,'-compile-only'))][@value=\"" + moduleName + "\"]",
                 "declaredModuleName").waitForVisible(DEFAULT_TIMEOUT_MS);
     }
 

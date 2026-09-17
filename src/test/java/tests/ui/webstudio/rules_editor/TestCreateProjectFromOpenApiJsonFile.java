@@ -140,6 +140,10 @@ public class TestCreateProjectFromOpenApiJsonFile extends BaseTest {
                 .as("Copying a module must add it next to the modules the project already reads (EPBDS-16227)")
                 .containsExactlyInAnyOrder("Algorithms2", "Algorithms_test", "Models_test");
 
+        editorPage.getEditorToolbarPanelComponent().clickExport();
+        String rulesXmlAfterCopy = ZipUtil.readFileFromZip(
+                editorPage.getExportProjectDialogComponent().clickExportAndDownload(), "rules.xml");
+
         repositoryPage = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.REPOSITORY);
         ProjectDetailPage detailAfterUpload = repositoryPage.openProjectsList().openProjectDetail(projectName);
         detailAfterUpload.uploadFileInto(TestDataUtil.getFilePathFromResources("rules.xlsx"), "rules");
@@ -158,7 +162,10 @@ public class TestCreateProjectFromOpenApiJsonFile extends BaseTest {
         File exportedZipAfterUpload = editorPageAfterUpload.getExportProjectDialogComponent().clickExportAndDownload();
         String rulesXmlAfterUpload = ZipUtil.readFileFromZip(exportedZipAfterUpload, "rules.xml");
         assertThat(rulesXmlAfterUpload)
-                .as("The descriptor is left declaring no module of its own through all of this")
+                .as("The descriptor is left as the copy left it: an upload writes no module into it")
+                .isEqualTo(rulesXmlAfterCopy);
+        assertThat(rulesXmlAfterUpload)
+                .as("The descriptor declares no module of its own through all of this")
                 .doesNotContain("<modules>").doesNotContain("<rules-root");
         assertThat(ZipUtil.listFiles(exportedZipAfterUpload))
                 .as("The saved project holds the workbooks as they were renamed, copied and uploaded")
