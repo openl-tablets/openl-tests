@@ -163,6 +163,16 @@ public class CreateNewProjectComponent extends BaseComponent {
         }
     }
 
+    /**
+     * Presses Create where the wizard is expected to refuse, and answers what it says: the wizard stays
+     * open, holding what it was given, so it can be read and put away by whoever asked.
+     */
+    public String submitExpectingRefusal() {
+        waitForBranchToBeOffered();
+        submitBtn.click();
+        return getError();
+    }
+
     private void waitForBranchToBeOffered() {
         if (!branchField.isVisible(BRANCH_FIELD_PROBE_MS)) {
             return;

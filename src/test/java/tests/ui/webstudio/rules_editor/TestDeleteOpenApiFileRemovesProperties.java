@@ -71,10 +71,13 @@ public class TestDeleteOpenApiFileRemovesProperties extends BaseTest {
         editorPage.getEditorToolbarPanelComponent().navigateToProjectRoot(projectName);
         editorPage.getEditorToolbarPanelComponent().clickExport();
         File exportedZip = editorPage.getExportProjectDialogComponent().clickExportAndDownload();
+        // A project made from a specification declares no module of its own either (EPBDS-16415): the
+        // workbooks are found where they lie, so what the deletion must leave standing is the workbooks
+        // themselves.
+        assertThat(ZipUtil.listFiles(exportedZip))
+                .as("The workbooks of the two modules should still stand after deleting openapi.yml")
+                .contains("rules/Algorithms.xlsx", "rules/Models.xlsx");
         String rulesXml = ZipUtil.readFileFromZip(exportedZip, "rules.xml");
-        assertThat(rulesXml)
-                .as("rules.xml should still contain Algorithms and Models modules after deleting openapi.yml")
-                .contains("<name>Algorithms</name>").contains("<name>Models</name>");
         assertThat(rulesXml)
                 .as("The descriptor should declare no OpenAPI specification, before the deletion or after it")
                 .doesNotContain("<openapi>");

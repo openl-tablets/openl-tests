@@ -92,7 +92,7 @@ public class TestProjectNameValidationUi extends BaseTest {
     private String submitTemplateProjectExpectingError(RepositoryPage repositoryPage, String projectName) {
         repositoryPage.getCreateProjectLink().click();
         CreateNewProjectComponent createDialog = repositoryPage.getCreateNewProjectComponent();
-        createDialog.createProjectFromTemplate("Sample Project", projectName, true);
-        return createDialog.getError();
+        createDialog.createProjectFromTemplate("Sample Project", projectName, false);
+        return createDialog.submitExpectingRefusal();
     }
 }

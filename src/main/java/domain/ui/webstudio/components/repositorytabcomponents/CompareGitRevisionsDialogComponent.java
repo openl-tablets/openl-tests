@@ -37,6 +37,36 @@ public class CompareGitRevisionsDialogComponent extends CompareLocalChangesDialo
         option.click();
     }
 
+    /**
+     * The Excel files the working copy offers to be compared, in the order the window offers them; the
+     * revision's own list is asked for in the same way.
+     */
+    public java.util.List<String> getWorkingCopyFilesOffered() {
+        return filesOffered("compare-working-file");
+    }
+
+    public java.util.List<String> getRevisionFilesOffered() {
+        return filesOffered("compare-revision-file");
+    }
+
+    private java.util.List<String> filesOffered(String box) {
+        WebElement picker = new WebElement(getPage(),
+                "xpath=//*[@data-testid='" + box + "']//input", "compareFilePicker");
+        picker.waitForVisible(DEFAULT_TIMEOUT_MS);
+        picker.click();
+        String list = picker.getAttribute("aria-controls");
+        String options = "//div[contains(@class,'ant-select-dropdown')][.//*[@id='" + list + "']]"
+                + "//div[@role='option']";
+        new WebElement(getPage(), "xpath=(" + options + ")[1]", "compareFileOption")
+                .waitForVisible(DEFAULT_TIMEOUT_MS);
+        java.util.List<String> named = getPage().locator("xpath=" + options)
+                .all().stream()
+                .map(option -> option.getAttribute("title"))
+                .toList();
+        picker.press("Escape");
+        return named;
+    }
+
     public void clickCompareBtn() {
         compareBtn.waitForVisible(DEFAULT_TIMEOUT_MS);
         compareBtn.click();

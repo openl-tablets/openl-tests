@@ -188,6 +188,17 @@ public class EditorPage extends BasePage {
     }
 
     /**
+     * Writes the specification of the project's rules, as the card offers it: the action stands beside the
+     * OpenAPI heading of the card being read, not among the settings the card is written through.
+     */
+    public void writeOpenApiSchema() {
+        WebElement write = new WebElement(getPage(), "xpath=//button[@data-testid='openapi-write']", "writeSchemaBtn");
+        write.waitForVisible(DEFAULT_TIMEOUT_MS);
+        write.click();
+        waitUntilSpinnerLoaded();
+    }
+
+    /**
      * Moves the workbooks lying in the project's root under {@code rules/} and writes the rules.xml that
      * names them. A project without one declares nothing, and writing a descriptor without moving them
      * first would stop the project finding them, so the card withholds its settings until this is done.

@@ -6,7 +6,6 @@ import configuration.annotations.AppContainerConfig;
 import configuration.appcontainer.AppContainerStartParameters;
 import domain.serviceclasses.constants.User;
 import domain.ui.webstudio.components.common.TabSwitcherComponent;
-import domain.ui.webstudio.components.editortabcomponents.ImportOpenApiDialogComponent;
 import domain.ui.webstudio.pages.mainpages.EditorPage;
 import domain.ui.webstudio.pages.mainpages.RepositoryPage;
 import helpers.service.WorkflowService;
@@ -32,11 +31,9 @@ public class TestGenerateOpenApiDefaultDate extends BaseTest {
         // written from are offered once they are moved under rules/.
         editorPage.migrateProject();
 
-        // Open Import OpenAPI dialog and click 'Create or Update Schema' button
-        // This generates openapi.json from the rules and places it in the repository
-        ImportOpenApiDialogComponent importDialog = editorPage.openImportOpenApiDialog();
-        importDialog.clickCreateOrUpdateSchema();
-        editorPage.waitUntilSpinnerLoaded();
+        // The card offers to write the specification of the rules beside its OpenAPI heading, as it is read;
+        // the settings the card is written through hold no such action.
+        editorPage.writeOpenApiSchema();
 
         // Navigate to Repository tab and verify openapi.json appears in the project tree
         RepositoryPage repositoryPage = editorPage.getTabSwitcherComponent()

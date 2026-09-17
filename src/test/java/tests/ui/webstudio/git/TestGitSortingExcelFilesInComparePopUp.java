@@ -27,18 +27,18 @@ public class TestGitSortingExcelFilesInComparePopUp extends BaseTest {
     private static final String PROJECT_NAME = "TestGitSortingExcelFilesInComparePopUp";
     private static final String ZIP_FILE_NAME = "Repository.TestGitSortingExcelFilesInComparePopUp.zip";
     private static final List<String> EXPECTED_ORDER = Arrays.asList(
+            "aa_CD.xlsx",
             "AB_CD.xlsx",
             "AS_CD.xlsx",
             "BC_CD.xlsx",
             "BC_CE.xlsx",
             "DS_CD.xlsx",
             "Input data example for EPBDS-6887 (2).xlsx",
-            "Main.xlsx",
             "Main (9).xlsx",
+            "Main.xlsx",
             "PN_CD.xlsx",
             "WY_CD.xlsx",
-            "XXD_CD.xlsx",
-            "aa_CD.xlsx"
+            "XXD_CD.xlsx"
     );
 
     @Test
@@ -60,16 +60,14 @@ public class TestGitSortingExcelFilesInComparePopUp extends BaseTest {
                 .openProjectDetail(PROJECT_NAME).openCompareWindow();
         compareDialog.waitForDialogToAppear();
 
-        // Verify left and right modules lists are sorted correctly
-        List<String> leftModulesList = compareDialog.getLeftModulesList();
-        List<String> rightModulesList = compareDialog.getRightModulesList();
-
-        assertThat(leftModulesList)
-                .as("Left modules list should be sorted correctly")
+        // The window offers the workbooks to be compared in two lists, one for each side, and it is the
+        // order of those lists that is asked about here.
+        assertThat(compareDialog.getWorkingCopyFilesOffered())
+                .as("The working copy should offer its workbooks sorted")
                 .isEqualTo(EXPECTED_ORDER);
 
-        assertThat(rightModulesList)
-                .as("Right modules list should be sorted correctly")
+        assertThat(compareDialog.getRevisionFilesOffered())
+                .as("The revision should offer its workbooks sorted")
                 .isEqualTo(EXPECTED_ORDER);
 
         // Close Compare dialog
