@@ -1,6 +1,7 @@
 package tests.ui.webstudio.studio_issues;
 
 import configuration.annotations.Description;
+import configuration.annotations.KnownIssue;
 import configuration.annotations.TestCaseId;
 import configuration.annotations.AppContainerConfig;
 import configuration.appcontainer.AppContainerStartParameters;
@@ -142,14 +143,51 @@ public class TestDisplayChangedRowsCompareScreens extends BaseTest {
 
     @Test
     @TestCaseId("IPBQA-32105")
-    @Description("Display Changed Rows: verify equal rows toggle in uploaded Excel files compare screen")
+    @Description("Display Changed Rows: the comparison of two uploaded workbooks draws the rows that differ, "
+            + "and drawing the equal ones as well is asked for with the toggle. Fails on EPBDS-16655: the "
+            + "action named after that screen opens the comparison of the project against its own revisions, "
+            + "so there is no way to the screen the scenario is about.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
+    @KnownIssue("EPBDS-16655")
     public void testDisplayChangedRowsUploadedFilesCompareScreen() {
-        WorkflowService.loginCreateProjectFromTemplate(User.ADMIN, "Sample Project");
+        String projectName = WorkflowService.loginCreateProjectFromTemplate(User.ADMIN, "Sample Project");
         EditorPage editorPage = new EditorPage();
+        // The action stands in the More menu of a module, so a module is opened to reach it.
+        editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Main");
 
-        throw new SkipException("KNOWN-ISSUES.md #9: the screen that compares two uploaded Excel files has no "
-                + "entry point left in the UI, so this scenario cannot be driven.");
+        CompareExcelFilesDialogComponent compareDialog = editorPage
+                .getEditorToolbarPanelComponent()
+                .clickMore()
+                .clickCompareExcelFiles();
+
+        assertThat(compareDialog.offersWorkbooksToUpload())
+                .as("'Compare Excel files' must open the comparison of two workbooks the reader uploads")
+                .isTrue();
+
+        compareDialog.uploadFile(TestDataUtil.getFilePathFromResources(BANK_RATING_FILE_1));
+        compareDialog.uploadFile(TestDataUtil.getFilePathFromResources(BANK_RATING_FILE_2));
+        compareDialog.clickCompareExcel();
+
+        compareDialog.openTreeNode("Limit");
+        compareDialog.clickTreeNode("Rules Double BankLimitIndex (Bank bank, RatingGroup bankRatingGroup)");
+
+        int drawnLeft = compareDialog.getNumberOfRows(1);
+        int drawnRight = compareDialog.getNumberOfRows(2);
+        assertThat(compareDialog.getHighlightedCellCount(1))
+                .as("The differences are marked in the first workbook")
+                .isPositive();
+        assertThat(compareDialog.getHighlightedCellCount(2))
+                .as("The differences are marked in the second workbook")
+                .isPositive();
+
+        compareDialog.setShowEqualRows(true);
+        assertThat(compareDialog.getNumberOfRows(1))
+                .as("Asking for the rows that read the same draws more of the first workbook")
+                .isGreaterThan(drawnLeft);
+        assertThat(compareDialog.getNumberOfRows(2))
+                .as("Asking for the rows that read the same draws more of the second workbook")
+                .isGreaterThan(drawnRight);
+        compareDialog.close();
     }
 
     @Test

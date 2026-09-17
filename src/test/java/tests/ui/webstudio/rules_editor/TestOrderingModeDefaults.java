@@ -1,5 +1,7 @@
 package tests.ui.webstudio.rules_editor;
 
+import configuration.annotations.Description;
+import configuration.annotations.KnownIssue;
 import configuration.annotations.TestCaseId;
 import configuration.annotations.AppContainerConfig;
 import configuration.appcontainer.AppContainerStartParameters;
@@ -91,7 +93,11 @@ public class TestOrderingModeDefaults extends BaseTest {
 
     @Test
     @TestCaseId("IPBQA-32117")
+    @Description("The default view of the tables tree in multi-user mode, and the groups the Type view puts "
+            + "the tables into. Fails on EPBDS-16654: an alias datatype is filed under Datatype, the tree not "
+            + "reading the Vocabulary kind the server marks it with.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
+    @KnownIssue("EPBDS-16654")
     public void testDefaultOrderForMultiUser() {
         String projectName = StringUtil.generateUniqueName("TestOrderingMode");
 
@@ -167,10 +173,10 @@ public class TestOrderingModeDefaults extends BaseTest {
         assertThat(editorPage.getEditorLeftRulesTreeComponent().getViewFilterValue())
                 .containsIgnoringCase("Type");
 
-        // 2.7 Verify the node list for the Type view. A "Vocabulary" group of its own is missing: the
-        // server still marks alias datatypes as Vocabulary, the module tree no longer reads it, so an
-        // alias datatype is filed under Datatype (see KNOWN-ISSUES.md #2).
+        // 2.7 The Type view groups the tables by the kind each one is, and an alias datatype is a
+        // Vocabulary — the server marks it as one in the very answer the tree is drawn from (EPBDS-16654).
         assertThat(editorPage.getEditorLeftRulesTreeComponent().getCategoriesVisible())
-                .contains("Rules", "Spreadsheet", "Test", "Datatype");
+                .as("The Type view should group the tables by their kind, Vocabulary among them")
+                .contains("Rules", "Spreadsheet", "Test", "Datatype", "Vocabulary");
     }
 }

@@ -1,6 +1,7 @@
 package tests.ui.webstudio.studio_issues;
 
 import configuration.annotations.Description;
+import configuration.annotations.KnownIssue;
 import configuration.annotations.TestCaseId;
 import configuration.annotations.AppContainerConfig;
 import configuration.appcontainer.AppContainerStartParameters;
@@ -20,6 +21,7 @@ public class TestGenerateOpenApiDefaultDate extends BaseTest {
     @TestCaseId("EPBDS-10789")
     @Description("After clicking 'Create or Update Schema' in Import OpenAPI dialog, openapi.json appears in the repository tree")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
+    @KnownIssue("EPBDS-16656")
     public void testGenerateOpenApiDefaultDate() {
         String projectName = WorkflowService.loginCreateProjectFromZip(User.ADMIN,
                 "StudioIssues.TestGenerateOpenApiDefaultDate.zip");
@@ -34,6 +36,15 @@ public class TestGenerateOpenApiDefaultDate extends BaseTest {
         // The card offers to write the specification of the rules beside its OpenAPI heading, as it is read;
         // the settings the card is written through hold no such action.
         editorPage.writeOpenApiSchema();
+
+        // The card is read where the generation was asked for: the specification it has just written is the
+        // one the project holds, so the section names it instead of saying the project declares none.
+        assertThat(editorPage.isOpenApiPropertiesSectionEmpty())
+                .as("The card should name the specification the generation has just written")
+                .isFalse();
+        assertThat(editorPage.getOpenApiPropertyValue("File"))
+                .as("The card should name the file the generation wrote")
+                .isEqualTo("openapi.json");
 
         // Navigate to Repository tab and verify openapi.json appears in the project tree
         RepositoryPage repositoryPage = editorPage.getTabSwitcherComponent()

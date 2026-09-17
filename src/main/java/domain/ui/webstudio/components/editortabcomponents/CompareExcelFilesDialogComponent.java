@@ -8,96 +8,55 @@ import java.nio.file.Paths;
 
 public class CompareExcelFilesDialogComponent extends CompareLocalChangesDialogComponent {
 
-    // File upload area: hidden input inside the RichFaces file upload widget
-    private WebElement fileUploadInput;
-    // "Add" button span element (visible when fewer than 2 files uploaded)
-    private WebElement addButtonElement;
-    // Second item in the upload list (for CSS border check)
-    private WebElement secondElementInUpload;
-    // "Clear All" button
-    private WebElement clearAllBtn;
-    // "Compare" button for Excel comparison
-    private WebElement compareExcelBtn;
-    // "Show equal rows" checkbox in the diffTreeForm
-    private WebElement showEqualRowsCheckboxExcel;
-    // "Show equal elements" checkbox (shows equal nodes in tree)
-    private WebElement showEqualElementsCheckbox;
+    private WebElement filesToUpload;
+    private WebElement pickedFiles;
+    private WebElement clearFileBtn;
+    private WebElement compareBtn;
 
     public CompareExcelFilesDialogComponent(Page comparePopup) {
         super(comparePopup);
-        initializeExcelElements();
+        filesToUpload = new WebElement(getPage(),
+                "xpath=//*[@data-testid='compare-files']//input[@type='file']", "comparedFilesUpload");
+        pickedFiles = new WebElement(getPage(), "xpath=//*[@data-testid='compare-file-list']/li", "comparedFiles");
+        clearFileBtn = new WebElement(getPage(),
+                "xpath=(//*[@data-testid='compare-file-clear'])[1]", "clearComparedFile");
+        compareBtn = new WebElement(getPage(), "xpath=//*[@data-testid='compare-start']", "compareFilesBtn");
     }
 
-    private void initializeExcelElements() {
-        fileUploadInput = new WebElement(getPage(),
-                "xpath=//div[@id='diffForm:fileUpload']//input[@type='file']",
-                "fileUploadInput");
-        addButtonElement = new WebElement(getPage(),
-                "xpath=//div[@id='diffForm:fileUpload']//span[@class='rf-fu-btn-cnt-add']",
-                "addButtonElement");
-        secondElementInUpload = new WebElement(getPage(),
-                "xpath=(//div[@id='diffForm:fileUpload']//div[@class='rf-fu-itm'])[2]",
-                "secondElementInUpload");
-        clearAllBtn = new WebElement(getPage(),
-                "xpath=//span[@class='rf-fu-btn-cnt-clr']",
-                "clearAllBtn");
-        compareExcelBtn = new WebElement(getPage(),
-                "xpath=//input[@id='diffForm:compareButton']",
-                "compareExcelBtn");
-        showEqualRowsCheckboxExcel = new WebElement(getPage(),
-                "xpath=//form[@id='diffTreeForm']//input[@type='checkbox']",
-                "showEqualRowsCheckboxExcel");
-        showEqualElementsCheckbox = new WebElement(getPage(),
-                "xpath=//div[@id='diffFormPanel']//input[@type='checkbox']",
-                "showEqualElementsCheckbox");
+    /** Whether the window opened on the comparison of two workbooks a reader uploads, which is what it is for. */
+    public boolean offersWorkbooksToUpload() {
+        return filesToUpload.getLocator().count() > 0;
     }
 
     public CompareExcelFilesDialogComponent uploadFile(String absoluteFilePath) {
-        fileUploadInput.getLocator().setInputFiles(Paths.get(absoluteFilePath));
-        WaitUtil.sleep(1000, "Waiting for file to upload: " + absoluteFilePath);
+        filesToUpload.setInputFiles(absoluteFilePath);
+        WaitUtil.waitForCondition(() -> pickedFiles.getLocator().count() > 0, DEFAULT_TIMEOUT_MS, 250,
+                "Waiting for the window to take the workbook");
         return this;
     }
 
-    public boolean isAddButtonPresent() {
-        return addButtonElement.isVisible(2000);
+    public int countPickedFiles() {
+        return pickedFiles.getLocator().count();
     }
 
-    public String getSecondElementBorderBottomStyle() {
-        return secondElementInUpload.getCssValue("border-bottom-style");
-    }
-
-    public CompareExcelFilesDialogComponent clickClearAll() {
-        clearAllBtn.click();
-        WaitUtil.sleep(500, "Waiting after Clear All click");
-        return this;
-    }
-
-    public boolean isCompareExcelBtnPresent() {
-        return compareExcelBtn.isVisible(2000);
-    }
-
-    public boolean isCompareExcelBtnEnabled() {
-        return compareExcelBtn.isEnabled();
-    }
-
-    public CompareExcelFilesDialogComponent setShowEqualRowsExcel(boolean value) {
-        if (showEqualRowsCheckboxExcel.isChecked() != value) {
-            showEqualRowsCheckboxExcel.click();
-            WaitUtil.sleep(300, "Waiting for showEqualRows toggle");
+    public CompareExcelFilesDialogComponent clearPickedFiles() {
+        while (pickedFiles.getLocator().count() > 0) {
+            clearFileBtn.click();
         }
         return this;
     }
 
-    public CompareExcelFilesDialogComponent setShowEqualElements(boolean value) {
-        if (showEqualElementsCheckbox.isChecked() != value) {
-            showEqualElementsCheckbox.click();
-            WaitUtil.sleep(300, "Waiting for showEqualElements toggle");
-        }
-        return this;
+    public boolean isCompareOffered() {
+        return compareBtn.isVisible(PROBE_MS);
     }
 
-    public void clickCompareExcel() {
-        compareExcelBtn.click();
-        WaitUtil.sleep(2000, "Waiting for Excel comparison to complete");
+    public boolean isCompareEnabled() {
+        return compareBtn.isVisible(PROBE_MS) && compareBtn.isEnabled();
+    }
+
+    public CompareExcelFilesDialogComponent clickCompareExcel() {
+        compareBtn.waitForVisible(DEFAULT_TIMEOUT_MS).click();
+        waitForDialogToAppear();
+        return this;
     }
 }
