@@ -421,26 +421,59 @@ holds. Showing a cell differently from Excel is exactly the difference they are 
 
 ---
 
-## 18. The Run menu no longer offers the test cases by range, nor a Run All box
+## 18. The Run menu no longer offers the test cases by range
 
 **What changed.** The contextual menu of Run / Test / Trace / Benchmark used to let a reader write which
-cases to run as a range — *2-4,7,10-12* or *id3-id7* — with a **Run All** box that filled the range with the
-whole table and locked it, and it refused to list the cases one by one for a table with more than twenty of
-them (EPBDS-14039).
+cases to run as a range — *2-4,7,10-12* or *id3-id7* — with a note beside the field saying how such a range
+is written, and it refused to list the cases one by one for a table with more than twenty of them
+(EPBDS-14039).
 
-The React screen lists every case with a box beside it, a box at the head to tick them all
-(`TestCaseSelector.tsx`, `pick-all-cases` / `pick-case-<id>`), and pages through them, showing *Total test
-cases: N* beside the pager. There is no range to write, no Run All, and no limit: a table of a thousand
-cases is ticked a page at a time.
+The React launcher keeps the box that takes them all — **All cases**, ticked unless the reader picks some
+(`TableInputLauncher.tsx`, `launch-all-cases`) — and lists every case with a box beside it, a box at the
+head to tick them all, and a pager saying *Total test cases: N* (`TestCaseSelector.tsx`). What is gone is
+the range **expression**: there is nowhere to write one, nothing explains how one is written, and there is
+no longer a limit past which the cases stop being offered one by one — a table of a thousand is ticked a
+page at a time.
 
 **The capability behind it is still there.** The launcher sends `testRanges` to the server exactly as
-before — it just builds it from the ticked ids (`TableInputLauncher.tsx`, `caseIds.join(',')`) — and the
-server still reads a range expression. Only the way of writing one is gone.
+before, built from the ticked ids (`TableInputLauncher.tsx`, `caseIds.join(',')`), and sends none at all
+when every case is taken; the server still reads a range expression.
+
+**Tests changed rather than blocked.** `TestRunContextualMenuRunAll` keeps what the screen still answers:
+that a table of several cases offers to take them all, that it does so unless the reader picks some, that
+picking one stops it, that taking them all again stands, and how many cases the table holds. What it no
+longer asks — the range filled in and locked by the box, the note beside the field, and the box being
+withheld for a table of twenty cases or fewer — is the coverage to restore with the range.
+
+---
+
+## 19. A rule table with no rules in it does not compile: its own headings are read as data
+
+**What happens.** A `SimpleRules` table written the ordinary way — the signature, a row of technical names,
+a row of display names — and holding no data rows yet fails to compile. The display names are read as the
+first row of data:
+
+```
+Cannot parse cell value 'Input'.  Expected value of type 'IntRange'.   (B4)
+Cannot parse cell value 'Result'. Expected value of type 'Integer'.    (C4)
+```
+
+B4 and C4 are the display names of the two columns, which `B3`/`C3` name technically as `x` and `_return_`.
+
+**Verified against a running 6.5.0-SNAPSHOT** (`6.5.0-b48c86279338`) with
+`src/test/resources/test_data/TestRunContextualMenuRunAll/RunAllTestTable.zip`, whose `doubleIt` table is
+exactly that shape. Appending a single data row to it through
+`POST /web/projects/{id}/tables/{id}/actions` clears both errors at once, which is what pins the cause: the
+display-name row is taken for data only while no data row follows it.
+
+**What it costs.** The rule does not compile, so everything that depends on it goes with it — the test table
+written against it reports *Tested rules have errors*, and the table toolbar offers neither Run nor Trace
+nor Test for either of them.
 
 **Blocked tests.**
-- `tests.ui.webstudio.rules_editor.TestRunContextualMenuRunAll` — the whole of C.9-C.13: Run All filling and
-  locking the range, unticking itself when the reader switches to Test, Trace or Benchmark, and being absent
-  for a table of twenty cases or fewer.
+- `tests.ui.webstudio.rules_editor.TestRunContextualMenuRunAll` — it opens the Run launcher of the test
+  table written against that rule. What it can still reach — the project, the module, the tables in the
+  rail — runs; the launcher cannot be opened at all while the rule is in error.
 
 ---
 
@@ -473,6 +506,7 @@ the build under test (`6.5.0-b48c86279338`) and against the screens themselves.
 | The result of running a rule is a window of its own, with one column per input and one for the result. The row carries no number, and each value is shown as the literal its type reads as (`"Tom"`, not `Tom`). | The expected rows were rewritten to what the window shows, keeping the value equality the test was written for. |
 | Running anything opens a window that covers the screen, and the module cannot be worked on again until it is closed. | `TestResultValidationComponent.closeResults()` is pressed once the results have been read. |
 | A table is removed behind a question the screen asks in a window of its own, not behind the browser's own confirm dialog. | `removeCurrentTable()` answers the screen's window. |
+| A module is copied where the project's files are — the workbook is copied beside itself on the Files tab and the copy becomes a module by the folder it lands in — rather than from a dialog on the module screen. | `EditorPage.copyModuleWorkbook` copies the workbook through the Files tab, which is the route the screen offers. |
 | A table wears a drawn icon that names itself rather than a small picture file, one chosen to read as the picture the old Editor drew for that kind (`tableIcons.tsx` names the picture each replaces). | `TestTableIcons` expects the glyph each kind wears, one per kind as before. |
 | A usage named inside a cell — the table a value comes from — is a button drawn in the colour a link is drawn in, underlined under the pointer, where the old editor drew an underlined anchor. | `TestArrayDeclarationIsLink` counts the buttons and checks that each reads as something to press. |
 | A value of a dimension property is offered by the name it is known by — *Québec*, *Washington*, *Yemen, Rials* — where the old list offered the code, and the code is what is still written down. | The tests name the value the way the screen offers it and expect the code in the table, so both halves are checked. |

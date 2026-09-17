@@ -107,7 +107,14 @@ public class EditorBreadcrumbsComponent extends BaseComponent {
         }, 10000, 500, "Selecting module " + moduleName + " from the breadcrumbs");
     }
 
+    /**
+     * Goes to the project through the breadcrumb. A reader already on that project's own card is where the
+     * breadcrumb would take them, and the card carries no switcher to press.
+     */
     public void selectProjectInDropdown(String projectName) {
+        if (!projectTrigger.isVisible(PROBE_MS)) {
+            return;
+        }
         WaitUtil.retryOnException(() -> {
             pickInSwitcher(projectTrigger, projectSearch, projectName);
             return true;

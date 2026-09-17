@@ -50,6 +50,15 @@ public class RunTestsMenuComponent extends BaseComponent implements IRunTestsMen
         return "";
     }
 
+    /**
+     * How many test tables the button says there are. The number is drawn as a badge on the button rather
+     * than written into its words, so it is read on its own.
+     */
+    public String getTestCount() {
+        WebElement count = new WebElement(page, "xpath=//*[@data-testid='module-test-count']", "moduleTestCount");
+        return count.isVisible(2000) ? count.getText().trim() : "";
+    }
+
     public boolean isTestButtonVisible() {
         return testBtn.isVisible(2000);
     }

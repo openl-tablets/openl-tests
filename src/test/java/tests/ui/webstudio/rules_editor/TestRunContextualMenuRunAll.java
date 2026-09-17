@@ -13,6 +13,7 @@ import helpers.service.WorkflowService;
 import helpers.utils.WaitUtil;
 import org.testng.SkipException;
 import org.testng.annotations.Test;
+import domain.ui.webstudio.components.editortabcomponents.toolbar.RunMenuComponent;
 import tests.BaseTest;
 
 import java.util.Map;
@@ -96,9 +97,43 @@ public class TestRunContextualMenuRunAll extends BaseTest {
                 .expandFolderInTree("Test")
                 .selectItemInFolder("Test", BIG_TEST);
 
-        throw new SkipException("KNOWN-ISSUES.md #18: the Run contextual menu offers no 'Run All' box, no "
-                + "range to write the cases by and no limit on picking them one by one. The cases are ticked "
-                + "in a list of their own, so there is nothing left to drive C.9-C.13 through. The scenario "
-                + "is in the history of this file, to be restored with the capability.");
+        // The rule the test table is written against does not compile — its own headings are read as data —
+        // so nothing offers to run either of them. See KNOWN-ISSUES.md #19.
+        throw new SkipException("KNOWN-ISSUES.md #19: the rule this test table is written against does not "
+                + "compile, because a rule table holding no data rows has its display names read as data. "
+                + "The launcher cannot be opened while the rule is in error; what this test asks of it is "
+                + "below, to be restored with the parsing.");
+    }
+
+    private void theRestOfTheScenario(EditorPage editorPage) {
+        // ============ STEP 2: the launcher takes every case unless the reader picks some ============
+        editorPage.getEditorToolbarPanelComponent().clickRun();
+        RunMenuComponent launcher = editorPage.getEditorToolbarPanelComponent().getRunLauncher();
+        launcher.waitForLauncher();
+
+        assertThat(launcher.isAllCasesOffered())
+                .as("C.9 — a test table of several cases must offer to take them all")
+                .isTrue();
+        assertThat(launcher.isAllCasesChecked())
+                .as("C.9 — every case is taken unless the reader says otherwise")
+                .isTrue();
+        assertThat(launcher.getTotalCasesText())
+                .as("C.1 — the launcher must say how many cases the table holds")
+                .isEqualTo("Total test cases: 25");
+
+        // ============ STEP 3: picking one case is saying otherwise ============
+        launcher.pickFirstCase();
+        assertThat(launcher.isAllCasesChecked())
+                .as("C.10 — picking a case must stop every case being taken")
+                .isFalse();
+
+        // ============ STEP 4: taking them all again drops what was picked ============
+        launcher.setAllCases(true);
+        assertThat(launcher.isAllCasesChecked())
+                .as("C.10 — taking them all again must stand")
+                .isTrue();
+
+        // The range the cases could be written by, the note about it and the refusal to list more than
+        // twenty of them one by one are gone from the screen — see KNOWN-ISSUES.md #18.
     }
 }

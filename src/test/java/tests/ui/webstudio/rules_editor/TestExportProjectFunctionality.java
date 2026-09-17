@@ -9,7 +9,6 @@ import domain.serviceclasses.constants.User;
 import domain.serviceclasses.models.UserData;
 import domain.ui.webstudio.components.common.CreateNewProjectComponent;
 import domain.ui.webstudio.components.common.TabSwitcherComponent;
-import domain.ui.webstudio.components.editortabcomponents.CopyModuleDialogComponent;
 import domain.ui.webstudio.components.editortabcomponents.EditProjectDialogComponent;
 import domain.ui.webstudio.components.editortabcomponents.ExportProjectDialogComponent;
 import domain.ui.webstudio.components.repositorytabcomponents.ExportProjectModalComponent;
@@ -148,9 +147,8 @@ public class TestExportProjectFunctionality extends BaseTest {
         editorPage.getEditorLeftProjectModuleSelectorComponent()
                 .selectModule(PROJECT_NAME, MODULE_FILE1);
 
-        CopyModuleDialogComponent copyModuleDialog = editorPage.openCopyModuleDialog();
-        copyModuleDialog.setModuleName(MODULE_FILE4);
-        copyModuleDialog.clickCopy();
+        // A module is the workbook it is written in, so it is copied where the project's files are.
+        editorPage.copyModuleWorkbook(PROJECT_NAME, MODULE_FILE1 + ".xls", MODULE_FILE4 + ".xls");
 
         editorPage.getEditorToolbarPanelComponent().clickExport();
         exportDialog.waitForDialogToAppear();
@@ -281,9 +279,7 @@ public class TestExportProjectFunctionality extends BaseTest {
         editorPage.getEditorLeftProjectModuleSelectorComponent()
                 .selectModule(PROJECT_NAME, MODULE_FILE1);
 
-        copyModuleDialog = editorPage.openCopyModuleDialog();
-        copyModuleDialog.setModuleName(MODULE_FILE5);
-        copyModuleDialog.clickCopy();
+        editorPage.copyModuleWorkbook(PROJECT_NAME, MODULE_FILE1 + ".xls", MODULE_FILE5 + ".xls");
 
         editorPage.getEditorToolbarPanelComponent().clickExport();
         exportDialog.waitForDialogToAppear();

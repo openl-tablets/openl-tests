@@ -5,6 +5,8 @@ import com.microsoft.playwright.options.BoundingBox;
 import configuration.core.ui.CorePage;
 import configuration.core.ui.WebElement;
 import domain.ui.webstudio.components.editortabcomponents.ChangesDialogComponent;
+import domain.ui.webstudio.components.editortabcomponents.EditorRevisionsTabComponent;
+import domain.ui.webstudio.components.editortabcomponents.TestResultValidationComponent;
 import domain.ui.webstudio.components.common.MessageComponent;
 import domain.ui.webstudio.components.common.UserSlidingRightMenuComponent;
 import helpers.utils.WaitUtil;
@@ -101,8 +103,11 @@ public abstract class BasePage extends CorePage {
     public UserSlidingRightMenuComponent openUserMenu() {
         closeAllMessages();
         // A window the reader opened over the screen keeps them from reaching their own menu, so it is
-        // closed first — which is what they would do.
+        // closed first — which is what they would do. The history, the revisions and the report of a run all
+        // stand over it.
         new ChangesDialogComponent().closeIfOpen();
+        new EditorRevisionsTabComponent().closeIfOpen();
+        new TestResultValidationComponent().closeResults();
         userLogo.click();
         userMenuDrawer.waitForVisible();
         return new UserSlidingRightMenuComponent(userMenuDrawer);

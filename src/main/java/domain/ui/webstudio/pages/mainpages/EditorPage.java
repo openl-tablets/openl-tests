@@ -157,6 +157,17 @@ public class EditorPage extends BasePage {
         return editProjectDialogComponent;
     }
 
+    /**
+     * Copies a module of the project beside itself. A module is the workbook it is written in, so it is
+     * copied where the project's files are: the copy becomes a module of the project by the folder it lands
+     * in. The editor is left on the project's card, where the reader can open either of them.
+     */
+    public void copyModuleWorkbook(String projectName, String workbookName, String copyName) {
+        getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.REPOSITORY);
+        new RepositoryPage().openProjectsList().openProjectDetail(projectName).copyFile(workbookName, copyName);
+        new EditorLeftProjectModuleSelectorComponent().selectProject(projectName);
+    }
+
     public CopyModuleDialogComponent openCopyModuleDialog() {
         moduleHeader.hover();
         copyModuleBtn.click();

@@ -75,6 +75,62 @@ public abstract class TableInputLauncherComponent extends BaseComponent {
      * for a field of the first level is its name; a field held inside another is named alone all the same,
      * and is then looked up among the rows the launcher draws.
      */
+    /**
+     * Whether the launcher offers to take every case of the table at once, which it does for a table that
+     * has more than one.
+     */
+    public boolean isAllCasesOffered() {
+        return allCasesBox().isVisible(PROBE_MS);
+    }
+
+    public boolean isAllCasesChecked() {
+        return allCasesBox().isChecked();
+    }
+
+    public void setAllCases(boolean taken) {
+        WebElement box = allCasesBox();
+        box.waitForVisible(DEFAULT_TIMEOUT_MS);
+        if (box.isChecked() != taken) {
+            box.click();
+        }
+    }
+
+    /** Takes the first case the launcher draws, which is how a reader chooses less than all of them. */
+    public void pickFirstCase() {
+        List<WebElement> boxes = createElementList(
+                "xpath=//*[@data-testid='test-cases']//input[@type='checkbox'][not(@data-testid='pick-all-cases')]",
+                "caseBoxes");
+        WaitUtil.waitForListNotEmpty(() -> boxes, DEFAULT_TIMEOUT_MS, 200,
+                "Waiting for the cases of the table to be listed");
+        boxes.get(0).click();
+    }
+
+    /** Takes one case of the table, which is how a reader chooses less than all of them. */
+    public void pickCase(String caseId) {
+        WebElement one = new WebElement(page, "xpath=//input[@data-testid='pick-case-" + caseId + "']"
+                + " | //*[@data-testid='pick-case-" + caseId + "']//input", "pickCase[" + caseId + "]");
+        one.waitForVisible(DEFAULT_TIMEOUT_MS);
+        one.click();
+    }
+
+    public boolean isCasePicked(String caseId) {
+        return new WebElement(page, "xpath=//input[@data-testid='pick-case-" + caseId + "']"
+                + " | //*[@data-testid='pick-case-" + caseId + "']//input", "pickCase[" + caseId + "]").isChecked();
+    }
+
+    /** What the launcher says about how many cases the table holds, as it is written beside the pager. */
+    public String getTotalCasesText() {
+        WebElement total = new WebElement(page,
+                "xpath=//*[@data-testid='test-cases']//li[contains(@class,'ant-pagination-total-text')]",
+                "totalTestCases");
+        return total.isVisible(PROBE_MS) ? total.getText().trim() : "";
+    }
+
+    private WebElement allCasesBox() {
+        return new WebElement(page, "xpath=//input[@data-testid='launch-all-cases']"
+                + " | //*[@data-testid='launch-all-cases']//input", "allCasesBox");
+    }
+
     protected String pathOf(String name) {
         waitForFields();
         if (hasRow(name)) {

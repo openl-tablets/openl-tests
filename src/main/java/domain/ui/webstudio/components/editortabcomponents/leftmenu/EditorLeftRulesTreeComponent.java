@@ -3,6 +3,7 @@ package domain.ui.webstudio.components.editortabcomponents.leftmenu;
 import com.microsoft.playwright.PlaywrightException;
 import domain.ui.webstudio.components.BaseComponent;
 import domain.ui.webstudio.components.editortabcomponents.ChangesDialogComponent;
+import domain.ui.webstudio.components.editortabcomponents.TestResultValidationComponent;
 import configuration.core.ui.WebElement;
 import configuration.driver.DriverPool;
 import helpers.utils.WaitUtil;
@@ -136,7 +137,11 @@ public class EditorLeftRulesTreeComponent extends BaseComponent {
         extendedSearchBtn = new WebElement(page, "xpath=//button[@data-testid='module-tables-search-extended']", "extendedSearchBtn");
         tree = new WebElement(page, TREE, "tablesTree");
         selectedNodeTitle = new WebElement(page, TREE + "//div[contains(@class,'ant-tree-treenode-selected')]//span[contains(@class,'ant-tree-title')]", "selectedNodeTitle");
-        tableIconTemplate = new WebElement(page, TREE_NODE + "[.//span[contains(@class,'ant-tree-title')][normalize-space()='%s']]//span[contains(@class,'ant-tree-iconEle')]", "tableIcon");
+        // A group may be named after a table it gathers — the Constants group holds the Constants table — so
+        // the row read here is the table's: a group's row is named after what it groups by.
+        tableIconTemplate = new WebElement(page, TREE_NODE + "[not(contains(@id,'-grp-'))]"
+                + "[.//span[contains(@class,'ant-tree-title')][normalize-space()='%s']]"
+                + "//span[contains(@class,'ant-tree-iconEle')]", "tableIcon");
     }
 
     private record TreeRow(int index, int depth, String title, boolean folder, boolean expanded, String nodeId, WebElement node) {
@@ -194,6 +199,7 @@ public class EditorLeftRulesTreeComponent extends BaseComponent {
 
     public EditorLeftRulesTreeComponent setViewFilter(FilterOptions filterOption) {
         waitUntilSpinnerLoaded();
+        clearWindowsOverTheRail();
         WaitUtil.requireCondition(() -> {
             if (filterOption.getValue().equals(getViewFilterValue())) {
                 return true;
@@ -212,6 +218,7 @@ public class EditorLeftRulesTreeComponent extends BaseComponent {
 
     public EditorLeftRulesTreeComponent expandFolderInTree(String folderName) {
         waitUntilSpinnerLoaded();
+        clearWindowsOverTheRail();
         WaitUtil.requireCondition(() -> {
             Optional<TreeRow> folder = findFolder(folderName);
             if (folder.isEmpty()) {
@@ -324,11 +331,12 @@ public class EditorLeftRulesTreeComponent extends BaseComponent {
     public String getTableIconName(String tableName) {
         // The rail draws only the rows a reader could see, so the row is scrolled to before it is read.
         TreeRow row = readRows().stream()
-                .filter(drawn -> tableName.equals(drawn.title()))
+                .filter(drawn -> tableName.equals(drawn.title()) && !drawn.folder())
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("The tables tree lists no table named " + tableName));
         revealNode(row.nodeId());
-        WebElement icon = tableIconTemplate.format(tableName).child("xpath=.//*[@data-icon]");
+        // A table some test exercises wears a tick over its own icon, so the first glyph is the table's.
+        WebElement icon = row.node().child("xpath=(.//span[contains(@class,'ant-tree-iconEle')]//*[@data-icon])[1]");
         icon.waitForVisible(DEFAULT_TIMEOUT_MS);
         return icon.getAttribute("data-icon");
     }
@@ -343,6 +351,15 @@ public class EditorLeftRulesTreeComponent extends BaseComponent {
 
     public void openExtendedSearch() {
         extendedSearchBtn.click();
+    }
+
+    /**
+     * Puts away whatever the reader opened over the screen. The rail lies under it, and nothing on the rail
+     * can be pressed through a window: the history of the module and the report of a run both stand there.
+     */
+    private void clearWindowsOverTheRail() {
+        new ChangesDialogComponent().closeIfOpen();
+        new TestResultValidationComponent().closeResults();
     }
 
     private Optional<TreeRow> findFolder(String folderName) {
@@ -403,9 +420,7 @@ public class EditorLeftRulesTreeComponent extends BaseComponent {
      * id it was read under.
      */
     private void clickNode(TreeRow row) {
-        // The rail lies under whatever window the reader opened over the screen, and a table cannot be
-        // opened through one.
-        new ChangesDialogComponent().closeIfOpen();
+        clearWindowsOverTheRail();
         WaitUtil.requireCondition(() -> {
             TreeRow current = rowStandingFor(row);
             if (current == null || !Boolean.TRUE.equals(page.evaluate(REVEAL_NODE_SCRIPT, current.nodeId()))) {

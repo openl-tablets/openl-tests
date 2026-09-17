@@ -80,6 +80,22 @@ public class ProjectFilesTabComponent extends BaseComponent {
         fileNodeByName.format(fileName).waitForHidden(DEFAULT_TIMEOUT_MS);
     }
 
+    /**
+     * Copies a file of the project beside itself. A module is the workbook it is written in, so copying a
+     * module is copying its workbook: the copy is a module of the project by the layout it lands in.
+     */
+    public void copyFile(String fileName, String copyName) {
+        fileNodeByName.format(fileName).waitForVisible(DEFAULT_TIMEOUT_MS).click();
+        fileActionsBtn.waitForVisible(DEFAULT_TIMEOUT_MS).click();
+        fileActionsMenuItem.format("Copy").click();
+        WebElement name = new WebElement(page, "xpath=//*[@data-testid='file-copy-name']", "fileCopyName");
+        name.waitForVisible(DEFAULT_TIMEOUT_MS);
+        name.fill(copyName);
+        new WebElement(page, "xpath=//*[@data-testid='file-copy-submit']", "fileCopySubmit").click();
+        waitUntilSpinnerLoaded();
+        fileNodeByName.format(copyName).waitForVisible(DEFAULT_TIMEOUT_MS);
+    }
+
     public void selectFile(String fileName) {
         fileNodeByName.format(fileName).waitForVisible(DEFAULT_TIMEOUT_MS).click();
     }

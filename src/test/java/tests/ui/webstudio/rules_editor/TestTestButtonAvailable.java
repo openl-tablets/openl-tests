@@ -62,9 +62,13 @@ public class TestTestButtonAvailable extends BaseTest {
         DriverPool.getPage().reload();
         editorPage = new EditorPage();
         editorPage.getProblemsPanelComponent().waitForCompilationToComplete();
+        // The number of test tables is drawn as a badge on the button rather than written into its words.
         assertThat(editorPage.getEditorToolbarPanelComponent().getTestButtonText())
-                .as("Test button should show 'Test 3'")
-                .isEqualTo("Test 3");
+                .as("The button should read Test and carry the number of test tables")
+                .isEqualTo("Test3");
+        assertThat(editorPage.getEditorToolbarPanelComponent().getTestCount())
+                .as("The button should say there are 3 test tables")
+                .isEqualTo("3");
 
         DriverPool.getPage().reload();
         editorPage = new EditorPage();
@@ -76,14 +80,16 @@ public class TestTestButtonAvailable extends BaseTest {
         // The button shows the plain "Test" label until the reloaded module finishes compiling.
         editorPage.getProblemsPanelComponent().waitForCompilationToComplete();
         assertThat(editorPage.getEditorToolbarPanelComponent().getTestButtonText())
-                .as("Test button should show 'Test 3' after full refresh")
-                .isEqualTo("Test 3");
+                .as("The button should read Test and carry the number of test tables after a full refresh")
+                .isEqualTo("Test3");
+        assertThat(editorPage.getEditorToolbarPanelComponent().getTestCount())
+                .as("The button should still say there are 3 test tables after a full refresh")
+                .isEqualTo("3");
 
         editorPage.getEditorToolbarPanelComponent().selectProjectBreadcrumbs(nameExample3Project);
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(nameExample3Project, "AutoPolicyTests");
-        var copyModuleDialog = editorPage.openCopyModuleDialog();
-        copyModuleDialog.setModuleName("AutoPolicyTests2");
-        copyModuleDialog.clickCopy();
+        // A module is the workbook it is written in, so it is copied where the project's files are.
+        editorPage.copyModuleWorkbook(nameExample3Project, "AutoPolicyTests.xlsx", "AutoPolicyTests2.xlsx");
 
         editorPage.getEditorToolbarPanelComponent().selectProjectBreadcrumbs(nameExample3Project);
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(nameExample3Project, "AutoPolicyTests2");
@@ -117,8 +123,11 @@ public class TestTestButtonAvailable extends BaseTest {
         editorPage.getProblemsPanelComponent().waitForCompilationToComplete();
 
         assertThat(editorPage.getEditorToolbarPanelComponent().getTestButtonText())
-                .as("Test button should show 'Test 6' after copying module and adding tests")
-                .isEqualTo("Test 6");
+                .as("The button should read Test and carry the number of test tables after the copy")
+                .isEqualTo("Test6");
+        assertThat(editorPage.getEditorToolbarPanelComponent().getTestCount())
+                .as("The button should say there are 6 test tables after copying the module")
+                .isEqualTo("6");
 
         editorPage.getEditorToolbarPanelComponent().clickSave();
         editorPage.getSaveChangesComponent().clickSave();
@@ -127,8 +136,11 @@ public class TestTestButtonAvailable extends BaseTest {
         editorPage = new EditorPage();
         editorPage.getProblemsPanelComponent().waitForCompilationToComplete();
         assertThat(editorPage.getEditorToolbarPanelComponent().getTestButtonText())
-                .as("Test button should show 'Test 6' after refresh")
-                .isEqualTo("Test 6");
+                .as("The button should read Test and carry the number of test tables after a refresh")
+                .isEqualTo("Test6");
+        assertThat(editorPage.getEditorToolbarPanelComponent().getTestCount())
+                .as("The button should still say there are 6 test tables after a refresh")
+                .isEqualTo("6");
 
         repositoryPage = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.REPOSITORY);
         repositoryPage.createProject(CreateNewProjectComponent.TabName.ZIP_ARCHIVE, NAME_PROJECT_MY, "MyProject.zip");

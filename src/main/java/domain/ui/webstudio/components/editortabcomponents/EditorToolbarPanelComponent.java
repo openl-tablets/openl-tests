@@ -11,6 +11,7 @@ import domain.ui.webstudio.components.editortabcomponents.leftmenu.EditorLeftRul
 import domain.ui.webstudio.components.editortabcomponents.toolbar.EditorBreadcrumbsComponent;
 import domain.ui.webstudio.components.editortabcomponents.toolbar.IMoreMenu;
 import domain.ui.webstudio.components.editortabcomponents.toolbar.IRunMenu;
+import domain.ui.webstudio.components.editortabcomponents.toolbar.RunMenuComponent;
 import domain.ui.webstudio.components.editortabcomponents.toolbar.IRunTestsMenu;
 import domain.ui.webstudio.components.editortabcomponents.toolbar.ITraceMenu;
 import domain.ui.webstudio.components.editortabcomponents.toolbar.ITraceWindow;
@@ -272,6 +273,11 @@ public class EditorToolbarPanelComponent extends BaseComponent {
         return tableToolbar.clickRun();
     }
 
+    /** The Run launcher as it stands open, for what it offers beyond the input: the cases to run. */
+    public RunMenuComponent getRunLauncher() {
+        return new RunMenuComponent(page);
+    }
+
     public ITraceMenu clickTrace() {
         return tableToolbar.clickTrace();
     }
@@ -431,6 +437,10 @@ public class EditorToolbarPanelComponent extends BaseComponent {
 
     public String getTestButtonText() {
         return runTestsMenu.getTestButtonText();
+    }
+
+    public String getTestCount() {
+        return runTestsMenu.getTestCount();
     }
 
     public boolean isTestButtonVisible() {

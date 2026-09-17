@@ -368,6 +368,12 @@ public class ProjectDetailPage extends BasePage {
         return files.isNodePresent(fileName);
     }
 
+    public ProjectDetailPage copyFile(String fileName, String copyName) {
+        openFilesTab();
+        files.copyFile(fileName, copyName);
+        return this;
+    }
+
     public ProjectDetailPage selectFile(String fileName) {
         openFilesTab();
         files.selectFile(fileName);
