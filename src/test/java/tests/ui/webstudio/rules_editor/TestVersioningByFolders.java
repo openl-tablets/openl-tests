@@ -21,10 +21,9 @@ public class TestVersioningByFolders extends BaseTest {
     private static final String MODULE_NAME = "TestModuleCategoryInheritedProperties";
     private static final String BASE_FOLDER = "Rules";
     private static final String VERSION_FOLDER = "MyRules1";
-    private static final String VERSIONED_TABLE_1 = "MyRules1 [0.0.1]";
-    private static final String VERSIONED_TABLE_2 = "MyRules1 [0.0.2]";
     private static final String VERSION_VALUE = "0.0.2";
     private static final String PROPERTY_NAME = "LOB";
+    private static final String PROPERTY_TABLE_NAME = "lob";
     private static final String INHERITED_VALUE = "001";
     private static final String OVERRIDDEN_VALUE = "777";
 
@@ -54,32 +53,38 @@ public class TestVersioningByFolders extends BaseTest {
 
         rulesTree.setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
                 .expandFolderInTree(BASE_FOLDER);
-        List<String> nodesNames = rulesTree.getAllEndNodesNames();
-        assertThat(nodesNames)
-                .as("Copied table versions should be grouped together in the visible tree list")
-                .containsSequence(VERSIONED_TABLE_1, VERSIONED_TABLE_2);
-        assertThat(nodesNames.stream().filter(name -> name.startsWith(VERSION_FOLDER + " [")).count())
-                .as("Two versioned entries of the same table should be visible after Copy as New Version")
-                .isEqualTo(2);
 
-        rulesTree.selectVisibleLeafNode(VERSIONED_TABLE_2);
+        // Both versions stand in the rail under the name they share. Copying as a new version sets the one
+        // copied from aside, and that — not a version written into the name — is what tells them apart
+        // (EPBDS-16357).
+        assertThat(rulesTree.countLeavesNamed(VERSION_FOLDER))
+                .as("Two versions of the table should stand in the rail after Copy as New Version")
+                .isEqualTo(2);
+        assertThat(rulesTree.countInactiveLeavesNamed(VERSION_FOLDER))
+                .as("Copying as a new version must set the version copied from aside")
+                .isEqualTo(1);
+
+        // The version that answers is the one that was copied to, and it keeps what the module gave it.
+        rulesTree.selectLeafNamed(VERSION_FOLDER, 1);
         verifyInheritedProperty(tableDetails, INHERITED_VALUE);
         tableDetails.editTextProperty(PROPERTY_NAME, OVERRIDDEN_VALUE);
         tableDetails.clickSaveBtn();
 
+        // Once the two versions differ by a dimension, each is named by the dimension that tells it from
+        // the other, and both answer again.
         rulesTree.setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
                 .expandFolderInTree(BASE_FOLDER);
-        List<String> refreshedNodesNames = rulesTree.getAllEndNodesNames().stream()
+        List<String> versions = rulesTree.getAllEndNodesNames().stream()
                 .filter(name -> name.startsWith(VERSION_FOLDER + " ["))
                 .toList();
 
-        assertThat(refreshedNodesNames)
-                .as("Both versioned table entries should still be present after saving an override")
+        assertThat(versions)
+                .as("Both versions should still stand in the rail after saving an override")
                 .hasSize(2);
-        assertThat(String.join(" | ", refreshedNodesNames))
+        assertThat(String.join(" | ", versions))
                 .as("Overriding a property in one version should not affect the other version")
-                .contains("lob=001")
-                .contains("lob=777");
+                .contains(PROPERTY_TABLE_NAME + "=" + INHERITED_VALUE)
+                .contains(PROPERTY_TABLE_NAME + "=" + OVERRIDDEN_VALUE);
     }
 
     private void verifyInheritedProperty(RightTableDetailsComponent tableDetails, String expectedValue) {

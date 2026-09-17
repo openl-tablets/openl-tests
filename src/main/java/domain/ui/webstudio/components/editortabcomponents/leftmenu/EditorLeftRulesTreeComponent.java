@@ -169,6 +169,35 @@ public class EditorLeftRulesTreeComponent extends BaseComponent {
                 .toList();
     }
 
+    /** The tables of that name the rail draws, in the order it draws them. */
+    private List<TreeRow> leavesNamed(String tableName) {
+        return readRows().stream()
+                .filter(row -> !row.folder() && tableName.equals(row.title()))
+                .toList();
+    }
+
+    /** How many tables of that name the rail draws. Several versions of one table share its name. */
+    public int countLeavesNamed(String tableName) {
+        return leavesNamed(tableName).size();
+    }
+
+    /** How many of them the rail draws as no longer answering — the versions that were set aside. */
+    public long countInactiveLeavesNamed(String tableName) {
+        return leavesNamed(tableName).stream()
+                .filter(row -> "module-table-inactive".equals(row.node().getAttribute("data-testid")))
+                .count();
+    }
+
+    /** Opens one of the tables of that name, counted from one in the order the rail draws them. */
+    public EditorLeftRulesTreeComponent selectLeafNamed(String tableName, int occurrence) {
+        List<TreeRow> drawn = leavesNamed(tableName);
+        if (drawn.size() < occurrence) {
+            throw new RuntimeException("The tables tree draws " + drawn.size() + " tables named " + tableName);
+        }
+        clickNode(drawn.get(occurrence - 1));
+        return this;
+    }
+
     public List<String> getAllEndNodesNames() {
         waitUntilSpinnerLoaded();
         return readRows().stream()
