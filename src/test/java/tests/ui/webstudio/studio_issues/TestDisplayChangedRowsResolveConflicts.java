@@ -5,6 +5,7 @@ import configuration.annotations.TestCaseId;
 import configuration.annotations.AppContainerConfig;
 import configuration.appcontainer.AppContainerStartParameters;
 import domain.serviceclasses.constants.User;
+import domain.ui.webstudio.components.common.TableComponent;
 import domain.ui.webstudio.components.editortabcomponents.ChangesDialogComponent;
 import domain.ui.webstudio.components.editortabcomponents.CompareLocalChangesDialogComponent;
 import domain.ui.webstudio.components.editortabcomponents.leftmenu.EditorLeftRulesTreeComponent;
@@ -101,11 +102,14 @@ public class TestDisplayChangedRowsResolveConflicts extends BaseTest {
                 .selectItemInFolder("Rules", "BankLimitIndex");
 
         editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
-        // A row is laid down after the one the reader is standing on, so a cell is picked before the row is
-        // asked for; the new row is then written in, because a blank line is not kept.
-        editorPage.getCenterTable().clickCell(1, 1);
+        // A row is laid down after the one the reader is standing on, so the last row is picked and the new
+        // one follows it — a row laid down anywhere else moves every row under it, and then every one of
+        // them differs instead of the added one alone. A blank line is not kept, so the new row is written in.
+        TableComponent editedTable = editorPage.getCenterTable();
+        int lastRow = editedTable.getRowsCount();
+        editedTable.clickCell(lastRow, 1);
         editorPage.getEditorTableActionsPanelComponent().clickInsertRowAfter();
-        editorPage.getCenterTable().editCell(2, 1, "changedValue");
+        editedTable.editCell(lastRow + 1, 1, "changedValue");
         editorPage.getEditorTableActionsPanelComponent().clickSaveChanges();
 
         ChangesDialogComponent changesDialog = editorPage.getEditorToolbarPanelComponent()
