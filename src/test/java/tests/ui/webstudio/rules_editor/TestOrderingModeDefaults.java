@@ -175,7 +175,7 @@ public class TestOrderingModeDefaults extends BaseTest {
 
         // 2.7 The Type view groups the tables by the kind each one is, and an alias datatype is a
         // Vocabulary — the server marks it as one in the very answer the tree is drawn from (EPBDS-16654).
-        assertThat(editorPage.getEditorLeftRulesTreeComponent().getCategoriesVisible())
+        assertThat(editorPage.getEditorLeftRulesTreeComponent().getFoldersVisible())
                 .as("The Type view should group the tables by their kind, Vocabulary among them")
                 .contains("Rules", "Spreadsheet", "Test", "Datatype", "Vocabulary");
     }

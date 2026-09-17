@@ -19,7 +19,6 @@ import domain.ui.webstudio.pages.mainpages.ProjectDetailPage;
 import domain.ui.webstudio.pages.mainpages.RepositoryPage;
 import helpers.service.WorkflowService;
 import helpers.utils.TestDataUtil;
-import org.testng.SkipException;
 import org.testng.annotations.Test;
 import tests.BaseTest;
 
@@ -173,12 +172,7 @@ public class TestDisplayChangedRowsCompareScreens extends BaseTest {
 
         int drawnLeft = compareDialog.getNumberOfRows(1);
         int drawnRight = compareDialog.getNumberOfRows(2);
-        assertThat(compareDialog.getHighlightedCellCount(1))
-                .as("The differences are marked in the first workbook")
-                .isPositive();
-        assertThat(compareDialog.getHighlightedCellCount(2))
-                .as("The differences are marked in the second workbook")
-                .isPositive();
+        validateCompareWindowCells(compareDialog);
 
         compareDialog.setShowEqualRows(true);
         assertThat(compareDialog.getNumberOfRows(1))
@@ -187,6 +181,7 @@ public class TestDisplayChangedRowsCompareScreens extends BaseTest {
         assertThat(compareDialog.getNumberOfRows(2))
                 .as("Asking for the rows that read the same draws more of the second workbook")
                 .isGreaterThan(drawnRight);
+        validateCompareWindowCells(compareDialog);
         compareDialog.close();
     }
 

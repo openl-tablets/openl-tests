@@ -16,7 +16,7 @@ public class CompareExcelFilesDialogComponent extends CompareLocalChangesDialogC
     public CompareExcelFilesDialogComponent(Page comparePopup) {
         super(comparePopup);
         filesToUpload = new WebElement(getPage(),
-                "xpath=//*[@data-testid='compare-files']//input[@type='file']", "comparedFilesUpload");
+                "xpath=//input[@data-testid='compare-files']", "comparedFilesUpload");
         pickedFiles = new WebElement(getPage(), "xpath=//*[@data-testid='compare-file-list']/li", "comparedFiles");
         clearFileBtn = new WebElement(getPage(),
                 "xpath=(//*[@data-testid='compare-file-clear'])[1]", "clearComparedFile");
@@ -25,12 +25,14 @@ public class CompareExcelFilesDialogComponent extends CompareLocalChangesDialogC
 
     /** Whether the window opened on the comparison of two workbooks a reader uploads, which is what it is for. */
     public boolean offersWorkbooksToUpload() {
-        return filesToUpload.getLocator().count() > 0;
+        return WaitUtil.waitForCondition(() -> filesToUpload.getLocator().count() > 0, DEFAULT_TIMEOUT_MS, 250,
+                "Waiting for the window to offer workbooks to be uploaded");
     }
 
     public CompareExcelFilesDialogComponent uploadFile(String absoluteFilePath) {
+        int taken = pickedFiles.getLocator().count();
         filesToUpload.setInputFiles(absoluteFilePath);
-        WaitUtil.waitForCondition(() -> pickedFiles.getLocator().count() > 0, DEFAULT_TIMEOUT_MS, 250,
+        WaitUtil.requireCondition(() -> pickedFiles.getLocator().count() > taken, DEFAULT_TIMEOUT_MS, 250,
                 "Waiting for the window to take the workbook");
         return this;
     }
@@ -40,9 +42,17 @@ public class CompareExcelFilesDialogComponent extends CompareLocalChangesDialogC
     }
 
     public CompareExcelFilesDialogComponent clearPickedFiles() {
-        while (pickedFiles.getLocator().count() > 0) {
+        for (int picked = pickedFiles.getLocator().count(); picked > 0; picked--) {
             clearFileBtn.click();
         }
+        WaitUtil.requireCondition(() -> pickedFiles.getLocator().count() == 0, DEFAULT_TIMEOUT_MS, 250,
+                "Waiting for the window to let the workbooks go");
+        return this;
+    }
+
+    /** Draws the elements that read the same on both sides as well, which the window offers to leave out. */
+    public CompareExcelFilesDialogComponent setShowEqualElements(boolean shown) {
+        setEqualElementsShown(shown);
         return this;
     }
 

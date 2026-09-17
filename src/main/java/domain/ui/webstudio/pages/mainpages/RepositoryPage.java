@@ -13,6 +13,9 @@ import java.util.List;
 @Getter
 public class RepositoryPage extends BasePage {
 
+    private static final int PROJECT_LISTED_TIMEOUT_MS = 90000;
+    private static final int ROW_PROBE_MS = 1000;
+
     private TabSwitcherComponent tabSwitcherComponent;
     private WebElement refreshBtn;
     private WebElement createProjectLink;
@@ -99,7 +102,10 @@ public class RepositoryPage extends BasePage {
             // row that is not there; the making is what failed, and that is what is said. A name is kept
             // without the spaces around it, so that is the name the row carries.
             String listed = projectName.trim();
-            if (!WaitUtil.waitForCondition(() -> isProjectPresent(listed), DEFAULT_TIMEOUT_MS, 500,
+            // The repository reads the project it has just been given before the list can hold it, which
+            // takes as long as the repository takes, so this is waited out far longer than a screen is.
+            if (!WaitUtil.waitForCondition(() -> projectsListTable.getRow(listed).isVisible(ROW_PROBE_MS),
+                    PROJECT_LISTED_TIMEOUT_MS, 500,
                     "Waiting for '" + listed + "' to be listed among the projects")) {
                 throw new AssertionError("The project '" + listed + "' was not made: it is not listed");
             }

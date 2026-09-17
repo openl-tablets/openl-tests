@@ -53,10 +53,6 @@ public class RunTestsMenuComponent extends BaseComponent implements IRunTestsMen
     }
 
     /**
-     * How many test tables the button says there are. The number is drawn as a badge on the button rather
-     * than written into its words, so it is read on its own.
-     */
-    /**
      * The number of test tables the button carries, once the module has told it. The count is drawn from
      * what the module answers about itself, so it reaches the button a moment after the module is compiled.
      */
@@ -64,6 +60,18 @@ public class RunTestsMenuComponent extends BaseComponent implements IRunTestsMen
         WaitUtil.waitForCondition(() -> expected.equals(getTestCount()), COUNT_TIMEOUT_MS, 500,
                 "Waiting for the button to say there are " + expected + " test tables");
         return getTestCount();
+    }
+
+    /**
+     * Waits for the button to be pressable. It is withheld until the module has said how many test tables it
+     * holds, so a press the moment the module is compiled lands on a button that is still disabled.
+     */
+    private void waitUntilTheModuleHasCounted() {
+        if (!testBtn.isVisible(PROBE_MS)) {
+            return;
+        }
+        WaitUtil.waitForCondition(testBtn::isEnabled, COUNT_TIMEOUT_MS, 500,
+                "Waiting for the module to say how many test tables it holds");
     }
 
     public String getTestCount() {
@@ -79,6 +87,7 @@ public class RunTestsMenuComponent extends BaseComponent implements IRunTestsMen
 
     public void clickTestButton() {
         closeWindowsOverTheScreen();
+        waitUntilTheModuleHasCounted();
         testBtn.click();
     }
 
@@ -89,6 +98,7 @@ public class RunTestsMenuComponent extends BaseComponent implements IRunTestsMen
 
     public void openDropdown() {
         closeWindowsOverTheScreen();
+        waitUntilTheModuleHasCounted();
         if (!runTestsBtn.isVisible(1000)) {
             dropdownToggle.click();
             runTestsBtn.waitForVisible(DEFAULT_TIMEOUT_MS);
