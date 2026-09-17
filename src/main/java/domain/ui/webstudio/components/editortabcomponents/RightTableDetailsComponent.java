@@ -137,9 +137,16 @@ public class RightTableDetailsComponent extends BaseComponent {
         waitUntilSpinnerLoaded();
     }
 
+    /** What the panel is headed with: the table it is about, or the word the panel goes by where it has none. */
+    public String getTitle() {
+        WebElement title = new WebElement(page, PANEL + "//div[contains(@class,'header')]/span[@title]", "detailsTitle");
+        title.waitForVisible(DEFAULT_TIMEOUT_MS);
+        return title.getText().trim();
+    }
+
+    /** How many properties the panel lists, which may be none. */
     public int getPropertiesRowCount() {
-        WaitUtil.requireCondition(() -> !propertyLabels.isEmpty(), DEFAULT_TIMEOUT_MS, 100,
-                "Waiting for the table properties to be listed");
+        panel.waitForVisible(DEFAULT_TIMEOUT_MS);
         return propertyLabels.size();
     }
 
@@ -183,12 +190,16 @@ public class RightTableDetailsComponent extends BaseComponent {
         page.keyboard().press("Escape");
     }
 
+    /**
+     * Writes a date over what the row already reads. The day is chosen in a control of its own, which keeps
+     * the day it stands on and puts it back whenever what is typed is not a day: the text is therefore taken
+     * out with the keyboard, as a reader would, rather than emptied from under it.
+     */
     public void editDateProperty(String propertyName, String dateValue) {
         startEditing();
         WebElement input = propertyInputTemplate.format(propertyName);
         input.click();
-        input.clear();
-        input.fillSequentially(dateValue);
+        input.fill(dateValue);
         input.press("Enter");
     }
 

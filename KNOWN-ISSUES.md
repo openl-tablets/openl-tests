@@ -361,6 +361,38 @@ is inserted — are gone from them, and are the coverage to restore with the ord
 
 ---
 
+## 16. A properties table carrying `validateDT` cannot be opened: the screen answers 500
+
+**What happens.** Opening a Properties table whose `validateDT` is written as the engine writes it — `on` or
+`off` — fails outright. The request the module screen makes for the table,
+`GET /web/projects/{id}/tables/{tableId}`, answers
+
+```
+HTTP 500  {"code":"openl.error.500.default.message",
+           "message":"No enum constant org.openl.rules.enumeration.ValidateDTEnum.on"}
+```
+
+and the screen is left with no table to draw.
+
+**Verified against a running 6.5.0-SNAPSHOT** (`6.5.0-b48c86279338`) with
+`src/test/resources/test_data/TestModuleCategoryInheritedProperties/TestModuleCategoryInheritedProperties.xlsx`,
+whose module-scope properties table writes `validateDT` as `on`. The module itself compiles clean and the
+properties panel reads the inherited values from that very table, so only the reading of the table for the
+screen is affected.
+
+**Where it comes from.** `ValidateDTEnum` declares the constants `ON` and `OFF` with the display names `On`
+and `Off`, and offers `fromString`, which compares without regard to case
+(`DEV/org.openl.rules/src/org/openl/rules/enumeration/ValidateDTEnum.java`). Something on the read path calls
+`Enum.valueOf` with the display name instead, which is case-sensitive and knows nothing of `on`. Every
+property written as an enum is open to the same fault.
+
+**Blocked tests.**
+- `tests.ui.webstudio.rules_editor.TestModuleCategoryInheritedProperties` — the step that follows the panel's
+  arrow to the properties table the value is inherited from. Everything the panel itself answers — the
+  inherited values, which are overwritten at the table, where each value comes from — still runs.
+
+---
+
 ## Renamings that are not bugs
 
 For the record, so they are not raised twice. These are the same tree, named the way the tables API has named
@@ -390,6 +422,8 @@ the build under test (`6.5.0-b48c86279338`) and against the screens themselves.
 | The result of running a rule is a window of its own, with one column per input and one for the result. The row carries no number, and each value is shown as the literal its type reads as (`"Tom"`, not `Tom`). | The expected rows were rewritten to what the window shows, keeping the value equality the test was written for. |
 | Running anything opens a window that covers the screen, and the module cannot be worked on again until it is closed. | `TestResultValidationComponent.closeResults()` is pressed once the results have been read. |
 | A table is removed behind a question the screen asks in a window of its own, not behind the browser's own confirm dialog. | `removeCurrentTable()` answers the screen's window. |
+| The name a table goes by heads the properties panel instead of standing in it as a property of its own, so a table declaring nothing lists nothing. | The tests read the panel's heading for the name and expect no property row where the table declares none. |
+| The properties panel offers to keep what was written only once something has been changed; writing a property the value it already holds leaves nothing to keep. | Where a test wrote a value the workbook already carried, it writes one the table does not carry, so the step is the edit it was meant to be. |
 | A date is shown as the year, the month and the day in that order, on the table and in the properties panel alike, rather than in the format the workbook writes the cell with. The workbook itself is unchanged — a date written through the panel is still a date cell carrying Excel's own `mm-dd-yy` format (verified by exporting the workbook and reading `xl/styles.xml`), so nothing is lost; the screen simply no longer reads the cell's format. Worth confirming with development that this is meant. | The dates the tests expect are written the way the screen shows them. The values compared are the same dates. |
 | Creating a project from an OpenAPI specification no longer writes an `openapi` block into `rules.xml`: the normalized file in the project root is reconciled against, and nothing is generated again over later edits. Deliberate, with the user guides changed in the same commit — `e3edf4a6e8`, EPBDS-16415, *"Default new OpenAPI projects to reconciliation"* (`repository-editor.md`, `rules-editor.md`). | A freshly created project is expected to read in **Reconciliation** and to name no module to write into; the import dialog starts empty. Where a test drove an overwrite, it now names the modules to write over, as a reader must, so the overwrite itself is still covered. Note the knock-on: a project that declares no module is drawn with its module list read-only even while the card is open for writing (`OverviewPanel.tsx`, `modulesEditable`), which puts the rename and copy steps of the two creation tests under issue 8. |
 

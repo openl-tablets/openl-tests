@@ -114,7 +114,7 @@ public class EditorPage extends BasePage {
         dependencyGraphSearchInput = new WebElement(getPage(), "xpath=//div[@data-testid='table-graph-search']//input", "dependencyGraphSearchInput");
         dependencyGraphOptionTemplate = new WebElement(getPage(), "xpath=//div[contains(@class,'ant-select-item-option-content') and normalize-space(.)='%s']", "dependencyGraphOptionTemplate");
         dependencyGraphOpenInEditorBtn = new WebElement(getPage(), "xpath=//button[normalize-space(.)='Open in editor']", "dependencyGraphOpenInEditorBtn");
-        refreshBtn = new WebElement(getPage(), "xpath=//a[@id='refreshBtn']", "refreshBtn");
+        refreshBtn = new WebElement(getPage(), "xpath=//button[@data-testid='module-refresh']", "refreshBtn");
         searchFilterComponent = new SearchFilterComponent();
         rangeEditorComponent = createScopedComponent(RangeEditorComponent.class, "xpath=//div[@data-testid='range-editor']", "rangeEditorComponent");
         multiselectArrayEditorComponent = createScopedComponent(MultiselectArrayEditorComponent.class, "xpath=//div[@class='multiselect_container']", "multiselectArrayEditorComponent");
@@ -255,8 +255,14 @@ public class EditorPage extends BasePage {
         return new WebElement(page, "xpath=//span[@data-testid='openapi-none']", "openApiNone").isVisible(DEFAULT_TIMEOUT_MS / 5);
     }
 
+    /**
+     * Reads the module again from what stands on disk, which is what a reader presses after the project has
+     * been changed from outside. The module is compiled anew, so the screen is waited for afterwards.
+     */
     public void refresh() {
         refreshBtn.click(DEFAULT_TIMEOUT_MS);
+        waitUntilSpinnerLoaded();
+        new ProblemsPanelComponent().waitForCompilationToComplete();
     }
 
     public void clickTableInDependenciesView(String tableName) {

@@ -47,7 +47,9 @@ public class TestEditingProperties extends BaseTest {
         editAndCheckProperty(editorPage, "Description", "description", "Hello Kitty2");
         editAndCheckProperty(editorPage, "Tags", "tags", "Tag3,Tag4");
         editAndCheckProperty(editorPage, "Effective Date", "effectiveDate", "05/14/2018");
-        editAndCheckProperty(editorPage, "Expiration Date", "expirationDate", "05/16/2018");
+        // The workbook already reads 05/16/2018 here, and the panel offers to keep only what was changed,
+        // so the date written is one the table does not already carry.
+        editAndCheckProperty(editorPage, "Expiration Date", "expirationDate", "05/17/2018");
         editAndCheckProperty(editorPage, "Start Request Date", "startRequestDate", "05/14/2017");
         editAndCheckProperty(editorPage, "End Request Date", "endRequestDate", "04/13/2016");
         editAndCheckProperty(editorPage, "LOB", "lob", "007");

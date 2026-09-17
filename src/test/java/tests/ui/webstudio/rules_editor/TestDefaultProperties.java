@@ -46,24 +46,24 @@ public class TestDefaultProperties extends BaseTest {
                 .expandFolderInTree("Run")
                 .selectItemInFolder("Run", "SpreadsheetTable");
 
+        // The name a table goes by is what the panel is headed with; a Run table declares nothing else, so
+        // the panel lists no property beside it.
+        assertThat(editorPage.getRightTableDetailsComponent().getTitle())
+                .as("The panel should be headed with the name of the Run table")
+                .contains("SpreadsheetTable");
         assertThat(editorPage.getRightTableDetailsComponent().getPropertiesRowCount())
-                .as("Properties table should have 1 row for Run SpreadsheetTable")
-                .isEqualTo(1);
-
-        assertThat(editorPage.getRightTableDetailsComponent().getPropertyNameInRow(1))
-                .as("First property should be 'Name' for Run SpreadsheetTable")
-                .contains("Name");
+                .as("A Run table declares no property of its own")
+                .isZero();
 
         editorPage.getEditorLeftRulesTreeComponent()
                 .expandFolderInTree("Test")
                 .selectItemInFolder("Test", "SpreadsheetTable");
 
+        assertThat(editorPage.getRightTableDetailsComponent().getTitle())
+                .as("The panel should be headed with the name of the Test table")
+                .contains("SpreadsheetTable");
         assertThat(editorPage.getRightTableDetailsComponent().getPropertiesRowCount())
-                .as("Properties table should have 1 row for Test SpreadsheetTable")
-                .isEqualTo(1);
-
-        assertThat(editorPage.getRightTableDetailsComponent().getPropertyNameInRow(1))
-                .as("First property should be 'Name' for Test SpreadsheetTable")
-                .contains("Name");
+                .as("A Test table declares no property of its own")
+                .isZero();
     }
 }
