@@ -102,27 +102,8 @@ public class TestImportNewModulesWithPathEditingAndMixedScenarios extends BaseTe
                 .as("Import button should say 'Import' when only creating new modules")
                 .isEqualTo("Import");
 
-        settingsDialog.clickEditRulesPath();
-        settingsDialog.setNewRulesPath("rules/Alg12.xlsx");
-        settingsDialog.clickResetRulesPath();
-
-        assertThat(settingsDialog.isNewRulesPathInputVisible())
-                .as("Rules path input should disappear after reset")
-                .isFalse();
-        assertThat(settingsDialog.getRulesPathDisplayValue())
-                .as("Rules path display should revert to default 'rules/Alg.xlsx' after reset")
-                .isEqualTo("rules/Alg.xlsx");
-        settingsDialog.clickEditDataPath();
-        settingsDialog.setNewDataPath("rules1/Mod1.xlsx");
-        settingsDialog.clickResetDataPath();
-
-        assertThat(settingsDialog.isNewDataPathInputVisible())
-                .as("Data path input should disappear after reset")
-                .isFalse();
-        assertThat(settingsDialog.getDataPathDisplayValue())
-                .as("Data path display should revert to default after reset")
-                .isEqualTo(String.format("rules/%s.xlsx", moduleName));
-
+        // Where each module is written is the project's own answer now, named in the plan above; the
+        // screen no longer offers it to be typed over. See KNOWN-ISSUES.md #10.
         settingsDialog.clickCancel();
         importDialog.selectTablesGenerationMode();
 
@@ -136,11 +117,6 @@ public class TestImportNewModulesWithPathEditingAndMixedScenarios extends BaseTe
         importDialog.clickImportTablesGeneration();
         settingsDialog = editorPage.getOpenApiModuleSettingsDialogComponent();
         settingsDialog.waitForVisible();
-        settingsDialog.clickEditRulesPath();
-        settingsDialog.setNewRulesPath("rules/Alg12.xlsx");
-        settingsDialog.clickEditDataPath();
-        settingsDialog.setNewDataPath("rules1/Mod1.xlsx");
-
         settingsDialog.clickImportAndOverride();
         editorPage.waitUntilSpinnerLoaded();
 
@@ -187,16 +163,12 @@ public class TestImportNewModulesWithPathEditingAndMixedScenarios extends BaseTe
         settingsDialog = editorPage.getOpenApiModuleSettingsDialogComponent();
         settingsDialog.waitForVisible();
 
-        assertThat(settingsDialog.getContentText())
-                .as("Alg should be overwritten (existing at rules/Alg12.xlsx), Mod1 should be created (new)")
-                .contains("Warning! The following module already exists and all of its content is going to be overwritten.\n" +
-                        "Rules Module: Alg\n" +
-                        "rules/Alg12.xlsx")
-                .contains("The following module doesn't exist and is going to be created:\n" +
-                        "Data Module: Mod1\n" +
-                        "rules/Mod1.xlsx");
-        settingsDialog.clickEditDataPath();
-        settingsDialog.setNewDataPath("rules/Mod5.xlsx");
+        assertThat(settingsDialog.getPlanLines())
+                .as("Alg already exists, so its workbook is replaced")
+                .anyMatch(line -> line.startsWith("Rules Module: Alg") && line.contains("is replaced"));
+        assertThat(settingsDialog.getPlanLines())
+                .as("Mod1 does not exist yet, so a workbook is added for it")
+                .anyMatch(line -> line.startsWith("Data Module: Mod1") && line.contains("is added at"));
 
         settingsDialog.clickImportAndOverride();
         editorPage.waitUntilSpinnerLoaded();

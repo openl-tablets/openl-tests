@@ -150,6 +150,77 @@ Confirm with development whether editing an explicitly declared module is meant 
 
 ---
 
+## 9. "Compare Excel files" no longer opens the comparison of two Excel files
+
+**What happens.** The module's More menu offers **Compare Excel files**. Pressing it opens the comparison of
+the *project* against one of its own revisions — the revision picker — not the screen that takes two
+workbooks and compares them against each other.
+
+**Where it went.** The comparison of two uploaded workbooks is still built and still works: it is what
+`/compare` draws when it is opened with no project named (`ComparePage.tsx`, the `compare-files` dragger).
+The only door to it was the Rules Editor top panel of the old UI, whose link opened `/compare` without a
+query; `7ab8ab2570` ("Draw every screen in the browser and take the rendered UI out") deleted that panel and
+nothing took the link over. Every remaining caller of the comparison window names a project
+(`compare.ts`: `openCompareWindow`, `openConflictCompareWindow`, `openVersionsCompareWindow`), so the page
+never reaches its file-picking state from the UI.
+
+Two defects, of which the first is the loss:
+1. the feature has no entry point left, and
+2. the menu item has carried the wrong label since `6ca12ff948`: it is named after the comparison of files
+   and performs the comparison of revisions. The button that screen then offers reads "Select other files"
+   and leads back to the revision picker.
+
+That this is a loss rather than a decision is settled by the product's own documentation, which at this same
+commit still describes the removed screen: *"select More > Compare Excel Files … Drag the two files to
+compare into the box"* (`Docs/user-guides/openl-studio/rules-editor.md`).
+
+**Workaround.** Open the comparison window from any project and strip the `?projectId=…` from its address.
+The tests do not use it: a screen a user cannot reach is a screen the tests must not pretend to reach.
+
+**Blocked tests.**
+- `tests.ui.webstudio.rules_editor.TestCompareExcelFiles`
+
+The comparison of a project against its own revisions is a different screen and still reachable, so
+`tests.ui.webstudio.git.TestGitSortingExcelFilesInComparePopUp`, which uses that one, is not blocked by this.
+
+---
+
+## 10. Where a generated module is written can no longer be chosen
+
+**What changed.** Generating tables from an OpenAPI specification used to ask where each module goes: the
+dialog showed the path of the rules module and of the data module, each could be typed over and reset back,
+and the server refused a path already taken by a file or a path shared by both modules. The React card names
+only the modules; the path each is written to is computed by the project and shown, not offered — the
+confirmation lists `<module> — the workbook <path> is replaced` or `a workbook is added at <path>`.
+
+The capability is gone from the screen. Whether it should come back is a product question: the plan does say
+what will happen to every workbook, which is what the paths were read for. Recorded here rather than papered
+over, because two refusals that the old screen could provoke — "File with such name already exists." and
+"Module paths cannot be the same" — can no longer be reached by any path through the UI.
+
+**Tests changed rather than blocked.** `TestImportNewModulesWithPathEditingAndMixedScenarios` keeps what it
+can still ask — which module is replaced, which is added, and that the module names survive a cancel — and no
+longer types paths. `TestImportPathValidationErrors` keeps its other eleven steps and no longer provokes the
+two path refusals.
+
+---
+
+## 11. The search trims what it is given, so a space cannot be searched for
+
+**What happens.** The extended search sends `name`, `header` and the text in the cells trimmed
+(`TableSearchModal.tsx`). A search for `Balance ` and one for ` Balance` therefore ask the same question as
+`Balance`, and a value that differs from another only by a leading or trailing space cannot be told apart.
+The old single box sent what was typed, spaces and all, and matched it as a substring.
+
+**Also.** The Kind list of the extended search still offers **Other**, which can never match: the server
+leaves free-form tables out of every answer it gives the UI (see issue 3), so that kind returns nothing
+whatever else is asked. A free-form table is thus unfindable by search as well as absent from the rail.
+
+**Tests changed rather than blocked.** `TestSearchOnProjectLevel` no longer asserts that a leading space and
+a trailing space find different numbers of tables; it asserts what the search still answers.
+
+---
+
 ## Renamings that are not bugs
 
 For the record, so they are not raised twice. These are the same tree, named the way the tables API has named

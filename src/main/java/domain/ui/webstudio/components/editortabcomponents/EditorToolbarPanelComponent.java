@@ -37,19 +37,14 @@ import java.util.List;
  */
 public class EditorToolbarPanelComponent extends BaseComponent {
 
-    private static final int SAVE_PROBE_MS = 2000;
+    // As long as a toolbar button was given before the actions moved: a card still settling is normal.
+    private static final int ACTION_PROBE_MS = DEFAULT_TIMEOUT_MS / 2;
 
     // TOP LINE TOOLBAR — plain buttons that belong to no dropdown
-    private WebElement exportBtn;
-    private WebElement saveBtn;
-    private WebElement projectSaveBtn;
     private WebElement projectActionsMoreBtn;
-    private WebElement projectSaveInOverflowBtn;
     private WebElement verifyBtn;
-    private WebElement copyProjectBtn;
     private WebElement createTableBtn;
     private WebElement refreshProjectBtn;
-    private WebElement syncBtn;
     private WebElement allTopToolbarLinks;
     // Trace factor input in the launcher form (kept page-level: the menu exists in the DOM only while open)
     private WebElement factorTextField;
@@ -73,19 +68,11 @@ public class EditorToolbarPanelComponent extends BaseComponent {
     }
 
     private void initializeElements() {
-        exportBtn = new WebElement(page, "xpath=//button[@data-testid='module-export']", "exportBtn");
         verifyBtn = new WebElement(page, "xpath=//button[@data-testid='module-verify']", "verifyBtn");
-        saveBtn = new WebElement(page, "xpath=//button[@data-testid='module-save']", "saveBtn");
-        projectSaveBtn = new WebElement(page,
-                "xpath=//div[@data-testid='project-actions']//button[starts-with(@data-testid,'save-')]", "projectSaveBtn");
         projectActionsMoreBtn = new WebElement(page,
                 "xpath=//button[@data-testid='project-actions-more']", "projectActionsMoreBtn");
-        projectSaveInOverflowBtn = new WebElement(page,
-                "xpath=//div[@data-testid='project-actions-overflow']//button[starts-with(@data-testid,'save-')]", "projectSaveInOverflowBtn");
         refreshProjectBtn = new WebElement(page, "xpath=//button[@data-testid='module-refresh']", "refreshProjectBtn");
-        copyProjectBtn = new WebElement(page, "xpath=//button[@data-testid='module-copy']", "copyProjectBtn");
         createTableBtn = new WebElement(page, "xpath=//button[@data-testid='module-createTable']", "createTableBtn");
-        syncBtn = new WebElement(page, "xpath=//button[@data-testid='module-sync']", "syncBtn");
         allTopToolbarLinks = new WebElement(page, "xpath=//div[@data-testid='module-actions']//button", "allTopToolbarLinks");
         factorTextField = new WebElement(page, "xpath=//div[@data-testid='table-input-anchor']//input[@type='text']", "factorTextField");
 
@@ -106,11 +93,11 @@ public class EditorToolbarPanelComponent extends BaseComponent {
     }
 
     public void clickCopyProjectBtn() {
-        copyProjectBtn.click();
+        clickProjectAction("copy");
     }
 
     public boolean isCopyProjectBtnVisible() {
-        return copyProjectBtn.isVisible(DEFAULT_TIMEOUT_MS / 2);
+        return offersProjectAction("copy");
     }
 
     public void clickCreateTable() {
@@ -118,28 +105,53 @@ public class EditorToolbarPanelComponent extends BaseComponent {
     }
 
     /**
-     * Saves the project. Save belongs to the project, so it is offered wherever the project is: on the
-     * module screen it stands in the module's action bar, and on the project card in the card's own bar,
-     * from where it falls into the overflow menu when the bar runs out of room. It is offered only while
-     * the project has changes of its own to save.
+     * An action of the project, wherever the project is being looked at: on the module screen it stands in
+     * the module's action bar under {@code module-<action>}, and on the project card in the card's own bar
+     * under {@code <action>-<project>}, from where it falls into an overflow menu when the bar runs out of
+     * room. The element is the one the screen shows now; it is absent while the project does not offer the
+     * action at all.
      */
-    public void clickSave() {
-        if (saveBtn.isVisible(SAVE_PROBE_MS)) {
-            saveBtn.click();
-            return;
+    private WebElement projectAction(String action) {
+        return new WebElement(page, "xpath=//button[@data-testid='module-" + action + "']"
+                + " | //div[@data-testid='project-actions']//button[starts-with(@data-testid,'" + action + "-')]"
+                + " | //div[@data-testid='project-actions-overflow']//button[starts-with(@data-testid,'" + action + "-')]",
+                action + "Btn");
+    }
+
+    /**
+     * Whether the project offers the action right now. The card folds the actions it has no room for into a
+     * menu behind a three-dots button, so an action that is not in sight may still be offered there; the
+     * menu is opened to look, and left as it was found.
+     */
+    private boolean offersProjectAction(String action) {
+        if (projectAction(action).isVisible(ACTION_PROBE_MS)) {
+            return true;
         }
-        if (projectSaveBtn.isVisible(SAVE_PROBE_MS)) {
-            projectSaveBtn.click();
-            return;
+        if (!projectActionsMoreBtn.isVisible(ACTION_PROBE_MS)) {
+            return false;
         }
-        if (projectActionsMoreBtn.isVisible(SAVE_PROBE_MS)) {
+        projectActionsMoreBtn.click();
+        boolean offered = projectAction(action).isVisible(ACTION_PROBE_MS);
+        projectActionsMoreBtn.click();
+        return offered;
+    }
+
+    /**
+     * Presses the action. What is waited for is the button itself, wherever it stands: pressing the
+     * three-dots button to look would close the menu the press before it opened.
+     */
+    private void clickProjectAction(String action) {
+        WebElement button = projectAction(action);
+        if (!button.isVisible(ACTION_PROBE_MS) && projectActionsMoreBtn.isVisible(ACTION_PROBE_MS)) {
             projectActionsMoreBtn.click();
-            projectSaveInOverflowBtn.waitForVisible(DEFAULT_TIMEOUT_MS);
-            projectSaveInOverflowBtn.click();
-            return;
         }
-        saveBtn.waitForVisible(DEFAULT_TIMEOUT_MS);
-        saveBtn.click();
+        button.waitForVisible(DEFAULT_TIMEOUT_MS);
+        button.click();
+    }
+
+    /** Saves the project, which is offered only while it has changes of its own to save. */
+    public void clickSave() {
+        clickProjectAction("save");
     }
 
     /** The toolbar's Refresh, which reloads the project the editor is showing. */
@@ -148,23 +160,17 @@ public class EditorToolbarPanelComponent extends BaseComponent {
     }
 
     public void clickSync() {
-        syncBtn.waitForVisible(DEFAULT_TIMEOUT_MS);
-        syncBtn.click();
+        clickProjectAction("sync");
         WaitUtil.sleep(500, "Waiting for Sync dialog to open");
     }
 
     public boolean isSyncButtonVisible() {
-        return syncBtn.isVisible(1000);
+        return offersProjectAction("sync");
     }
 
-    public String getSyncButtonTitle() {
-        return syncBtn.getAttribute("title");
-    }
 
     public void clickExport() {
-        // Like Save, this toolbar button sits in the JSF layer that re-renders on its own while the project
-        // recompiles, so a strict click can thrash — click it once the page has settled.
-        exportBtn.clickWhenSettled();
+        clickProjectAction("export");
         new ExportProjectDialogComponent().waitForDialogToAppear();
     }
 

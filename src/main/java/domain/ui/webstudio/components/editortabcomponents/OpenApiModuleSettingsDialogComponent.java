@@ -9,21 +9,23 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * What the project asks before it writes the tables its specification describes: the plan of the writing.
+ *
+ * <p>The plan names each module the specification is generated into and says what becomes of the workbook
+ * behind it — the one there is replaced, or one is added where none stands. Where the module is written is
+ * the project's own business now: the settings name the module, and the project answers with the path.
+ */
 public class OpenApiModuleSettingsDialogComponent extends BaseComponent {
 
-    private WebElement contentDiv;
-    private WebElement importAndOverrideBtn;
+    private static final String PLAN_DIALOG = "xpath=//div[contains(@class,'ant-modal-confirm')]"
+            + "[.//ul[@data-testid='openapi-generation-plan']]";
+    private static final int PROBE_MS = 3000;
+
+    private WebElement planBody;
+    private WebElement generateBtn;
     private WebElement cancelBtn;
-    private WebElement errorMsg;
-    private List<WebElement> errorMsgs;
-    private WebElement editRulesPathLink;
-    private WebElement newRulesPathInput;
-    private WebElement resetRulesPathLink;
-    private WebElement rulesPathDisplay;
-    private WebElement editDataPathLink;
-    private WebElement newDataPathInput;
-    private WebElement resetDataPathLink;
-    private WebElement dataPathDisplay;
+    private List<WebElement> planLines;
 
     public OpenApiModuleSettingsDialogComponent() {
         super(DriverPool.getPage());
@@ -36,103 +38,64 @@ public class OpenApiModuleSettingsDialogComponent extends BaseComponent {
     }
 
     private void initializeElements() {
-        contentDiv = new WebElement(page,"xpath=//div[@id='openAPIModulesSettings_content']", "contentDiv");
-        // These buttons are inside generateOpenAPIForm but may be outside the content div,
-        // so they use page-level locators
-        importAndOverrideBtn = new WebElement(page, "xpath=//input[@id='generateOpenAPIForm:generateOpenAPIBtn']", "importAndOverrideBtn");
-        cancelBtn = new WebElement(page, "xpath=//div[@id='openAPIModulesSettings_content']//input[@value='Cancel']", "cancelBtn");
-        errorMsg = new WebElement(page, "xpath=//form[@id='generateOpenAPIForm']//span[@class='error']", "errorMsg");
-        errorMsgs = createElementList("xpath=//form[@id='generateOpenAPIForm']//span[@class='error']", "errorMsgs");
-        editRulesPathLink = new WebElement(page, "xpath=//a[@id='editAlgoPath']", "editRulesPathLink");
-        newRulesPathInput = new WebElement(page, "xpath=//input[@id='generateOpenAPIForm:newAlgoPath']", "newRulesPathInput");
-        resetRulesPathLink = new WebElement(page, "xpath=//a[@id='resetAlgoPath']", "resetRulesPathLink");
-        rulesPathDisplay = new WebElement(page, "xpath=//*[@id='algoPath']", "rulesPathDisplay");
-        editDataPathLink = new WebElement(page, "xpath=//a[@id='editDataPath']", "editDataPathLink");
-        newDataPathInput = new WebElement(page, "xpath=//input[@id='generateOpenAPIForm:newDataPath']", "newDataPathInput");
-        resetDataPathLink = new WebElement(page, "xpath=//a[@id='resetDataPath']", "resetDataPathLink");
-        dataPathDisplay = new WebElement(page, "xpath=//*[@id='dataPath']", "dataPathDisplay");
+        planBody = new WebElement(page, PLAN_DIALOG + "//div[contains(@class,'ant-modal-confirm-content')]", "openApiPlanBody");
+        generateBtn = new WebElement(page, PLAN_DIALOG + "//button[contains(@class,'ant-btn-primary')]", "openApiGenerateBtn");
+        cancelBtn = new WebElement(page, PLAN_DIALOG + "//div[contains(@class,'ant-modal-confirm-btns')]"
+                + "//button[not(contains(@class,'ant-btn-primary'))]", "openApiPlanCancelBtn");
+        planLines = createElementList(PLAN_DIALOG + "//ul[@data-testid='openapi-generation-plan']/li", "openApiPlanLines");
     }
 
+    /** What the plan says, line by line, as it is read on the screen. */
     public String getContentText() {
-        String raw = contentDiv.getInnerTextAfterDelay(5000);
-        return Arrays.stream(raw.split("\n"))
+        return Arrays.stream(planBody.getInnerTextAfterDelay(1000).split("\n"))
                 .map(line -> line.replaceAll("\\s+", " ").trim())
                 .filter(line -> !line.isEmpty())
                 .collect(Collectors.joining("\n"));
     }
 
-    public String getImportButtonText() {
-        return importAndOverrideBtn.getAttribute("value");
+    /** The modules the specification is written into, one line each. */
+    public List<String> getPlanLines() {
+        WaitUtil.waitForListNotEmpty(() -> planLines, DEFAULT_TIMEOUT_MS, 250,
+                "Waiting for the plan of the generation to be drawn");
+        return planLines.stream().map(WebElement::getText).map(line -> line.replaceAll("\\s+", " ").trim()).toList();
     }
 
+    public String getImportButtonText() {
+        return generateBtn.getText().trim();
+    }
+
+    /** Goes ahead with the writing the plan describes. */
     public void clickImportAndOverride() {
-        importAndOverrideBtn.waitForVisible();
-        importAndOverrideBtn.click();
-        WaitUtil.sleep(500, "Waiting for import action to process");
+        generateBtn.waitForVisible(DEFAULT_TIMEOUT_MS);
+        generateBtn.click();
+        waitUntilSpinnerLoaded();
     }
 
     public void clickCancel() {
         cancelBtn.click();
     }
 
+    /** What the project says went wrong, which it says in a notice of its own rather than beside a field. */
     public String getErrorMessage() {
-        return errorMsg.getTextAfterDelay(3000);
+        WebElement notice = new WebElement(page,
+                "xpath=(//div[contains(@class,'ant-notification-notice-description')])[1]", "openApiGenerateError");
+        return notice.isVisible(PROBE_MS) ? notice.getText().trim() : "";
     }
 
     public List<String> getErrorMessages() {
-        WaitUtil.waitForListNotEmpty(() -> errorMsgs, 5000, 250, "Waiting for error messages to appear");
-        return errorMsgs.stream()
-                .map(e -> e.getText().trim())
-                .toList();
-    }
-
-    public void clickEditRulesPath() {
-        editRulesPathLink.click();
-    }
-
-    public void setNewRulesPath(String path) {
-        newRulesPathInput.clear();
-        newRulesPathInput.fillSequentially(path);
-    }
-
-    public void clickResetRulesPath() {
-        resetRulesPathLink.click();
-    }
-
-    public String getRulesPathDisplayValue() {
-        return rulesPathDisplay.getText();
-    }
-
-    public void clickEditDataPath() {
-        editDataPathLink.click();
-    }
-
-    public void setNewDataPath(String path) {
-        newDataPathInput.clear();
-        newDataPathInput.fillSequentially(path);
-    }
-
-    public void clickResetDataPath() {
-        resetDataPathLink.click();
-    }
-
-    public String getDataPathDisplayValue() {
-        return dataPathDisplay.getText();
-    }
-
-    public boolean isNewRulesPathInputVisible() {
-        return newRulesPathInput.isVisible(1000);
-    }
-
-    public boolean isNewDataPathInputVisible() {
-        return newDataPathInput.isVisible(1000);
+        List<WebElement> notices = createElementList(
+                "xpath=//div[contains(@class,'ant-notification-notice-description')]"
+                        + " | //div[contains(@class,'ant-notification-notice-message')]", "openApiGenerateErrors");
+        WaitUtil.waitForListNotEmpty(() -> notices, DEFAULT_TIMEOUT_MS, 250,
+                "Waiting for the project to say what went wrong");
+        return notices.stream().map(WebElement::getText).map(String::trim).toList();
     }
 
     public boolean isVisible() {
-        return importAndOverrideBtn.isVisible(3000);
+        return generateBtn.isVisible(PROBE_MS);
     }
 
     public void waitForVisible() {
-        importAndOverrideBtn.waitForVisible(10000);
+        generateBtn.waitForVisible(DEFAULT_TIMEOUT_MS);
     }
 }

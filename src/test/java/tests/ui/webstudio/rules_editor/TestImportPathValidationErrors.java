@@ -79,24 +79,14 @@ public class TestImportPathValidationErrors extends BaseTest {
 
         OpenApiModuleSettingsDialogComponent settingsDialog = editorPage.getOpenApiModuleSettingsDialogComponent();
         settingsDialog.waitForVisible();
-        settingsDialog.clickEditRulesPath();
-        settingsDialog.setNewRulesPath("Bank Rating.xlsx");
-        settingsDialog.clickEditDataPath();
-        settingsDialog.setNewDataPath("rules/Models.xlsx");
-        settingsDialog.clickImportAndOverride();
 
-        assertThat(settingsDialog.getErrorMessages())
-                .as("Error should indicate a file with this name already exists in the project")
-                .contains("File with such name already exists.");
-
-        // Step 13: Change both paths to the same value and verify same-paths error
-        settingsDialog.setNewRulesPath("aaa.xlsx");
-        settingsDialog.setNewDataPath("aaa.xlsx");
-        settingsDialog.clickImportAndOverride();
-
-        assertThat(settingsDialog.getErrorMessages())
-                .as("Error should indicate module paths cannot be the same")
-                .contains("Module paths cannot be the same");
+        // Where the modules are written is the project's own answer now, so the two refusals this step
+        // used to provoke — a path already taken by a file, and both modules sharing one path — can no
+        // longer be provoked from the screen. The plan says instead what becomes of each workbook.
+        // See KNOWN-ISSUES.md #10.
+        assertThat(settingsDialog.getPlanLines())
+                .as("The plan must name both modules the specification is written into")
+                .hasSize(2);
 
         settingsDialog.clickCancel();
         importDialog.clickCancel();

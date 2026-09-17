@@ -89,6 +89,19 @@ public class EditorLeftProjectModuleSelectorComponent extends BaseComponent {
         waitForModuleScreenReady();
     }
 
+    /**
+     * Opens the project at whichever module it lists first. The tables of a project are reached through a
+     * module of it — the tables rail, its search and the table screens all belong to a module — so a reader
+     * who wants the project's tables opens one.
+     */
+    public void selectFirstModule(String projectName) {
+        selectProject(projectName);
+        WaitUtil.waitForListNotEmpty(() -> moduleOpenLinks, DEFAULT_TIMEOUT_MS, MODULE_READY_POLL_MS,
+                "Waiting for the modules of '" + projectName + "' to be listed");
+        moduleOpenLinks.get(0).click();
+        waitForModuleScreenReady();
+    }
+
     public List<String> getAllModuleNames(String projectName) {
         selectProject(projectName);
         WaitUtil.waitForListNotEmpty(() -> moduleOpenLinks, DEFAULT_TIMEOUT_MS, MODULE_READY_POLL_MS,

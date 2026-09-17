@@ -63,9 +63,15 @@ public class SearchFilterComponent extends BaseComponent {
                 + "//button[starts-with(@data-testid,'table-search-open-')]", "viewTableButtons");
     }
 
+    /**
+     * Searches for the text wherever it is written about a table, which is what the one search box of the
+     * old editor did: it matched the text against every cell the table is written in, and the line a table
+     * is headed by is one of those cells. That search is the field the extended search calls the text in
+     * the cells; the name beside it is a narrower question the old box could not ask.
+     */
     public SearchFilterComponent typeSearchAndEnter(String text) {
         openAdvancedSearch();
-        nameInput.fill(text);
+        textInput.fill(text);
         performSearch();
         return this;
     }
@@ -200,12 +206,19 @@ public class SearchFilterComponent extends BaseComponent {
         }).collect(Collectors.toList());
     }
 
+    /**
+     * What the search can be narrowed to. The list is drawn outside the box it hangs under, and the box
+     * names an element that holds nothing readable, so the list is read where it is drawn — and only while
+     * it stands open, since a list closed before it stays in the page marked as hidden.
+     */
     public List<String> getScopeOptions() {
         openAdvancedSearch();
-        scopeSelect.click();
-        String listId = scopeSelect.getAttribute("aria-controls");
+        if (!"true".equals(scopeSelect.getAttribute("aria-expanded"))) {
+            scopeSelect.click();
+        }
         List<WebElement> options = createElementList(
-                "xpath=//div[@id=\"" + listId + "\"]//div[contains(@class,'ant-select-item-option')]", "scopeOptions");
+                "xpath=//div[contains(@class,'ant-select-dropdown')][not(contains(@class,'ant-select-dropdown-hidden'))]"
+                        + "//div[contains(@class,'ant-select-item-option')][@title]", "scopeOptions");
         WaitUtil.waitForListNotEmpty(() -> options, DEFAULT_TIMEOUT_MS, 100, "Waiting for the search scopes to be listed");
         List<String> names = options.stream().map(WebElement::getText).map(String::trim).collect(Collectors.toList());
         scopeSelect.click();

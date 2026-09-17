@@ -12,8 +12,11 @@ import java.util.List;
 
 public class TabSwitcherComponent extends BaseComponent {
 
-    private WebElement tabTemplate;
+    private static final int LIST_PROBE_MS = 1500;
+
     private WebElement tabLabelTemplate;
+    private WebElement projectsList;
+    private WebElement projectsCrumb;
 
     public TabSwitcherComponent() {
         super(DriverPool.getPage());
@@ -26,8 +29,12 @@ public class TabSwitcherComponent extends BaseComponent {
     }
 
     private void initializeElements() {
-        tabTemplate = createScopedElement("xpath=./li[./span[text()='%s']]", "selectedTab");
         tabLabelTemplate = createScopedElement("xpath=./li[./span[text()='%s']]/span", "selectedTabLabel");
+        projectsList = new WebElement(page, "xpath=//div[@data-testid='projects-home']", "projectsList");
+        // Inside a project the breadcrumb leads back to the list as well. The name of the application leads
+        // there too, from every screen, so the one meant here is named inside the screen's own header.
+        projectsCrumb = new WebElement(page, "xpath=//div[@data-testid='module-header']//a[@href='/projects']"
+                + " | //div[@data-testid='project-header']//a[@href='/projects']", "projectsCrumb");
     }
 
     public List<String> getVisibleTabNames() {
@@ -40,16 +47,28 @@ public class TabSwitcherComponent extends BaseComponent {
                 timeoutMs, 500, "Waiting for the '" + tabName + "' tab to be offered");
     }
 
+    /**
+     * Goes to the screen the tab names, which for Projects is the list of them.
+     *
+     * <p>A project and a module of it are drawn under the same tab as the list, so while either is open the
+     * tab is already the one standing out. Pressing it is still how a reader comes back to the list, so the
+     * press is made whatever the tab looks like and what is waited for is the list itself.
+     */
     @SuppressWarnings("unchecked")
     public <T extends BasePage> T selectTab(TabName tabName) {
-        WebElement tab = tabTemplate.format(tabName.getValue());
         WebElement tabLabel = tabLabelTemplate.format(tabName.getValue());
-        WaitUtil.waitForCondition(() -> {
-            if (!tab.getAttribute("class").contains("ant-menu-item-selected")) {
-                tabLabel.click();
+        WaitUtil.requireCondition(() -> {
+            if (projectsList.isVisible(LIST_PROBE_MS)) {
+                return true;
             }
-            return tab.getAttribute("class").contains("ant-menu-item-selected");
-        }, 10000, 1000, "Waiting for tab '" + tabName.getValue() + "' to become active");
+            if (tabLabel.isVisible(LIST_PROBE_MS)) {
+                tabLabel.click();
+            } else if (projectsCrumb.isVisible(LIST_PROBE_MS)) {
+                projectsCrumb.click();
+            }
+            return projectsList.isVisible(LIST_PROBE_MS);
+        }, DEFAULT_TIMEOUT_MS, 500, "Going to '" + tabName.getValue() + "'");
+        waitUntilSpinnerLoaded();
 
         return switch (tabName) {
             case REPOSITORY -> (T) new RepositoryPage();

@@ -56,9 +56,9 @@ public class TestLocalChangesModuleScopeUi extends BaseTest {
         assertThat(changes.getRowCount())
                 .as("Three changes are shown as four rows: three history entries plus the current version")
                 .isEqualTo(4);
-        assertThat(changes.getRenderedModuleName())
-                .as("The Local Changes island must carry the selected module name, otherwise the API is asked "
-                        + "for the project without a module and the server falls back to the first module")
+        assertThat(changes.getRequestedModuleName())
+                .as("The history must be asked for the selected module, otherwise the API is asked for the "
+                        + "project without a module and the server falls back to the first module")
                 .isEqualTo("Module2");
 
         changes = openLocalChanges(editorPage, "Module1", "MySpr1");
@@ -68,8 +68,8 @@ public class TestLocalChangesModuleScopeUi extends BaseTest {
         assertThat(changes.getRowCount())
                 .as("One change is shown as two rows: the history entry plus the current version")
                 .isEqualTo(2);
-        assertThat(changes.getRenderedModuleName())
-                .as("Switching modules must re-render the island with the newly selected module")
+        assertThat(changes.getRequestedModuleName())
+                .as("Switching modules must ask the history for the newly selected module")
                 .isEqualTo("Module1");
 
         changes = openLocalChanges(editorPage, "Module3", "MySpr3");
@@ -77,8 +77,8 @@ public class TestLocalChangesModuleScopeUi extends BaseTest {
                 .as("Module3 was never edited, so it must report no history at all - on the defect it showed "
                         + "the history belonging to whichever module the resolver returned first")
                 .isEqualTo("No changes in history");
-        assertThat(changes.getRenderedModuleName())
-                .as("The island must carry Module3 even though Module3 has no history of its own")
+        assertThat(changes.getRequestedModuleName())
+                .as("The history must be asked for Module3 even though Module3 has none of its own")
                 .isEqualTo("Module3");
     }
 
@@ -97,7 +97,7 @@ public class TestLocalChangesModuleScopeUi extends BaseTest {
         editSpreadsheet(editorPage, "Module2", "MySpr2", "Module2-roll-me-back");
 
         ChangesDialogComponent changes = openLocalChanges(editorPage, "Module2", "MySpr2");
-        assertThat(changes.getRenderedModuleName())
+        assertThat(changes.getRequestedModuleName())
                 .as("Restore must be issued for the selected module")
                 .isEqualTo("Module2");
         changes.clickRestoreAtRow(2);
@@ -155,6 +155,9 @@ public class TestLocalChangesModuleScopeUi extends BaseTest {
     }
 
     private ChangesDialogComponent openLocalChanges(EditorPage editorPage, String moduleName, String tableName) {
+        // The history stands over the module screen, so one left open is closed before another table is
+        // opened; closing it also forgets the readings made so far, so the next one answers for itself.
+        new ChangesDialogComponent().closeIfOpen();
         openSpreadsheet(editorPage, moduleName, tableName);
         return editorPage.getEditorToolbarPanelComponent().clickMore().clickChanges();
     }

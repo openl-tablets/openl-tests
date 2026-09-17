@@ -48,7 +48,11 @@ public class EditorBreadcrumbsComponent extends BaseComponent {
         branchSwitchConfirm = new WebElement(page, "xpath=//button[@data-testid='crumb-branch-discard-switch-confirm']", "branchSwitchConfirm");
         moduleTrigger = new WebElement(page, HEADER + "//button[@data-testid='module-switcher-trigger']", "breadcrumbsModuleTrigger");
         moduleSearch = new WebElement(page, "xpath=//input[@data-testid='module-switcher-search']", "breadcrumbsModuleSearch");
-        dropdownItemTemplate = new WebElement(page, OPEN_DROPDOWN + "//li[contains(@class,'ant-dropdown-menu-item')][normalize-space()='%s']", "breadcrumbsDropdownItem");
+        // A branch is listed under its name with the marks it carries — Default, Protected — beside it, so
+        // the name is read from the part of the entry that holds it rather than from the whole entry.
+        dropdownItemTemplate = new WebElement(page, OPEN_DROPDOWN
+                + "//li[contains(@class,'ant-dropdown-menu-item')]"
+                + "[normalize-space()='%1$s' or .//span[normalize-space()='%1$s']]", "breadcrumbsDropdownItem");
     }
 
     public void navigateToProjectsList() {
