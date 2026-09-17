@@ -54,6 +54,8 @@ public class CompareGitRevisionsDialogComponent extends CompareLocalChangesDialo
                 "xpath=//*[@data-testid='" + box + "']//input", "compareFilePicker");
         picker.waitForVisible(DEFAULT_TIMEOUT_MS);
         picker.click();
+        WaitUtil.requireCondition(() -> "true".equals(picker.getAttribute("aria-expanded")),
+                DEFAULT_TIMEOUT_MS, 200, "Waiting for the list of workbooks to stand open");
         String list = picker.getAttribute("aria-controls");
         String options = "//div[contains(@class,'ant-select-dropdown')][.//*[@id='" + list + "']]"
                 + "//div[@role='option']";
@@ -80,7 +82,7 @@ public class CompareGitRevisionsDialogComponent extends CompareLocalChangesDialo
     @Override
     public CompareGitRevisionsDialogComponent waitForDialogToAppear() {
         WaitUtil.requireCondition(() -> isComparisonDrawn() || compareBtn.isVisible(PICKER_PROBE_MS),
-                DEFAULT_TIMEOUT_MS * 2, 250, "Waiting for the comparison of the project to be drawn");
+                COMPARISON_TIMEOUT_MS, 250, "Waiting for the comparison of the project to be drawn");
         return this;
     }
 }

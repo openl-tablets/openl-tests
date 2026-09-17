@@ -24,7 +24,7 @@ public class CompareLocalChangesDialogComponent extends BaseComponent {
     private static final String CELL = "./td[not(.//span[@data-testid='table-line-number'])]";
     protected static final int PROBE_MS = 1000;
     /** A comparison is worked out on the server, table by table, so it is waited for far longer than a screen. */
-    private static final int COMPARISON_TIMEOUT_MS = 90000;
+    protected static final int COMPARISON_TIMEOUT_MS = 90000;
 
     protected final WebElement tree;
     protected final WebElement identicalNotice;
@@ -292,7 +292,7 @@ public class CompareLocalChangesDialogComponent extends BaseComponent {
      * the count is read once it stops changing: a count taken mid-redraw is the count of half a table.
      */
     public int getNumberOfRows(int fragment) {
-        WaitUtil.waitForCondition(() -> rowsOf(fragment).count() > 0, COMPARISON_TIMEOUT_MS, 250,
+        WaitUtil.waitForCondition(() -> rowsOf(fragment).count() > 0, DEFAULT_TIMEOUT_MS, 250,
                 "Waiting for the rows of version " + fragment);
         WaitUtil.waitForStableSize(() -> rowsOf(fragment).count(), DEFAULT_TIMEOUT_MS, 250,
                 "Waiting for the rows of version " + fragment + " to settle");

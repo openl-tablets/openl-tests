@@ -193,7 +193,7 @@ public class TestDisplayChangedRowsCompareScreens extends BaseTest {
                 .isTrue();
 
         // Open text compare nested modal via Compare link and verify no equal rows checkbox (non-Excel file)
-        CompareLocalChangesDialogComponent compareDialog = resolveConflictsDialog.clickCompareLinkInCurrentPage();
+        CompareLocalChangesDialogComponent compareDialog = resolveConflictsDialog.clickCompareLinkAsPopup();
         compareDialog.waitForTextCompareToAppear();
         assertThat(compareDialog.isShowEqualRowsCheckboxVisible())
                 .as("Equal rows checkbox must not be visible for non-Excel (text) file diff in Resolve Conflicts")
