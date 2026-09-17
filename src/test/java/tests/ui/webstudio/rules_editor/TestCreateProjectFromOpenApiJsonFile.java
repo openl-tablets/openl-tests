@@ -16,7 +16,6 @@ import helpers.service.LoginService;
 import helpers.service.UserService;
 import helpers.utils.TestDataUtil;
 import helpers.utils.ZipUtil;
-import org.testng.SkipException;
 import org.testng.annotations.Test;
 import tests.BaseTest;
 
@@ -128,9 +127,48 @@ public class TestCreateProjectFromOpenApiJsonFile extends BaseTest {
                 .as("Both generated modules are read all the same")
                 .containsExactlyInAnyOrder("Algorithms", "Models");
 
-        throw new SkipException("KNOWN-ISSUES.md #8: the project's card lists its modules read-only, so a "
-                + "module can no longer be renamed or copied from it. Everything the project answers up to "
-                + "that point is checked above; the rest of this scenario is in the history of this file, to "
-                + "be restored with the capability.");
+        // A module is named after the workbook it reads where the project finds its modules by the standard
+        // layout, so a module is renamed and copied by renaming and copying that workbook on the Files tab.
+        editorPage.renameModuleWorkbook(projectName, "Algorithms.xlsx", "Algorithms_test.xlsx");
+        editorPage.renameModuleWorkbook(projectName, "Models.xlsx", "Models_test.xlsx");
+        assertThat(editorPage.getEditorLeftProjectModuleSelectorComponent().getAllModuleNames(projectName))
+                .as("A module renamed with its workbook is read under the new name")
+                .containsExactlyInAnyOrder("Algorithms_test", "Models_test");
+
+        editorPage.copyModuleWorkbook(projectName, "Algorithms_test.xlsx", "Algorithms2.xlsx");
+        assertThat(editorPage.getEditorLeftProjectModuleSelectorComponent().getAllModuleNames(projectName))
+                .as("Copying a module must add it next to the modules the project already reads (EPBDS-16227)")
+                .containsExactlyInAnyOrder("Algorithms2", "Algorithms_test", "Models_test");
+
+        repositoryPage = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.REPOSITORY);
+        ProjectDetailPage detailAfterUpload = repositoryPage.openProjectsList().openProjectDetail(projectName);
+        detailAfterUpload.uploadFileInto(TestDataUtil.getFilePathFromResources("rules.xlsx"), "rules");
+        assertThat(detailAfterUpload.isFilePresent("rules.xlsx"))
+                .as("rules.xlsx should be present in the project files after upload").isTrue();
+        repositoryPage.openProjectsList().saveProject(projectName, "Uploaded rules.xlsx");
+
+        EditorPage editorPageAfterUpload = new EditorPage();
+        editorPageAfterUpload.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName);
+        assertThat(editorPageAfterUpload.getEditorLeftProjectModuleSelectorComponent().getAllModuleNames(projectName))
+                .as("A workbook put in the rules folder is read as a module of its own, and the ones already "
+                        + "there are kept")
+                .containsExactlyInAnyOrder("Algorithms2", "Algorithms_test", "Models_test", "rules");
+
+        editorPageAfterUpload.getEditorToolbarPanelComponent().clickExport();
+        File exportedZipAfterUpload = editorPageAfterUpload.getExportProjectDialogComponent().clickExportAndDownload();
+        String rulesXmlAfterUpload = ZipUtil.readFileFromZip(exportedZipAfterUpload, "rules.xml");
+        assertThat(rulesXmlAfterUpload)
+                .as("The descriptor is left declaring no module of its own through all of this")
+                .doesNotContain("<modules>").doesNotContain("<rules-root");
+        assertThat(ZipUtil.listFiles(exportedZipAfterUpload))
+                .as("The saved project holds the workbooks as they were renamed, copied and uploaded")
+                .contains("rules/Algorithms_test.xlsx", "rules/Algorithms2.xlsx", "rules/Models_test.xlsx",
+                        "rules/rules.xlsx");
+
+        repositoryPage = editorPageAfterUpload.getTabSwitcherComponent()
+                .selectTab(TabSwitcherComponent.TabName.REPOSITORY);
+        repositoryPage.openProjectsList().copyProject(projectName, projectName + "-Copy");
+        assertThat(repositoryPage.isProjectPresent(projectName + "-Copy"))
+                .as("Copied project '" + projectName + "-Copy' should appear in the projects list").isTrue();
     }
 }

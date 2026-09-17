@@ -15,7 +15,6 @@ import domain.ui.webstudio.pages.mainpages.RepositoryPage;
 import helpers.service.LoginService;
 import helpers.service.UserService;
 import helpers.utils.ZipUtil;
-import org.testng.SkipException;
 import org.testng.annotations.Test;
 import tests.BaseTest;
 
@@ -110,9 +109,54 @@ public class TestCreateProjectFromOpenApiYamlWithCustomModuleNames extends BaseT
         editorPage.getProblemsPanelComponent().checkNoProblems();
 
         editorPage.getEditorToolbarPanelComponent().navigateToProjectRoot(projectName);
-        throw new SkipException("KNOWN-ISSUES.md #8: the project's card lists its modules read-only, so a "
-                + "module can no longer be renamed or copied from it. Everything the project answers up to "
-                + "that point is checked above; the rest of this scenario is in the history of this file, to "
-                + "be restored with the capability.");
+
+        // The descriptor names only the module whose workbook lies outside the standard layout; the other is
+        // found by the pattern over rules/, so each is renamed where it is named: one on the card, the other
+        // by its workbook on the Files tab.
+        RepositoryPage repository = editorPage.getTabSwitcherComponent()
+                .selectTab(TabSwitcherComponent.TabName.REPOSITORY);
+        ProjectDetailPage card = repository.openProjectsList().openProjectDetail(projectName);
+        card.getOverviewTab().renameDeclaredModule("Data_Types", "Data_Type_test");
+        editorPage = new EditorPage();
+        editorPage.renameModuleWorkbook(projectName, "Spreadsheets.xlsx", "Spreadsheets_test.xlsx");
+
+        editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName);
+        assertThat(editorPage.getEditorLeftProjectModuleSelectorComponent().getAllModuleNames(projectName))
+                .as("Each module is read under the name it was renamed to")
+                .containsExactlyInAnyOrder("Spreadsheets_test", "Data_Type_test");
+
+        editorPage.getEditorToolbarPanelComponent().clickExport();
+        File exportedZipAfterRename = editorPage.getExportProjectDialogComponent().clickExportAndDownload();
+        String rulesXmlAfterRename = ZipUtil.readFileFromZip(exportedZipAfterRename, "rules.xml");
+        assertThat(rulesXmlAfterRename)
+                .as("The descriptor names the module it declares as it was renamed, and leaves its workbook where it is")
+                .contains("<name>Data_Type_test</name>")
+                .contains("<rules-root path=\"rules1/Data_Types_file.xlsx\"/>");
+        assertThat(ZipUtil.listFiles(exportedZipAfterRename))
+                .as("The module found by the pattern is renamed with its workbook")
+                .contains("rules/Spreadsheets_test.xlsx")
+                .doesNotContain("rules/Spreadsheets.xlsx");
+
+        // Taking a declaration out of the descriptor leaves the workbook where it is, which is what the
+        // Files tab is for; the module is no longer read because nothing else leads to that workbook.
+        repository = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.REPOSITORY);
+        card = repository.openProjectsList().openProjectDetail(projectName);
+        card.getOverviewTab().removeDeclaredModule("Data_Type_test");
+
+        editorPage = new EditorPage();
+        editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName);
+        assertThat(editorPage.getEditorLeftProjectModuleSelectorComponent().getAllModuleNames(projectName))
+                .as("A module whose declaration was taken out is no longer read")
+                .doesNotContain("Data_Type_test");
+
+        editorPage.getEditorToolbarPanelComponent().clickExport();
+        File exportedZipAfterDelete = editorPage.getExportProjectDialogComponent().clickExportAndDownload();
+        String rulesXmlAfterDelete = ZipUtil.readFileFromZip(exportedZipAfterDelete, "rules.xml");
+        assertThat(rulesXmlAfterDelete)
+                .as("The descriptor names the removed module no more")
+                .doesNotContain("<name>Data_Type_test</name>");
+        assertThat(ZipUtil.listFiles(exportedZipAfterDelete))
+                .as("The workbook of the removed module is left where it stands")
+                .contains("rules1/Data_Types_file.xlsx");
     }
 }

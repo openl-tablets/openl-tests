@@ -136,6 +136,112 @@ public class ProjectOverviewTabComponent extends BaseComponent {
         return names;
     }
 
+    /**
+     * The modules the descriptor declares, as the card offers them for writing. A project that declares
+     * none is drawn read-only, the engine resolving its modules from the standard layout, so there are no
+     * rows to write into then.
+     */
+    public void renameDeclaredModule(String moduleName, String newName) {
+        openForWriting();
+        WebElement field = declaredModuleField(moduleName);
+        field.fill(newName);
+        keepWhatWasWritten();
+    }
+
+    public void addDeclaredModule(String moduleName, String path) {
+        openForWriting();
+        new WebElement(page, "xpath=//*[@data-testid='edit-module-add']", "addModuleRow")
+                .waitForVisible(DEFAULT_TIMEOUT_MS).click();
+        int added = declaredModuleFields().size() - 1;
+        new WebElement(page, "xpath=//*[@data-testid='edit-module-" + added + "']", "newModuleName")
+                .waitForVisible(DEFAULT_TIMEOUT_MS).fill(moduleName);
+        new WebElement(page, "xpath=//*[@data-testid='edit-module-" + added + "-path']", "newModulePath")
+                .waitForVisible(DEFAULT_TIMEOUT_MS).fill(path);
+        keepWhatWasWritten();
+    }
+
+    /**
+     * Writes a module into the descriptor where the card is expected to refuse it, and answers what it says.
+     * The card stays open on what it was given, so the refusal can be read off the notice it raises.
+     */
+    public String addDeclaredModuleExpectingRefusal(String moduleName, String path) {
+        openForWriting();
+        new WebElement(page, "xpath=//*[@data-testid='edit-module-add']", "addModuleRow")
+                .waitForVisible(DEFAULT_TIMEOUT_MS).click();
+        int added = declaredModuleFields().size() - 1;
+        new WebElement(page, "xpath=//*[@data-testid='edit-module-" + added + "']", "newModuleName")
+                .waitForVisible(DEFAULT_TIMEOUT_MS).fill(moduleName);
+        new WebElement(page, "xpath=//*[@data-testid='edit-module-" + added + "-path']", "newModulePath")
+                .waitForVisible(DEFAULT_TIMEOUT_MS).fill(path);
+        saveBtn.waitForVisible(DEFAULT_TIMEOUT_MS).click();
+        return whyTheCardRefused();
+    }
+
+    public void removeDeclaredModule(String moduleName) {
+        openForWriting();
+        int row = declaredModuleRowOf(moduleName);
+        new WebElement(page, "xpath=//*[@data-testid='edit-module-" + row + "-remove']", "removeModuleRow")
+                .waitForVisible(DEFAULT_TIMEOUT_MS).click();
+        keepWhatWasWritten();
+    }
+
+    /** What the card says when it refuses to keep what was written into it, or nothing at all. */
+    public String whyTheCardRefused() {
+        WebElement refusal = new WebElement(page,
+                "xpath=(//div[contains(concat(' ',normalize-space(@class),' '),' ant-notification-notice-wrapper ')]"
+                        + " | //*[@data-testid='overview-error'])[1]", "cardRefusal");
+        return refusal.isVisible(DEFAULT_TIMEOUT_MS / 4) ? refusal.getInnerText().trim().replace("\n", " ") : "";
+    }
+
+    public boolean areModulesWritable() {
+        openForWriting();
+        return new WebElement(page, "xpath=//*[@data-testid='edit-module-add']", "addModuleRow")
+                .isVisible(DEFAULT_TIMEOUT_MS / 4);
+    }
+
+    private void openForWriting() {
+        if (saveBtn.isVisible(DEFAULT_TIMEOUT_MS / 5)) {
+            return;
+        }
+        editBtn.waitForVisible(DEFAULT_TIMEOUT_MS).click();
+        saveBtn.waitForVisible(DEFAULT_TIMEOUT_MS);
+    }
+
+    private void keepWhatWasWritten() {
+        saveBtn.waitForVisible(DEFAULT_TIMEOUT_MS).click();
+        waitUntilSpinnerLoaded();
+    }
+
+    private List<WebElement> declaredModuleFields() {
+        return createElementList("xpath=//input[starts-with(@data-testid,'edit-module-')]"
+                + "[not(contains(@data-testid,'-path'))][not(contains(@data-testid,'-compile-only'))]",
+                "declaredModuleNames");
+    }
+
+    private WebElement declaredModuleField(String moduleName) {
+        return new WebElement(page,
+                "xpath=//input[starts-with(@data-testid,'edit-module-')][@value=\"" + moduleName + "\"]",
+                "declaredModuleName").waitForVisible(DEFAULT_TIMEOUT_MS);
+    }
+
+    private int declaredModuleRowOf(String moduleName) {
+        List<WebElement> fields = declaredModuleFields();
+        for (int row = 0; row < fields.size(); row++) {
+            if (moduleName.equals(fields.get(row).getCurrentInputValue())) {
+                return row;
+            }
+        }
+        throw new AssertionError("The card declares no module named '" + moduleName + "'");
+    }
+
+    /** What the card shows of a module's own method filter, which the descriptor declares beside it. */
+    public String moduleMethodFilter(String modulePath) {
+        descriptorActionsMarker.waitForVisible(DEFAULT_TIMEOUT_MS);
+        WebElement filter = new WebElement(page,
+                "xpath=//*[@data-testid='module-filter-" + modulePath + "']", "moduleMethodFilter");
+        return filter.isVisible(DEFAULT_TIMEOUT_MS) ? filter.getInnerText().trim().replace("\n", " ") : "";
+    }
+
     public void editAndSave() {
         editBtn.waitForVisible(DEFAULT_TIMEOUT_MS).click();
         saveBtn.waitForVisible(DEFAULT_TIMEOUT_MS).click();

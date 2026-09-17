@@ -96,6 +96,22 @@ public class ProjectFilesTabComponent extends BaseComponent {
         fileNodeByName.format(copyName).waitForVisible(DEFAULT_TIMEOUT_MS);
     }
 
+    /**
+     * Renames a file where it stands. The Files tab offers it beside Copy and Move — a rename is a move
+     * within the same folder — and a workbook renamed this way renames the module the project reads from it.
+     */
+    public void renameFile(String fileName, String newName) {
+        fileNodeByName.format(fileName).waitForVisible(DEFAULT_TIMEOUT_MS).click();
+        fileActionsBtn.waitForVisible(DEFAULT_TIMEOUT_MS).click();
+        fileActionsMenuItem.format("Rename").click();
+        WebElement name = new WebElement(page, "xpath=//*[@data-testid='file-move-name']", "fileMoveName");
+        name.waitForVisible(DEFAULT_TIMEOUT_MS);
+        name.fill(newName);
+        new WebElement(page, "xpath=//*[@data-testid='file-move-submit']", "fileMoveSubmit").click();
+        waitUntilSpinnerLoaded();
+        fileNodeByName.format(newName).waitForVisible(DEFAULT_TIMEOUT_MS);
+    }
+
     public void selectFile(String fileName) {
         fileNodeByName.format(fileName).waitForVisible(DEFAULT_TIMEOUT_MS).click();
     }

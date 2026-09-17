@@ -168,6 +168,16 @@ public class EditorPage extends BasePage {
         new EditorLeftProjectModuleSelectorComponent().selectProject(projectName);
     }
 
+    /**
+     * Renames the module by renaming the workbook it reads: a module is named after its workbook where the
+     * project finds its modules by the standard layout, so this is how a module is renamed now.
+     */
+    public void renameModuleWorkbook(String projectName, String workbookName, String newName) {
+        getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.REPOSITORY);
+        new RepositoryPage().openProjectsList().openProjectDetail(projectName).renameFile(workbookName, newName);
+        new EditorLeftProjectModuleSelectorComponent().selectProject(projectName);
+    }
+
     public CopyModuleDialogComponent openCopyModuleDialog() {
         moduleHeader.hover();
         copyModuleBtn.click();

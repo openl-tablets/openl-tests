@@ -141,26 +141,29 @@ old editor offered, has no property to pick.
 
 ---
 
-## 8. A module can no longer be added, renamed or removed from the project's card
+## 8. A module is added, renamed and removed where it is declared — not from one dialog
 
-**What changed.** The JSF project page listed the modules with "Add Module", "Edit" and "Remove" beside
-them. The React Overview panel lists the modules as read-only (`modules-readonly`) and says instead: *"These
-modules are discovered automatically from the rules and tests folders. To add a module, put its Excel file in
-the rules or tests folder."* For a project whose descriptor declares its modules explicitly the panel still
-shows them, but the actions are gone from the card either way.
+**Resolved, and kept here for the record.** What the JSF page offered as "Add Module", "Edit" and "Remove"
+beside the module list is offered in two places now, by how the project leads to the module:
 
-This looks deliberate — modules are files now, and files are managed on the Files tab — but it is a
-capability the old screen offered and the new one does not, so the tests that used it have nothing to press.
-Confirm with development whether editing an explicitly declared module is meant to come back.
+- A module the descriptor **declares by name** is written on the project's card: open it with **Edit** and
+  the module rows become a name, a path and *Compile this module only*, with **Add** under them and a bin
+  beside each (`OverviewPanel.tsx`, `modulesEditable = hasRulesXml && !modulesDefault`). A workbook two
+  modules would read is refused there — *The path 'X' is already read by another module.*
+- A module the standard layout **finds by itself** — the case for every project whose descriptor declares
+  nothing — is named after its workbook, so it is added, renamed and copied by adding, renaming and copying
+  that workbook on the **Files** tab.
 
-**Blocked tests.**
-- `tests.ui.webstudio.studio_issues.TestAddModuleWithPathExistingModule`
-- `tests.ui.webstudio.rules_editor.TestCreateProjectFromOpenApiYamlWithCustomModuleNames`
-- `tests.ui.webstudio.rules_editor.TestCreateProjectFromOpenApiJsonFile`
-- `tests.ui.webstudio.rules_editor.TestMigratedMethodFilterReloadUi` — its setup needs a module carrying a
-  method filter of its own. Note that what this test watched for — an endless re-POST after a JSF view
-  expired — cannot happen on a screen that holds no JSF view; what is worth restoring with the capability is
-  the rest of it: the screen settles after the descriptor is rewritten, and the table stays.
+Its own method filter is declared in the descriptor beside the module and shown on the card
+(`module-filter-<path>`); the screen offers no form of its own for it, and the action that migrated such
+filters to the project is gone with the JSF page.
+
+**Tests.** `TestAddModuleWithPathExistingModule` writes the duplicate path on the card and reads the refusal;
+`TestCreateProjectFromOpenApiJsonFile` renames and copies its modules by their workbooks;
+`TestCreateProjectFromOpenApiYamlWithCustomModuleNames` renames the declared module on the card and the
+pattern-matched one by its workbook, and takes the declaration out to remove it;
+`TestMigratedMethodFilterReloadUi` writes the filter into the descriptor and asks what it always asked — that
+the project reloads once and settles, with the table still there.
 
 ---
 

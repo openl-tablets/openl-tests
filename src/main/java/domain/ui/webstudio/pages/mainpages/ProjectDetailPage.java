@@ -82,6 +82,12 @@ public class ProjectDetailPage extends BasePage {
         errorNotification = new WebElement(page, "xpath=(//div[contains(@class,'ant-notification-notice')])[last()]", "errorNotification");
     }
 
+    /** The card of the project: what the descriptor says, offered for reading and for writing. */
+    public ProjectOverviewTabComponent getOverviewTab() {
+        openOverviewTab();
+        return overview;
+    }
+
     public ProjectDetailPage openOverviewTab() {
         overviewTab.click();
         waitUntilSpinnerLoaded();
@@ -371,6 +377,12 @@ public class ProjectDetailPage extends BasePage {
     public ProjectDetailPage copyFile(String fileName, String copyName) {
         openFilesTab();
         files.copyFile(fileName, copyName);
+        return this;
+    }
+
+    public ProjectDetailPage renameFile(String fileName, String newName) {
+        openFilesTab();
+        files.renameFile(fileName, newName);
         return this;
     }
 
