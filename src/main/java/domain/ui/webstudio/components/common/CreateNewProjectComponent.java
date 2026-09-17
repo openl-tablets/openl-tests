@@ -146,6 +146,23 @@ public class CreateNewProjectComponent extends BaseComponent {
         }
     }
 
+    /**
+     * Presses Create once the wizard has everything it asks for, and says what it refused when it refuses.
+     * A repository that holds branches is asked which branch to write to, and the wizard fills that in from
+     * the repository itself — until it has, pressing Create is refused rather than sent.
+     */
+    private void submitAndExpectTheWizardToClose() {
+        waitForBranchToBeOffered();
+        submitBtn.click();
+        if (!WaitUtil.waitForCondition(() -> !submitBtn.isVisible(BRANCH_FIELD_PROBE_MS), DEFAULT_TIMEOUT_MS, 250,
+                "Waiting for the wizard to close on what it was given")) {
+            String refused = openApiError.isVisible(BRANCH_FIELD_PROBE_MS) ? openApiError.getText().trim() : "";
+            if (!refused.isEmpty()) {
+                throw new AssertionError("The wizard refused what it was given: " + refused);
+            }
+        }
+    }
+
     private void waitForBranchToBeOffered() {
         if (!branchField.isVisible(BRANCH_FIELD_PROBE_MS)) {
             return;
@@ -168,7 +185,7 @@ public class CreateNewProjectComponent extends BaseComponent {
             typeProjectName(projectName);
         }
         if (submit) {
-            submitBtn.click();
+            submitAndExpectTheWizardToClose();
         }
     }
 
@@ -198,7 +215,7 @@ public class CreateNewProjectComponent extends BaseComponent {
         if (projectName != null && !projectName.isEmpty()) {
             typeProjectName(projectName);
         }
-        submitBtn.click();
+        submitAndExpectTheWizardToClose();
     }
 
     public void createProjectFromZip(String zipFileName, String projectName) {
@@ -207,7 +224,7 @@ public class CreateNewProjectComponent extends BaseComponent {
         if (projectName != null && !projectName.isEmpty()) {
             typeProjectName(projectName);
         }
-        submitBtn.click();
+        submitAndExpectTheWizardToClose();
     }
 
     public CreateNewProjectComponent selectMethod(TabName method) {

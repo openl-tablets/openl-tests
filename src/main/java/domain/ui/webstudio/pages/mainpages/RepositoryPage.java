@@ -96,12 +96,14 @@ public class RepositoryPage extends BasePage {
             waitUntilSpinnerLoaded();
             openProjectsList();
             // A project that was not made is not listed, and everything after would then be looking for a
-            // row that is not there; the making is what failed, and that is what is said.
-            if (!WaitUtil.waitForCondition(() -> isProjectPresent(projectName), DEFAULT_TIMEOUT_MS, 500,
-                    "Waiting for '" + projectName + "' to be listed among the projects")) {
-                throw new AssertionError("The project '" + projectName + "' was not made: it is not listed");
+            // row that is not there; the making is what failed, and that is what is said. A name is kept
+            // without the spaces around it, so that is the name the row carries.
+            String listed = projectName.trim();
+            if (!WaitUtil.waitForCondition(() -> isProjectPresent(listed), DEFAULT_TIMEOUT_MS, 500,
+                    "Waiting for '" + listed + "' to be listed among the projects")) {
+                throw new AssertionError("The project '" + listed + "' was not made: it is not listed");
             }
-            openIfClosed(projectName);
+            openIfClosed(listed);
         }
     }
 

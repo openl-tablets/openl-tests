@@ -69,7 +69,7 @@ public class TestGitSwitchToDeletedBranch extends BaseTest {
         RepositoryPage repositoryPage = editorPage.getTabSwitcherComponent()
                 .selectTab(TabSwitcherComponent.TabName.REPOSITORY);
 
-        String projectNameForTest = getOrCreateProject(repositoryPage);
+        String projectNameForTest = projectOfTheRepository(repositoryPage);
         String deletedBranchName = createBranchAndDeleteIt(repositoryPage, projectNameForTest);
 
         WaitUtil.sleep(11000, "Waiting for branch deletion to propagate");
@@ -80,18 +80,16 @@ public class TestGitSwitchToDeletedBranch extends BaseTest {
                 .isFalse();
     }
 
-    private String getOrCreateProject(RepositoryPage repositoryPage) {
-        java.util.List<String> visibleProjects = repositoryPage.getAllVisibleProjectsInTable();
-
-        if (!visibleProjects.isEmpty()) {
-            String projectName = visibleProjects.getFirst();
-            LOGGER.info("Using existing project: {}", projectName);
-            return projectName;
-        }
-
-        LOGGER.info("Creating new project: {}", PROJECT_NAME);
-        repositoryPage.createProject(CreateNewProjectComponent.TabName.TEMPLATE, PROJECT_NAME, TEMPLATE_NAME);
-        return PROJECT_NAME;
+    /**
+     * The project the design repository holds. It is read from git when the repository is first read, so it
+     * is waited for rather than made: the scenario is about the branches of a project that is already there.
+     */
+    private String projectOfTheRepository(RepositoryPage repositoryPage) {
+        WaitUtil.requireCondition(() -> !repositoryPage.getAllVisibleProjectsInTable().isEmpty(),
+                30000, 1000, "Waiting for the projects of the design repository to be listed");
+        String projectName = repositoryPage.getAllVisibleProjectsInTable().getFirst();
+        LOGGER.info("Using the project the repository holds: {}", projectName);
+        return projectName;
     }
 
     private String createBranchAndDeleteIt(RepositoryPage repositoryPage, String projectName) {

@@ -136,13 +136,13 @@ public class TestExportProjectFunctionality extends BaseTest {
         editorPage.getEditorToolbarPanelComponent().clickExport();
         exportDialog.waitForDialogToAppear();
         exportAndVerifyDownload(exportDialog, "first export",
-                "file1.xls", "file2.xlsx", "pic.png", "dir1/file3.xlsx");
+                "file1.xls", "file2.xlsx", "pic.png", "rules.xml", "dir1/file3.xlsx");
 
         editorPage.getEditorToolbarPanelComponent().clickExport();
         exportDialog.waitForDialogToAppear();
         exportDialog.selectRevision(revision);
         exportAndVerifyDownload(exportDialog, "specific revision export",
-                "file1.xls", "file2.xlsx", "pic.png", "dir1/file3.xlsx");
+                "file1.xls", "file2.xlsx", "pic.png", "rules.xml", "dir1/file3.xlsx");
 
         editorPage.getEditorLeftProjectModuleSelectorComponent()
                 .selectModule(PROJECT_NAME, MODULE_FILE1);
@@ -165,7 +165,7 @@ public class TestExportProjectFunctionality extends BaseTest {
         exportDialog.waitForDialogToAppear();
         exportDialog.selectRevision(revision);
         exportAndVerifyDownload(exportDialog, "old revision while In Editing",
-                "file1.xls", "file2.xlsx", "pic.png", "dir1/file3.xlsx");
+                "file1.xls", "file2.xlsx", "pic.png", "rules.xml", "dir1/file3.xlsx");
 
         editorPage.getEditorToolbarPanelComponent().clickSave();
         editorPage.getSaveChangesComponent().clickSave();

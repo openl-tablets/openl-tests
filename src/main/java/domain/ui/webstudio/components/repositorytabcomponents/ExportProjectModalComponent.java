@@ -73,15 +73,20 @@ public class ExportProjectModalComponent extends BaseComponent {
         return revisions;
     }
 
+    /**
+     * Folds the list of revisions away, so what stands under it can be pressed. Escape is not what does it
+     * here: the dialog answers Escape by closing itself, and the list is then asked about a dialog that is
+     * no longer there. Moving on from the select is what folds the list away.
+     */
     private void closeRevisionDropdown() {
         if (!openDropdown.exists()) {
             return;
         }
-        page.keyboard().press("Escape");
+        page.keyboard().press("Tab");
         if (dropdownClosed()) {
             return;
         }
-        LOGGER.warn("Escape left a select dropdown open; clicking the revision select to close it");
+        LOGGER.warn("The revision list stayed open; pressing the select itself to fold it away");
         revisionSelect.click();
         if (!dropdownClosed()) {
             LOGGER.warn("A select dropdown is still open and may cover the dialog buttons");
@@ -114,9 +119,22 @@ public class ExportProjectModalComponent extends BaseComponent {
         return downloadedFile;
     }
 
+    /**
+     * Leaves the export without making it. The list of revisions hangs over the foot of the dialog while it
+     * is open, and nothing short of choosing from it folds it away, so the dialog is then left by the cross
+     * it carries — which is the same leaving, by the other way the dialog offers.
+     */
     public void clickCancel() {
         closeRevisionDropdown();
-        cancelBtn.click();
+        if (!isDialogVisible()) {
+            return;
+        }
+        if (openDropdown.exists()) {
+            new WebElement(page, "xpath=" + MODAL + "//button[contains(@class,'ant-modal-close')]",
+                    "exportDialogClose").click();
+        } else {
+            cancelBtn.click();
+        }
         revisionSelect.waitForHidden(DEFAULT_TIMEOUT_MS);
     }
 }
