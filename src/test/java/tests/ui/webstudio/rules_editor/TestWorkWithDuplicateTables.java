@@ -50,6 +50,7 @@ public class TestWorkWithDuplicateTables extends BaseTest {
                 .contains("Found duplicated table 'SmartLookup Double someLookupBig2( String param1, Integer param2)'.");
         editorPage.getCenterTable().editCell(3, 1, "Param 2");
         editorPage.getEditorTableActionsPanelComponent().clickSaveChanges();
+        editorPage.getEditorTableActionsPanelComponent().closeTableEditor();
         assertThat(editorPage.getProblemsPanelComponent().getAllErrors())
                 .as("Error message should persist after editing cell")
                 .contains("Found duplicated table 'SmartLookup Double someLookupBig2( String param1, Integer param2)'.");
@@ -84,11 +85,13 @@ public class TestWorkWithDuplicateTables extends BaseTest {
                 .as("WithinCurrentModuleOnly should be enabled after Trace click (same module)")
                 .isTrue();
         editorPage.refresh();
+        // The module's own Test button opens the launcher that runs the tests of the module, which carries
+        // the box of its own rather than the one the input launcher carries.
         editorPage.getEditorToolbarPanelComponent().clickTestDropdown();
-        assertThat(editorPage.getEditorToolbarPanelComponent().isWithinCurrentModuleOnlyInputArgsChecked())
+        assertThat(editorPage.getEditorToolbarPanelComponent().isWithinCurrentModuleOnlyTestTablesChecked())
                 .as("WithinCurrentModuleOnly should be unchecked after TestDropdown click (same module)")
                 .isFalse();
-        assertThat(editorPage.getEditorToolbarPanelComponent().isWithinCurrentModuleOnlyInputArgsEnabled())
+        assertThat(editorPage.getEditorToolbarPanelComponent().isWithinCurrentModuleOnlyTestTablesEnabled())
                 .as("WithinCurrentModuleOnly should be enabled after TestDropdown click (same module)")
                 .isTrue();
         assertThat(editorPage.getEditorToolbarPanelComponent().getAvailableTestRunsLinkText())
@@ -102,28 +105,30 @@ public class TestWorkWithDuplicateTables extends BaseTest {
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
                 .expandFolderInTree("Test")
                 .selectItemInFolder("Test", "someLookupBig2Test");
-        assertThat(editorPage.getTopProblemsPanelComponent().isAbsent())
+        // The panel at the foot of the screen reports the compilation of the whole project, which does
+        // carry the duplicate; what is asked here is what the table itself raised, which is nothing.
+        assertThat(editorPage.getEditorMainContentProblemsPanelComponent().isErrorMessageListPresent())
                 .as("No errors should be shown for test table in same module")
-                .isTrue();
+                .isFalse();
         editorPage.getEditorToolbarPanelComponent().clickRunDropdown();
-        assertThat(editorPage.getEditorToolbarPanelComponent().isWithinCurrentModuleOnlyTestTablesChecked())
+        assertThat(editorPage.getEditorToolbarPanelComponent().isWithinCurrentModuleOnlyInputArgsChecked())
                 .as("WithinCurrentModuleOnlyTestTables should be unchecked after RunDropdown click (same module)")
                 .isFalse();
-        assertThat(editorPage.getEditorToolbarPanelComponent().isWithinCurrentModuleOnlyTestTablesEnabled())
+        assertThat(editorPage.getEditorToolbarPanelComponent().isWithinCurrentModuleOnlyInputArgsEnabled())
                 .as("WithinCurrentModuleOnlyTestTables should be enabled after RunDropdown click (same module)")
                 .isTrue();
         editorPage.getEditorToolbarPanelComponent().clickTrace();
-        assertThat(editorPage.getEditorToolbarPanelComponent().isWithinCurrentModuleOnlyTestTablesChecked())
+        assertThat(editorPage.getEditorToolbarPanelComponent().isWithinCurrentModuleOnlyInputArgsChecked())
                 .as("WithinCurrentModuleOnlyTestTables should be unchecked after Trace click (same module)")
                 .isFalse();
-        assertThat(editorPage.getEditorToolbarPanelComponent().isWithinCurrentModuleOnlyTestTablesEnabled())
+        assertThat(editorPage.getEditorToolbarPanelComponent().isWithinCurrentModuleOnlyInputArgsEnabled())
                 .as("WithinCurrentModuleOnlyTestTables should be enabled after Trace click (same module)")
                 .isTrue();
         editorPage.getEditorToolbarPanelComponent().clickBenchmarkDropdown();
-        assertThat(editorPage.getEditorToolbarPanelComponent().isWithinCurrentModuleOnlyTestTablesChecked())
+        assertThat(editorPage.getEditorToolbarPanelComponent().isWithinCurrentModuleOnlyInputArgsChecked())
                 .as("WithinCurrentModuleOnlyTestTables should be unchecked after BenchmarkDropdown click (same module)")
                 .isFalse();
-        assertThat(editorPage.getEditorToolbarPanelComponent().isWithinCurrentModuleOnlyTestTablesEnabled())
+        assertThat(editorPage.getEditorToolbarPanelComponent().isWithinCurrentModuleOnlyInputArgsEnabled())
                 .as("WithinCurrentModuleOnlyTestTables should be enabled after BenchmarkDropdown click (same module)")
                 .isTrue();
         editorPage.getEditorToolbarPanelComponent().clickRun().clickRunInsideMenu();
@@ -145,6 +150,7 @@ public class TestWorkWithDuplicateTables extends BaseTest {
                 .contains("There can be only one active table.");
         editorPage.getCenterTable().editCell(3, 1, "Param 2");
         editorPage.getEditorTableActionsPanelComponent().clickSaveChanges();
+        editorPage.getEditorTableActionsPanelComponent().closeTableEditor();
         assertThat(editorPage.getProblemsPanelComponent().getAllErrors())
                 .as("Error message should persist after editing cell (diff modules)")
                 .contains("There can be only one active table.");
@@ -168,7 +174,9 @@ public class TestWorkWithDuplicateTables extends BaseTest {
                 .setInputTextField("1", "a1")
                 .setInputTextField("2", "11")
                 .clickRunInsideMenu();
-        assertThat(editorPage.getTestResultValidationComponent().getResultTable().getCellText(1, 4))
+        // The run shows what it was given and what it returned, and the row is no longer numbered, so what
+        // it returned stands in the third of the three columns.
+        assertThat(editorPage.getTestResultValidationComponent().getResultTable().getCellText(1, 3))
                 .as("Run result for someLookupBig2 should be 100")
                 .isEqualTo("100");
 
@@ -213,24 +221,24 @@ public class TestWorkWithDuplicateTables extends BaseTest {
                 .as("Error message for test table referencing duplicated rule (diff modules)")
                 .contains("Tested rules have errors");
         editorPage.getEditorToolbarPanelComponent().clickRunDropdown();
-        assertThat(editorPage.getEditorToolbarPanelComponent().isWithinCurrentModuleOnlyTestTablesChecked())
+        assertThat(editorPage.getEditorToolbarPanelComponent().isWithinCurrentModuleOnlyInputArgsChecked())
                 .as("WithinCurrentModuleOnlyTestTables should be checked (diff modules)")
                 .isTrue();
-        assertThat(editorPage.getEditorToolbarPanelComponent().isWithinCurrentModuleOnlyTestTablesEnabled())
+        assertThat(editorPage.getEditorToolbarPanelComponent().isWithinCurrentModuleOnlyInputArgsEnabled())
                 .as("WithinCurrentModuleOnlyTestTables should be disabled (diff modules)")
                 .isFalse();
         editorPage.getEditorToolbarPanelComponent().clickTrace();
-        assertThat(editorPage.getEditorToolbarPanelComponent().isWithinCurrentModuleOnlyTestTablesChecked())
+        assertThat(editorPage.getEditorToolbarPanelComponent().isWithinCurrentModuleOnlyInputArgsChecked())
                 .as("WithinCurrentModuleOnlyTestTables should be checked after Trace (diff modules)")
                 .isTrue();
-        assertThat(editorPage.getEditorToolbarPanelComponent().isWithinCurrentModuleOnlyTestTablesEnabled())
+        assertThat(editorPage.getEditorToolbarPanelComponent().isWithinCurrentModuleOnlyInputArgsEnabled())
                 .as("WithinCurrentModuleOnlyTestTables should be disabled after Trace (diff modules)")
                 .isFalse();
         editorPage.getEditorToolbarPanelComponent().clickBenchmarkDropdown();
-        assertThat(editorPage.getEditorToolbarPanelComponent().isWithinCurrentModuleOnlyTestTablesChecked())
+        assertThat(editorPage.getEditorToolbarPanelComponent().isWithinCurrentModuleOnlyInputArgsChecked())
                 .as("WithinCurrentModuleOnlyTestTables should be checked after BenchmarkDropdown (diff modules)")
                 .isTrue();
-        assertThat(editorPage.getEditorToolbarPanelComponent().isWithinCurrentModuleOnlyTestTablesEnabled())
+        assertThat(editorPage.getEditorToolbarPanelComponent().isWithinCurrentModuleOnlyInputArgsEnabled())
                 .as("WithinCurrentModuleOnlyTestTables should be disabled after BenchmarkDropdown (diff modules)")
                 .isFalse();
         editorPage.getEditorToolbarPanelComponent().clickRun().clickRunInsideMenu();
@@ -256,6 +264,7 @@ public class TestWorkWithDuplicateTables extends BaseTest {
                         " active status, properties set.");
         editorPage.getCenterTable().editCell(3, 1, "Param 2");
         editorPage.getEditorTableActionsPanelComponent().clickSaveChanges();
+        editorPage.getEditorTableActionsPanelComponent().closeTableEditor();
         assertThat(editorPage.getProblemsPanelComponent().getAllErrors())
                 .as("Error message should persist after editing cell (dependency project)")
                 .contains("Method 'someLookupBig2(String param1," +
@@ -278,28 +287,28 @@ public class TestWorkWithDuplicateTables extends BaseTest {
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
                 .expandFolderInTree("Test")
                 .selectItemInFolder("Test", "someLookupBig2Test");
-        assertThat(editorPage.getTopProblemsPanelComponent().isAbsent())
+        assertThat(editorPage.getEditorMainContentProblemsPanelComponent().isErrorMessageListPresent())
                 .as("No errors should be shown for test table in dependency project")
-                .isTrue();
+                .isFalse();
         editorPage.getEditorToolbarPanelComponent().clickRunDropdown();
-        assertThat(editorPage.getEditorToolbarPanelComponent().isWithinCurrentModuleOnlyTestTablesChecked())
+        assertThat(editorPage.getEditorToolbarPanelComponent().isWithinCurrentModuleOnlyInputArgsChecked())
                 .as("WithinCurrentModuleOnlyTestTables should be unchecked (dependency project)")
                 .isFalse();
-        assertThat(editorPage.getEditorToolbarPanelComponent().isWithinCurrentModuleOnlyTestTablesEnabled())
+        assertThat(editorPage.getEditorToolbarPanelComponent().isWithinCurrentModuleOnlyInputArgsEnabled())
                 .as("WithinCurrentModuleOnlyTestTables should be enabled (dependency project)")
                 .isTrue();
         editorPage.getEditorToolbarPanelComponent().clickTrace();
-        assertThat(editorPage.getEditorToolbarPanelComponent().isWithinCurrentModuleOnlyTestTablesChecked())
+        assertThat(editorPage.getEditorToolbarPanelComponent().isWithinCurrentModuleOnlyInputArgsChecked())
                 .as("WithinCurrentModuleOnlyTestTables should be unchecked after Trace (dependency project)")
                 .isFalse();
-        assertThat(editorPage.getEditorToolbarPanelComponent().isWithinCurrentModuleOnlyTestTablesEnabled())
+        assertThat(editorPage.getEditorToolbarPanelComponent().isWithinCurrentModuleOnlyInputArgsEnabled())
                 .as("WithinCurrentModuleOnlyTestTables should be enabled after Trace (dependency project)")
                 .isTrue();
         editorPage.getEditorToolbarPanelComponent().clickBenchmarkDropdown();
-        assertThat(editorPage.getEditorToolbarPanelComponent().isWithinCurrentModuleOnlyTestTablesChecked())
+        assertThat(editorPage.getEditorToolbarPanelComponent().isWithinCurrentModuleOnlyInputArgsChecked())
                 .as("WithinCurrentModuleOnlyTestTables should be unchecked after BenchmarkDropdown (dependency project)")
                 .isFalse();
-        assertThat(editorPage.getEditorToolbarPanelComponent().isWithinCurrentModuleOnlyTestTablesEnabled())
+        assertThat(editorPage.getEditorToolbarPanelComponent().isWithinCurrentModuleOnlyInputArgsEnabled())
                 .as("WithinCurrentModuleOnlyTestTables should be enabled after BenchmarkDropdown (dependency project)")
                 .isTrue();
         editorPage.getEditorToolbarPanelComponent().clickRun().clickRunInsideMenu();
@@ -313,9 +322,9 @@ public class TestWorkWithDuplicateTables extends BaseTest {
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
                 .expandFolderInTree("Rules")
                 .selectItemInFolder("Rules", "someLookupBig2");
-        assertThat(editorPage.getTopProblemsPanelComponent().isAbsent())
+        assertThat(editorPage.getEditorMainContentProblemsPanelComponent().isErrorMessageListPresent())
                 .as("No errors should be shown for decision table in dependent project")
-                .isTrue();
+                .isFalse();
         editorPage.getEditorToolbarPanelComponent().clickRun();
         assertThat(editorPage.getEditorToolbarPanelComponent().isWithinCurrentModuleOnlyInputArgsChecked())
                 .as("WithinCurrentModuleOnly should be unchecked (dependent project)")

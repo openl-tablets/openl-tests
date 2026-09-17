@@ -267,6 +267,18 @@ public class EditorPage extends BasePage {
         return mode;
     }
 
+    /**
+     * Whether the card names a specification the project holds without declaring it. A descriptor that says
+     * nothing about OpenAPI is read against the file lying in the project under the name the format reads
+     * as, and the card says so.
+     */
+    public boolean isOpenApiDeclaredByDefault() {
+        waitUntilOverviewIsRead();
+        expandOpenApiSection();
+        return new WebElement(page, "xpath=//span[@data-testid='openapi-by-default']", "openApiByDefault")
+                .isVisible(OVERVIEW_PROBE_MS);
+    }
+
     /** Whether the project says it declares no OpenAPI specification. */
     public boolean isOpenApiPropertiesSectionEmpty() {
         return new WebElement(page, "xpath=//span[@data-testid='openapi-none']", "openApiNone").isVisible(DEFAULT_TIMEOUT_MS / 5);

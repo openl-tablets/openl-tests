@@ -92,12 +92,18 @@ public class ImportOpenApiDialogComponent extends BaseComponent {
         openForWriting();
         openApiFilePathInput.waitForVisible(DEFAULT_TIMEOUT_MS);
         openApiFilePathInput.click();
+        String openList = "//div[contains(@class,'ant-select-dropdown')][not(contains(@class,'ant-select-dropdown-hidden'))]";
+        // The list is waited for before it is read, so an empty reading says the list offers nothing rather
+        // than that it had not opened yet.
+        new WebElement(page, "xpath=" + openList, "specificationsList").waitForVisible(DEFAULT_TIMEOUT_MS);
         WebElement offered = new WebElement(page,
-                "xpath=//div[contains(@class,'ant-select-dropdown')][not(contains(@class,'ant-select-dropdown-hidden'))]"
-                        + "//div[contains(@class,'ant-select-item-option-content')]",
+                "xpath=" + openList + "//div[contains(@class,'ant-select-item-option-content')]",
                 "offeredSpecifications");
         offered.isVisible(CANCEL_PROBE_MS);
-        return offered.getLocator().allInnerTexts().stream().map(String::trim).filter(text -> !text.isEmpty()).toList();
+        List<String> names = offered.getLocator().allInnerTexts().stream()
+                .map(String::trim).filter(text -> !text.isEmpty()).toList();
+        page.keyboard().press("Escape");
+        return names;
     }
 
     /** The mode the settings currently stand at, as the switch shows it. */

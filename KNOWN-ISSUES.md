@@ -525,6 +525,28 @@ Reproduced on `ghcr.io/openl-tablets/webstudio:6.5.0-b48c86279338`: upload `Migr
 
 ---
 
+## 21. The OpenAPI section keeps a specification that has been deleted
+
+**What happens.** A project made from a specification declares none in its descriptor: the file lying in the
+project under the name its format reads as is what is read against, and the card names it, marked
+`openapi-by-default`. Delete that file on the project's Files tab and the OpenAPI section goes on naming it —
+FILE `openapi.yaml`, MODE Reconciliation — until the card is drawn again from the start.
+
+**Where it comes from.** The section reads the files of the project once, on a dependency list of
+`[editing, projectId]` (`STUDIO/studio-ui/src/containers/projects/OverviewPanel.tsx:1282-1297`), and the
+token the card bumps when something about the project has changed reaches the descriptor
+(`OverviewPanel.tsx:828`) and the migration (`:906-910`) but not this section. The Overview tab stays mounted
+while the reader is on Files (`ProjectDetail.tsx:425-441`), so nothing remounts it either.
+
+**Why it matters.** The card says the project reads against a specification it no longer holds, which is the
+one thing that section is there to answer.
+
+**Test changed rather than blocked.** `TestDeleteOpenApiFileRemovesProperties` draws the card again from the
+start before reading the section. What is not asked, and is the coverage to restore with the fix, is that the
+section answers the deletion by itself.
+
+---
+
 ## Renamings that are not bugs
 
 For the record, so they are not raised twice. These are the same tree, named the way the tables API has named
@@ -564,13 +586,14 @@ the build under test (`6.5.0-b48c86279338`) and against the screens themselves.
 | The properties panel offers to keep what was written only once something has been changed; writing a property the value it already holds leaves nothing to keep. | Where a test wrote a value the workbook already carried, it writes one the table does not carry, so the step is the edit it was meant to be. |
 | Creating a project from an OpenAPI specification no longer writes an `openapi` block into `rules.xml`: the normalized file in the project root is reconciled against, and nothing is generated again over later edits. Deliberate, with the user guides changed in the same commit — `e3edf4a6e8`, EPBDS-16415, *"Default new OpenAPI projects to reconciliation"* (`repository-editor.md`, `rules-editor.md`). | A freshly created project is expected to read in **Reconciliation** and to name no module to write into; the import dialog starts empty. Where a test drove an overwrite, it now names the modules to write over, as a reader must, so the overwrite itself is still covered. Note the knock-on: a project that declares no module is drawn with its module list read-only even while the card is open for writing (`OverviewPanel.tsx`, `modulesEditable`), which puts the rename and copy steps of the two creation tests under issue 8. |
 | **Migrate** moves the workbooks under `rules/` only for a project that declares nothing; a project that already carries a `rules.xml` is migrated by rewriting that file into its minimal modern form, and its workbooks stay where the descriptor names them (`ProjectMigrationService.java:41-47,89-101,126-132`, EPBDS-16327 — the same as the `openl:migrate` goal, which moves nothing at all). Since EPBDS-16415 an archive taken in without a descriptor is given one on the spot, so a project that declares nothing is now made by deleting its `rules.xml`. | `TestMigrateLegacyProjectUi` asks each of the two: the rewrite keeps the workbook where it is and stops offering the migration, and the move is asked of a project whose descriptor was deleted first. |
-| The settings point the project at a specification it already **holds**, chosen from the ones it holds: there is no box to write a path into. A project holding none is offered none, and two modules named the same are refused when the generation is asked for — *The rules and the data types need a workbook each; one workbook cannot hold both.* — rather than while the names are being written. A specification is also kept under the name its format reads as, so the characters the old wizard refused in a file name never reach the repository. | `TestImportOpenApiDialogDefaultStateForNonOpenApiProject` asks that a project holding no specification is offered none, in place of naming a missing file to be refused; `TestImportOpenApiModuleNamesValidation` reads the refusal off the generation it confirmed; `TestCreateProjectFromOpenApiFormValidation` asks that an oddly named file is taken and kept as `openapi.yaml`. |
+| The settings point the project at a specification it already **holds**, chosen from the ones it holds: there is no box to write a path into. A project holding none is offered none, and two modules named the same name one workbook between them, and that is what is refused when the generation is asked for (the paths are compared, and a name that is not written out becomes `rules/<name>.xlsx`) — *The rules and the data types need a workbook each; one workbook cannot hold both.* — rather than while the names are being written. A specification is also kept under the name its format reads as, so the characters the old wizard refused in a file name never reach the repository. | `TestImportOpenApiDialogDefaultStateForNonOpenApiProject` asks that a project holding no specification is offered none, in place of naming a missing file to be refused; `TestImportOpenApiModuleNamesValidation` reads the refusal off the generation it confirmed; `TestCreateProjectFromOpenApiFormValidation` asks that an oddly named file is taken and kept as `openapi.yaml`. |
 | A row or a column is laid down **after or before the cell the reader is standing on**, so the buttons that lay one down are withheld until a cell is picked; and a line laid down and left empty is not kept — the screen refuses to keep a table carrying a blank line (`tableEdits.ts`, `blankLine`). | The tests pick a cell before asking for a row or a column, and write into the new line before keeping the table. |
+| The **Show equal rows** box of the comparison now does what it says: with it off only the rows that differ are drawn. A table whose column was added shows eight of its nine rows as differing — the ninth is the heading, one cell banked across the table, which reads the same on both sides. The old screen drew all nine either way, so the box changed nothing. | `TestDisplayChangedRowsTableStructure` expects eight rows with the box off and nine with it on, which is the difference the box is there to make. |
 
 ## Class names of the component library, for whoever writes the next locator
 
-Ant Design 6 renamed two containers that a great many locators were written against. Both were confirmed in
-the running application, not only in the sources:
+Ant Design 6 renamed containers that a great many locators were written against. Each was confirmed in the
+running application, not only in the sources:
 
 | Ant Design 5 (≤ 6.4.0) | Ant Design 6 (6.5.0) |
 |---|---|

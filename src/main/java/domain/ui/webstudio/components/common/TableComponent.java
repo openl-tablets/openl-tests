@@ -133,9 +133,15 @@ public class TableComponent extends BaseComponent {
                         variableName),
                 "cellUsage");
         named.hover();
-        WebElement hint = new WebElement(page, "xpath=//div[@role='tooltip'][contains(@class,'ant-tooltip-container')]",
+        WebElement hint = new WebElement(page,
+                "xpath=//div[@role='tooltip'][contains(@class,'ant-tooltip-container')]"
+                        + "[not(ancestor::div[contains(@class,'ant-tooltip-hidden')])]",
                 "cellHint");
         hint.waitForVisible(DEFAULT_TIMEOUT_MS);
+        // One box is kept for every hint on the screen, and it holds what was last pointed at until it is
+        // told otherwise, so what it says is read once it speaks of the word that was pointed at.
+        WaitUtil.requireCondition(() -> hint.getInnerText().contains(variableName), DEFAULT_TIMEOUT_MS, 200,
+                "Waiting for the hint of '" + variableName + "' to be told");
         return hint.getInnerText().trim();
     }
 

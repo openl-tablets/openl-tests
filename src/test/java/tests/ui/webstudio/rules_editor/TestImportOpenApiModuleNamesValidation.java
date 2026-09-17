@@ -66,8 +66,6 @@ public class TestImportOpenApiModuleNamesValidation extends BaseTest {
         assertThat(settingsDialog.getErrorMessages())
                 .as("The generation should be refused when the rules and the data types name one workbook")
                 .contains("The rules and the data types need a workbook each; one workbook cannot hold both.");
-
-        settingsDialog.clickCancel();
     }
 
     private void uploadFileToProject(RepositoryPage repositoryPage, String projectName, String fileName) {

@@ -215,6 +215,7 @@ public class EditorLeftRulesTreeComponent extends BaseComponent {
         waitUntilSpinnerLoaded();
         expandFolderInTree(folderName);
         TreeRow item = WaitUtil.waitForResult(() -> itemsOfFolder(folderName).stream()
+                        .filter(row -> !row.folder())
                         .filter(row -> itemName.equals(row.title()))
                         .filter(row -> raisesErrors(row) == raisingErrors)
                         .findFirst(),
@@ -316,7 +317,10 @@ public class EditorLeftRulesTreeComponent extends BaseComponent {
     public EditorLeftRulesTreeComponent selectItemInFolderByIndex(String folderName, String itemName, int index) {
         waitUntilSpinnerLoaded();
         expandFolderInTree(folderName);
+        // A group may be named after the tables it gathers, so what is opened is a table of that name and
+        // never the group standing over them.
         TreeRow item = WaitUtil.waitForResult(() -> itemsOfFolder(folderName).stream()
+                        .filter(row -> !row.folder())
                         .filter(row -> itemName.equals(row.title()))
                         .skip(Math.max(0, index - 1))
                         .findFirst(),

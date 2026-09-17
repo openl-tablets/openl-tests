@@ -136,7 +136,7 @@ public class TestDisplayChangedRowsTableStructure extends BaseTest {
 
     @Test
     @TestCaseId("IPBQA-32105")
-    @Description("Display Changed Rows: equal rows and column counts when only a column is added")
+    @Description("Display Changed Rows: equal rows and column counts when a column is added and written in")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void testEqualRowsCheckboxInTableAddingColumnComparison() {
         String projectName = WorkflowService.loginCreateProjectFromTemplate(User.ADMIN, "Sample Project");

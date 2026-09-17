@@ -38,11 +38,27 @@ public class TestDeleteOpenApiFileRemovesProperties extends BaseTest {
 
         repositoryPage.createProjectFromOpenApi(YML_FILE, projectName);
 
-        // Whatever the uploaded specification was called, the project keeps it under the name its format
-        // reads as, and a YML file reads as YAML (EPBDS-16415).
+        // A project made from a specification declares none in its descriptor (EPBDS-16415): the file lying
+        // in it under the name its format reads as — a YML file reads as YAML — is what is read against, and
+        // the card says it stands there by default rather than by declaration.
+        editorPage = new EditorPage();
+        editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName);
+        assertThat(editorPage.isOpenApiDeclaredByDefault())
+                .as("The card should name the specification the project holds without declaring it")
+                .isTrue();
+        assertThat(editorPage.getOpenApiPropertyValue("File"))
+                .as("The specification is kept under the name its format reads as")
+                .isEqualTo("openapi.yaml");
+
+        repositoryPage = editorPage.getTabSwitcherComponent()
+                .selectTab(TabSwitcherComponent.TabName.REPOSITORY);
         repositoryPage.openProjectsList().openProjectDetail(projectName).deleteFile("openapi.yaml");
 
         editorPage = new EditorPage();
+        editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName);
+        // The card is read again from the start: the OpenAPI section keeps the files it read when it was
+        // drawn and does not read them again when one is deleted. See KNOWN-ISSUES.md #21.
+        editorPage.reloadPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName);
 
         assertThat(editorPage.isOpenApiPropertiesSectionEmpty())
@@ -60,7 +76,7 @@ public class TestDeleteOpenApiFileRemovesProperties extends BaseTest {
                 .as("rules.xml should still contain Algorithms and Models modules after deleting openapi.yml")
                 .contains("<name>Algorithms</name>").contains("<name>Models</name>");
         assertThat(rulesXml)
-                .as("rules.xml should not contain <openapi> section after deleting the OpenAPI file")
+                .as("The descriptor should declare no OpenAPI specification, before the deletion or after it")
                 .doesNotContain("<openapi>");
     }
 }

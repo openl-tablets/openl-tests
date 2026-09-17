@@ -11,6 +11,7 @@ public class EditorTableActionsPanelComponent extends BaseComponent {
 
     private static final int SAVE_PROBE_MS = 1000;
     private static final long SAVE_SETTLE_MS = 10000;
+    private static final int DISCARD_PROBE_MS = 3000;
 
     private WebElement saveChangesBtn;
     private WebElement undoChangesBtn;
@@ -75,6 +76,29 @@ public class EditorTableActionsPanelComponent extends BaseComponent {
                 "xpath=//div[contains(@class,'ant-notification-notice')] | //div[contains(@class,'ant-message-notice')]",
                 "saveRefusal");
         return notice.isVisible(SAVE_PROBE_MS) ? notice.getInnerText().trim() : "the screen says nothing";
+    }
+
+    /**
+     * Leaves the table as it stands. Everything written into it has been kept by then, so the screen has
+     * nothing to ask about; it asking is a change that was not kept, and that is said rather than discarded.
+     */
+    public void closeTableEditor() {
+        WebElement close = createScopedElement("xpath=.//button[@data-testid='table-edit-cancel']", "closeEditorBtn");
+        if (!close.isVisible(SAVE_PROBE_MS)) {
+            return;
+        }
+        close.click();
+        WebElement asked = new WebElement(page,
+                "xpath=//div[contains(@class,'ant-modal')][.//button[@data-testid='table-edit-discard']]",
+                "discardChangesDialog");
+        if (asked.isVisible(DISCARD_PROBE_MS)) {
+            String why = saveChangesBtn.isVisible(SAVE_PROBE_MS)
+                    ? String.valueOf(saveChangesBtn.getAttribute("title"))
+                    : "";
+            throw new AssertionError("Leaving the table was questioned, so something written into it was "
+                    + "never kept: " + asked.getInnerText().trim().replace("\n", " ")
+                    + (why.isEmpty() || "null".equals(why) ? "" : "; keeping it is offered as: " + why));
+        }
     }
 
     public void undoClickChanges() {

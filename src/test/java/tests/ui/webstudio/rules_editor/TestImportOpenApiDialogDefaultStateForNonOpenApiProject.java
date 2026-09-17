@@ -24,7 +24,7 @@ public class TestImportOpenApiDialogDefaultStateForNonOpenApiProject extends Bas
 
     @Test
     @TestCaseId("IPBQA-31035")
-    @Description("Import OpenAPI dialog default state for non-OpenAPI project: Reconciliation is default, file-not-found error shown on import")
+    @Description("Import OpenAPI dialog default state for non-OpenAPI project: Reconciliation is the mode it stands at, and a project holding no specification is offered none to point at")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void testImportOpenApiDialogDefaultStateForNonOpenApiProject() {
         String projectName = "TestNonOpenApi_" + System.currentTimeMillis();

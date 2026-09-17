@@ -37,6 +37,8 @@ public class TableToolbarComponent extends BaseComponent {
     // at page level because the menus only exist in the DOM while open.
     private final WebElement withinCurrentModuleOnlyInputArgs;
     private final WebElement withinCurrentModuleOnlyTestTables;
+    // Whichever launcher stands open says so by the button it starts its own run with.
+    private final List<WebElement> openLaunchers;
 
     public TableToolbarComponent(Page page) {
         this(new WebElement(page, "xpath=//div[@data-testid='table-toolbar']", "tableToolbarPanel"));
@@ -62,12 +64,31 @@ public class TableToolbarComponent extends BaseComponent {
         tableActionsTestBtn = createScopedElement("xpath=.//button[@data-testid='table-tests']", "tableActionsTestBtn");
         tableActionsTestDropdownBtn = createScopedElement("xpath=.//button[@data-testid='table-tests']", "tableActionsTestDropdownBtn");
         withinCurrentModuleOnlyInputArgs = new WebElement(page, "xpath=//input[@data-testid='launch-module-only']", "withinCurrentModuleOnlyInputArgs");
-        withinCurrentModuleOnlyTestTables = new WebElement(page, "xpath=//input[@data-testid='launch-module-only']", "withinCurrentModuleOnlyTestTables");
+        // The launcher that asks for the input of a table and the one that runs the tests written against it
+        // each carry the box of their own.
+        withinCurrentModuleOnlyTestTables = new WebElement(page, "xpath=//input[@data-testid='tests-module-only']", "withinCurrentModuleOnlyTestTables");
+        openLaunchers = createElementList("xpath=//button[@data-testid='run-start' or @data-testid='trace-start'"
+                + " or @data-testid='tests-start' or @data-testid='benchmark-start']", "openLaunchers");
     }
 
     // ========== Launchers ==========
 
+    /**
+     * Closes what the last press left over the toolbar: the window a run put its results in, and the
+     * launcher another button opened, which hangs under that button and lies over the toolbar beside it.
+     */
+    private void closeOpenLauncher() {
+        closeWindowsOverTheScreen();
+        if (openLaunchers.isEmpty()) {
+            return;
+        }
+        page.keyboard().press("Escape");
+        WaitUtil.requireCondition(openLaunchers::isEmpty, DEFAULT_TIMEOUT_MS, 200,
+                "Waiting for the launcher standing open to close");
+    }
+
     public IRunMenu clickRun() {
+        closeOpenLauncher();
         runBtn.waitForVisible();
         runBtn.click();
         RunMenuComponent launcher = new RunMenuComponent(page);
@@ -76,6 +97,7 @@ public class TableToolbarComponent extends BaseComponent {
     }
 
     public ITraceMenu clickTrace() {
+        closeOpenLauncher();
         traceBtn.click();
         TraceMenuComponent launcher = new TraceMenuComponent(page);
         launcher.waitForLauncher();
@@ -109,11 +131,13 @@ public class TableToolbarComponent extends BaseComponent {
      * launcher itself now, so opening it is the same press as running.
      */
     public void clickRunDropdown() {
+        closeOpenLauncher();
         runBtn.waitForVisible();
         runBtn.click();
     }
 
     public void clickBenchmarkDropdown() {
+        closeOpenLauncher();
         benchmarkBtn.waitForVisible();
         benchmarkBtn.click();
     }
@@ -148,11 +172,20 @@ public class TableToolbarComponent extends BaseComponent {
         return createTestBtn;
     }
 
+    /**
+     * Runs the tests written against the table. The button opens the launcher the run is settled in, and the
+     * run itself starts from there, so pressing the button is opening it and starting from it.
+     */
     public void clickTableActionsTestBtn() {
+        closeOpenLauncher();
         tableActionsTestBtn.click();
+        WebElement start = new WebElement(page, "xpath=//button[@data-testid='tests-start']", "testsStartBtn");
+        start.waitForVisible(DEFAULT_TIMEOUT_MS);
+        start.click();
     }
 
     public void clickTableActionsTestDropdown() {
+        closeOpenLauncher();
         tableActionsTestBtn.waitForVisible();
         tableActionsTestBtn.click();
     }

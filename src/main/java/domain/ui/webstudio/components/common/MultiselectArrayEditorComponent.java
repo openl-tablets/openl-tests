@@ -124,28 +124,22 @@ public class MultiselectArrayEditorComponent extends BaseComponent {
     }
 
     /**
+     * Takes the whole list, or lets the whole of it go. The screen offers one button for the two, named
+     * after what pressing it would do, so what it is named is what it will do.
+     */
+    public void setAllValuesChosen(boolean chosen) {
+        String asked = chosen ? "Select All" : "Deselect All";
+        if (!actionButtonTemplate.format(asked).isVisible(PROBE_MS)) {
+            throw new AssertionError("The list should offer '" + asked + "' and does not");
+        }
+        clickActionButton(asked);
+    }
+
+    /**
      * Presses one of the editor's buttons (Done / Select All / Deselect All). The list is drawn anew whenever
      * a value is ticked, so the button found a moment ago can be gone by the time it is pressed — the press
      * is retried on the current one instead of waiting the whole timeout out on a detached node.
      */
-    /**
-     * Takes the whole list, or lets the whole of it go. The screen offers one button for the two, named
-     * after what pressing it would do, so a list already wholly taken offers to let it go and there is then
-     * nothing to press.
-     */
-    public void setAllValuesChosen(boolean chosen) {
-        String asked = chosen ? "Select All" : "Deselect All";
-        WebElement toggle = actionButtonTemplate.format(asked);
-        if (toggle.isVisible(PROBE_MS)) {
-            clickActionButton(asked);
-            return;
-        }
-        String other = chosen ? "Deselect All" : "Select All";
-        if (!actionButtonTemplate.format(other).isVisible(PROBE_MS)) {
-            throw new AssertionError("The list offers neither '" + asked + "' nor '" + other + "'");
-        }
-    }
-
     public void clickActionButton(String buttonName) {
         WaitUtil.retryOnException(() -> {
             actionButtonTemplate.format(buttonName).click(ACTION_BUTTON_CLICK_TIMEOUT_MS);

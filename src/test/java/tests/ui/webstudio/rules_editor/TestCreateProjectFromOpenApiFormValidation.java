@@ -27,9 +27,10 @@ public class TestCreateProjectFromOpenApiFormValidation extends BaseTest {
 
     @Test
     @TestCaseId("IPBQA-30678")
-    @Description("Create Project from OpenAPI refuses a bad name, a bad module name or path, duplicate module "
-            + "names or paths and a malformed specification. 6.4.0 reports all of them with one generic "
-            + "message instead of naming the problem")
+    @Description("Create Project from OpenAPI refuses a bad project name, a bad module name or path, "
+            + "duplicate module names or paths and a malformed specification, reporting all of them with one "
+            + "generic message instead of naming the problem. A file whose own name carries forbidden "
+            + "characters is taken, because the specification is kept under the name its format reads as")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void testCreateProjectFromOpenApiFormValidation() {
         LoginService loginService = new LoginService(DriverPool.getPage());
