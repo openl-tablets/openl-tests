@@ -27,7 +27,7 @@ public class TestSimpleLookupSimpleRules extends BaseTest {
     @TestCaseId("IPBQA-29967")
     @Description("SimpleLookup and SimpleRules tables: open, recreate, run, edit, copy and create test table. "
             + "The Create Table modal (EPBDS-6912) titles the default return column 'Output' (legacy wizard "
-            + "wrote 'RETURN') and generates the default Test table with a leading numbering column.")
+            + "wrote 'RETURN').")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void testSimpleLookupSimpleRules() {
         String projectName = WorkflowService.loginCreateProjectFromExcelFile(User.ADMIN, EXCEL_FILE);
@@ -69,7 +69,7 @@ public class TestSimpleLookupSimpleRules extends BaseTest {
 
         runSimpleRule(editorPage, "20", "female");
         assertThat(editorPage.getTestResultValidationComponent().getTestResult(1))
-                .isEqualTo(List.of("1", "20", "female", "0.2"));
+                .isEqualTo(List.of("20", "\"female\"", "0.2"));
 
         rulesTree.selectItemInFolder("Rules", "SimpleREx1");
         table.doubleClickCell(2, 2);
@@ -103,19 +103,19 @@ public class TestSimpleLookupSimpleRules extends BaseTest {
         rulesTree.selectItemInFolder("Rules", "SimpleLEx2");
         editorPage.getProblemsPanelComponent().checkNoProblems();
         assertThat(normalizeNonBreakingSpaces(table.getColumn(1))).isEqualTo(List.of(
-                "SimpleLookup Double SimpleLEx2 (Gender gender, Marital_Status status)",
-                "Gender\\\n                 Marital_Status", "male", "female", " "));
+                "SimpleLookup Double SimpleLEx2 (Gender gender, Marital_Status  status)",
+                "Gender\\\n                 Marital_Status", "male", "female", ""));
         assertThat(table.getColumn(2)).isEqualTo(List.of("Married", "700", "300", "500"));
         assertThat(table.getColumn(3)).isEqualTo(List.of("Single", "720", "350", "550"));
 
         runSimpleLookup(editorPage, "female", "Single");
         assertThat(editorPage.getTestResultValidationComponent().getTestResult(1))
-                .isEqualTo(List.of("1", "female", "Single", "350"));
+                .isEqualTo(List.of("\"female\"", "\"Single\"", "350"));
 
         rulesTree.selectItemInFolder("Rules", "SimpleLEx2");
         runSimpleLookup(editorPage, null, "Married");
         assertThat(editorPage.getTestResultValidationComponent().getTestResult(1))
-                .isEqualTo(List.of("1", "Empty", "Married", "500"));
+                .isEqualTo(List.of("null", "\"Married\"", "500"));
 
         rulesTree.selectItemInFolder("Rules", "SimpleLEx2");
         table.doubleClickCell(4, 1);
@@ -136,23 +136,23 @@ public class TestSimpleLookupSimpleRules extends BaseTest {
         editorPage.getEditorToolbarPanelComponent().createDefaultTestTable();
         rulesTree.checkRulesTablePresent("Test", "SimpleLEx2Test");
         assertThat(rulesTree.getSelectedItemText()).isEqualTo("SimpleLEx2Test");
-        assertThat(table.getRow(2).getValue()).isEqualTo(List.of("", "gender", "status", "_res_"));
+        assertThat(table.getRow(2).getValue()).isEqualTo(List.of("gender", "status", "_res_"));
     }
 
     private void runSimpleRule(EditorPage editorPage, String age, String gender) {
         editorPage.getEditorToolbarPanelComponent()
                 .clickRun()
                 .setInputTextField("1", age)
-                .setInputSelectField("1", gender)
+                .setInputTextField("2", gender)
                 .clickRunInsideMenu();
     }
 
     private void runSimpleLookup(EditorPage editorPage, String gender, String status) {
         IRunMenu runMenu = editorPage.getEditorToolbarPanelComponent().clickRun();
         if (gender != null) {
-            runMenu.setInputSelectField("1", gender);
+            runMenu.setInputTextField("1", gender);
         }
-        runMenu.setInputSelectField("2", status)
+        runMenu.setInputTextField("2", status)
                 .clickRunInsideMenu();
     }
 

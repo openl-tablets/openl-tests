@@ -545,6 +545,48 @@ one thing that section is there to answer.
 start before reading the section. What is not asked, and is the coverage to restore with the fix, is that the
 section answers the deletion by itself.
 
+## 22. The values of an alias datatype never reach the Run/Trace launcher
+
+**What happens.** A parameter whose type is an alias datatype — `myType`, declaring bla1, bla2, bla3 — is
+offered as a plain text box in the Run and Trace launchers, where the old launcher offered the three values
+to pick from. It holds for the datatype itself and for an array of it: growing `my (myType[])` by one and
+folding the row open gives `input-my[0]`, an `ant-input`, not a list.
+
+**Where it comes from.** The launcher draws its form from the JSON schema of the parameter, and the schema is
+generated from the erased Java class: `ExecutionValueMapper.java:182-186` calls
+`SafeSchemaGenerator.generate(..., type.getInstanceClass())`, and `DomainOpenClass.getInstanceClass()`
+(`DEV/org.openl.rules/src/org/openl/types/impl/DomainOpenClass.java:100-102`) answers `String.class` for
+`myType` and `String[].class` for `myType[]`. The domain is dropped there, so the schema carries no `enum`,
+and the front end picks `'string'` (`studio-ui/src/components/schemaForm/schema.ts:97-122`) and draws an
+`Input` (`ScalarEditor.tsx:181-194`) in place of the `Select` it draws for `enum` (`:127-142`). The domain is
+still at hand where the schema is asked for — `TableInputServiceImpl.java:119-137` passes the declared
+`IOpenClass`, and an array of an alias type is itself a `DomainOpenClass` carrying the element's domain
+(`AOpenClass.java:90-106`) — and the front end is ready to draw a list from `items`
+(`SchemaTree.tsx:256-271`, covered by `SchemaForm.test.tsx`). For an array the `enum` belongs in `items`, the
+domain being the element's.
+
+This is a regression of what EPBDS-6497 gave the Run page (`d9e15d6feb`, *"Show appropriate input elements
+for input parameters in Run Table page"*): the JSF tree held the `IOpenClass` itself and answered `selection`
+for an alias (deleted `STUDIO/org.openl.rules.webstudio/src/org/openl/rules/webstudio/web/test/SimpleParameterTreeNode.java:47-81`),
+with a collection's elements built from `getComponentClass()` (`CollectionParameterTreeNode.java:163-170`).
+The new route came in with EPBDS-16560 (`1929d67c7b`), the JSF nodes were deleted in `ba11551ebe`. The test
+that traces this is filed under EPBDS-7796, which is the ticket the array case was raised as.
+
+**Why it matters.** The whole point of an alias datatype is that only its values are allowed; the launcher
+now takes anything typed into the box.
+
+**Blocked tests.**
+- `tests.ui.webstudio.studio_issues.TestArrayOfAliasValuesInRunTrace#testArrayOfAliasValuesInRunTrace` — the
+  scenario stops with `SkipException` before it runs. Its assertion `containsExactly("bla1", "bla2", "bla3")`
+  is what catches the defect and is kept in the source word for word, but it is not carried out while the
+  test is blocked, so nothing in the suite asks the launcher for the values of an alias datatype until the
+  fix lands.
+
+**Tests changed rather than blocked.** `TestSimpleLookupSimpleRules` runs its rules with a `Gender` and a
+`Marital_Status`, both alias datatypes. It now types those values into the boxes the launcher offers instead
+of picking them from lists; what the run returns is still checked in full. Picking them from a list is the
+coverage to restore with the fix.
+
 ---
 
 ## Renamings that are not bugs
@@ -591,6 +633,10 @@ the build under test (`6.5.0-b48c86279338`) and against the screens themselves.
 | A cell whose type is a list of allowed values is written by picking from that list: the cell offers the list and nothing else, so the value cannot be typed into it as text. The old editor let a reader switch such a cell to a plain box and write into it. | `TestEditingCommaSeparatedArrayValues` writes the original value back by picking it from the list, in place of typing it, and still checks that the cell reads as it did before. |
 | The **Show equal rows** box of the comparison now does what it says: with it off only the rows that differ are drawn. A table whose column was added shows eight of its nine rows as differing — the ninth is the heading, one cell banked across the table, which reads the same on both sides. The old screen drew all nine either way, so the box changed nothing. | `TestDisplayChangedRowsTableStructure` expects eight rows with the box off and nine with it on, which is the difference the box is there to make. |
 | A row added at the **end** of a table is drawn by the comparison as one row more on the side it was added to, with that row marked as the difference; both sides are drawn whole rather than reduced to the one row that differs. | `TestDisplayChangedRowsResolveConflicts` asks that the side with the addition holds one row more, that the last row of it carries what was written and is marked, and that the row before it reads the same on both sides. |
+| The window a run opens holds one row — the values the table ran with, a column each, and the value it returned (`RunResultModal.tsx:30-42`) — without the case number the old window numbered the row with. A value is drawn the way a debugger draws a literal, so a string stands in quotation marks and a value that was not given reads `null` (`valueTree.ts:20-41`). | `TestSimpleLookupSimpleRules` reads the row as the window draws it: the inputs and the result, with the strings quoted and the parameter left empty read as `null`. |
+| A cell is drawn with the spaces the workbook holds, where the old editor let the browser fold them together, and a cell holding nothing reads as nothing rather than as a space. | `TestSimpleLookupSimpleRules` expects the header of `SimpleLEx2` with the two spaces its workbook carries, and the empty cell as empty. |
+| The editor of a cell opens as a plain box and becomes the list, the calendar or the number field the cell asks for once the cell has said what it takes (`CellValueEditor.tsx`), and a value picked from a list is kept by Enter, as a value typed is. | `TableComponent.editCell` waits for the editor to settle before writing, picks from the list where one is offered and presses Enter to keep it. |
+| The Create Table dialog holds its body under a spinner while it reads the modules, the skeleton or the sheets (`CreateTableModal.tsx:1232,1258`), and a body under the spinner takes no press at all. | `CreateTableDialogComponent` waits for the dialog to stop loading before every press, and picks a value from the list that belongs to the cell it is writing, named `<id of the cell's input>_list`. |
 
 ## Class names of the component library, for whoever writes the next locator
 

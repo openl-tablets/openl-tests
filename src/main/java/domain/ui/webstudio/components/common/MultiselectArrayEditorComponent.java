@@ -23,8 +23,11 @@ public class MultiselectArrayEditorComponent extends BaseComponent {
     // Short enough that a button lost to a re-render is retried rather than waited out.
     private static final int ACTION_BUTTON_CLICK_TIMEOUT_MS = DEFAULT_TIMEOUT_MS / 2;
     private static final int PROBE_MS = 2000;
+    private static final int SCREENFULS = 40;
+    private static final int SCREENFUL_PX = 200;
 
     private WebElement optionTemplate;
+    private WebElement listHolder;
     private WebElement actionButtonTemplate;
     private List<WebElement> allOptions;
 
@@ -43,6 +46,9 @@ public class MultiselectArrayEditorComponent extends BaseComponent {
                 "xpath=(" + OPTION + "[@title=\"%1$s\" or normalize-space(.)=\"%1$s\"])[1]", "multiselectOption");
         actionButtonTemplate = new WebElement(page,
                 "xpath=" + OPEN_LIST + "//button[normalize-space()='%s']", "multiselectActionBtn");
+        listHolder = new WebElement(page,
+                "xpath=" + OPEN_LIST + "//div[contains(@class,'-list-holder')][not(contains(@class,'-list-holder-inner'))]",
+                "multiselectListHolder");
         allOptions = createElementList("xpath=" + OPTION, "multiselectOptions");
     }
 
@@ -68,28 +74,36 @@ public class MultiselectArrayEditorComponent extends BaseComponent {
     /** Whether the value is among those the cell holds, which the list marks as chosen. */
     public boolean isValueChecked(String value) {
         openList();
-        WebElement option = narrowedTo(value);
-        boolean chosen = String.valueOf(option.getAttribute("class")).contains("ant-select-item-option-selected");
-        widenAgain(value);
-        return chosen;
+        WebElement option = rolledTo(value);
+        return String.valueOf(option.getAttribute("class")).contains("ant-select-item-option-selected");
     }
 
     /**
-     * Narrows the list to the value and answers the one option left. A long list is drawn a screenful at a
-     * time, so a value far down it is not in the page until the list is narrowed — which is what a reader
-     * does by typing what they are looking for.
+     * The option carrying the value, scrolled to. A long list is drawn a screenful at a time, so a value far
+     * down it is not in the page until the list has been rolled down to it; and the list narrows by what a
+     * value is written as, not by the name it is offered under, so a reader looking for a name rolls the
+     * list rather than typing the name.
      */
-    private WebElement narrowedTo(String value) {
-        page.keyboard().type(value);
+    private WebElement rolledTo(String value) {
         WebElement option = optionTemplate.format(value);
-        option.waitForVisible(DEFAULT_TIMEOUT_MS);
-        return option;
+        if (option.isVisible(PROBE_MS / 4)) {
+            return option;
+        }
+        listHolder.waitForVisible(DEFAULT_TIMEOUT_MS).hover();
+        roll(-SCREENFUL_PX);
+        for (int screenful = 0; screenful < SCREENFULS; screenful++) {
+            if (option.isVisible(PROBE_MS / 8)) {
+                return option;
+            }
+            page.mouse().wheel(0, SCREENFUL_PX);
+        }
+        throw new AssertionError("The list offers no '" + value + "'");
     }
 
-    /** Takes back what was typed to narrow the list, so the next value is looked for in the whole of it. */
-    private void widenAgain(String value) {
-        for (int typed = 0; typed < value.length(); typed++) {
-            page.keyboard().press("Backspace");
+    /** Rolls the list the whole way in one direction, so it is looked through from where it starts. */
+    private void roll(int by) {
+        for (int screenful = 0; screenful < SCREENFULS; screenful++) {
+            page.mouse().wheel(0, by);
         }
     }
 
@@ -130,17 +144,10 @@ public class MultiselectArrayEditorComponent extends BaseComponent {
 
     /** Presses the value only when it stands the way it should not, since a press turns it the other way. */
     private void press(String value, boolean chosenNow) {
-        WebElement option = narrowedTo(value);
-        boolean chosen = String.valueOf(option.getAttribute("class")).contains("ant-select-item-option-selected");
-        if (chosen == chosenNow) {
+        WebElement option = rolledTo(value);
+        if (String.valueOf(option.getAttribute("class")).contains("ant-select-item-option-selected") == chosenNow) {
             option.click();
-            // Choosing takes back what was typed by itself; taking a value away leaves it standing.
-            if (chosenNow) {
-                widenAgain(value);
-            }
-            return;
         }
-        widenAgain(value);
     }
 
     /**

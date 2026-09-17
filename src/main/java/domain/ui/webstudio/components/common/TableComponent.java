@@ -1,7 +1,8 @@
 package domain.ui.webstudio.components.common;
 
-import domain.ui.webstudio.components.BaseComponent;
+import com.microsoft.playwright.PlaywrightException;
 import configuration.core.ui.WebElement;
+import domain.ui.webstudio.components.BaseComponent;
 import configuration.driver.DriverPool;
 import helpers.utils.WaitUtil;
 
@@ -87,19 +88,49 @@ public class TableComponent extends BaseComponent {
             return true;
         }, 10000, 500, "Activating cell editor for cell [" + rowIndex + "," + columnIndex + "]");
 
-        boolean isSelectEditor = inputLocator.getLocator().locator("xpath=self::div[contains(@class,'ant-select')]").count() > 0;
-        if (isSelectEditor) {
-            // A cell offering a list of values is written by picking from it, not by typing over it.
-            pickInSelect(new WebElement(inputLocator, "xpath=.//input", "cellValueInput"), text);
-        } else {
-            inputLocator.press("Control+A");
-            inputLocator.press("Delete");
-            inputLocator.fill(text);
+        waitUntilTheEditorIsDrawn();
+        boolean written = WaitUtil.waitForCondition(() -> {
+            // A cell offering a list of values is written by picking from it, not by typing over it, and the
+            // editor opens as a box before the cell says the values it takes, so which one it is is read again
+            // on every try.
+            if (String.valueOf(inputLocator.getAttribute("class")).contains("ant-select")) {
+                WebElement picker = new WebElement(inputLocator, "xpath=.//input", "cellValueInput");
+                pickInSelect(picker, text);
+                if (pressEnter) {
+                    picker.press("Enter");
+                }
+                return true;
+            }
+            try {
+                inputLocator.press("Control+A");
+                inputLocator.press("Delete");
+                inputLocator.fill(text);
+            } catch (PlaywrightException editorChanged) {
+                if (!String.valueOf(editorChanged.getMessage()).contains("Element is not an <input>")) {
+                    throw editorChanged;
+                }
+                return false;
+            }
             if (pressEnter) {
                 inputLocator.press("Enter");
             }
+            return true;
+        }, 10000, 250, "Writing '" + text + "' into the editor of cell [" + rowIndex + "," + columnIndex + "]");
+        if (!written) {
+            throw new IllegalStateException("The editor of cell [" + rowIndex + "," + columnIndex
+                    + "] took neither the value nor a pick from a list");
         }
         WaitUtil.sleep(250, "Waiting for cell edit to be applied");
+    }
+
+    private void waitUntilTheEditorIsDrawn() {
+        String[] last = {null};
+        WaitUtil.waitForCondition(() -> {
+            String drawn = String.valueOf(inputLocator.getAttribute("class"));
+            boolean settled = drawn.equals(last[0]);
+            last[0] = drawn;
+            return settled;
+        }, 5000, 300, "Waiting for the cell editor the cell asks for to be drawn");
     }
 
     public void editCell(int rowIndex, int columnIndex, String text) {
