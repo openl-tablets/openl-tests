@@ -16,6 +16,8 @@ public class MoreMenuComponent extends BaseComponent implements IMoreMenu {
     private static final int MENU_ITEM_VISIBLE_TIMEOUT_MS = 500;
     private static final int MENU_ITEM_CLICK_TIMEOUT_MS = 2000;
     private static final long MENU_RETRY_TIMEOUT_MS = DEFAULT_TIMEOUT_MS * 2L;
+    private static final int SETTLE_LOOKS = 4;
+    private static final int SETTLE_LOOK_MS = 800;
 
     private final WebElement toggle;
     private final WebElement changesBtn;
@@ -69,10 +71,13 @@ public class MoreMenuComponent extends BaseComponent implements IMoreMenu {
                 throw new IllegalStateException("Local Changes view did not open after clicking the menu item");
             }
             // The module screen finishes what the save left it doing and draws itself anew, which takes the
-            // history away with it. It is opened again rather than read while it is going.
-            WaitUtil.sleep(1000, "Letting the module screen settle under the history");
-            if (!changes.isViewShown(MENU_ITEM_VISIBLE_TIMEOUT_MS * 2)) {
-                throw new IllegalStateException("Local Changes closed again while the module screen settled");
+            // history away with it. It is opened again rather than read while it is going, and it counts as
+            // open only once it has stayed so while the screen underneath settled.
+            for (int look = 0; look < SETTLE_LOOKS; look++) {
+                WaitUtil.sleep(SETTLE_LOOK_MS, "Letting the module screen settle under the history");
+                if (!changes.isViewShown(MENU_ITEM_VISIBLE_TIMEOUT_MS * 2)) {
+                    throw new IllegalStateException("Local Changes closed again while the module screen settled");
+                }
             }
         }, MENU_RETRY_TIMEOUT_MS + DEFAULT_TIMEOUT_MS, 500, "Opening Local Changes from the More menu");
         if (!opened) {

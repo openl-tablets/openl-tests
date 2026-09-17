@@ -38,7 +38,9 @@ public class TestDeleteOpenApiFileRemovesProperties extends BaseTest {
 
         repositoryPage.createProjectFromOpenApi(YML_FILE, projectName);
 
-        repositoryPage.openProjectsList().openProjectDetail(projectName).deleteFile("openapi.yml");
+        // Whatever the uploaded specification was called, the project keeps it under the name its format
+        // reads as, and a YML file reads as YAML (EPBDS-16415).
+        repositoryPage.openProjectsList().openProjectDetail(projectName).deleteFile("openapi.yaml");
 
         editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName);

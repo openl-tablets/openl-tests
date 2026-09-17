@@ -10,6 +10,7 @@ import helpers.utils.WaitUtil;
 import lombok.Getter;
 
 import java.util.ArrayList;
+import java.util.function.Supplier;
 import java.util.List;
 
 public abstract class BaseComponent extends CoreComponent {
@@ -64,13 +65,22 @@ public abstract class BaseComponent extends CoreComponent {
     }
 
     /**
+     * Takes the pointer off whatever it was last left on. A label the screen shows under the pointer stays
+     * drawn while it is there and lies over what is beside it, so a reader who is about to press something
+     * else moves away from it first.
+     */
+    protected void movePointerAway() {
+        page.mouse().move(2, 2);
+    }
+
+    /**
      * Picks a value from an Ant Design Select, whatever screen it stands on.
      *
      * <p>A Select that takes typing is narrowed by the value first: a long list is drawn a screenful at a
      * time, so the value may not be drawn until it is the only one left.
      */
     protected void pickInSelect(WebElement selectInput, String value) {
-        WaitUtil.requireCondition(() -> {
+        Supplier<Boolean> pick = () -> {
             // Pressing an open list closes it again, so it is opened only while it stands closed.
             if (!"true".equals(selectInput.getAttribute("aria-expanded"))) {
                 selectInput.click();
@@ -85,7 +95,15 @@ public abstract class BaseComponent extends CoreComponent {
             }
             option.click();
             return true;
-        }, DEFAULT_TIMEOUT_MS, SELECT_SETTLE_MS, "Picking '" + value + "' from the list");
+        };
+        try {
+            WaitUtil.requireCondition(pick, DEFAULT_TIMEOUT_MS, SELECT_SETTLE_MS,
+                    "Picking '" + value + "' from the list");
+        } catch (RuntimeException notPicked) {
+            throw new AssertionError("'" + value + "' was not among what the list offered: "
+                    + page.locator("xpath=//div[contains(@class,'ant-select-dropdown')]"
+                            + "[not(contains(@class,'ant-select-dropdown-hidden'))]").allInnerTexts(), notPicked);
+        }
     }
 
     /**

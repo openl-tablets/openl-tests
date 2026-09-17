@@ -23,6 +23,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class TestNewRecordWhenRegeneratingFromDifferentFile extends BaseTest {
 
     private static final String OPENAPI_FILE_1 = "openapi1.json";
+    /** What the project calls the specification it was created from: the name its format reads as. */
+    private static final String NORMALIZED_SPEC = "openapi.json";
     private static final String OPENAPI_FILE_2 = "openapi2.json";
 
     @Test
@@ -57,7 +59,7 @@ public class TestNewRecordWhenRegeneratingFromDifferentFile extends BaseTest {
         editorPage.getEditorToolbarPanelComponent().navigateToProjectRoot(projectName);
         importDialog = editorPage.openImportOpenApiDialog();
         importDialog.waitForFilePathField();
-        importDialog.setOpenApiFilePath(OPENAPI_FILE_1);
+        importDialog.setOpenApiFilePath(NORMALIZED_SPEC);
         importDialog.selectTablesGenerationMode();
         importDialog.clickImportTablesGeneration();
 

@@ -11,6 +11,7 @@ public class ImportOpenApiDialogComponent extends BaseComponent {
 
     private static final String OVERVIEW = "xpath=//div[@data-testid='overview-panel']";
     private static final String MODE = OVERVIEW + "//div[@data-testid='edit-openapi-mode']";
+    private static final int CANCEL_PROBE_MS = 2000;
 
     private WebElement openApiFilePathInput;
     private WebElement generateFromRulesRadio;
@@ -134,8 +135,16 @@ public class ImportOpenApiDialogComponent extends BaseComponent {
         waitUntilSpinnerLoaded();
     }
 
+    /**
+     * Leaves the settings without keeping them. Refusing what an import offered leaves them read again by
+     * itself, and there is then nothing left to leave.
+     */
     public void clickCancel() {
-        cancelBtn.click();
+        if (cancelBtn.isVisible(CANCEL_PROBE_MS)) {
+            cancelBtn.click();
+        }
+        WaitUtil.requireCondition(() -> !cancelBtn.isVisible(CANCEL_PROBE_MS), DEFAULT_TIMEOUT_MS, 250,
+                "Waiting for the settings to be left without being kept");
     }
 
     public String getErrorMessage() {

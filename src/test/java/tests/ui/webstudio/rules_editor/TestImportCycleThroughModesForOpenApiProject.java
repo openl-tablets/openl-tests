@@ -24,6 +24,7 @@ public class TestImportCycleThroughModesForOpenApiProject extends BaseTest {
 
     private static final String OPENAPI_FILE = "openapi2.json";
     private static final String OPENAPI_FILE_3 = "openapi3.json";
+    private static final String NORMALIZED_SPEC = "openapi.json";
 
     @Test
     @TestCaseId("IPBQA-31035")
@@ -43,10 +44,12 @@ public class TestImportCycleThroughModesForOpenApiProject extends BaseTest {
         editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName);
 
-        assertThat(editorPage.getOpenApiMode()).isEqualTo("Tables generation");
-        assertThat(editorPage.getOpenApiPropertyValue("File")).isEqualTo(OPENAPI_FILE_3);
-        assertThat(editorPage.getOpenApiPropertyValue("Services module")).isEqualTo("Algorithms");
-        assertThat(editorPage.getOpenApiPropertyValue("Data types module")).isEqualTo("Models");
+        // A project made from a specification keeps it under the name its format reads as and is reconciled
+        // against it, naming no module to write into until a generation is asked for (EPBDS-16415).
+        assertThat(editorPage.getOpenApiMode()).isEqualTo("Reconciliation");
+        assertThat(editorPage.getOpenApiPropertyValue("File")).isEqualTo(NORMALIZED_SPEC);
+        assertThat(editorPage.hasOpenApiProperty("Services module")).isFalse();
+        assertThat(editorPage.hasOpenApiProperty("Data types module")).isFalse();
 
         // Step 6.1: Switch to Reconciliation mode import (using Generate from Rules, no file path needed)
         ImportOpenApiDialogComponent importDialog = editorPage.openImportOpenApiDialog();
@@ -55,7 +58,7 @@ public class TestImportCycleThroughModesForOpenApiProject extends BaseTest {
         editorPage.getEditorToolbarPanelComponent().navigateToProjectRoot(projectName);
 
         assertThat(editorPage.getOpenApiMode()).isEqualTo("Reconciliation");
-        assertThat(editorPage.getOpenApiPropertyValue("File")).isEqualTo(OPENAPI_FILE_3);
+        assertThat(editorPage.getOpenApiPropertyValue("File")).isEqualTo(NORMALIZED_SPEC);
 
         editorPage.getEditorToolbarPanelComponent().clickSave();
         editorPage.getSaveChangesComponent().clickSave();
@@ -107,7 +110,7 @@ public class TestImportCycleThroughModesForOpenApiProject extends BaseTest {
         editorPage.getEditorToolbarPanelComponent().navigateToProjectRoot(projectName);
         importDialog = editorPage.openImportOpenApiDialog();
         importDialog.waitForFilePathField();
-        importDialog.setOpenApiFilePath(OPENAPI_FILE_3);
+        importDialog.setOpenApiFilePath(NORMALIZED_SPEC);
         importDialog.selectTablesGenerationMode();
         importDialog.clickImportTablesGeneration();
 

@@ -70,6 +70,10 @@ public class TestImportTablesGenerationOverwriteWarning extends BaseTest {
         editorPage.getEditorToolbarPanelComponent().navigateToProjectRoot(projectName);
         importDialog = editorPage.openImportOpenApiDialog();
         importDialog.selectTablesGenerationMode();
+        // Creating a project from a specification no longer writes down what to generate into (EPBDS-16415),
+        // so the modules to write over are named here, as a reader would name them.
+        importDialog.setRulesModuleName("Algorithms_test");
+        importDialog.setDataModuleName("Models_test");
         importDialog.clickImportTablesGeneration();
 
         OpenApiModuleSettingsDialogComponent settingsDialog = editorPage.getOpenApiModuleSettingsDialogComponent();
@@ -77,7 +81,8 @@ public class TestImportTablesGenerationOverwriteWarning extends BaseTest {
 
         assertThat(settingsDialog.getPlanLines())
                 .as("Both modules already stand, so the workbooks the project declares for them are replaced")
-                .contains("Services module: Algorithms_test — the workbook rules1/Algorithms_test1.xlsx is replaced", "Data types module: Models_test — the workbook rules2/Models_test2.xlsx is replaced");
+                .contains("Services module: Algorithms_test — the workbook rules1/Algorithms_test1.xlsx is replaced",
+                        "Data types module: Models_test — the workbook rules2/Models_test2.xlsx is replaced");
         assertThat(settingsDialog.isVisible())
                 .as("Settings dialog with Cancel button should be visible")
                 .isTrue();
@@ -85,6 +90,8 @@ public class TestImportTablesGenerationOverwriteWarning extends BaseTest {
         // Step 3.1: Cancel, re-open settings dialog, confirm import with overwrite
         settingsDialog.clickCancel();
         importDialog.selectTablesGenerationMode();
+        importDialog.setRulesModuleName("Algorithms_test");
+        importDialog.setDataModuleName("Models_test");
         importDialog.clickImportTablesGeneration();
         editorPage.getOpenApiModuleSettingsDialogComponent().waitForVisible();
         editorPage.getOpenApiModuleSettingsDialogComponent().clickImportAndOverride();

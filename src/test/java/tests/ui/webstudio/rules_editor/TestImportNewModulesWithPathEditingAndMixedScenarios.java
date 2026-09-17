@@ -26,6 +26,8 @@ public class TestImportNewModulesWithPathEditingAndMixedScenarios extends BaseTe
 
     private static final String OPENAPI_FILE = "openapi2.json";
     private static final String OPENAPI_FILE_1 = "openapi1.json";
+    /** What the project calls the specification it was created from: the name its format reads as. */
+    private static final String NORMALIZED_SPEC = "openapi.json";
 
     @Test
     @TestCaseId("IPBQA-31035")
@@ -70,6 +72,10 @@ public class TestImportNewModulesWithPathEditingAndMixedScenarios extends BaseTe
         editorPage.getEditorToolbarPanelComponent().navigateToProjectRoot(projectName);
         importDialog = editorPage.openImportOpenApiDialog();
         importDialog.selectTablesGenerationMode();
+        // The project was made from a specification, which no longer writes down what to generate into
+        // (EPBDS-16415), so the modules to write over are named here, as a reader would name them.
+        importDialog.setRulesModuleName("Algorithms_test");
+        importDialog.setDataModuleName("Models_test");
         importDialog.clickImportTablesGeneration();
         OpenApiModuleSettingsDialogComponent settingsDialog = editorPage.getOpenApiModuleSettingsDialogComponent();
         settingsDialog.waitForVisible();
@@ -81,7 +87,7 @@ public class TestImportNewModulesWithPathEditingAndMixedScenarios extends BaseTe
         editorPage.getEditorToolbarPanelComponent().navigateToProjectRoot(projectName);
         importDialog = editorPage.openImportOpenApiDialog();
         importDialog.waitForFilePathField();
-        importDialog.setOpenApiFilePath(OPENAPI_FILE_1);
+        importDialog.setOpenApiFilePath(NORMALIZED_SPEC);
         importDialog.selectTablesGenerationMode();
         importDialog.setRulesModuleName("Alg");
         importDialog.setDataModuleName(moduleName);
@@ -121,7 +127,7 @@ public class TestImportNewModulesWithPathEditingAndMixedScenarios extends BaseTe
         assertThat(modules).as("Mod-123 should be created").contains(moduleName);
 
         assertThat(editorPage.getOpenApiMode()).isEqualTo("Tables generation");
-        assertThat(editorPage.getOpenApiPropertyValue("File")).isEqualTo(OPENAPI_FILE_1);
+        assertThat(editorPage.getOpenApiPropertyValue("File")).isEqualTo(NORMALIZED_SPEC);
         assertThat(editorPage.getOpenApiPropertyValue("Services module")).isEqualTo("Alg");
         assertThat(editorPage.getOpenApiPropertyValue("Data types module")).isEqualTo(moduleName);
 

@@ -58,9 +58,6 @@ public class EditorPage extends BasePage {
     private WebElement overviewSaveBtn;
     private WebElement migrateConfirmBtn;
     private ManageDependenciesDialogComponent manageDependenciesDialogComponent;
-    private WebElement dependenciesHeader;
-    private WebElement addDependenciesLink;
-    private WebElement manageDependenciesBtn;
     private WebElement dependencyGraphSearch;
     private WebElement dependencyGraphSearchInput;
     private WebElement dependencyGraphOptionTemplate;
@@ -113,9 +110,6 @@ public class EditorPage extends BasePage {
         overviewSaveBtn = new WebElement(getPage(), "xpath=//button[@data-testid='overview-save']", "overviewSaveBtn");
         migrateConfirmBtn = new WebElement(getPage(), "xpath=//div[contains(@class,'ant-modal-confirm')]//button[normalize-space()='Migrate']", "migrateConfirmBtn");
         manageDependenciesDialogComponent = createScopedComponent(ManageDependenciesDialogComponent.class, "xpath=//div[@id='manageDependenciesPopup_container']", "manageDependenciesDialogComponent");
-        dependenciesHeader = new WebElement(getPage(), "xpath=//div[@id='content']//span[text()='Dependencies']", "dependenciesHeader");
-        addDependenciesLink = new WebElement(getPage(), "xpath=//div[@id='content']//a[contains(text(),'Click to add dependencies')]", "addDependenciesLink");
-        manageDependenciesBtn = new WebElement(getPage(), "xpath=//div[@id='content']//a[@title='Manage Dependencies']//img", "manageDependenciesBtn");
         dependencyGraphSearch = new WebElement(getPage(), "xpath=//div[@data-testid='table-graph-search']", "dependencyGraphSearch");
         dependencyGraphSearchInput = new WebElement(getPage(), "xpath=//div[@data-testid='table-graph-search']//input", "dependencyGraphSearchInput");
         dependencyGraphOptionTemplate = new WebElement(getPage(), "xpath=//div[contains(@class,'ant-select-item-option-content') and normalize-space(.)='%s']", "dependencyGraphOptionTemplate");
@@ -218,6 +212,12 @@ public class EditorPage extends BasePage {
         return openApiPropertyValueTemplate.format(propertyName).getText().trim();
     }
 
+    /** Whether the card says anything under that name at all; a setting the project does not hold is left out. */
+    public boolean hasOpenApiProperty(String propertyName) {
+        waitUntilOverviewIsRead();
+        return openApiPropertyValueTemplate.format(propertyName).isVisible(OVERVIEW_PROBE_MS);
+    }
+
     /**
      * Waits for the card to be back to what it says rather than what it is being told. While the settings
      * are open for writing every row holds the control it is written with, and a row read then would read
@@ -268,13 +268,7 @@ public class EditorPage extends BasePage {
     }
 
     public ManageDependenciesDialogComponent openManageDependenciesDialog() {
-        if (addDependenciesLink.isVisible(2000)) {
-            addDependenciesLink.click();
-        } else {
-            dependenciesHeader.hover();
-            manageDependenciesBtn.click();
-        }
-        manageDependenciesDialogComponent.waitForDialogToAppear();
+        manageDependenciesDialogComponent.openForEditing();
         return manageDependenciesDialogComponent;
     }
 }

@@ -28,6 +28,10 @@ public class TestGenerateOpenApiDefaultDate extends BaseTest {
         EditorPage editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName);
 
+        // A project whose workbooks lie in its root holds no descriptor, and the settings the schema is
+        // written from are offered once they are moved under rules/.
+        editorPage.migrateProject();
+
         // Open Import OpenAPI dialog and click 'Create or Update Schema' button
         // This generates openapi.json from the rules and places it in the repository
         ImportOpenApiDialogComponent importDialog = editorPage.openImportOpenApiDialog();

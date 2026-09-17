@@ -1,5 +1,6 @@
 package domain.ui.webstudio.components.editortabcomponents.leftmenu;
 
+import com.microsoft.playwright.PlaywrightException;
 import domain.ui.webstudio.components.BaseComponent;
 import domain.ui.webstudio.components.editortabcomponents.ChangesDialogComponent;
 import configuration.core.ui.WebElement;
@@ -30,6 +31,7 @@ public class EditorLeftRulesTreeComponent extends BaseComponent {
     private static final String TREE_NODE = TREE + "//div[contains(@class,'ant-tree-treenode')]";
     private static final int SETTLE_POLL_MS = 200;
     private static final int NODE_PROBE_MS = 1000;
+    private static final int NODE_CLICK_MS = 3000;
     private static final int PROBE_MS = 1000;
     private static final long EXPAND_TIMEOUT_MS = 10000;
 
@@ -209,7 +211,13 @@ public class EditorLeftRulesTreeComponent extends BaseComponent {
                 return true;
             }
             revealNode(folder.get().nodeId());
-            folder.get().node().child("xpath=./span[contains(@class,'ant-tree-switcher')]").click();
+            movePointerAway();
+            try {
+                folder.get().node().child("xpath=./span[contains(@class,'ant-tree-switcher')]").click(NODE_CLICK_MS);
+            } catch (PlaywrightException covered) {
+                LOGGER.info("The folder '{}' could not be pressed, trying again: {}", folderName, covered.getMessage());
+                return false;
+            }
             // The row redraws as it opens, so its state is read back before another press is considered.
             return WaitUtil.waitForCondition(
                     () -> findFolder(folderName).map(TreeRow::expanded).orElse(false),
@@ -381,7 +389,15 @@ public class EditorLeftRulesTreeComponent extends BaseComponent {
             if (!title.isVisible(NODE_PROBE_MS)) {
                 return false;
             }
-            title.click();
+            // The rail names a row in a label under the pointer, and that label lies over the rows beside
+            // it until the pointer leaves the row it belongs to.
+            movePointerAway();
+            try {
+                title.click(NODE_CLICK_MS);
+            } catch (PlaywrightException covered) {
+                LOGGER.info("The row '{}' could not be pressed, trying again: {}", row.title(), covered.getMessage());
+                return false;
+            }
             return true;
         }, DEFAULT_TIMEOUT_MS, SETTLE_POLL_MS, "Selecting '" + row.title() + "' in the tables tree");
         waitUntilSpinnerLoaded();

@@ -87,14 +87,13 @@ public class TestLocalChangesCoreMechanics extends BaseTest {
         compareDialog.openTreeNode("Rules");
         compareDialog.clickTreeNode("Rules String Hello (Integer hour)");
 
-        assertThat(compareDialog.isCellHighlighted(6, 4, 1))
-                .as("Cell (6,4) in fragment 1 should be highlighted after single edit")
+        // A cell is named by what it reads: which line a difference is drawn on depends on what the reader
+        // asked to be left out, and a cell covered by a merge is not drawn at all.
+        assertThat(compareDialog.isDifferenceShown(1, "Good Morning"))
+                .as("The older state should show 'Good Morning' as what differs after the single edit")
                 .isTrue();
-        assertThat(compareDialog.isCellContainsExpectedValue(6, 4, "1", "Good Morning"))
-                .as("Fragment 1 (older state) cell (6,4) should show original value 'Good Morning'")
-                .isTrue();
-        assertThat(compareDialog.isCellContainsExpectedValue(6, 4, "2", "Good Morning1"))
-                .as("Fragment 2 (newer state) cell (6,4) should show edited value 'Good Morning1'")
+        assertThat(compareDialog.isDifferenceShown(2, "Good Morning1"))
+                .as("The newer state should show 'Good Morning1' as what differs after the single edit")
                 .isTrue();
         compareDialog.close();
 
@@ -129,14 +128,11 @@ public class TestLocalChangesCoreMechanics extends BaseTest {
         compareDialog.openTreeNode("Rules");
         compareDialog.clickTreeNode("Rules String Hello (Integer hour)");
 
-        assertThat(compareDialog.isCellHighlighted(7, 4, 1))
-                .as("Cell (7,4) in fragment 1 should be highlighted after second edit")
+        assertThat(compareDialog.isDifferenceShown(1, "Good Afternoon"))
+                .as("The older state should show 'Good Afternoon' as what differs after the second edit")
                 .isTrue();
-        assertThat(compareDialog.isCellContainsExpectedValue(7, 4, "1", "Good Afternoon"))
-                .as("Fragment 1 (older state) cell (7,4) should show original value 'Good Afternoon'")
-                .isTrue();
-        assertThat(compareDialog.isCellContainsExpectedValue(7, 4, "2", "Good Afternoon1"))
-                .as("Fragment 2 (newer state) cell (7,4) should show edited value 'Good Afternoon1'")
+        assertThat(compareDialog.isDifferenceShown(2, "Good Afternoon1"))
+                .as("The newer state should show 'Good Afternoon1' as what differs after the second edit")
                 .isTrue();
         compareDialog.close();
 
@@ -287,8 +283,8 @@ public class TestLocalChangesCoreMechanics extends BaseTest {
         compareDialog.openTreeNode("Rules");
         compareDialog.clickTreeNode("Rules String Hello (Integer hour)");
 
-        assertThat(compareDialog.isCellHighlighted(6, 4, 1))
-                .as("Cell (6,4) in fragment 1 should be highlighted after edit on saved project")
+        assertThat(compareDialog.isDifferenceShown(1, "Good Morning"))
+                .as("The older state should show 'Good Morning' as what differs after the edit on a saved project")
                 .isTrue();
         compareDialog.close();
     }

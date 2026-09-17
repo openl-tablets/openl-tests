@@ -130,6 +130,10 @@ old editor offered, has no property to pick.
 - `tests.ui.webstudio.rules_editor.TestAddAndDeleteProperty#testAddAndDeleteProperty` — adds Description,
   Tags and ID among others. The scenario now stops with `SkipException` after the properties that can still
   be added; the Category part still runs and passes.
+- `tests.ui.webstudio.studio_issues.TestAddProperty` and
+  `tests.ui.webstudio.studio_issues.TestAddPropertyExtraStateAppears` — both added Description; both now add
+  Category, which the panel still offers. What each guards — the write on a two-column table, and that only
+  the property added is written — is unchanged; that it is Description is the coverage to restore.
 - `tests.ui.webstudio.rules_editor.TestSearchOnProjectLevel#testAdvancedSearchOnProjectLevel` — the three
   cases that narrowed the search by Description and by Tags are gone from it; everything else it asked — the
   scopes, the table kinds, the name, the header, the counts, opening a table from the results — still runs.
@@ -311,6 +315,10 @@ describes: *"or, if the property is not defined, based on the Excel table sheet 
 Somebody wrote the dot on purpose, so which of the two is the product's answer is a call for development to
 make, not one to settle here.
 
+**Also reached by this.** `TestAddProperty` opened its table through the folder the category view named
+after the sheet; it now opens it through the Excel Sheet view, which still names it. The grouping itself is
+covered by `TestOrderingModeDefaults`.
+
 **Tests changed rather than blocked.** `TestOrderingModeDefaults` keeps everything the views still answer —
 the default order per user, the selector reflecting it, the Excel Sheet and Type views, and the categories
 themselves under the Category view. Steps 1.7, 1.9, 2.4 and 1.10 no longer name what the halves, the sheet
@@ -359,6 +367,7 @@ the build under test (`6.5.0-b48c86279338`) and against the screens themselves.
 | The result of running a rule is a window of its own, with one column per input and one for the result. The row carries no number, and each value is shown as the literal its type reads as (`"Tom"`, not `Tom`). | The expected rows were rewritten to what the window shows, keeping the value equality the test was written for. |
 | Running anything opens a window that covers the screen, and the module cannot be worked on again until it is closed. | `TestResultValidationComponent.closeResults()` is pressed once the results have been read. |
 | A table is removed behind a question the screen asks in a window of its own, not behind the browser's own confirm dialog. | `removeCurrentTable()` answers the screen's window. |
+| Creating a project from an OpenAPI specification no longer writes an `openapi` block into `rules.xml`: the normalized file in the project root is reconciled against, and nothing is generated again over later edits. Deliberate, with the user guides changed in the same commit — `e3edf4a6e8`, EPBDS-16415, *"Default new OpenAPI projects to reconciliation"* (`repository-editor.md`, `rules-editor.md`). | A freshly created project is expected to read in **Reconciliation** and to name no module to write into; the import dialog starts empty. Where a test drove an overwrite, it now names the modules to write over, as a reader must, so the overwrite itself is still covered. Note the knock-on: a project that declares no module is drawn with its module list read-only even while the card is open for writing (`OverviewPanel.tsx`, `modulesEditable`), which puts the rename and copy steps of the two creation tests under issue 8. |
 
 ## Class names of the component library, for whoever writes the next locator
 

@@ -77,7 +77,7 @@ public class TestImportTablesGenerationForNonOpenApiProject extends BaseTest {
         settingsDialog.waitForVisible();
         assertThat(settingsDialog.getPlanLines())
                 .as("Bank Rating is a workbook the project already reads, so it is written over")
-                .contains("Services module: Bank Rating — the workbook Bank Rating.xlsx is replaced");
+                .contains("Services module: Bank Rating — the workbook rules/Bank Rating.xlsx is replaced");
         assertThat(settingsDialog.getPlanLines())
                 .as("The data types are written into Models, in the workbook the project names for it")
                 .anySatisfy(line -> assertThat(line).contains("Data types module: Models", "rules/Models.xlsx"));

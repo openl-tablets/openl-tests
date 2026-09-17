@@ -30,12 +30,15 @@ public class TestAddPropertyExtraStateAppears extends BaseTest {
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
                 .expandFolderInTree("Rules")
                 .selectItemInFolder("Rules", "MyDatatype");
+        // The property added is Category rather than Description: Description is one of the four the panel
+        // can no longer offer (KNOWN-ISSUES.md #7). What this test guards is that only the property added is
+        // written, which any property drives.
         editorPage.getRightTableDetailsComponent()
-                .addProperty(RightTableDetailsComponent.DropdownOptions.DESCRIPTION.getValue())
-                .setProperty(RightTableDetailsComponent.DropdownOptions.DESCRIPTION.getValue(), "Description details")
+                .addProperty(RightTableDetailsComponent.DropdownOptions.CATEGORY.getValue())
+                .setProperty(RightTableDetailsComponent.DropdownOptions.CATEGORY.getValue(), "Category details")
                 .clickSaveBtn();
-        WaitUtil.waitForCondition(() -> editorPage.getCenterTable().getCellText(2, 2).equals("description"), 5000, 200, "Waiting for 'description' cell in center table");
-        assertThat(editorPage.getCenterTable().getCellText(2, 2)).isEqualTo("description");
+        WaitUtil.waitForCondition(() -> editorPage.getCenterTable().getCellText(2, 2).equals("category"), 5000, 200, "Waiting for 'category' cell in center table");
+        assertThat(editorPage.getCenterTable().getCellText(2, 2)).isEqualTo("category");
         assertThat(editorPage.getCenterTable().getCellText(3, 2)).contains("Result");
         assertThat(editorPage.getCenterTable().getCellText(4, 2)).contains("= new MyDatatype");
     }

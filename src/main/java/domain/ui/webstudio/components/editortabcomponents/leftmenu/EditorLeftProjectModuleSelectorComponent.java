@@ -23,6 +23,7 @@ public class EditorLeftProjectModuleSelectorComponent extends BaseComponent {
     private TabSwitcherComponent tabSwitcher;
     private ProjectsTableComponent projectsTable;
     private WebElement projectDetail;
+    private WebElement overviewTab;
     private WebElement projectCardName;
     private WebElement projectCrumb;
     private WebElement projectCrumbFollow;
@@ -49,6 +50,8 @@ public class EditorLeftProjectModuleSelectorComponent extends BaseComponent {
                 "xpath=//ul[@role='menu' and contains(@class,'ant-menu-horizontal')]", "tabSwitcher"));
         projectsTable = new ProjectsTableComponent(page);
         projectDetail = new WebElement(page, "xpath=//div[@data-testid='project-detail']", "projectDetail");
+        overviewTab = new WebElement(page,
+                "xpath=//div[@data-testid='project-tabs']//div[@data-node-key='overview']", "projectOverviewTab");
         // The card's own heading is the first one on it; the panels below carry headings of their own.
         projectCardName = new WebElement(page, "xpath=(//div[@data-testid='project-detail']//h3)[1]", "projectCardName");
         projectCrumb = new WebElement(page, "xpath=//span[@data-testid='crumb-project']", "projectCrumb");
@@ -87,6 +90,7 @@ public class EditorLeftProjectModuleSelectorComponent extends BaseComponent {
 
     public void selectModule(String projectName, String projectModuleName) {
         selectProject(projectName);
+        showModules();
         WebElement moduleLink = moduleOpenTemplate.format(projectModuleName);
         moduleLink.waitForVisible(DEFAULT_TIMEOUT_MS);
         moduleLink.click();
@@ -100,6 +104,7 @@ public class EditorLeftProjectModuleSelectorComponent extends BaseComponent {
      */
     public void selectFirstModule(String projectName) {
         selectProject(projectName);
+        showModules();
         WaitUtil.waitForListNotEmpty(() -> moduleOpenLinks, DEFAULT_TIMEOUT_MS, MODULE_READY_POLL_MS,
                 "Waiting for the modules of '" + projectName + "' to be listed");
         moduleOpenLinks.get(0).click();
@@ -108,6 +113,7 @@ public class EditorLeftProjectModuleSelectorComponent extends BaseComponent {
 
     public List<String> getAllModuleNames(String projectName) {
         selectProject(projectName);
+        showModules();
         WaitUtil.waitForListNotEmpty(() -> moduleOpenLinks, DEFAULT_TIMEOUT_MS, MODULE_READY_POLL_MS,
                 "Waiting for the modules of '" + projectName + "' to be listed");
         return moduleOpenLinks.stream()
@@ -115,6 +121,16 @@ public class EditorLeftProjectModuleSelectorComponent extends BaseComponent {
                 .map(String::trim)
                 .filter(name -> !name.isEmpty())
                 .toList();
+    }
+
+    /**
+     * Shows the side of the card its modules are listed on. The card keeps its files, its history and its
+     * settings on sides of their own, and a reader who was last on one of those is still on it.
+     */
+    private void showModules() {
+        if (moduleOpenLinks.isEmpty() && overviewTab.isVisible(PROBE_MS)) {
+            overviewTab.click();
+        }
     }
 
     private boolean isCardOf(String projectName) {

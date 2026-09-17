@@ -51,16 +51,18 @@ public class TestImportModuleNamesRetentionOnModeSwitching extends BaseTest {
         editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName);
 
-        // Step 1.1: Open dialog, switch to Tables Generation mode, verify pre-populated names
+        // Step 1.1: Open dialog, switch to Tables Generation mode. Creating a project from a specification
+        // no longer writes what to generate into, so the project names no module to start from and the
+        // reader says where the tables are to go (EPBDS-16415).
         ImportOpenApiDialogComponent importDialog = editorPage.openImportOpenApiDialog();
         importDialog.selectTablesGenerationMode();
 
         assertThat(importDialog.getRulesModuleName())
-                .as("Rules module name should be pre-populated with 'Algorithms_test' from project creation")
-                .isEqualTo("Algorithms_test");
+                .as("The project names no module for the rules until a generation is asked for")
+                .isEmpty();
         assertThat(importDialog.getDataModuleName())
-                .as("Data module name should be pre-populated with 'Models_test' from project creation")
-                .isEqualTo("Models_test");
+                .as("The project names no module for the data types until a generation is asked for")
+                .isEmpty();
 
         // Change module names, then switch modes and verify names are retained
         importDialog.setRulesModuleName("Algorithms_test_1");
