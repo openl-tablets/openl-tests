@@ -58,9 +58,7 @@ public class MultiselectArrayEditorComponent extends BaseComponent {
         if (isOpen()) {
             return;
         }
-        WebElement cellSelect = new WebElement(page,
-                "xpath=//*[@data-testid='table-cell-input'][contains(@class,'ant-select')]//div[contains(@class,'ant-select-content')]",
-                "cellMultiselect");
+        WebElement cellSelect = new WebElement(page, "xpath=//*[@data-testid='table-cell-input']", "cellMultiselect");
         cellSelect.waitForVisible(DEFAULT_TIMEOUT_MS);
         cellSelect.click();
         WaitUtil.requireCondition(this::isOpen, DEFAULT_TIMEOUT_MS, 250,
@@ -69,6 +67,7 @@ public class MultiselectArrayEditorComponent extends BaseComponent {
 
     /** Whether the value is among those the cell holds, which the list marks as chosen. */
     public boolean isValueChecked(String value) {
+        openList();
         WebElement option = narrowedTo(value);
         boolean chosen = String.valueOf(option.getAttribute("class")).contains("ant-select-item-option-selected");
         widenAgain(value);
@@ -95,6 +94,7 @@ public class MultiselectArrayEditorComponent extends BaseComponent {
     }
 
     public void verifyChosenValues(List<String> values) {
+        openList();
         for (String value : values) {
             if (!isValueChecked(value)) {
                 throw new AssertionError(String.format(
@@ -104,6 +104,7 @@ public class MultiselectArrayEditorComponent extends BaseComponent {
     }
 
     public void verifyNonChosenValues(String... values) {
+        openList();
         for (String value : values) {
             if (isValueChecked(value)) {
                 throw new AssertionError(String.format(
@@ -114,12 +115,14 @@ public class MultiselectArrayEditorComponent extends BaseComponent {
 
     /** Pressing a value that is already chosen would take it away, so only the ones missing are pressed. */
     public void selectValues(String... values) {
+        openList();
         for (String value : values) {
             press(value, false);
         }
     }
 
     public void deselectValues(String... values) {
+        openList();
         for (String value : values) {
             press(value, true);
         }
@@ -158,6 +161,19 @@ public class MultiselectArrayEditorComponent extends BaseComponent {
      * a value is ticked, so the button found a moment ago can be gone by the time it is pressed — the press
      * is retried on the current one instead of waiting the whole timeout out on a detached node.
      */
+    /**
+     * Leaves nothing chosen, whatever was chosen before. The one button the list offers is named after what
+     * pressing it would do, so it says "Deselect All" only once everything is chosen: taking the whole list
+     * first is what makes letting the whole of it go the thing on offer.
+     */
+    public void clearAllValues() {
+        openList();
+        if (actionButtonTemplate.format("Select All").isVisible(PROBE_MS)) {
+            clickActionButton("Select All");
+        }
+        setAllValuesChosen(false);
+    }
+
     public void clickActionButton(String buttonName) {
         WaitUtil.retryOnException(() -> {
             actionButtonTemplate.format(buttonName).click(ACTION_BUTTON_CLICK_TIMEOUT_MS);
@@ -166,6 +182,7 @@ public class MultiselectArrayEditorComponent extends BaseComponent {
     }
 
     public List<String> getAllValues() {
+        openList();
         return allOptions.stream()
                 .map(WebElement::getText)
                 .map(String::trim)

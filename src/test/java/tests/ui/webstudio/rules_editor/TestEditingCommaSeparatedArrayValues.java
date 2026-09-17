@@ -114,15 +114,14 @@ public class TestEditingCommaSeparatedArrayValues extends BaseTest {
         // floating editor input (`_t_te_editorWrapper`) is the equivalent path and `editCell`
         // already drives it. Legacy `editCell` saved automatically; our framework requires an
         // explicit save before navigating away to avoid the "Discard changes" modal.
-        table.editCell(4, 1, cellContent);
-        // editCell types into the floating editor input and presses Enter — the value is
-        // committed but the multiselect popup stays on screen (it overlays the table-actions
-        // toolbar). Close it via Done so the table Save changes button is clickable.
+        // A cell of a list holds what was picked from the list, and the list is all it offers — there is no
+        // box to write the value into as text, so the original value is written back by picking it.
+        table.doubleClickCell(4, 1);
+        multiselect.clearAllValues();
+        multiselect.selectValues(cellContent);
         multiselect.clickActionButton("Done");
         editorPage.getEditorTableActionsPanelComponent().clickSaveChanges();
-        table.doubleClickCell(4, 1);
-        multiselect.verifyChosenValues(Collections.singletonList(cellContent));
-        multiselect.clickActionButton("Done");
+        verifyEditTableCellContent(table, 4, 1, cellContent);
         // Done from a no-op popup state still flags the table as modified — save again so the
         // following navigation does not trigger the "Discard changes" prompt.
         editorPage.getEditorTableActionsPanelComponent().clickSaveChanges();

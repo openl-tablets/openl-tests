@@ -140,9 +140,18 @@ public class TableComponent extends BaseComponent {
         hint.waitForVisible(DEFAULT_TIMEOUT_MS);
         // One box is kept for every hint on the screen, and it holds what was last pointed at until it is
         // told otherwise, so what it says is read once it speaks of the word that was pointed at.
-        WaitUtil.requireCondition(() -> hint.getInnerText().contains(variableName), DEFAULT_TIMEOUT_MS, 200,
+        WaitUtil.requireCondition(() -> hintSaid(hint).contains(variableName), DEFAULT_TIMEOUT_MS, 200,
                 "Waiting for the hint of '" + variableName + "' to be told");
-        return hint.getInnerText().trim();
+        return hintSaid(hint).trim();
+    }
+
+    /** What the one hint box says, or nothing while it is being drawn again for another word. */
+    private String hintSaid(WebElement hint) {
+        try {
+            return hint.getLocator().first().innerText();
+        } catch (RuntimeException beingRedrawn) {
+            return "";
+        }
     }
 
     public String getPropertyValue(String propertyName) {
