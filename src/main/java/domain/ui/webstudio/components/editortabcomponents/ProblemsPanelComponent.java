@@ -180,6 +180,21 @@ public class ProblemsPanelComponent extends BaseComponent {
         return readMessages(true);
     }
 
+    /**
+     * The errors of the table in hand, once the one looked for is among them. The panel is filled in as the
+     * module reports what it found, so a list read the moment the table is opened can still be empty while
+     * the module is answering.
+     */
+    public List<String> errorsSaying(String said) {
+        List<String> errors = readMessages(true);
+        if (errors.stream().anyMatch(error -> error.contains(said))) {
+            return errors;
+        }
+        WaitUtil.waitForCondition(() -> readMessages(true).stream().anyMatch(error -> error.contains(said)),
+                COMPILATION_TIMEOUT_MS, COMPILATION_POLL_MS * 2, "Waiting for the panel to say '" + said + "'");
+        return readMessages(true);
+    }
+
     public List<String> getAllWarnings() {
         return readMessages(false);
     }

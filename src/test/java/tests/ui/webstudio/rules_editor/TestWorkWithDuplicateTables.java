@@ -45,13 +45,13 @@ public class TestWorkWithDuplicateTables extends BaseTest {
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
                 .expandFolderInTree("Rules")
                 .selectItemInFolderRaisingErrors("Rules", "someLookupBig2", true);
-        assertThat(editorPage.getProblemsPanelComponent().getAllErrors())
+        assertThat(editorPage.getProblemsPanelComponent().errorsSaying("Found duplicated table 'SmartLookup Double someLookupBig2( String param1, Integer param2)'."))
                 .as("Error message for duplicated table in same module")
                 .contains("Found duplicated table 'SmartLookup Double someLookupBig2( String param1, Integer param2)'.");
         editorPage.getCenterTable().editCell(3, 1, "Param 2");
         editorPage.getEditorTableActionsPanelComponent().clickSaveChanges();
         editorPage.getEditorTableActionsPanelComponent().closeTableEditor();
-        assertThat(editorPage.getProblemsPanelComponent().getAllErrors())
+        assertThat(editorPage.getProblemsPanelComponent().errorsSaying("Found duplicated table 'SmartLookup Double someLookupBig2( String param1, Integer param2)'."))
                 .as("Error message should persist after editing cell")
                 .contains("Found duplicated table 'SmartLookup Double someLookupBig2( String param1, Integer param2)'.");
 
@@ -145,13 +145,13 @@ public class TestWorkWithDuplicateTables extends BaseTest {
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
                 .expandFolderInTree("Rules")
                 .selectItemInFolder("Rules", "someLookupBig2");
-        assertThat(editorPage.getProblemsPanelComponent().getAllErrors())
+        assertThat(editorPage.getProblemsPanelComponent().errorsSaying("There can be only one active table."))
                 .as("Error message for duplicate table in different modules")
                 .contains("There can be only one active table.");
         editorPage.getCenterTable().editCell(3, 1, "Param 2");
         editorPage.getEditorTableActionsPanelComponent().clickSaveChanges();
         editorPage.getEditorTableActionsPanelComponent().closeTableEditor();
-        assertThat(editorPage.getProblemsPanelComponent().getAllErrors())
+        assertThat(editorPage.getProblemsPanelComponent().errorsSaying("There can be only one active table."))
                 .as("Error message should persist after editing cell (diff modules)")
                 .contains("There can be only one active table.");
 
@@ -254,7 +254,9 @@ public class TestWorkWithDuplicateTables extends BaseTest {
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
                 .expandFolderInTree("Rules")
                 .selectItemInFolder("Rules", "someLookupBig2");
-        assertThat(editorPage.getProblemsPanelComponent().getAllErrors())
+        assertThat(editorPage.getProblemsPanelComponent().errorsSaying("Method 'someLookupBig2(String param1," +
+                        " Integer param2)' is already used in modules 'module_AZ' and 'module_KS' with the same version," +
+                        " active status, properties set."))
                 .as("Error message for duplicate table across projects with dependency")
                 .contains("Method 'someLookupBig2(String param1," +
                         " Integer param2)' is already used in modules 'module_AZ' and 'module_KS' with the same version," +
@@ -262,7 +264,9 @@ public class TestWorkWithDuplicateTables extends BaseTest {
         editorPage.getCenterTable().editCell(3, 1, "Param 2");
         editorPage.getEditorTableActionsPanelComponent().clickSaveChanges();
         editorPage.getEditorTableActionsPanelComponent().closeTableEditor();
-        assertThat(editorPage.getProblemsPanelComponent().getAllErrors())
+        assertThat(editorPage.getProblemsPanelComponent().errorsSaying("Method 'someLookupBig2(String param1," +
+                        " Integer param2)' is already used in modules 'module_AZ' and 'module_KS' with the same version," +
+                        " active status, properties set."))
                 .as("Error message should persist after editing cell (dependency project)")
                 .contains("Method 'someLookupBig2(String param1," +
                         " Integer param2)' is already used in modules 'module_AZ' and 'module_KS' with the same version," +

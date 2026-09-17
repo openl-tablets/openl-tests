@@ -24,6 +24,8 @@ public class ProjectsTableComponent extends BaseComponent {
     // Short enough that a row lost to a re-render is retried instead of waited out.
     private static final int ACTION_CLICK_TIMEOUT_MS = DEFAULT_TIMEOUT_MS / 2;
 
+    private static final int LISTING_TIMEOUT_MS = 60000;
+
     private final WebElement rowByName;
     private final WebElement nameInRow;
     private final WebElement branchInRow;
@@ -58,7 +60,20 @@ public class ProjectsTableComponent extends BaseComponent {
     }
 
     public boolean isProjectPresent(String projectName) {
+        waitUntilTheListIsDrawn();
         return rowByName.format(projectName).isVisible(DEFAULT_TIMEOUT_MS);
+    }
+
+    /**
+     * Waits for the list to hold what it is going to hold. A repository being read through says so in place
+     * of the list, and a project made a moment ago is in it only once that reading has ended.
+     */
+    private void waitUntilTheListIsDrawn() {
+        WebElement reading = new WebElement(page,
+                "xpath=//*[@data-testid='projects-indexing'] | //*[@data-testid='projects-home-loading']",
+                "projectsListBeingRead");
+        WaitUtil.waitForCondition(() -> !reading.exists(), LISTING_TIMEOUT_MS, 250,
+                "Waiting for the list of projects to be drawn");
     }
 
     /** The project row element by name — for callers that need custom row interactions. */
@@ -88,6 +103,7 @@ public class ProjectsTableComponent extends BaseComponent {
 
     /** Clicks the project name to open the React project-detail view. */
     public void clickProjectName(String projectName) {
+        waitUntilTheListIsDrawn();
         nameInRow.format(projectName).click();
     }
 
