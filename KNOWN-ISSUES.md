@@ -72,7 +72,7 @@ a datatype anywhere in the tree.
 
 ## 3. The extended search offers a table kind it can never find
 
-**Filed as EPBDS-16674**, together with the trimming of what the search is given (issue 11).
+**Filed as EPBDS-16674.** The trimming of what the search is given (issue 11) is EPBDS-16676.
 
 **What changed.** The extended search of the module screen lists "Other" among the kinds to search by, and
 the REST API declares it too, but `WorkspaceProjectService` unconditionally drops `XLS_OTHER` from the
@@ -110,7 +110,9 @@ because of a forbidden character in its name answers with an empty message.
 
 ## 6. A row can only be added below the current one, and the button says the opposite
 
-**Filed as EPBDS-16675.**
+**Filed as EPBDS-16675.** The old editor had one button too, labelled *Insert row after*, which is what it
+did; the React toolbar took the internal name for the label. A button that inserts above has never been
+offered — that is EPBDS-7397, open since 2018.
 
 **What changed.** The JSF table toolbar had *Insert row before* and *Insert row after*. The React edit
 toolbar has one button: its tooltip reads **Insert Row Before** (`browser.module.edit_insert_row`), while the
@@ -269,7 +271,7 @@ a workbook already standing at the path the project computes.
 
 ## 11. The search trims what it is given, so a space cannot be searched for
 
-**Raised inside EPBDS-16674**, which is about the kind that can never match; the trimming is recorded there as the second half.
+**Filed as EPBDS-16676.**
 
 **What happens.** The extended search sends `name`, `header` and the text in the cells trimmed
 (`TableSearchModal.tsx`). A search for `Balance ` and one for ` Balance` therefore ask the same question as
@@ -378,7 +380,9 @@ all.
 
 ## 15. The tables tree no longer shows the order the workbook holds
 
-**Filed as EPBDS-16668.**
+**Filed as EPBDS-16668.** Worth knowing for whoever takes it: the order is lost before the browser sees
+it — the listing the rail is drawn from is sorted by name on the server
+(`WorkspaceProjectService.java:1662`), and the rail sorts by label again.
 
 **What happens.** Every level of the rail is now sorted by name — the groups and the tables under them alike
 (`tableGrouping.ts`, `buildTableTree` and `tableNodes`, both ending in `.sort(byLabel)`). The **By Excel
@@ -405,7 +409,9 @@ row is inserted — are gone from them, and are the coverage to restore with the
 
 ## 16. A properties table cannot be opened where a value is written in the case the screen shows
 
-**Filed as EPBDS-16667.**
+**Filed as EPBDS-16667.** Asked of every table of such a module, four of fifteen are refused: both
+properties tables in either view, and the two rules tables that write the property themselves in the raw
+view the table screen reads. A table that only inherits the property is drawn as before.
 
 **What happens.** Opening a Properties table whose `validateDT` reads `on` — the case the engine itself
 accepts — fails outright. The request the module screen makes for the table,
