@@ -117,7 +117,9 @@ public class EditorPage extends BasePage {
         refreshBtn = new WebElement(getPage(), "xpath=//button[@data-testid='module-refresh']", "refreshBtn");
         searchFilterComponent = new SearchFilterComponent();
         rangeEditorComponent = createScopedComponent(RangeEditorComponent.class, "xpath=//div[@data-testid='range-editor']", "rangeEditorComponent");
-        multiselectArrayEditorComponent = createScopedComponent(MultiselectArrayEditorComponent.class, "xpath=//div[@class='multiselect_container']", "multiselectArrayEditorComponent");
+        multiselectArrayEditorComponent = createScopedComponent(MultiselectArrayEditorComponent.class,
+                "xpath=//div[contains(@class,'ant-select-dropdown')][not(contains(@class,'ant-select-dropdown-hidden'))]",
+                "multiselectArrayEditorComponent");
     }
 
     public EditorToolbarPanelComponent getEditorToolbarPanelComponent() {

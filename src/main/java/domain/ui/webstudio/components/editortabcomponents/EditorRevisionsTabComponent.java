@@ -15,6 +15,7 @@ public class EditorRevisionsTabComponent extends BaseComponent {
 
     private static final String LIST = "//ol[starts-with(@data-testid,'revisions-')]";
     private static final String ENTRY = LIST + "/li";
+    private static final int CLOSE_PROBE_MS = 1000;
 
     private List<WebElement> revisionEntries;
     private WebElement commentTemplate;
@@ -36,6 +37,24 @@ public class EditorRevisionsTabComponent extends BaseComponent {
                 "xpath=(" + ENTRY + ")[%s]//span[starts-with(@data-testid,'revision-comment-')]", "revisionComment");
         openTemplate = new WebElement(page,
                 "xpath=(" + ENTRY + ")[%s]//button[starts-with(@data-testid,'revision-open-')]", "revisionOpen");
+    }
+
+    /**
+     * Closes the window the revisions stand in, if that is where they stand. On a module screen they are
+     * shown over it, and the screen underneath cannot be reached until they are put away; on the project's
+     * own card they are a side of it and there is nothing to close.
+     */
+    public void closeIfOpen() {
+        WebElement window = new WebElement(page,
+                "xpath=//div[contains(@class,'ant-modal-wrap')][.//ol[starts-with(@data-testid,'revisions-')]]",
+                "revisionsWindow");
+        if (!window.isVisible(CLOSE_PROBE_MS)) {
+            return;
+        }
+        new WebElement(page, "xpath=//div[contains(@class,'ant-modal-wrap')]"
+                + "[.//ol[starts-with(@data-testid,'revisions-')]]//button[@aria-label='Close']",
+                "closeRevisionsBtn").click();
+        window.waitForHidden(DEFAULT_TIMEOUT_MS);
     }
 
     public void waitForTableToLoad() {

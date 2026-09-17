@@ -283,8 +283,12 @@ public class TestLocalChangesCoreMechanics extends BaseTest {
         compareDialog.openTreeNode("Rules");
         compareDialog.clickTreeNode("Rules String Hello (Integer hour)");
 
-        assertThat(compareDialog.isDifferenceShown(1, "Good Morning"))
-                .as("The older state should show 'Good Morning' as what differs after the edit on a saved project")
+        // The cell read 'Good Morning1' when the project was saved, and reads 'Good Morning2' now.
+        assertThat(compareDialog.isDifferenceShown(1, "Good Morning1"))
+                .as("The saved state should show 'Good Morning1' as what differs after the edit")
+                .isTrue();
+        assertThat(compareDialog.isDifferenceShown(2, "Good Morning2"))
+                .as("The working copy should show 'Good Morning2' as what differs after the edit")
                 .isTrue();
         compareDialog.close();
     }

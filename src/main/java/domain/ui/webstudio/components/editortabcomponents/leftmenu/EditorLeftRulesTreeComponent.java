@@ -317,6 +317,22 @@ public class EditorLeftRulesTreeComponent extends BaseComponent {
         return tableIconTemplate.format(tableName);
     }
 
+    /**
+     * The name of the glyph a table wears. The rail draws a drawn icon rather than a small picture, and each
+     * one names itself, so what a table wears is read by that name.
+     */
+    public String getTableIconName(String tableName) {
+        // The rail draws only the rows a reader could see, so the row is scrolled to before it is read.
+        TreeRow row = readRows().stream()
+                .filter(drawn -> tableName.equals(drawn.title()))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("The tables tree lists no table named " + tableName));
+        revealNode(row.nodeId());
+        WebElement icon = tableIconTemplate.format(tableName).child("xpath=.//*[@data-icon]");
+        icon.waitForVisible(DEFAULT_TIMEOUT_MS);
+        return icon.getAttribute("data-icon");
+    }
+
     /** Filters the tree by the name typed into the search box above it. */
     public EditorLeftRulesTreeComponent searchByName(String text) {
         searchInput.click();

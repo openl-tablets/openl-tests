@@ -36,21 +36,27 @@ public class TestTableIcons extends BaseTest {
             "Data", "Run", "Test", "Datatype", "Method", "Constants"
     );
 
+    /**
+     * The glyph each table wears. The rail draws a named icon rather than a small picture, and the name of
+     * each was chosen to read as the picture the old Editor drew — a grid for a decision table, a banded
+     * grid for a spreadsheet, a cylinder for data, fx for a method, a ticked box for a test, a play triangle
+     * for a run table (`tableIcons.tsx` says so alongside the picture it replaces).
+     */
     private static final Map<String, String> TABLE_NAMES_AND_ICONS = new HashMap<>() {{
-        put("SimpleLookupTable", "dt3.png");
-        put("SimpleRulesTable", "dt3.png");
-        put("SmartLookup1", "dt3.png");
-        put("SmartRules1", "dt3.png");
-        put("SpreadsheetTable", "spreadsheet.gif");
-        put("TBasicTable", "tbasic.gif");
-        put("ColumnMatchTable", "cmatch.gif");
-        put("DataTable1", "data.gif");
-        put("RunTable", "run.gif");
-        put("Test1", "test_ok.gif");
-        put("Datatype1", "dataobject.gif");
-        put("Vocabulary1", "dataobject.gif");
-        put("MethodTable", "method.gif");
-        put("Constants", "spreadsheet.gif");
+        put("SimpleLookupTable", "table");
+        put("SimpleRulesTable", "table");
+        put("SmartLookup1", "table");
+        put("SmartRules1", "table");
+        put("SpreadsheetTable", "layout");
+        put("TBasicTable", "apartment");
+        put("ColumnMatchTable", "column-width");
+        put("DataTable1", "database");
+        put("RunTable", "caret-right");
+        put("Test1", "check-square");
+        put("Datatype1", "block");
+        put("Vocabulary1", "block");
+        put("MethodTable", "function");
+        put("Constants", "layout");
     }};
 
     @Test
@@ -80,13 +86,9 @@ public class TestTableIcons extends BaseTest {
         );
 
         // Verify icons for each table
-        TABLE_NAMES_AND_ICONS.forEach((tableName, expectedIcon) -> {
-            String actualIconSrc = finalEditorPage.getEditorLeftRulesTreeComponent()
-                    .getTableIcon(tableName)
-                    .getAttribute("src");
-            assertThat(actualIconSrc)
-                    .as("Table '%s' should have icon '%s'", tableName, expectedIcon)
-                    .endsWith(expectedIcon);
-        });
+        TABLE_NAMES_AND_ICONS.forEach((tableName, expectedIcon) -> assertThat(
+                finalEditorPage.getEditorLeftRulesTreeComponent().getTableIconName(tableName))
+                .as("Table '%s' should wear the '%s' glyph", tableName, expectedIcon)
+                .isEqualTo(expectedIcon));
     }
 }
