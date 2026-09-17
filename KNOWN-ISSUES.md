@@ -279,6 +279,8 @@ history stays with the old name, and the old project stays behind to be deleted.
 **Blocked tests.**
 - `tests.ui.webstudio.studio_issues.TestRenameProjectFromOldRevisionConflictUi` — renames a project twice,
   from an old revision, to check the conflict that used to raise.
+- `tests.ui.webstudio.repository.TestProjectDeleteUnsavedEditUi` — renames a project and then deletes it
+  while the rename is still unsaved, to check the row is found under the new name.
 
 ---
 
