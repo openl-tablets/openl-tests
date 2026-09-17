@@ -53,6 +53,9 @@ public class ProjectDetailPage extends BasePage {
     private ConfigureCommitInfoComponent configureCommitInfoComponent;
     private WebElement configureCommitInfoShade;
     private SyncUpdatesDialogComponent syncUpdatesDialogComponent;
+    private WebElement accessRefusal;
+    private WebElement accessRoles;
+    private WebElement notFoundCode;
     private WebElement detailRoot;
     private WebElement errorNotification;
 
@@ -69,6 +72,16 @@ public class ProjectDetailPage extends BasePage {
         managementTab = new WebElement(page, "xpath=//div[@data-node-key='access']", "managementTab");
         publishTab = new WebElement(page, "xpath=//div[@data-node-key='publish']", "publishTab");
         accessPanel = new WebElement(page, "xpath=//*[@data-testid='access-panel']", "accessPanel");
+        accessRefusal = new WebElement(page,
+                "xpath=//*[@data-testid='access-panel']//div[contains(concat(' ',normalize-space(@class),' '),' ant-alert-error ')]",
+                "accessRefusal");
+        accessRoles = new WebElement(page,
+                "xpath=//*[@data-testid='access-panel']//*[starts-with(@data-testid,'access-role-')]"
+                        + " | //*[@data-testid='access-panel']//*[@data-testid='access-empty']",
+                "accessRoles");
+        notFoundCode = new WebElement(page,
+                "xpath=//div[normalize-space(text())='404'][following-sibling::div[contains(.,'Page not found')]]",
+                "notFoundCode");
         headerActions = new ProjectHeaderActionsComponent(page);
         overview = new ProjectOverviewTabComponent(page);
         files = new ProjectFilesTabComponent(page);
@@ -88,13 +101,11 @@ public class ProjectDetailPage extends BasePage {
         errorNotification = new WebElement(page, "xpath=(//div[contains(@class,'ant-notification-notice')])[last()]", "errorNotification");
     }
 
-    /** The card of the project: what the descriptor says, offered for reading and for writing. */
     public ProjectOverviewTabComponent getOverviewTab() {
         openOverviewTab();
         return overview;
     }
 
-    /** Writes a service name into the deploy configuration and keeps it, which is an edit of that file. */
     public ProjectDetailPage writeDeployConfigServiceName(String serviceName) {
         openPublishTab();
         new WebElement(page, "xpath=//*[@data-testid='deploy-config-edit']", "deployConfigEdit")
@@ -107,7 +118,6 @@ public class ProjectDetailPage extends BasePage {
         return this;
     }
 
-    /** Whether the deploy configuration is offered to be migrated, which it is only while it is legacy. */
     public boolean isDeployConfigMigrateOffered() {
         openPublishTab();
         return new WebElement(page, "xpath=//*[@data-testid='deploy-migrate']", "deployConfigMigrate")
@@ -127,11 +137,33 @@ public class ProjectDetailPage extends BasePage {
         waitUntilSpinnerLoaded();
     }
 
-    /** Opens the Management tab and answers whether the roles of the project are drawn there. */
-    public boolean openManagementAndSeeRoles() {
-        managementTab.waitForVisible(DEFAULT_TIMEOUT_MS).click();
-        waitUntilSpinnerLoaded();
-        return accessPanel.isVisible(DEFAULT_TIMEOUT_MS);
+    public String whyTheManagementTabRefused() {
+        openManagementTab();
+        return accessRefusal.isVisible(DEFAULT_TIMEOUT_MS / 4)
+                ? accessRefusal.getInnerText().trim().replace("\n", " ")
+                : "";
+    }
+
+    public boolean managementTabListsRoles() {
+        openManagementTab();
+        return WaitUtil.waitForCondition(() -> accessRoles.getLocator().count() > 0, DEFAULT_TIMEOUT_MS, 250,
+                "Waiting for the Management tab to read the roles of the project");
+    }
+
+    public boolean isManagementTabOffered() {
+        return managementTab.isVisible(DEFAULT_TIMEOUT_MS / 2);
+    }
+
+    public boolean isPageNotFound() {
+        return notFoundCode.isVisible(DEFAULT_TIMEOUT_MS / 4);
+    }
+
+    public ProjectDetailPage openManagementTab() {
+        if (!accessPanel.isVisible(DEFAULT_TIMEOUT_MS / 5) && isManagementTabOffered()) {
+            managementTab.click();
+            waitUntilSpinnerLoaded();
+        }
+        return this;
     }
 
     public ProjectDetailPage openOverviewTab() {
@@ -201,7 +233,12 @@ public class ProjectDetailPage extends BasePage {
         clickHeaderAction("Copy");
         copyProjectDialogComponent.waitForDialogToAppear().setBranchName(branchName);
         copyProjectDialogComponent.clickCopyButton(false);
-        return String.join(" ", copyProjectDialogComponent.waitForErrors(DEFAULT_TIMEOUT_MS));
+        String errors = String.join(" ", copyProjectDialogComponent.waitForErrors(DEFAULT_TIMEOUT_MS));
+        if (errors.isEmpty()) {
+            fillCommitInfoIfShown();
+            waitUntilSpinnerLoaded();
+        }
+        return errors;
     }
 
     public ProjectDetailPage switchBranch(String branchName) {

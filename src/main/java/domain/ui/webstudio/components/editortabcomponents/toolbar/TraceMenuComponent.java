@@ -108,7 +108,11 @@ public class TraceMenuComponent extends TableInputLauncherComponent implements I
         return new TraceWindowComponent(popup);
     }
 
-    /** The first element of the first collection the launcher holds, which is written as {@code name[0]}. */
+    @Override
+    public boolean offersTheFirstElementAsAList() {
+        return isFieldChosenFromList(firstElementPath());
+    }
+
     private String firstElementPath() {
         waitForFields();
         return writablePaths().stream()

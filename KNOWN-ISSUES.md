@@ -6,8 +6,11 @@ turned out to fail not because the test was written against the old markup, but 
 interface offered is gone from the product. Each one names the tests that stay red — or are skipped — until it
 is decided.
 
-Nothing here is a JIRA ticket yet. Raise them, then replace the references in the tests with
-`@KnownIssue("<key>")` so the report shows them as known rather than as failures.
+Every finding that is a defect carries its JIRA key, named under its heading. Where a test catches the
+defect it carries `@KnownIssue("<key>")` and the report shows it as a known issue rather than as a failure;
+the findings filed as EPBDS-16667 to EPBDS-16675 are carried by no test yet, and the tests for them are still
+to be written. Nothing in the suite is skipped over a defect any more: a blocked scenario runs to the point
+where the product refuses it and fails there, which is what keeps the validation alive and the shard honest.
 
 ---
 
@@ -26,10 +29,11 @@ internal search by name. So utility tables are hidden and nobody can ask to see 
 **Why it matters.** A rule author can no longer see utility tables at all. The information exists in the
 model; only the way to ask for it was removed.
 
-**Blocked tests** (the scenario stops half way, having run the rest).
-- `tests.ui.webstudio.rules_editor.TestOrderingModeTableList#testTableListOrdering2` — the first half
-  (ordering with utility tables hidden) still runs and passes; the scenario then stops with `SkipException`,
-  because the second half needs the filter turned off.
+**Tests that report this as a known issue (they run and fail against it).**
+- `tests.ui.webstudio.rules_editor.TestOrderingModeTableList#testTableListOrdering2` — reads the tables of
+  the sheet and fails on the utility table `Test123`, which stands nowhere in the tree and cannot be asked
+  for. It carries `@KnownIssue("EPBDS-16665")`. The ordering the second half of the scenario used to assert
+  is left out: the tree sorts by name now, which is EPBDS-16668, a defect of its own.
 
 ---
 
@@ -68,6 +72,8 @@ a datatype anywhere in the tree.
 
 ## 3. The extended search offers a table kind it can never find
 
+**Filed as EPBDS-16674**, together with the trimming of what the search is given (issue 11).
+
 **What changed.** The extended search of the module screen lists "Other" among the kinds to search by, and
 the REST API declares it too, but `WorkspaceProjectService` unconditionally drops `XLS_OTHER` from the
 results. Choosing "Other" therefore always returns nothing. Same root cause as issue 1.
@@ -104,6 +110,8 @@ because of a forbidden character in its name answers with an empty message.
 
 ## 6. A row can only be added below the current one, and the button says the opposite
 
+**Filed as EPBDS-16675.**
+
 **What changed.** The JSF table toolbar had *Insert row before* and *Insert row after*. The React edit
 toolbar has one button: its tooltip reads **Insert Row Before** (`browser.module.edit_insert_row`), while the
 code behind it inserts **after** the cell in hand — `onInsertRow={() => step({ kind: 'insertRow', at: at.row
@@ -139,10 +147,12 @@ all, although the server would accept it.
 and the extended search cannot narrow by any of them either — a search by Description or by Tags, which the
 old editor offered, has no property to pick.
 
-**Blocked tests.**
+**Tests that report this as a known issue (they run and fail against it).**
 - `tests.ui.webstudio.rules_editor.TestAddAndDeleteProperty#testAddAndDeleteProperty` — adds Description,
-  Tags and ID among others. The scenario stops with `SkipException` after the properties that can still be
-  added; the Category part runs before it.
+  Tags and ID among others; it fails on the first of them the panel does not offer —
+  *'Description' was not among what the list offered*. It carries `@KnownIssue("EPBDS-16664")`;
+  EPBDS-15705, the same panel disappearing after some seven properties, is what it is expected to run into
+  once the dictionary is fixed.
 
 **Coverage dropped; the tests run.**
 - `tests.ui.webstudio.studio_issues.TestAddProperty` and
@@ -225,6 +235,8 @@ reachable, so `TestGitSortingExcelFilesInComparePopUp`, which uses that one, run
 
 ## 10. Where a generated module is written can no longer be chosen
 
+**Filed as EPBDS-16671**; the lost rule that a generated module must be an Excel workbook as EPBDS-16672.
+
 **What changed.** Generating tables from an OpenAPI specification used to ask where each module goes: the
 dialog showed the path of the rules module and of the data module, each could be typed over and reset back.
 The React card names only the modules; the path each is written to is computed by the project and shown, not
@@ -257,6 +269,8 @@ a workbook already standing at the path the project computes.
 
 ## 11. The search trims what it is given, so a space cannot be searched for
 
+**Raised inside EPBDS-16674**, which is about the kind that can never match; the trimming is recorded there as the second half.
+
 **What happens.** The extended search sends `name`, `header` and the text in the cells trimmed
 (`TableSearchModal.tsx`). A search for `Balance ` and one for ` Balance` therefore ask the same question as
 `Balance`, and a value that differs from another only by a leading or trailing space cannot be told apart.
@@ -272,6 +286,8 @@ a trailing space find different numbers of tables; it asserts what the search st
 ---
 
 ## 12. The generation plan says a workbook is replaced when none stands there
+
+**Filed as EPBDS-16673.**
 
 **What happens.** Before writing the tables a specification describes, the project shows what it will do to
 each module: `the workbook <path> is replaced`, or `a workbook is added at <path>`. Which of the two it says
@@ -309,6 +325,8 @@ again — renames it a second time and asks for the conflict.
 ---
 
 ## 14. The three category views of the tables tree draw one and the same tree
+
+**Filed as EPBDS-16670**, which covers the lost fallback to the sheet and the category a table inherits. The separator (a dash before, a dot now) and whether a view chosen by hand should outlive the Default Order are for development to settle, and are not in the ticket.
 
 **What happens.** The tables rail offers five ways of grouping what a module holds, three of them by the
 category a table declares: **Category**, **Category Detailed** (the first part of the category) and
@@ -360,6 +378,8 @@ all.
 
 ## 15. The tables tree no longer shows the order the workbook holds
 
+**Filed as EPBDS-16668.**
+
 **What happens.** Every level of the rail is now sorted by name — the groups and the tables under them alike
 (`tableGrouping.ts`, `buildTableTree` and `tableNodes`, both ending in `.sort(byLabel)`). The **By Excel
 Sheet** view therefore lists the sheets alphabetically and the tables inside each sheet alphabetically, and a
@@ -384,6 +404,8 @@ row is inserted — are gone from them, and are the coverage to restore with the
 ---
 
 ## 16. A properties table cannot be opened where a value is written in the case the screen shows
+
+**Filed as EPBDS-16667.**
 
 **What happens.** Opening a Properties table whose `validateDT` reads `on` — the case the engine itself
 accepts — fails outright. The request the module screen makes for the table,
@@ -424,6 +446,8 @@ open to it, not only properties tables.
 
 ## 17. A date is shown in place of the format the workbook writes it with
 
+**Filed as EPBDS-16669.**
+
 **What happens.** A date is drawn as `2018-05-14` on the table and in the properties panel alike, whatever
 the cell's own format says. The workbook is unharmed: a date written through the panel is still a date cell
 carrying Excel's built-in `mm-dd-yy` (`numFmtId="14"`, read back out of `xl/styles.xml` of the exported
@@ -443,6 +467,8 @@ holds. Showing a cell differently from Excel is exactly the difference they are 
 ---
 
 ## 18. The Run menu no longer offers the test cases by range
+
+**Already filed as EPBDS-16606** (*Functionality "Use the Range" is not available in "Run Test" menu*, 14 Sep 2026), which is the same defect.
 
 **What changed.** The contextual menu of Run / Test / Trace / Benchmark used to let a reader write which
 cases to run as a range — *2-4,7,10-12* or *id3-id7* — with a note beside the field saying how such a range
@@ -500,9 +526,10 @@ already guard the null (`DatatypeTableReader:34`, `VocabularyTableReader:33`, `D
 **Why it matters.** One malformed table — the very thing an author opens the editor to find and fix — hides
 every other table of the module and the messages that would say what is wrong.
 
-**Test blocked.** `tests.ui.webstudio.studio_issues.TestClickOnErrorFromTheBottom` (EPBDS-9309). Its project
-carries that table on purpose: the test is about clicking a compilation error in the bottom panel and *not*
-getting a server error. It now fails on opening the module, waiting for a tables tree that never appears.
+**Test that reports this as a known issue.** `tests.ui.webstudio.studio_issues.TestClickOnErrorFromTheBottom`
+(EPBDS-9309), carrying `@KnownIssue("EPBDS-16662")`. Its project carries that table on purpose: the test is
+about clicking a compilation error in the bottom panel and *not* getting a server error. It runs and fails on
+opening the module, waiting for a tables tree that never appears.
 The workbook is left as it is — repairing it would delete the case the test exists for and hide a live 500.
 
 Reproduced on `ghcr.io/openl-tablets/webstudio:6.5.0-b48c86279338`:
@@ -545,8 +572,10 @@ this branch (`ITEST/itest.studio/repos/test-resources/task_EPBDS-16364-xls-loss`
 `migratable: false` when EPBDS-16415 made the import write a descriptor of its own, so nothing exercises the
 branch any more.
 
-**Test blocked.** `TestMigrateLegacyProjectUi.testMigrateMovesRootWorkbookOfAProjectWithoutDescriptor` — the
-half of the scenario where the workbooks are moved. The other half, the rewrite of a legacy descriptor, runs.
+**Test that reports this as a known issue.**
+`TestMigrateLegacyProjectUi.testMigrateMovesRootWorkbookOfAProjectWithoutDescriptor`, carrying
+`@KnownIssue("EPBDS-16666")` — the half of the scenario where the workbooks are moved. The other half, the
+rewrite of a legacy descriptor, passes.
 
 Reproduced on `ghcr.io/openl-tablets/webstudio:6.5.0-b48c86279338`: upload `MigrateXlsProject.zip`, open it,
 `DELETE /web/projects/{id}/files/rules.xml`, then `POST /web/projects/{id}/migrate?scope=rulesXml` → 400, and
@@ -613,10 +642,8 @@ now takes anything typed into the box.
 **Filed as EPBDS-16660.**
 
 - `tests.ui.webstudio.studio_issues.TestArrayOfAliasValuesInRunTrace#testArrayOfAliasValuesInRunTrace` — the
-  scenario stops with `SkipException` before it runs. Its assertion `containsExactly("bla1", "bla2", "bla3")`
-  is what catches the defect and is kept in the source word for word, but it is not carried out while the
-  test is blocked, so nothing in the suite asks the launcher for the values of an alias datatype until the
-  fix lands.
+  scenario runs and fails on `containsExactly("bla1", "bla2", "bla3")`, which is the assertion that catches
+  the defect. It carries `@KnownIssue("EPBDS-16660")`.
 
 **Tests changed rather than blocked.** `TestSimpleLookupSimpleRules` runs its rules with a `Gender` and a
 `Marital_Status`, both alias datatypes. It now types those values into the boxes the launcher offers instead
@@ -661,11 +688,11 @@ read-only, said *Import and overwrite*, deleted that workbook and wrote the gene
 (`ProjectBean.getModulesInfo` and `regenerateOpenAPI`, deleted in `7ab8ab2570`). Nothing in the commit that
 replaced it records a decision to change this.
 
-**Blocked tests.**
-- `tests.ui.webstudio.rules_editor.TestLocalChangesAfterReImportForTemplateProject` — the scenario stops with
-  `SkipException` where it turns to `AutoPolicyTests`: the module it lands on was created rather than
-  replaced, so it has no local history at all, and the tree now offers two modules of that name. What runs
-  before it — the re-import itself and the local change it leaves on the module of rules — still runs.
+**Tests that report this as a known issue (they run and fail against it).**
+- `tests.ui.webstudio.rules_editor.TestLocalChangesAfterReImportForTemplateProject` — the scenario runs to
+  `AutoPolicyTests` and fails there: the module it lands on was created rather than replaced, so it has no
+  local history at all, and the tree offers two modules of that name. It carries
+  `@KnownIssue("EPBDS-16661")`.
 
 ---
 
@@ -674,18 +701,17 @@ replaced it records a decision to change this.
 | Ticket | Test | State |
 |---|---|---|
 | EPBDS-16639 | `TestProjectWithoutDescriptorUi#testCopyToBranchWorksForAProjectWithoutDescriptor` | fails: *Failed to update project status.* |
-| EPBDS-16641 | `TestProjectWithoutDescriptorUi#testDeployWorksForAProjectWithoutDescriptor` | fails: the project is not offered to be deployed |
+| EPBDS-16641 | `TestDeployProjectWithoutDescriptorUi#testDeployWorksForAProjectWithoutDescriptor` | fails: the deployment the studio confirmed stands nowhere among the deployments |
 | EPBDS-16652 | `TestProjectCreatedMessageUi#testProjectCreationSaysSo` | fails: creating a project says nothing |
 | EPBDS-16657 | `TestMigrateAfterDeployConfigEditUi#testMigrateIsNotOfferedAgainAfterEditingTheDeployConfig` | fails: Migrate is offered again after the deploy configuration is written through the studio |
-| EPBDS-16638 | `TestProjectWithoutDescriptorUi#testManagementTabOpensForAProjectWithoutDescriptor` | passes here: the 404 does not reproduce on the pinned build, so the test guards the behaviour |
-| EPBDS-16653 | `TestWithinCurrentModuleOnlyAfterModuleSwitch` | passes here: the box stays offered on this build, so the test guards the behaviour |
+| EPBDS-16638 | `TestProjectWithoutDescriptorUi#testManagementTabOpensForAProjectWithoutDescriptor` | fails: the card opens and offers the Management tab, and pressing it answers 404 |
+| EPBDS-16635 | `TestRunTableResultUi#testRunTableReportsItsResults` | fails: the window of results holds no row for a Run table of a module that compiles clean (`test_data/TestRunTableResultUi/RunTableProject.xlsx`) |
+| EPBDS-16653 | `TestWithinCurrentModuleOnlyAfterModuleSwitch` | fails: the box is locked on the module reached through the module list of the breadcrumbs, which is the route the ticket takes |
+| EPBDS-16636 | `TestNoConflictsWhileRunningTestsUi#testRunningTestsIsNotRefusedWithConflict` | fails: reading the results of a run answers 409 — `GET /projects/{id}/tests/summary` — until the run has ended |
 
-**Not covered, and why.** EPBDS-16635 (an empty result from running a Run table) is reported against a
-project attached to the ticket, and a Run table cannot be built from the templates without guessing what
-that project holds. EPBDS-16650 needs a JDBC or S3 design repository, which this suite does not raise.
-EPBDS-16636 (409s in the browser console) and EPBDS-16634 (an XML parsing error in the browser log, raised
-against a JSF endpoint this build no longer has) are about what the browser logs rather than what the screen
-does. EPBDS-16651 (the theme not reaching the pop-up messages) needs the themes, which this build does not
+**Not covered, and why.** EPBDS-16650 needs a JDBC or S3 design repository, which this suite does not raise.
+EPBDS-16634 (an XML parsing error in the browser log) is raised against
+`faces/tableEditor/ajax/getCellEditor`, a JSF endpoint this build no longer has, and is already in testing. EPBDS-16651 (the theme not reaching the pop-up messages) needs the themes, which this build does not
 have: nothing in `studio-ui` knows of a night theme.
 
 ---

@@ -1,6 +1,7 @@
 package tests.ui.webstudio.studio_issues;
 
 import configuration.annotations.Description;
+import configuration.annotations.KnownIssue;
 import configuration.annotations.TestCaseId;
 import configuration.annotations.AppContainerConfig;
 import configuration.appcontainer.AppContainerStartParameters;
@@ -9,7 +10,6 @@ import domain.ui.webstudio.components.editortabcomponents.EditorToolbarPanelComp
 import domain.ui.webstudio.components.editortabcomponents.leftmenu.EditorLeftRulesTreeComponent;
 import domain.ui.webstudio.pages.mainpages.EditorPage;
 import helpers.service.WorkflowService;
-import org.testng.SkipException;
 import org.testng.annotations.Test;
 import tests.BaseTest;
 
@@ -22,8 +22,6 @@ import domain.ui.webstudio.components.editortabcomponents.toolbar.ITraceMenu;
 
 public class TestArrayOfAliasValuesInRunTrace extends BaseTest {
 
-    private static final boolean THE_ALIAS_VALUES_ARE_NOT_OFFERED = true;
-
     private final List<String> tables = Arrays.asList("myRule2", "myRule3", "myRule5", "myRule_array", "myRule_x_array",
             "myRule_x", "myRule");
 
@@ -31,24 +29,17 @@ public class TestArrayOfAliasValuesInRunTrace extends BaseTest {
     @TestCaseId("EPBDS-7796")
     @Description("BUG: Dropdown with alias values is empty in Run/Trace for array types")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
+    @KnownIssue("EPBDS-16660")
     public void testArrayOfAliasValuesInRunTrace() {
-        if (THE_ALIAS_VALUES_ARE_NOT_OFFERED) {
-            throw new SkipException("KNOWN-ISSUES.md #22: the values of an alias datatype never reach the "
-                    + "launcher — the schema of the parameter is generated from the erased Java class, so "
-                    + "an element of my (myType[]) is offered as a plain text box instead of the list of "
-                    + "bla1, bla2, bla3.");
-        }
         String projectName = WorkflowService.loginCreateProjectFromExcelFile(User.ADMIN, "TestArrayOfAliasValuesInRunTrace.xlsx");
         EditorPage editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "TestArrayOfAliasValuesInRunTrace");
 
-        // Set the filter and expand the folder once before iterating through tables
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
                 .expandFolderInTree("Rules");
 
         tables.forEach(tableName -> {
-            // Select the item from the already expanded folder
             editorPage.getEditorLeftRulesTreeComponent().selectItemInFolder("Rules", tableName);
 
             IRunMenu runMenu = editorPage.getEditorToolbarPanelComponent().clickRun();
@@ -56,13 +47,19 @@ public class TestArrayOfAliasValuesInRunTrace extends BaseTest {
                     .clickAddElementToCollectionBtn("my")
                     .clickExpandCollection();
             
-            // Verify dropdown in Run menu
+            assertThat(runMenu.offersTheFirstElementAsAList())
+                    .as("The element of the array should be written by picking from the values of the alias "
+                            + "datatype in the Run menu for table: " + tableName)
+                    .isTrue();
             assertThat(runMenu.getAliasDropdownValues())
                     .as("Dropdown for alias values should contain expected values in Run menu for table: " + tableName)
                     .containsExactly("bla1", "bla2", "bla3");
 
-            // Switch to Trace and verify again
             ITraceMenu traceMenu = editorPage.getEditorToolbarPanelComponent().clickTrace();
+            assertThat(traceMenu.offersTheFirstElementAsAList())
+                    .as("The element of the array should be written by picking from the values of the alias "
+                            + "datatype in the Trace menu for table: " + tableName)
+                    .isTrue();
             assertThat(traceMenu.getAliasDropdownValues())
                     .as("Dropdown for alias values should contain expected values in Trace menu for table: " + tableName)
                     .containsExactly("bla1", "bla2", "bla3");

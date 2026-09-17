@@ -48,18 +48,12 @@ public class TestTabRevisionsInEditor extends BaseTest {
         editorPage.getCenterTable().editCell(6, 2, "100");
         editorPage.getEditorTableActionsPanelComponent().clickSaveChanges();
 
-        // Saving the table leaves the editor spinning on a recompile that never settles, and the toolbar's
-        // Save stays disabled while it does. A reload comes back to the same module with the edit kept and
-        // the toolbar usable.
         editorPage.reloadPage();
         editorPage = new EditorPage();
         editorPage.getEditorToolbarPanelComponent().clickSave();
         editorPage.getSaveChangesComponent().clickSave();
         editorPage.waitUntilSpinnerLoaded();
 
-        // The immediate post-save recompile keeps re-rendering the JSF toolbar/breadcrumb; a reload
-        // settles it on the static welcome view, then a tab round-trip re-enters the editor with the
-        // projects tree (arriving on the Editor tab shows the tree, as later in this test).
         editorPage.reloadPage();
         RepositoryPage repositoryPage = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.REPOSITORY);
         editorPage = new EditorPage();
@@ -77,7 +71,6 @@ public class TestTabRevisionsInEditor extends BaseTest {
                 .as("Oldest revision comment should indicate project creation")
                 .isEqualTo("Project " + projectName + " is created.");
 
-        // Compare editor revisions count with repository revisions count
         repositoryPage = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.REPOSITORY);
         int repositoryRevisionCount = repositoryPage.openProjectDetail(projectName).getRevisionsCount();
 
@@ -101,8 +94,6 @@ public class TestTabRevisionsInEditor extends BaseTest {
                 .as("Revision count should still be 2 after module navigation")
                 .isEqualTo(2);
 
-        // Viewing revisions in the editor leaves a lingering loading overlay that blocks the tab bar; a
-        // reload clears it to a stable state before switching to the Projects tab.
         editorPage.reloadPage();
         repositoryPage = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.REPOSITORY);
         repositoryPage.closeProject(projectName);
@@ -117,7 +108,6 @@ public class TestTabRevisionsInEditor extends BaseTest {
 
         revisionsTab.waitForTableToLoad();
         revisionsTab.openRevision(2);
-        // TODO: verify viewing revision status - locator unknown
 
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Main");
         editorPage.getEditorLeftRulesTreeComponent()

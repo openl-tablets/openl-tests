@@ -1,6 +1,7 @@
 package tests.ui.webstudio.rules_editor;
 
 import configuration.annotations.Description;
+import configuration.annotations.KnownIssue;
 import configuration.annotations.TestCaseId;
 import configuration.annotations.AppContainerConfig;
 import configuration.appcontainer.AppContainerStartParameters;
@@ -17,15 +18,12 @@ import domain.ui.webstudio.pages.mainpages.RepositoryPage;
 import helpers.service.LoginService;
 import helpers.service.UserService;
 import helpers.utils.TestDataUtil;
-import org.testng.SkipException;
 import org.testng.annotations.Test;
 import tests.BaseTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestLocalChangesAfterReImportForTemplateProject extends BaseTest {
-
-    private static final boolean THE_GENERATION_LAYS_A_SECOND_MODULE = true;
 
     private static final String OPENAPI_FILE_2 = "openapi2.json";
     private static final String TEMPLATE_AUTO_POLICY = "Example 3 - Auto Policy Calculation";
@@ -36,6 +34,7 @@ public class TestLocalChangesAfterReImportForTemplateProject extends BaseTest {
     @TestCaseId("IPBQA-31512")
     @Description("Steps 2-2.2: Local Changes appear after Tables Generation re-import for template project. Restore shows reconciliation warning. Compare window shows changed items.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
+    @KnownIssue("EPBDS-16661")
     public void testLocalChangesAfterReImportForTemplateProject() {
         String projectName = "TestLocalChanges2_" + System.currentTimeMillis();
         String rulesModuleName = "AutoPolicyCalculation";
@@ -82,12 +81,6 @@ public class TestLocalChangesAfterReImportForTemplateProject extends BaseTest {
                 .as("Should be 2 rows in history (current + previous)")
                 .isEqualTo(2);
 
-        if (THE_GENERATION_LAYS_A_SECOND_MODULE) {
-            throw new SkipException("KNOWN-ISSUES.md #23: the generation writes the module of data types to "
-                    + "rules/AutoPolicyTests.xlsx instead of the tests/AutoPolicyTests.xlsx the project "
-                    + "already reads, so the project is left with two modules of that name and the one the "
-                    + "screen lands on was created rather than replaced — it holds no local history.");
-        }
 
         editorPage.getEditorToolbarPanelComponent().navigateToProjectRoot(projectName);
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, dataModuleName);

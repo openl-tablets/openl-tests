@@ -10,6 +10,7 @@ public interface IRunMenu {
     IRunMenu clickRunInsideMenu();
     IRunMenu clickAddedElementsExpander(String containsText);
     List<String> getAliasDropdownValues();
+    boolean offersTheFirstElementAsAList();
     IRunMenu setInputTextField(String index, String value);
     IRunMenu setInputSelectField(String index, String value);
 }

@@ -419,6 +419,7 @@ public class EditorLeftRulesTreeComponent extends BaseComponent {
         extendedSearchBtn.click();
     }
 
+
     private Optional<TreeRow> findFolder(String folderName) {
         return readRows().stream()
                 .filter(row -> row.folder() && folderName.equals(row.title()))

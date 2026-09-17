@@ -23,6 +23,7 @@ public class ProjectsTableComponent extends BaseComponent {
     private static final int PROBE_MS = DEFAULT_TIMEOUT_MS / 5;
     // Short enough that a row lost to a re-render is retried instead of waited out.
     private static final int ACTION_CLICK_TIMEOUT_MS = DEFAULT_TIMEOUT_MS / 2;
+    private static final int ROW_LISTED_TIMEOUT_MS = 90000;
 
     private final WebElement listBeingRead;
     private final WebElement rowByName;
@@ -104,7 +105,9 @@ public class ProjectsTableComponent extends BaseComponent {
     /** Clicks the project name to open the React project-detail view. */
     public void clickProjectName(String projectName) {
         waitUntilTheListIsDrawn();
-        nameInRow.format(projectName).click();
+        WebElement name = nameInRow.format(projectName);
+        name.waitForVisible(ROW_LISTED_TIMEOUT_MS);
+        name.click();
     }
 
     /** Clicks a same-name row picked out by its state (an opened row offers "Close", a closed one "Open"). */

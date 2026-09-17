@@ -77,7 +77,6 @@ public class RunMenuComponent extends TableInputLauncherComponent implements IRu
         return this;
     }
 
-    /** The values the first element of the collection offers, which is what its type allows. */
     @Override
     public List<String> getAliasDropdownValues() {
         return fieldOptions(firstElementPath());
@@ -121,13 +120,16 @@ public class RunMenuComponent extends TableInputLauncherComponent implements IRu
                 + position + " among its fields: " + paths);
     }
 
-    /** The first element of the first collection the launcher holds, which is written as {@code name[0]}. */
+    @Override
+    public boolean offersTheFirstElementAsAList() {
+        return isFieldChosenFromList(firstElementPath());
+    }
+
     private String firstElementPath() {
+        waitForFields();
         return writablePaths().stream()
                 .filter(path -> path.endsWith("]"))
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("The launcher holds no element of a collection: " + writablePaths()));
     }
-
-
 }

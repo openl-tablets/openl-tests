@@ -11,4 +11,5 @@ public interface ITraceMenu {
     ITraceWindow clickTraceInsideMenu(boolean isPopupExpected);
     ITraceWindow clickTraceInsideMenuBusiness();
     List<String> getAliasDropdownValues();
+    boolean offersTheFirstElementAsAList();
 }

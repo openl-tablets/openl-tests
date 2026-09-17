@@ -21,6 +21,7 @@ public class DeploymentsHomePage extends BasePage {
     private WebElement noMatchPlaceholder;
     private WebElement clearSearchBtn;
     private WebElement emptyPlaceholder;
+    private WebElement errorPlaceholder;
     private WebElement pagination;
     private WebElement repositoryRailItemTemplate;
 
@@ -46,6 +47,7 @@ public class DeploymentsHomePage extends BasePage {
         noMatchPlaceholder = new WebElement(page, "xpath=//*[@data-testid='deployments-no-match']", "deploymentsNoMatch");
         clearSearchBtn = new WebElement(page, "xpath=//button[normalize-space()='Clear search']", "clearSearchBtn");
         emptyPlaceholder = new WebElement(page, "xpath=//*[@data-testid='deployments-empty']", "deploymentsEmpty");
+        errorPlaceholder = new WebElement(page, "xpath=//*[@data-testid='deployments-error']", "deploymentsError");
         pagination = new WebElement(page, "xpath=//*[@data-testid='deployments-pagination']", "deploymentsPagination");
         repositoryRailItemTemplate = new WebElement(page,
                 "xpath=//button[@data-testid='deployment-repository-%s']", "deploymentRepositoryRailItem");
@@ -98,12 +100,20 @@ public class DeploymentsHomePage extends BasePage {
     private void waitForListSettled() {
         WaitUtil.waitForCondition(
                 () -> deploymentsTable.isVisible(1000) || emptyPlaceholder.isVisible(500)
-                        || noMatchPlaceholder.isVisible(500) || emptyRepositoriesPlaceholder.isVisible(500),
+                        || noMatchPlaceholder.isVisible(500) || emptyRepositoriesPlaceholder.isVisible(500)
+                        || errorPlaceholder.isVisible(500),
                 DEFAULT_TIMEOUT_MS, 300, "Waiting for the deployments list to leave its loading state");
+        if (errorPlaceholder.isVisible(500)) {
+            throw new IllegalStateException("The deployments could not be read: "
+                    + errorPlaceholder.getInnerText().trim().replace("\n", " "));
+        }
     }
 
     public List<String> getVisibleDeploymentNames() {
-        deploymentsTable.waitForVisible(DEFAULT_TIMEOUT_MS);
+        waitForListSettled();
+        if (!deploymentsTable.isVisible(1000)) {
+            return List.of();
+        }
         return page.locator("xpath=//button[starts-with(@data-testid,'deployment-open-')]")
                 .allInnerTexts().stream().map(String::trim).toList();
     }

@@ -1,6 +1,7 @@
 package tests.ui.webstudio.repository;
 
 import configuration.annotations.Description;
+import configuration.annotations.KnownIssue;
 import configuration.annotations.TestCaseId;
 import configuration.annotations.AppContainerConfig;
 import configuration.appcontainer.AppContainerStartParameters;
@@ -10,15 +11,12 @@ import domain.ui.webstudio.pages.mainpages.EditorPage;
 import domain.ui.webstudio.pages.mainpages.ProjectDetailPage;
 import domain.ui.webstudio.pages.mainpages.RepositoryPage;
 import helpers.service.WorkflowService;
-import org.testng.SkipException;
 import org.testng.annotations.Test;
 import tests.BaseTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestMigrateLegacyProjectUi extends BaseTest {
-
-    private static final boolean MOVE_IS_BLOCKED = true;
 
     @Test
     @TestCaseId("IPBQA-33027")
@@ -28,8 +26,6 @@ public class TestMigrateLegacyProjectUi extends BaseTest {
             + "uncommitted workspace edits.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void testMigrateRewritesLegacyDescriptorAndKeepsModules() {
-        // The templates the product ships now carry the standard layout and a descriptor of their own, so a
-        // project with a workbook in its root — which is what there is to move — comes from an archive.
         String projectName = WorkflowService.loginCreateProjectFromZip(User.ADMIN, "MigrateXlsProject.zip");
         RepositoryPage repositoryPage = new EditorPage().getTabSwitcherComponent()
                 .selectTab(TabSwitcherComponent.TabName.REPOSITORY);
@@ -45,16 +41,12 @@ public class TestMigrateLegacyProjectUi extends BaseTest {
         detail.openOverviewTab();
         detail.migrateOverviewDescriptor();
 
-        // The descriptor names the workbook itself rather than a pattern, so the card lists it as the module
-        // it declares; only a declaration written as a pattern carries the files it matched under it.
         assertThat(detail.getOverviewModuleNames())
                 .as("The workbook must still be declared as a module after the migration")
                 .anyMatch(name -> name.contains("LegacyOld"));
         assertThat(detail.isOverviewEditOffered())
                 .as("Edit must replace Migrate once the descriptor is modern")
                 .isTrue();
-        // A project that already declares its modules is migrated by rewriting its descriptor; the workbooks
-        // are moved only for a project that declares nothing, which is the other test below.
         assertThat(detail.isFilePresent("LegacyOld.xls"))
                 .as("A descriptor rewrite must leave the workbook where rules.xml declares it")
                 .isTrue();
@@ -72,14 +64,8 @@ public class TestMigrateLegacyProjectUi extends BaseTest {
             + "the root is what there is to move, so the migration moves it under rules/ and writes the "
             + "descriptor that names it.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
+    @KnownIssue("EPBDS-16666")
     public void testMigrateMovesRootWorkbookOfAProjectWithoutDescriptor() {
-        if (MOVE_IS_BLOCKED) {
-            throw new SkipException("KNOWN-ISSUES.md #20: migrating a project that declares nothing answers "
-                    + "400 after it has already moved the workbooks, leaving the project with neither them "
-                    + "nor a descriptor in its root.");
-        }
-        // An archive without a descriptor is given one as it is taken in, so the project that declares
-        // nothing is made here the way a reader would make it: by deleting the descriptor.
         String projectName = WorkflowService.loginCreateProjectFromZip(User.ADMIN, "MigrateXlsProject.zip");
         RepositoryPage repositoryPage = new EditorPage().getTabSwitcherComponent()
                 .selectTab(TabSwitcherComponent.TabName.REPOSITORY);

@@ -72,6 +72,13 @@ public class TestResultValidationComponent extends BaseComponent {
                 "Waiting for the run to report its results");
     }
 
+    public int rowsTheRunReported() {
+        resultsWindow.waitForVisible(RESULTS_TIMEOUT_MS);
+        boolean drawn = WaitUtil.waitForCondition(() -> resultTable.isVisible(PROBE_MS),
+                RESULTS_TIMEOUT_MS, 250, "Waiting for the run to draw what it returned");
+        return drawn ? resultTable.getRows().size() : 0;
+    }
+
     public TableComponent getResultTable() {
         waitForResults();
         WaitUtil.requireCondition(() -> resultTable.isVisible() && !resultTable.getRows().isEmpty(),

@@ -16,7 +16,6 @@ import domain.ui.webstudio.pages.mainpages.RepositoryPage;
 import helpers.service.LoginService;
 import helpers.service.UserService;
 import helpers.utils.WaitUtil;
-import org.testng.SkipException;
 import org.testng.annotations.Test;
 import tests.BaseTest;
 
@@ -33,9 +32,12 @@ public class TestAddAndDeleteProperty extends BaseTest {
 
     @Test
     @TestCaseId("IPBQA-25857")
-    @Description("Rules Editor - Add and delete properties in table details.")
+    @Description("Rules Editor - Add and delete properties in table details. Fails on EPBDS-16664: the "
+            + "panel reads a dictionary that leaves the table-scope properties out, so Description is not "
+            + "offered. EPBDS-15705, the panel disappearing after some seven properties, is what it is "
+            + "expected to run into once that is fixed.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
-    @KnownIssue("EPBDS-15705")
+    @KnownIssue("EPBDS-16664")
     public void testAddAndDeleteProperty() {
         EditorPage editorPage = loginAndCreateProject();
 
@@ -48,13 +50,6 @@ public class TestAddAndDeleteProperty extends BaseTest {
 
         addAndCheckProperty(editorPage, "Category", "category", "MyCategory");
 
-        // Description, Tags and ID exist only at table scope, and the panel reads a dictionary that leaves
-        // them out, so they cannot be added at all — see KNOWN-ISSUES.md, issue 7.
-        throw new SkipException("Blocked: the properties panel cannot add table-scope properties "
-                + "(description, tags, id, active) — see KNOWN-ISSUES.md, issue 7");
-    }
-
-    private void theRestOfTheScenario(EditorPage editorPage) {
         addAndCheckProperty(editorPage, "Description", "description", "TestDescription");
         addAndCheckProperty(editorPage, "Tags", "tags", "Tag1,Tag2");
         addAndCheckProperty(editorPage, "Effective Date", "effectiveDate", "05/14/2024");
@@ -109,6 +104,7 @@ public class TestAddAndDeleteProperty extends BaseTest {
         deletePropertyAndCheck(editorPage, "Nature", "nature");
         deletePropertyAndCheck(editorPage, "Empty Result Processing", "emptyResultProcessing");
     }
+
 
     private EditorPage loginAndCreateProject() {
         LoginService loginService = new LoginService(DriverPool.getPage());

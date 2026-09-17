@@ -30,4 +30,13 @@ public class WorkflowService {
     public static String loginCreateProjectFromTemplate(User user, String templateName) {
         return loginCreateProject(user, CreateNewProjectComponent.TabName.TEMPLATE, templateName);
     }
+
+    public static String loginCreateProjectWithoutDescriptor(User user, String templateName) {
+        String projectName = loginCreateProjectFromTemplate(user, templateName);
+        RepositoryPage repositoryPage = new EditorPage().getTabSwitcherComponent()
+                .selectTab(TabSwitcherComponent.TabName.REPOSITORY);
+        repositoryPage.openProjectsList().openProjectDetail(projectName).deleteFile("rules.xml");
+        repositoryPage.openProjectsList().saveProject(projectName, "Descriptor deleted");
+        return projectName;
+    }
 }
