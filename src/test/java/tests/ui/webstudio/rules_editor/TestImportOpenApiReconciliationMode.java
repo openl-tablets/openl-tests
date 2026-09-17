@@ -47,8 +47,6 @@ public class TestImportOpenApiReconciliationMode extends BaseTest {
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName);
 
         // Step 4: Open dialog, select "Uploaded in the Repository", enter path, import in Reconciliation mode
-        // A template project keeps its workbooks in its root; the settings are offered once they are moved.
-        editorPage.migrateProject();
         ImportOpenApiDialogComponent importDialog = editorPage.openImportOpenApiDialog();
         assertThat(importDialog.isVisible())
                 .as("Import OpenAPI dialog should be visible")

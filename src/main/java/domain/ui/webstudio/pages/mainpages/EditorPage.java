@@ -262,7 +262,7 @@ public class EditorPage extends BasePage {
     public void refresh() {
         refreshBtn.click(DEFAULT_TIMEOUT_MS);
         waitUntilSpinnerLoaded();
-        new ProblemsPanelComponent().waitForCompilationToComplete();
+        problemsPanelComponent.waitForCompilationToComplete();
     }
 
     public void clickTableInDependenciesView(String tableName) {

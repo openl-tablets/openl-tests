@@ -40,8 +40,6 @@ public class TestImportOpenApiDialogDefaultStateForNonOpenApiProject extends Bas
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName);
 
         // Step 8: Open dialog and immediately cancel
-        // A template project keeps its workbooks in its root; the settings are offered once they are moved.
-        editorPage.migrateProject();
         ImportOpenApiDialogComponent importDialog = editorPage.openImportOpenApiDialog();
         importDialog.clickCancel();
 

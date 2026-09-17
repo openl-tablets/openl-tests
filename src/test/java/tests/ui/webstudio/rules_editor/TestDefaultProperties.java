@@ -46,14 +46,15 @@ public class TestDefaultProperties extends BaseTest {
                 .expandFolderInTree("Run")
                 .selectItemInFolder("Run", "SpreadsheetTable");
 
-        // The name a table goes by is what the panel is headed with; a Run table declares nothing else, so
-        // the panel lists no property beside it.
+        // The name a table goes by is what the panel is headed with, and three tables of this module are
+        // called SpreadsheetTable, so the name carries what tells them apart. A Run table declares nothing
+        // else, and the panel says so rather than listing anything.
         assertThat(editorPage.getRightTableDetailsComponent().getTitle())
                 .as("The panel should be headed with the name of the Run table")
-                .contains("SpreadsheetTable");
-        assertThat(editorPage.getRightTableDetailsComponent().getPropertiesRowCount())
-                .as("A Run table declares no property of its own")
-                .isZero();
+                .startsWith("SpreadsheetTable$Run$");
+        assertThat(editorPage.getRightTableDetailsComponent().saysNoProperties())
+                .as("The panel should say that the Run table declares no property of its own")
+                .isTrue();
 
         editorPage.getEditorLeftRulesTreeComponent()
                 .expandFolderInTree("Test")
@@ -61,9 +62,9 @@ public class TestDefaultProperties extends BaseTest {
 
         assertThat(editorPage.getRightTableDetailsComponent().getTitle())
                 .as("The panel should be headed with the name of the Test table")
-                .contains("SpreadsheetTable");
-        assertThat(editorPage.getRightTableDetailsComponent().getPropertiesRowCount())
-                .as("A Test table declares no property of its own")
-                .isZero();
+                .startsWith("SpreadsheetTable$Test$");
+        assertThat(editorPage.getRightTableDetailsComponent().saysNoProperties())
+                .as("The panel should say that the Test table declares no property of its own")
+                .isTrue();
     }
 }

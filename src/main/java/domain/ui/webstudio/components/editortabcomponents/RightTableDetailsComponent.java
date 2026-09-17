@@ -139,11 +139,17 @@ public class RightTableDetailsComponent extends BaseComponent {
         waitUntilSpinnerLoaded();
     }
 
-    /** What the panel is headed with: the table it is about, or the word the panel goes by where it has none. */
+    /** The name of the table the panel is about, which heads it. */
     public String getTitle() {
         WebElement title = new WebElement(page, PANEL + "/div[1]/span[@title]", "detailsTitle");
         title.waitForVisible(DEFAULT_TIMEOUT_MS);
         return title.getText().trim();
+    }
+
+    /** Whether the panel says in so many words that the table declares nothing. */
+    public boolean saysNoProperties() {
+        return new WebElement(page, PANEL + "//*[@data-testid='table-details-empty']", "detailsEmpty")
+                .isVisible(DEFAULT_TIMEOUT_MS);
     }
 
     /** How many properties the panel lists, which may be none. */

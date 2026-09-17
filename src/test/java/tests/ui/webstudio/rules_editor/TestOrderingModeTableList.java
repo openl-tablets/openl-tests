@@ -42,10 +42,11 @@ public class TestOrderingModeTableList extends BaseTest {
         // Expand folders and verify leaf node ordering
         editorPage.getEditorLeftRulesTreeComponent().expandFolderInTree("Sheet1");
         editorPage.getEditorLeftRulesTreeComponent().expandFolderInTree("Asheet");
-        // The tables of both sheets are listed; the order they are listed in is no longer the order they
-        // sit on the sheet — see KNOWN-ISSUES.md #15.
+        // The tables of both sheets are listed, both versions of the overloaded one among them; the order
+        // they are listed in is no longer the order they sit on the sheet — see KNOWN-ISSUES.md #15.
         List<String> nodesNames = editorPage.getEditorLeftRulesTreeComponent().getAllEndNodesNames();
-        assertThat(nodesNames).contains("_MyRules2", "MyRules1");
+        assertThat(nodesNames).contains("_MyRules2");
+        assertThat(nodesNames).filteredOn("MyRules1"::equals).hasSize(2);
         assertThat(nodesNames).contains("тест123", "はsomeRules", "_someRules", "étudiantomeRules", "トsomeRules");
 
         // Edit table _MyRules2: add a row to change ordering
@@ -58,9 +59,12 @@ public class TestOrderingModeTableList extends BaseTest {
         editorPage.getEditorTableActionsPanelComponent().clickSaveChanges();
         editorPage.getProblemsPanelComponent().waitForCompilationToComplete();
 
-        // Inserting a row moves the table down its sheet, which the rail no longer follows — KNOWN-ISSUES.md #15.
+        // Inserting a row moves the table down its sheet, which the rail no longer follows — KNOWN-ISSUES.md
+        // #15. What the insert did is read from the table itself, and the rail still lists what it listed.
+        assertThat(editorPage.getCenterTable().getCellText(5, 1)).isEqualTo("1");
         nodesNames = editorPage.getEditorLeftRulesTreeComponent().getAllEndNodesNames();
-        assertThat(nodesNames).contains("MyRules1", "_MyRules2");
+        assertThat(nodesNames).contains("_MyRules2");
+        assertThat(nodesNames).filteredOn("MyRules1"::equals).hasSize(2);
 
         // Create new Datatype table in "Asheet" category
         editorPage.getEditorToolbarPanelComponent().clickCreateTable();
@@ -104,7 +108,8 @@ public class TestOrderingModeTableList extends BaseTest {
         // Verify ordering with utility tables hidden (default)
         // The order they are listed in is no longer the order they sit on the sheet — KNOWN-ISSUES.md #15.
         List<String> nodesNames = editorPage.getEditorLeftRulesTreeComponent().getAllEndNodesNames();
-        assertThat(nodesNames).contains("_MyRules", "MyRules", "Atable");
+        assertThat(nodesNames).contains("_MyRules", "Atable");
+        assertThat(nodesNames).filteredOn("MyRules"::equals).hasSize(2);
 
         // The rest of this scenario needs the "Hide Utility Tables" filter, which the module screen no longer
         // offers and the server no longer honours — see KNOWN-ISSUES.md, issue 1.

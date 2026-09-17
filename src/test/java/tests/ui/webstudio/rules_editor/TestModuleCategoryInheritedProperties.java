@@ -187,7 +187,7 @@ public class TestModuleCategoryInheritedProperties extends BaseTest {
                 .as("The panel should say where the inherited value comes from")
                 .isEqualTo(expectedSource);
 
-        assertThat(tableDetails.getGoToPropertiesTableArrow("LOB").isVisible())
+        assertThat(tableDetails.getGoToPropertiesTableArrow("LOB").isEnabled())
                 .as("The panel should offer to open the table the value is inherited from")
                 .isTrue();
 

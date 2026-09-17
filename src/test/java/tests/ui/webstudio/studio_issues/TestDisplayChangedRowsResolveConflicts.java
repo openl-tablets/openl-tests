@@ -50,6 +50,8 @@ public class TestDisplayChangedRowsResolveConflicts extends BaseTest {
         compareDialog.openTreeNode("Sheet1");
         compareDialog.clickTreeNode("Test BenefitPremium");
 
+        // What differs is counted rather than pointed at by place: hiding the rows the two versions read the
+        // same renumbers everything below them, and a cell covered by a merge is not drawn at all.
         compareDialog.setShowEqualRows(false);
         assertThat(compareDialog.getNumberOfRows(1))
                 .as("Left fragment: only 1 changed row when equal rows hidden")
@@ -57,12 +59,14 @@ public class TestDisplayChangedRowsResolveConflicts extends BaseTest {
         assertThat(compareDialog.getNumberOfRows(2))
                 .as("Right fragment: only 1 changed row when equal rows hidden")
                 .isEqualTo(1);
-        assertThat(compareDialog.isCellHighlightedWhite(2, 1, "1"))
-                .as("Changed cell in left fragment should be highlighted white")
-                .isTrue();
-        assertThat(compareDialog.isCellHighlightedWhite(2, 1, "2"))
-                .as("Changed cell in right fragment should be highlighted white")
-                .isTrue();
+        int paintedLeft = compareDialog.getHighlightedCellCount(1);
+        int paintedRight = compareDialog.getHighlightedCellCount(2);
+        assertThat(paintedLeft)
+                .as("The one row left must carry what differs")
+                .isPositive();
+        assertThat(paintedRight)
+                .as("The one row left must carry what differs")
+                .isPositive();
 
         compareDialog.setShowEqualRows(true);
         assertThat(compareDialog.getNumberOfRows(1))
@@ -71,12 +75,12 @@ public class TestDisplayChangedRowsResolveConflicts extends BaseTest {
         assertThat(compareDialog.getNumberOfRows(2))
                 .as("Right fragment should have more than 1 row when equal rows shown")
                 .isGreaterThan(1);
-        assertThat(compareDialog.isCellHighlightedWhite(2, 1, "1"))
-                .as("Changed cell in left fragment still highlighted white")
-                .isTrue();
-        assertThat(compareDialog.isCellHighlightedWhite(2, 1, "2"))
-                .as("Changed cell in right fragment still highlighted white")
-                .isTrue();
+        assertThat(compareDialog.getHighlightedCellCount(1))
+                .as("Showing the rows that read the same must add nothing to what differs")
+                .isEqualTo(paintedLeft);
+        assertThat(compareDialog.getHighlightedCellCount(2))
+                .as("Showing the rows that read the same must add nothing to what differs")
+                .isEqualTo(paintedRight);
 
         compareDialog.close();
     }

@@ -355,16 +355,17 @@ finds the table they are looking at in Excel, and how they see that an insert la
 
 **Blocked tests.** `tests.ui.webstudio.rules_editor.TestOrderingModeTableList` — both scenarios are about
 that order. What each still asks is kept: that the view opens on Excel Sheet, that every sheet of the
-workbook is a group of its own, and that a table created or removed appears and disappears. The sequences —
-the sheets in workbook order, the tables in the order they sit on the sheet, the order changing after a row
-is inserted — are gone from them, and are the coverage to restore with the order.
+workbook is a group of its own, that both versions of an overloaded table are drawn, that a row inserted
+lands where it was meant to, and that a table created or removed appears and disappears. Only the sequences
+— the sheets in workbook order, the tables in the order they sit on the sheet, the order changing after a
+row is inserted — are gone from them, and are the coverage to restore with the order.
 
 ---
 
-## 16. A properties table carrying `validateDT` cannot be opened: the screen answers 500
+## 16. A properties table cannot be opened where a value is written in the case the screen shows
 
-**What happens.** Opening a Properties table whose `validateDT` is written as the engine writes it — `on` or
-`off` — fails outright. The request the module screen makes for the table,
+**What happens.** Opening a Properties table whose `validateDT` reads `on` — the case the engine itself
+accepts — fails outright. The request the module screen makes for the table,
 `GET /web/projects/{id}/tables/{tableId}`, answers
 
 ```
@@ -376,20 +377,47 @@ and the screen is left with no table to draw.
 
 **Verified against a running 6.5.0-SNAPSHOT** (`6.5.0-b48c86279338`) with
 `src/test/resources/test_data/TestModuleCategoryInheritedProperties/TestModuleCategoryInheritedProperties.xlsx`,
-whose module-scope properties table writes `validateDT` as `on`. The module itself compiles clean and the
-properties panel reads the inherited values from that very table, so only the reading of the table for the
-screen is affected.
+whose module-scope properties table writes `validateDT` as `on` and its category-scope one as `off`. The
+module compiles clean and the properties panel reads the inherited values from those very tables, so only
+the reading of the table for the screen is affected. The sibling fixture
+`TestAddDeleteEditProperties.xlsx`, which writes `ON`, opens.
 
-**Where it comes from.** `ValidateDTEnum` declares the constants `ON` and `OFF` with the display names `On`
-and `Off`, and offers `fromString`, which compares without regard to case
-(`DEV/org.openl.rules/src/org/openl/rules/enumeration/ValidateDTEnum.java`). Something on the read path calls
-`Enum.valueOf` with the display name instead, which is case-sensitive and knows nothing of `on`. Every
-property written as an enum is open to the same fault.
+**Where it comes from.** The table is read cell by cell — `CellValueReader` asks
+`XlsDataFormatterFactory.getFormatter` for a formatter and hands it the cell's text. For a cell the meta
+info types as an enum that is `EnumFormatter`, which parses through `EnumUtils` and therefore through
+`Enum.valueOf`: the **constant name**, case-sensitive. `ON` passes, `on` does not. Two other readers of the
+same cell are case-insensitive — `String2EnumConvertor`, which is why the module compiles, and
+`ValidateDTEnum.fromString`, which reads the display name — so three parsers disagree about the same text.
+
+**How far it reaches.** For `validateDT` the constant and the display name differ only in case. For every
+other dimension property they differ entirely — `CaRegionsEnum` declares `QC("Québec")` — so a properties
+table written the way the panel *shows* the values cannot be opened at all. Every table read this way is
+open to it, not only properties tables.
 
 **Blocked tests.**
 - `tests.ui.webstudio.rules_editor.TestModuleCategoryInheritedProperties` — the step that follows the panel's
   arrow to the properties table the value is inherited from. Everything the panel itself answers — the
   inherited values, which are overwritten at the table, where each value comes from — still runs.
+
+---
+
+## 17. A date is shown in place of the format the workbook writes it with
+
+**What happens.** A date is drawn as `2018-05-14` on the table and in the properties panel alike, whatever
+the cell's own format says. The workbook is unharmed: a date written through the panel is still a date cell
+carrying Excel's built-in `mm-dd-yy` (`numFmtId="14"`, read back out of `xl/styles.xml` of the exported
+workbook), which Excel shows as `5/14/18`. The old editor drew the cell as the workbook writes it; the new
+screen does not read the format at all.
+
+The same is true of a percentage: a cell formatted as one is drawn as the bare number it holds.
+
+**Why it matters.** The table screen is where an author checks that what they wrote is what the workbook
+holds. Showing a cell differently from Excel is exactly the difference they are looking for.
+
+**Tests changed rather than blocked.** The dates the tests expect are written the way the screen shows them
+— the same dates, compared exactly — in `TestEditingProperties` and `TestModuleCategoryInheritedProperties`.
+`tests.ui.webstudio.studio_issues.TestAddDeleteRowWithoutSaving` expects `0%` where the screen now reads
+`0`; that one is the percentage half of this issue.
 
 ---
 
@@ -423,10 +451,9 @@ the build under test (`6.5.0-b48c86279338`) and against the screens themselves.
 | Running anything opens a window that covers the screen, and the module cannot be worked on again until it is closed. | `TestResultValidationComponent.closeResults()` is pressed once the results have been read. |
 | A table is removed behind a question the screen asks in a window of its own, not behind the browser's own confirm dialog. | `removeCurrentTable()` answers the screen's window. |
 | A value of a dimension property is offered by the name it is known by — *Québec*, *Washington*, *Yemen, Rials* — where the old list offered the code, and the code is what is still written down. | The tests name the value the way the screen offers it and expect the code in the table, so both halves are checked. |
-| The templates and examples the product ships now carry the standard layout — the workbook under `rules/` and a descriptor beside it — so no project made from one has anything to move and none offers **Migrate**. | A test that needs a project with a workbook in its root creates it from an archive that has one (`MigrateXlsProject.zip`). |
+| The templates and examples the product ships now carry the standard layout — the workbook under `rules/` and a descriptor beside it — so a project made from one has nothing to move and is not offered **Migrate**. Checked through `GET /projects/{id}/migration` for Sample Project, Example 1, Example 2, Example 3 and Tutorial 1; Example 3 still offers the move for its *rules-deploy*, not for its descriptor. | A test that needs a project with a workbook in its root creates it from an archive that has one (`MigrateXlsProject.zip`). |
 | The name a table goes by heads the properties panel instead of standing in it as a property of its own, so a table declaring nothing lists nothing. | The tests read the panel's heading for the name and expect no property row where the table declares none. |
 | The properties panel offers to keep what was written only once something has been changed; writing a property the value it already holds leaves nothing to keep. | Where a test wrote a value the workbook already carried, it writes one the table does not carry, so the step is the edit it was meant to be. |
-| A date is shown as the year, the month and the day in that order, on the table and in the properties panel alike, rather than in the format the workbook writes the cell with. The workbook itself is unchanged — a date written through the panel is still a date cell carrying Excel's own `mm-dd-yy` format (verified by exporting the workbook and reading `xl/styles.xml`), so nothing is lost; the screen simply no longer reads the cell's format. Worth confirming with development that this is meant. | The dates the tests expect are written the way the screen shows them. The values compared are the same dates. |
 | Creating a project from an OpenAPI specification no longer writes an `openapi` block into `rules.xml`: the normalized file in the project root is reconciled against, and nothing is generated again over later edits. Deliberate, with the user guides changed in the same commit — `e3edf4a6e8`, EPBDS-16415, *"Default new OpenAPI projects to reconciliation"* (`repository-editor.md`, `rules-editor.md`). | A freshly created project is expected to read in **Reconciliation** and to name no module to write into; the import dialog starts empty. Where a test drove an overwrite, it now names the modules to write over, as a reader must, so the overwrite itself is still covered. Note the knock-on: a project that declares no module is drawn with its module list read-only even while the card is open for writing (`OverviewPanel.tsx`, `modulesEditable`), which puts the rename and copy steps of the two creation tests under issue 8. |
 
 ## Class names of the component library, for whoever writes the next locator

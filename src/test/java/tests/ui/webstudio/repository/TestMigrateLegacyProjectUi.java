@@ -19,7 +19,7 @@ public class TestMigrateLegacyProjectUi extends BaseTest {
 
     @Test
     @TestCaseId("IPBQA-33027")
-    @Description("EPBDS-16327 Migrate happy path: a template project keeps its workbook in the project root, so Overview "
+    @Description("EPBDS-16327 Migrate happy path: a project whose workbook lies in its root, so Overview "
             + "offers Migrate instead of Edit; after the migration the workbook lives under rules/, stays "
             + "matched as a module, Edit replaces Migrate, and the change lands as uncommitted workspace edits.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)

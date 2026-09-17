@@ -51,9 +51,7 @@ public class TestLocalChangesAfterReImportForTemplateProject extends BaseTest {
         editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName);
 
-        // A template project keeps its workbooks in its root; the settings are offered once they are moved.
 
-        editorPage.migrateProject();
 
         ImportOpenApiDialogComponent importDialog = editorPage.openImportOpenApiDialog();
         importDialog.waitForFilePathField();
