@@ -13,7 +13,10 @@ import helpers.utils.WaitUtil;
  */
 public class EditorBreadcrumbsComponent extends BaseComponent {
 
-    private static final String HEADER = "xpath=//div[@data-testid='module-header']";
+    // The breadcrumbs head both screens a project is read on: the module's, which names its header, and
+    // the project's own card, whose header is drawn inside the card and names nothing of its own.
+    private static final String HEADER = "xpath=(//div[@data-testid='module-header']"
+            + " | //div[@data-testid='project-detail'])[1]";
     private static final String OPEN_DROPDOWN = "xpath=//div[contains(@class,'ant-dropdown')][not(contains(@class,'ant-dropdown-hidden'))]";
     private static final int PROBE_MS = 1000;
 
