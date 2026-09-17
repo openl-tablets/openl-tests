@@ -23,6 +23,7 @@ public class MoreMenuComponent extends BaseComponent implements IMoreMenu {
     private final WebElement compareExcelFilesBtn;
     private final WebElement tableDependenciesBtn;
     private final WebElement allMenuLinks;
+    private final WebElement revisionsTab;
 
     // The menu itself is rendered into a body-level dropdown, so its items are located at page level.
     private static final String OPEN_MENU = "xpath=//div[contains(@class,'ant-dropdown')][not(contains(@class,'ant-dropdown-hidden'))]";
@@ -39,12 +40,19 @@ public class MoreMenuComponent extends BaseComponent implements IMoreMenu {
         compareExcelFilesBtn = new WebElement(page, OPEN_MENU + "//li[normalize-space()='Compare Excel files']", "compareExcelFilesBtn");
         tableDependenciesBtn = new WebElement(page, OPEN_MENU + "//li[normalize-space()='Table Dependencies']", "tableDependenciesBtn");
         allMenuLinks = new WebElement(page, OPEN_MENU + "//li[contains(@class,'ant-dropdown-menu-item')]", "allMoreMenuLinks");
+        revisionsTab = new WebElement(page, "xpath=//div[@data-testid='project-tabs']//div[@data-node-key='history']", "revisionsTab");
     }
 
+    /**
+     * Opens the More menu. The project's own screen has none — what the menu holds is its tabs there — so
+     * the press is made only where the menu is, and each action finds its own way from whichever screen.
+     */
     public MoreMenuComponent open() {
-        WaitUtil.sleep(1000, "Waiting before clicking More dropdown");
-        toggle.click();
-        WaitUtil.sleep(500, "Waiting for More dropdown to open");
+        WaitUtil.sleep(1000, "Waiting before opening the More menu");
+        if (toggle.isVisible(MENU_ITEM_VISIBLE_TIMEOUT_MS * 2)) {
+            toggle.click();
+            WaitUtil.sleep(500, "Waiting for the More menu to open");
+        }
         return this;
     }
 
@@ -65,9 +73,18 @@ public class MoreMenuComponent extends BaseComponent implements IMoreMenu {
     }
 
     @Override
+    /**
+     * Opens what the project has been through. A module screen keeps it behind More; the project's own
+     * screen gives it a tab of its own, so which of the two is pressed depends on where the reader stands.
+     */
     public void clickRevisions() {
-        clickMenuItem(revisionsBtn, "Revisions");
-        WaitUtil.sleep(500, "Waiting for Revisions dialog to open");
+        if (toggle.isVisible(MENU_ITEM_VISIBLE_TIMEOUT_MS * 2)) {
+            clickMenuItem(revisionsBtn, "Revisions");
+        } else {
+            revisionsTab.waitForVisible(DEFAULT_TIMEOUT_MS);
+            revisionsTab.click();
+        }
+        WaitUtil.sleep(500, "Waiting for the revisions to be listed");
     }
 
     @Override

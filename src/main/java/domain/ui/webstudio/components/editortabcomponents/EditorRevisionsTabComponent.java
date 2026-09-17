@@ -1,6 +1,5 @@
 package domain.ui.webstudio.components.editortabcomponents;
 
-import com.microsoft.playwright.Dialog;
 import configuration.core.ui.WebElement;
 import configuration.driver.DriverPool;
 import domain.ui.webstudio.components.BaseComponent;
@@ -8,12 +7,18 @@ import helpers.utils.WaitUtil;
 
 import java.util.List;
 
+/**
+ * What a project has been through, as the screen lists it: one entry per revision, newest first, each with
+ * the message it was saved under and the way back to it.
+ */
 public class EditorRevisionsTabComponent extends BaseComponent {
 
-    // Revisions table shown in the editor after clicking More → Revisions
-    private List<WebElement> revisionRows;
-    // Action link template (first link in each row's last column)
-    private WebElement actionLinkTemplate;
+    private static final String LIST = "//ol[starts-with(@data-testid,'revisions-')]";
+    private static final String ENTRY = LIST + "/li";
+
+    private List<WebElement> revisionEntries;
+    private WebElement commentTemplate;
+    private WebElement openTemplate;
 
     public EditorRevisionsTabComponent() {
         super(DriverPool.getPage());
@@ -26,39 +31,36 @@ public class EditorRevisionsTabComponent extends BaseComponent {
     }
 
     private void initializeElements() {
-        revisionRows = createElementList(
-                "xpath=//div[@id='content']//table//tbody[contains(@class,'rf-dt-b')]//tr",
-                "revisionRows");
-        actionLinkTemplate = new WebElement(page,
-                "xpath=(//div[@id='content']//table//tr)[%s]//td[last()]//a",
-                "actionLinkTemplate");
+        revisionEntries = createElementList("xpath=" + ENTRY, "revisionEntries");
+        commentTemplate = new WebElement(page,
+                "xpath=(" + ENTRY + ")[%s]//span[starts-with(@data-testid,'revision-comment-')]", "revisionComment");
+        openTemplate = new WebElement(page,
+                "xpath=(" + ENTRY + ")[%s]//button[starts-with(@data-testid,'revision-open-')]", "revisionOpen");
     }
 
     public void waitForTableToLoad() {
-        WaitUtil.waitForCondition(() -> !revisionRows.isEmpty(), 5000, 250,
-                "Waiting for revisions table to load");
+        WaitUtil.waitForCondition(() -> !revisionEntries.isEmpty(), DEFAULT_TIMEOUT_MS, 250,
+                "Waiting for the revisions of the project to be listed");
     }
 
+    /** The message the revision at that place was saved under; the places count from one, newest first. */
     public String getCommentForRow(int rowIndex) {
-        WebElement commentCell = new WebElement(page,
-                String.format("xpath=(//div[@id='content']//table//tr)[%s]//td[position()=3]", rowIndex + 1),
-                "commentCell_" + rowIndex);
-        return commentCell.getText().trim();
+        return commentTemplate.format(String.valueOf(rowIndex)).getText().trim();
     }
 
+    /**
+     * Opens the revision standing at that place. The one the workspace already holds offers no way back to
+     * itself, so the entries that do are counted among all of them.
+     */
     public void openRevision(int rowIndex) {
-        // rowIndex is 1-based (1 = most recent, 2 = one before, etc.)
-        // The table header is row 1, so data rows start at position 2
-        int tableRowPosition = rowIndex + 1;
-        WebElement actionLink = actionLinkTemplate.format(String.valueOf(tableRowPosition));
-        // Accept the browser alert that confirms opening the old revision
-        page.onDialog(Dialog::accept);
-        actionLink.click();
-        WaitUtil.sleep(2000, "Waiting after opening revision " + rowIndex);
+        WebElement open = openTemplate.format(String.valueOf(rowIndex));
+        open.waitForVisible(DEFAULT_TIMEOUT_MS);
+        open.click();
+        waitUntilSpinnerLoaded();
     }
 
     public int getRowCount() {
         waitForTableToLoad();
-        return revisionRows.size();
+        return revisionEntries.size();
     }
 }

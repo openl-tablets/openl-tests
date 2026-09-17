@@ -152,9 +152,11 @@ public class EditorPage extends BasePage {
         return centerTable;
     }
 
+    /** Opens what the project says about itself for writing, on the project's own screen. */
     public EditProjectDialogComponent openEditProjectDialog(String projectName) {
-        projectHeaderTemplate.format(projectName).hover();
-        editProjectIconTemplate.format(projectName).click();
+        new EditorLeftProjectModuleSelectorComponent().selectProject(projectName);
+        importOpenApiImg.waitForVisible(DEFAULT_TIMEOUT_MS);
+        importOpenApiImg.click();
         editProjectDialogComponent.waitForDialogToAppear();
         return editProjectDialogComponent;
     }

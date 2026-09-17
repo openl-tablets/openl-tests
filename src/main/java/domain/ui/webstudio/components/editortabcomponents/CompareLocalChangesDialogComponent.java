@@ -1,283 +1,286 @@
 package domain.ui.webstudio.components.editortabcomponents;
 
+import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import configuration.core.ui.WebElement;
 import domain.ui.webstudio.components.BaseComponent;
 import helpers.utils.WaitUtil;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
+/**
+ * The comparison of two versions of a project, drawn in a window of its own.
+ *
+ * <p>The window lists what differs as a tree, and shows the picked element as two tables side by side: the
+ * first version on the left, the second on the right. A cell the versions read differently is painted; the
+ * rows that read the same are left out until the reader asks for them.
+ */
 public class CompareLocalChangesDialogComponent extends BaseComponent {
 
-    private static final Logger LOGGER = LogManager.getLogger(CompareLocalChangesDialogComponent.class);
+    private static final String TREE = "//div[@data-testid='compare-tree']";
+    private static final String TREE_NODE = TREE + "//div[contains(@class,'ant-tree-treenode')]";
+    private static final String PANE = "//div[@data-testid='compare-pane-%s']";
+    // The grid leads each row with the number of its line, which is not a cell of the table.
+    private static final String CELL = "./td[not(.//span[@data-testid='table-line-number'])]";
+    protected static final int PROBE_MS = 1000;
 
-    private WebElement treeContainer;
-    private WebElement closeBtn;
-    private List<WebElement> treeItems;
-    private WebElement firstFragment;
-    private WebElement secondFragment;
-    private WebElement showEqualRowsCheckbox;
+    protected final WebElement tree;
+    protected final WebElement identicalNotice;
+    private final WebElement showEqualRowsCheckbox;
+    private final WebElement showEqualElementsCheckbox;
+    private final WebElement conflictText;
+    private final WebElement treeNodeTemplate;
+    private final WebElement treeSwitcherTemplate;
 
-    // Template: %s = nodeName
-    private WebElement treeNodeExpanderTemplate;
-    // Template: %s = nodeName
-    private WebElement treeNodeLinkTemplate;
-    // Template: %s = name
-    private WebElement treeItemTemplate;
-    // Template: %s = idSuffix e.g. "1_te_c-7:5" (fragment_te_c-row:col)
-    // Works for diffTreeForm and compareRevisionsForm
-    private WebElement cellTemplate;
-    // Template: %s = idSuffix — only diffTreeForm (used for neighbour cell in isCellHighlighted)
-    private WebElement neighbourCellTemplate;
-    // Template: %s = idSuffix — editor1/editor2 cell id
-    private WebElement editorCellTemplate;
-    // Template: %s = idSuffix — tableEditor1/tableEditor2 cell id
-    private WebElement tableEditorCellTemplate;
-    // Template: %s = fragment number — tableEditor rows (local changes compare)
-    private WebElement tableEditorRowsTemplate;
-    // Template: %s = fragment number — comparison-layout rows
-    private WebElement comparisonLayoutRowsTemplate;
-    // Text diff sections (for non-Excel conflict compare)
-    private List<WebElement> textDiffSections;
-
-    private Page comparePopup;
+    private final Page comparePopup;
 
     public CompareLocalChangesDialogComponent(Page comparePopup) {
         super(comparePopup);
         this.comparePopup = comparePopup;
-        initializeElements();
+        tree = new WebElement(getPage(), "xpath=" + TREE, "compareTree");
+        identicalNotice = new WebElement(getPage(), "xpath=//*[@data-testid='compare-identical']", "compareIdentical");
+        showEqualRowsCheckbox = new WebElement(getPage(), "xpath=//input[@data-testid='compare-show-equal-rows']", "showEqualRows");
+        showEqualElementsCheckbox = new WebElement(getPage(), "xpath=//input[@data-testid='compare-show-equal-elements']", "showEqualElements");
+        conflictText = new WebElement(getPage(), "xpath=//*[@data-testid='compare-conflict-text']", "compareConflictText");
+        treeNodeTemplate = new WebElement(getPage(), "xpath=" + TREE_NODE
+                + "[.//span[contains(@class,'ant-tree-title')][contains(normalize-space(),\"%s\")]]", "compareTreeNode");
+        treeSwitcherTemplate = new WebElement(getPage(), "xpath=" + TREE_NODE
+                + "[.//span[contains(@class,'ant-tree-title')][contains(normalize-space(),\"%s\")]]"
+                + "/span[contains(@class,'ant-tree-switcher') and not(contains(@class,'ant-tree-switcher-noop'))]",
+                "compareTreeSwitcher");
     }
 
-    // Use when the comparison opens inline (nested modal) rather than as a browser popup.
-    // close() becomes a no-op so the caller controls dialog lifecycle.
+    /** Used where the comparison is drawn in the page itself rather than in a window of its own. */
     public CompareLocalChangesDialogComponent(Page page, boolean inlineModal) {
-        super(page);
-        this.comparePopup = null;
-        initializeElements();
-    }
-
-    private void initializeElements() {
-        treeContainer = new WebElement(getPage(), "xpath=//div[@id='diffTreeForm:newTree']", "treeContainer");
-        closeBtn = new WebElement(getPage(), "xpath=//input[@value='Close']", "closeBtn");
-        treeItems = createElementList("xpath=//div[@id='diffTreeForm:newTree']//span[@class='rf-trn-lbl']", "treeItems");
-        firstFragment = new WebElement(getPage(),
-                "xpath=//div[contains(@id,'diffTreeForm') and contains(@id,'1')]//table//tbody",
-                "firstFragment");
-        secondFragment = new WebElement(getPage(),
-                "xpath=//div[contains(@id,'diffTreeForm') and contains(@id,'2')]//table//tbody",
-                "secondFragment");
-        showEqualRowsCheckbox = new WebElement(getPage(),
-                "xpath=//form[contains(.,'equal rows')]//input[contains(@id,'idt') or contains(@name,'showEqualRows')]",
-                "showEqualRowsCheckbox");
-        treeNodeExpanderTemplate = new WebElement(getPage(),
-                "xpath=//div[@id='diffTreeForm:newTree' or contains(@id,'compareRevisionsForm:newTree')]" +
-                        "//div[contains(@class,'rf-trn') and .//span[contains(@class,'rf-trn-lbl') and text()='%s']]" +
-                        "/span[contains(@class,'colps') or contains(@class,'exp')]",
-                "treeNodeExpanderTemplate");
-        treeNodeLinkTemplate = new WebElement(getPage(),
-                "xpath=//div[@id='diffTreeForm:newTree' or contains(@id,'compareRevisionsForm:newTree')]" +
-                        "//div[contains(@class,'rf-trn') and .//span[contains(@class,'rf-trn-lbl') and text()='%s']]/span[2]/span",
-                "treeNodeLinkTemplate");
-        treeItemTemplate = new WebElement(getPage(),
-                "xpath=//div[@id='diffTreeForm:newTree']//span[@class='rf-trn-lbl' and text()='%s']",
-                "treeItemTemplate");
-        // idSuffix pattern: "1_te_c-7:5" — uses ends-with to avoid substring collisions (e.g. c-2:1 vs c-2:10)
-        cellTemplate = new WebElement(getPage(),
-                "xpath=//td[(contains(@id,'diffTreeForm') or contains(@id,'compareRevisionsForm')) and (substring(@id, string-length(@id) - string-length('%1$s') + 1) = '%1$s')]",
-                "cellTemplate");
-        neighbourCellTemplate = new WebElement(getPage(),
-                "xpath=//td[contains(@id,'diffTreeForm') and (substring(@id, string-length(@id) - string-length('%1$s') + 1) = '%1$s')]",
-                "neighbourCellTemplate");
-        editorCellTemplate = new WebElement(getPage(),
-                "xpath=//td[@id='diffTreeForm:editor%s']",
-                "editorCellTemplate");
-        tableEditorCellTemplate = new WebElement(getPage(),
-                "xpath=//td[@id='diffTreeForm:tableEditor%s']",
-                "tableEditorCellTemplate");
-        tableEditorRowsTemplate = new WebElement(getPage(),
-                "xpath=//div[@id='diffTreeForm:tableEditor%s_te_table']//tr[./td]",
-                "tableEditorRowsTemplate");
-        comparisonLayoutRowsTemplate = new WebElement(getPage(),
-                "xpath=//table[@class='comparison-layout']/tbody/tr[2]/td[%s]//tr[./td]",
-                "comparisonLayoutRowsTemplate");
-        textDiffSections = createElementList(
-                "xpath=//div[@class='d2h-files-diff']/div",
-                "textDiffSections");
+        this(page);
     }
 
     public CompareLocalChangesDialogComponent waitForDialogToAppear() {
-        WaitUtil.waitForCondition(
-                () -> treeContainer.isVisible(1000),
-                15000,
-                250,
-                "Waiting for Local Changes Compare dialog tree to appear");
-        WaitUtil.waitForListNotEmpty(
-                () -> treeItems,
-                15000,
-                250,
-                "Waiting for Local Changes Compare tree items to load");
+        WaitUtil.requireCondition(this::isComparisonDrawn, DEFAULT_TIMEOUT_MS * 2, 250,
+                "Waiting for the comparison to be drawn");
         return this;
+    }
+
+    /** Whether the window is showing a comparison: what differs, or that nothing does. */
+    protected boolean isComparisonDrawn() {
+        return tree.isVisible(PROBE_MS) || identicalNotice.isVisible(PROBE_MS);
     }
 
     public CompareLocalChangesDialogComponent waitForTextCompareToAppear() {
-        WaitUtil.waitForCondition(
-                () -> textDiffSections.stream().anyMatch(s -> s.isVisible(500)),
-                10000, 250, "Waiting for text diff sections to appear");
+        conflictText.waitForVisible(DEFAULT_TIMEOUT_MS);
         return this;
     }
 
+    /** What the comparison found, one line per element, as the tree lists them. */
     public List<String> getLeftModulesList() {
-        return treeItems.stream().map(WebElement::getText).collect(Collectors.toList());
+        WaitUtil.waitForListNotEmpty(this::treeTitles, DEFAULT_TIMEOUT_MS, 250,
+                "Waiting for the comparison to list what differs");
+        return treeTitles().stream().map(WebElement::getText).map(String::trim).toList();
     }
 
-    // ========== Tree navigation ==========
+    /** The same tree: one comparison is shown, not one list per version. */
+    public List<String> getRightModulesList() {
+        return getLeftModulesList();
+    }
+
+    private List<WebElement> treeTitles() {
+        return createElementList("xpath=" + TREE_NODE + "//span[contains(@class,'ant-tree-title')]", "compareTreeTitles");
+    }
 
     public void openTreeNode(String nodeName) {
-        treeNodeExpanderTemplate.format(nodeName).click();
-        WaitUtil.sleep(500, "Waiting for tree node to expand: " + nodeName);
+        WaitUtil.requireCondition(() -> {
+            WebElement switcher = treeSwitcherTemplate.format(nodeName);
+            if (!switcher.isVisible(PROBE_MS)) {
+                return treeNodeTemplate.format(nodeName).isVisible(PROBE_MS);
+            }
+            if (!switcher.getAttribute("class").contains("ant-tree-switcher_open")) {
+                switcher.click();
+            }
+            return switcher.getAttribute("class").contains("ant-tree-switcher_open");
+        }, DEFAULT_TIMEOUT_MS, 250, "Opening '" + nodeName + "' in the comparison tree");
     }
 
     public void clickTreeNode(String nodeName) {
-        treeNodeLinkTemplate.format(nodeName).click();
-        WaitUtil.sleep(500, "Waiting after clicking tree node: " + nodeName);
+        WebElement node = treeNodeTemplate.format(nodeName);
+        node.waitForVisible(DEFAULT_TIMEOUT_MS);
+        node.getLocator().locator("xpath=.//span[contains(@class,'ant-tree-title')]").first().click();
+        WaitUtil.requireCondition(() -> rowsOf(1).count() > 0 || rowsOf(2).count() > 0 || identicalNotice.isVisible(PROBE_MS),
+                DEFAULT_TIMEOUT_MS, 250, "Waiting for '" + nodeName + "' to be shown side by side");
     }
 
     public boolean isTreeItemPresent(String name) {
-        return treeItemTemplate.format(name).isVisible(1000);
+        return treeNodeTemplate.format(name).isVisible(PROBE_MS);
     }
 
-    // ========== Fragment presence ==========
-
     public boolean isFirstFragmentPresent() {
-        return firstFragment.isVisible(2000);
+        return rowsOf(1).count() > 0;
     }
 
     public boolean isSecondFragmentPresent() {
-        return secondFragment.isVisible(2000);
+        return rowsOf(2).count() > 0;
     }
-
-    // ========== Cell content ==========
 
     public String getCellContent(int fragment, int row, int col) {
-        String idSuffix = fragment + "_te_c-" + row + ":" + col;
-        WebElement editorCell = editorCellTemplate.format(idSuffix);
-        WebElement tableEditorCell = tableEditorCellTemplate.format(idSuffix);
-        if (editorCell.isVisible(500)) {
-            return editorCell.getText().trim();
-        }
-        return tableEditorCell.getText().trim();
-    }
-
-    // ========== Cell highlighting ==========
-
-    public boolean isCellHighlightedGreen(int row, int col, String fragment) {
-        return isCellHighlightedWithColor(row, col, fragment, "rgb(195, 214, 155)");
-    }
-
-    public boolean isCellHighlightedWhite(int row, int col, String fragment) {
-        return isCellHighlightedWithColor(row, col, fragment, "rgb(255, 255, 255)");
-    }
-
-    public boolean isCellHighlightedWithColor(int row, int col, String fragment, String colorRGBA) {
-        String idSuffix = fragment + "_te_c-" + row + ":" + col;
-        WebElement cell = cellTemplate.format(idSuffix);
-        cell.waitForVisible(5000);
-        String actualColor = cell.getCssValue("background-color");
-        LOGGER.info("Cell background-color at [{},{}] fragment={}: {}", row, col, fragment, actualColor);
-        return actualColor.equals(colorRGBA);
-    }
-
-    public boolean isCellHighlighted(int row, int col, int fragment) {
-        String cellSuffix = fragment + "_te_c-" + row + ":" + col;
-        WebElement cell = cellTemplate.format(cellSuffix);
-        cell.waitForVisible(5000);
-        String color = cell.getCssValue("background-color");
-        LOGGER.info("Cell [{},{}] fragment={} background-color: {}", row, col, fragment, color);
-        return !color.equals("rgb(255, 255, 255)") && !color.equals("rgba(0, 0, 0, 0)");
+        return cellOf(fragment, row, col).innerText().trim();
     }
 
     public boolean isCellContainsExpectedValue(int row, int col, String fragment, String expectedValue) {
-        String idSuffix = fragment + "_te_c-" + row + ":" + col;
-        String value = cellTemplate.format(idSuffix).getText().trim();
-        LOGGER.info("Cell value at [{},{}] fragment={}: '{}'", row, col, fragment, value);
-        return value.equalsIgnoreCase(expectedValue);
+        return getCellContent(Integer.parseInt(fragment), row, col).equalsIgnoreCase(expectedValue);
     }
 
-    // ========== Row and column counting ==========
+    /** A cell the two versions read differently is painted; one they read the same is left as the workbook draws it. */
+    public boolean isCellHighlighted(int row, int col, int fragment) {
+        String colour = colourOf(fragment, row, col);
+        return !"rgb(255, 255, 255)".equals(colour) && !"rgba(0, 0, 0, 0)".equals(colour);
+    }
+
+    public boolean isCellHighlightedWhite(int row, int col, String fragment) {
+        return !isCellHighlighted(row, col, Integer.parseInt(fragment));
+    }
+
+    public boolean isCellHighlightedGreen(int row, int col, String fragment) {
+        return isCellHighlighted(row, col, Integer.parseInt(fragment));
+    }
+
+    public boolean isCellHighlightedWithColor(int row, int col, String fragment, String colorRGBA) {
+        return colourOf(Integer.parseInt(fragment), row, col).equals(colorRGBA);
+    }
 
     /**
-     * Rows of the given comparison fragment. The table is replaced wholesale on every re-render, so the count
-     * is read once it stops changing - the first non-zero count can be taken mid-replacement.
+     * Whether the row carries a cell the two versions read differently. The grid draws a merged cell once
+     * and leaves no place for the cells it covers, so which column a difference falls in is the grid's own
+     * counting; which row it falls on is the table's.
      */
-    public int getNumberOfRows(int fragment) {
-        String frag = String.valueOf(fragment);
-        WaitUtil.waitForCondition(() -> countRows(frag) > 0, DEFAULT_TIMEOUT_MS, 250,
-                "Waiting for comparison rows to appear for fragment " + fragment);
-        WaitUtil.waitForStableSize(() -> countRows(frag), DEFAULT_TIMEOUT_MS, 250,
-                "Waiting for the row count of fragment " + fragment + " to settle");
-        return countRows(frag);
+    public boolean isRowHighlighted(int fragment, int row) {
+        String pane = String.format(PANE, fragment == 1 ? "first" : "second");
+        String corner = getPage().locator("xpath=" + pane + "//td[@data-cell]").first().getAttribute("data-cell");
+        int line = Integer.parseInt(corner.replaceAll("[^0-9]", "")) + row - 1;
+        // The address is a column of letters and a line of digits, so the line is what the letters leave.
+        Locator cells = getPage().locator("xpath=" + pane + "//td[@data-cell]"
+                + "[translate(@data-cell,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','') = '" + line + "']");
+        for (int index = 0; index < cells.count(); index++) {
+            String colour = cells.nth(index).evaluate("node => getComputedStyle(node).backgroundColor").toString();
+            if (!"rgb(255, 255, 255)".equals(colour) && !"rgba(0, 0, 0, 0)".equals(colour)) {
+                return true;
+            }
+        }
+        return false;
     }
 
-    private int countRows(String fragment) {
-        int count = tableEditorRowsTemplate.format(fragment).getLocator().count();
-        if (count == 0) {
-            count = comparisonLayoutRowsTemplate.format(fragment).getLocator().count();
+    /** How many cells of the version are painted, which is how many the two versions read differently. */
+    public int getHighlightedCellCount(int fragment) {
+        String pane = String.format(PANE, fragment == 1 ? "first" : "second");
+        Locator cells = getPage().locator("xpath=" + pane + "//td[@data-cell]");
+        int painted = 0;
+        for (int index = 0; index < cells.count(); index++) {
+            String colour = cells.nth(index).evaluate("node => getComputedStyle(node).backgroundColor").toString();
+            if (!"rgb(255, 255, 255)".equals(colour) && !"rgba(0, 0, 0, 0)".equals(colour)) {
+                painted++;
+            }
         }
-        return count;
+        return painted;
+    }
+
+    private String colourOf(int fragment, int row, int col) {
+        Locator cell = cellOf(fragment, row, col);
+        return cell.evaluate("node => getComputedStyle(node).backgroundColor").toString();
+    }
+
+    /**
+     * A cell of one of the two versions, named by where it sits in the table: the line of the table and the
+     * place along it, both counted from one.
+     *
+     * <p>Every cell carries the address it has in the workbook, and that is what the cell is found by. Where
+     * a cell is drawn is no use: the rows the two versions read the same are left out while the reader has
+     * not asked for them, so the same cell would answer to a different place each time that is switched.
+     */
+    private Locator cellOf(int fragment, int row, int col) {
+        String address = addressOf(fragment, row, col);
+        String pane = String.format(PANE, fragment == 1 ? "first" : "second");
+        return getPage().locator("xpath=" + pane + "//td[@data-cell='" + address + "']");
+    }
+
+    /** The address the cell at that place in the table has in the workbook the table is written in. */
+    private String addressOf(int fragment, int row, int col) {
+        String pane = String.format(PANE, fragment == 1 ? "first" : "second");
+        Locator firstAddressed = getPage().locator("xpath=" + pane + "//td[@data-cell]").first();
+        firstAddressed.waitFor();
+        String corner = firstAddressed.getAttribute("data-cell");
+        String letters = corner.replaceAll("[0-9]", "");
+        int firstRow = Integer.parseInt(corner.replaceAll("[^0-9]", ""));
+        return columnName(columnNumber(letters) + col - 1) + (firstRow + row - 1);
+    }
+
+    /** The place a column letter stands for: A is 1, Z is 26, AA is 27. */
+    private static int columnNumber(String letters) {
+        int number = 0;
+        for (char letter : letters.toCharArray()) {
+            number = number * 26 + (Character.toUpperCase(letter) - 'A' + 1);
+        }
+        return number;
+    }
+
+    private static String columnName(int number) {
+        StringBuilder name = new StringBuilder();
+        for (int left = number; left > 0; left = (left - 1) / 26) {
+            name.insert(0, (char) ('A' + (left - 1) % 26));
+        }
+        return name.toString();
+    }
+
+    /**
+     * Rows of one of the two versions. The table is drawn anew whenever the reader asks for other rows, so
+     * the count is read once it stops changing: a count taken mid-redraw is the count of half a table.
+     */
+    public int getNumberOfRows(int fragment) {
+        WaitUtil.waitForCondition(() -> rowsOf(fragment).count() > 0, DEFAULT_TIMEOUT_MS, 250,
+                "Waiting for the rows of version " + fragment);
+        WaitUtil.waitForStableSize(() -> rowsOf(fragment).count(), DEFAULT_TIMEOUT_MS, 250,
+                "Waiting for the rows of version " + fragment + " to settle");
+        return rowsOf(fragment).count();
     }
 
     public int getNumberOfColumns(int fragment) {
-        String frag = String.valueOf(fragment);
-        com.microsoft.playwright.Locator rows = tableEditorRowsTemplate.format(frag).getLocator();
-        if (rows.count() == 0) {
-            rows = comparisonLayoutRowsTemplate.format(frag).getLocator();
+        Locator rows = rowsOf(fragment);
+        int widest = 0;
+        for (int index = 0; index < rows.count(); index++) {
+            widest = Math.max(widest, rows.nth(index).locator("xpath=" + CELL).count());
         }
-        int maxCols = 0;
-        for (int i = 0; i < rows.count(); i++) {
-            int cols = rows.nth(i).locator("xpath=./td").count();
-            if (cols > maxCols) {
-                maxCols = cols;
-            }
-        }
-        return maxCols;
+        return widest;
     }
 
-    // ========== Show Equal Rows ==========
+    private Locator rowsOf(int fragment) {
+        String pane = String.format(PANE, fragment == 1 ? "first" : "second");
+        return getPage().locator("xpath=" + pane + "//table//tbody/tr");
+    }
 
-    /**
-     * Turns the "show equal rows" filter on or off and waits for the tables to be redrawn: the checkbox itself
-     * flips at once, while the rows are replaced by a later render.
-     */
+    /** Shows or hides the rows the two versions read the same. */
     public void setShowEqualRows(boolean value) {
-        if (showEqualRowsCheckbox.isChecked() == value) {
+        setCheckbox(showEqualRowsCheckbox, value);
+    }
+
+    /** Shows or hides the elements the two versions read the same. */
+    protected void setEqualElementsShown(boolean value) {
+        setCheckbox(showEqualElementsCheckbox, value);
+    }
+
+    private void setCheckbox(WebElement checkbox, boolean value) {
+        checkbox.waitForVisible(DEFAULT_TIMEOUT_MS);
+        if (checkbox.isChecked() == value) {
             return;
         }
-        int before = countRows("1");
-        showEqualRowsCheckbox.click();
-        WaitUtil.waitForCondition(() -> showEqualRowsCheckbox.isChecked() == value, DEFAULT_TIMEOUT_MS, 200,
-                "Waiting for the equal rows checkbox to read " + value);
-        WaitUtil.waitForCondition(() -> countRows("1") != before, DEFAULT_TIMEOUT_MS, 250,
-                "Waiting for the comparison to be redrawn with equal rows " + (value ? "shown" : "hidden"));
-        WaitUtil.waitForStableSize(() -> countRows("1"), DEFAULT_TIMEOUT_MS, 250,
-                "Waiting for the redrawn comparison to settle");
+        checkbox.click();
+        WaitUtil.requireCondition(() -> checkbox.isChecked() == value, DEFAULT_TIMEOUT_MS, 200,
+                "Waiting for the comparison to be asked for what reads the same");
     }
 
     public boolean isShowEqualRowsCheckboxVisible() {
-        return showEqualRowsCheckbox.isVisible(2000);
+        return showEqualRowsCheckbox.isVisible(PROBE_MS);
     }
 
-    // ========== Text files compare form ==========
-
+    /** Whether the comparison found nothing to show, which it says instead of drawing two empty tables. */
     public boolean isCompareTextFilesFormClear() {
-        if (textDiffSections.size() != 2) {
-            return false;
-        }
-        boolean firstHasRows = textDiffSections.get(0).getLocator().locator("xpath=.//tr").count() > 0;
-        boolean secondHasRows = textDiffSections.get(1).getLocator().locator("xpath=.//tr").count() > 0;
-        return firstHasRows && secondHasRows;
+        return identicalNotice.isVisible(PROBE_MS);
     }
 
     public void close() {

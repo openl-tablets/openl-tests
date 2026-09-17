@@ -23,10 +23,12 @@ public class EditProjectDialogComponent extends BaseComponent {
     }
 
     private void initializeElements() {
-        projectNameField = createScopedElement("xpath=.//input[@id='projectName']", "projectNameField");
-        descriptionField = createScopedElement("xpath=.//textarea[@id='projectDescription']", "descriptionField");
-        updateBtn = createScopedElement("xpath=.//input[@value='Update']", "updateBtn");
-        cancelBtn = createScopedElement("xpath=.//input[@value='Cancel']", "cancelBtn");
+        // What the project says about itself is written on the project's own screen now: the Overview is
+        // opened for writing, the description is a field of it, and Save keeps the whole card at once.
+        projectNameField = new WebElement(page, "xpath=//input[@data-testid='edit-project-name']", "projectNameField");
+        descriptionField = new WebElement(page, "xpath=//textarea[@data-testid='edit-description']", "descriptionField");
+        updateBtn = new WebElement(page, "xpath=//button[@data-testid='overview-save']", "updateBtn");
+        cancelBtn = new WebElement(page, "xpath=//button[@data-testid='overview-cancel']", "cancelBtn");
     }
 
     public boolean isProjectNameFieldVisible() {
@@ -48,7 +50,8 @@ public class EditProjectDialogComponent extends BaseComponent {
     }
 
     public EditProjectDialogComponent setDescription(String description) {
-        descriptionField.fillSequentially(description);
+        descriptionField.waitForVisible(DEFAULT_TIMEOUT_MS);
+        descriptionField.fill(description);
         return this;
     }
 
@@ -58,7 +61,9 @@ public class EditProjectDialogComponent extends BaseComponent {
 
     public void clickUpdateButton() {
         updateBtn.click();
-        waitForDialogToClose();
+        WaitUtil.requireCondition(() -> !updateBtn.isVisible(1000), DEFAULT_TIMEOUT_MS, 200,
+                "Waiting for what the project says about itself to be kept");
+        waitUntilSpinnerLoaded();
     }
 
     public void clickCancelButton() {
@@ -70,7 +75,8 @@ public class EditProjectDialogComponent extends BaseComponent {
     }
 
     public void waitForDialogToAppear() {
-        WaitUtil.waitForCondition(this::isDialogVisible, 5000, 100, "Waiting for Edit Project dialog to appear");
+        WaitUtil.waitForCondition(this::isDialogVisible, DEFAULT_TIMEOUT_MS, 100,
+                "Waiting for the project settings to be open for writing");
     }
 
     public void waitForDialogToClose() {

@@ -262,6 +262,23 @@ sentences the plan uses, except where the workbook genuinely stands there alread
 
 ---
 
+## 13. A project can no longer be renamed
+
+**What changed.** The JSF project screen offered Edit Project, whose first field was the project's name: a
+project could be renamed where it stood. The React card offers what the descriptor says — the description,
+the modules, the dependencies, the OpenAPI settings — and the actions the project has
+(`PROJECT_ACTIONS`: save, open, close, copy, delete branch, open revision, sync, deploy, compare, export,
+delete, unlock). None of them renames it, and the only Rename in the whole application belongs to a file.
+
+Copying the project into one of another name is the nearest thing left, and it is not the same act: the
+history stays with the old name, and the old project stays behind to be deleted.
+
+**Blocked tests.**
+- `tests.ui.webstudio.studio_issues.TestRenameProjectFromOldRevisionConflictUi` — renames a project twice,
+  from an old revision, to check the conflict that used to raise.
+
+---
+
 ## Renamings that are not bugs
 
 For the record, so they are not raised twice. These are the same tree, named the way the tables API has named

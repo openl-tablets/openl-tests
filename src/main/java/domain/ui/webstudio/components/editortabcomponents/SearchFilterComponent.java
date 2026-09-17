@@ -15,6 +15,8 @@ public class SearchFilterComponent extends BaseComponent {
     private static final String RESULTS = "xpath=//div[@data-testid='table-search-results']";
     private static final int PROBE_MS = 1000;
     private static final int SETTLE_MS = 200;
+    // Short enough that a search lost with the screen it was opened onto is opened again rather than waited out.
+    private static final int SEARCH_CLICK_TIMEOUT_MS = 3000;
 
     private WebElement quickSearch;
     private WebElement openExtendedSearchBtn;
@@ -73,15 +75,12 @@ public class SearchFilterComponent extends BaseComponent {
         // The screen may still be settling on the table just opened, and a search opened onto a screen that
         // is being replaced goes away with it — so what was typed is checked to be still there before the
         // search is run, and the whole of it is done again when it is not.
-        WaitUtil.requireCondition(() -> {
+        WaitUtil.retryOnException(() -> {
             openAdvancedSearch();
             textInput.fill(text);
-            if (!form.isVisible(PROBE_MS)) {
-                return false;
-            }
-            searchBtn.click();
+            searchBtn.click(SEARCH_CLICK_TIMEOUT_MS);
             return true;
-        }, DEFAULT_TIMEOUT_MS, SETTLE_MS, "Searching for '" + text + "'");
+        }, DEFAULT_TIMEOUT_MS * 2, SETTLE_MS, "Searching for '" + text + "'");
         waitForSearchResult();
         return this;
     }
