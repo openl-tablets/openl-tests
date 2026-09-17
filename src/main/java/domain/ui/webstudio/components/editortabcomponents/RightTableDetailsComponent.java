@@ -31,6 +31,7 @@ public class RightTableDetailsComponent extends BaseComponent {
     private WebElement propertyInputTemplate;
     private WebElement propertyCheckboxTemplate;
     private WebElement propertySelectTemplate;
+    private WebElement propertyClearTemplate;
     private WebElement propertyDeleteTemplate;
     private WebElement inheritedSourceTemplate;
     private List<WebElement> propertyLabels;
@@ -57,6 +58,7 @@ public class RightTableDetailsComponent extends BaseComponent {
         propertyInputTemplate = new WebElement(page, ROW_BY_LABEL + "//input[not(@type='checkbox')]", "propertyInput");
         propertyCheckboxTemplate = new WebElement(page, ROW_BY_LABEL + "//input[@type='checkbox']", "propertyCheckbox");
         propertySelectTemplate = new WebElement(page, ROW_BY_LABEL + "//div[contains(@class,'ant-select')]//input", "propertySelect");
+        propertyClearTemplate = new WebElement(page, ROW_BY_LABEL + "//span[contains(@class,'ant-select-clear')]", "propertyClearBtn");
         propertyDeleteTemplate = new WebElement(page, ROW_BY_LABEL + "//button[starts-with(@data-testid,'table-details-remove-')]", "propertyDeleteBtn");
         inheritedSourceTemplate = new WebElement(page, ROW_BY_LABEL + "//button[starts-with(@data-testid,'table-details-source-')]", "inheritedSourceBtn");
         propertyLabels = createElementList(PANEL + "//tr[contains(@class,'ant-descriptions-row')]/th", "propertyLabels");
@@ -139,7 +141,7 @@ public class RightTableDetailsComponent extends BaseComponent {
 
     /** What the panel is headed with: the table it is about, or the word the panel goes by where it has none. */
     public String getTitle() {
-        WebElement title = new WebElement(page, PANEL + "//div[contains(@class,'header')]/span[@title]", "detailsTitle");
+        WebElement title = new WebElement(page, PANEL + "/div[1]/span[@title]", "detailsTitle");
         title.waitForVisible(DEFAULT_TIMEOUT_MS);
         return title.getText().trim();
     }
@@ -181,9 +183,19 @@ public class RightTableDetailsComponent extends BaseComponent {
     }
 
     /** Picks several values of a property that holds more than one. */
+    /**
+     * Leaves the row reading exactly those values. The control takes several and answers a press by adding or
+     * taking away what was pressed, so what it already holds is let go of first and the values are then taken
+     * one by one.
+     */
     public void editCheckboxProperty(String propertyName, String... values) {
         startEditing();
         WebElement select = propertySelectTemplate.format(propertyName);
+        WebElement clear = propertyClearTemplate.format(propertyName);
+        select.hover();
+        if (clear.isVisible(PROBE_MS)) {
+            clear.click();
+        }
         for (String value : values) {
             pickInSelect(select, value);
         }

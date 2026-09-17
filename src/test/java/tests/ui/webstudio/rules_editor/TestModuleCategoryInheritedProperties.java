@@ -118,7 +118,7 @@ public class TestModuleCategoryInheritedProperties extends BaseTest {
         selectTable(editorPage, "Rules", "MyRules1");
         verifyPropertiesInTableDetails(editorPage, valuesModuleProperties);
 
-        verifyBlueArrowWork(editorPage);
+        verifyBlueArrowWork(editorPage, "Inherited from the module properties table");
 
         editorPage.getEditorLeftRulesTreeComponent().expandFolderInTree("Spreadsheet");
         selectTable(editorPage, "Spreadsheet", "MyRules7");
@@ -140,7 +140,7 @@ public class TestModuleCategoryInheritedProperties extends BaseTest {
         selectTable(editorPage, "Rules", "MyRules3");
         verifyPropertiesInTableDetails(editorPage, valuesCategoryProperties);
 
-        verifyBlueArrowWork(editorPage);
+        verifyBlueArrowWork(editorPage, "Inherited from the category properties table");
 
         selectTable(editorPage, "Spreadsheet", "MyRules9");
         assertThat(editorPage.getRightTableDetailsComponent().getPropertyValue("Auto Type Discovery"))
@@ -175,7 +175,7 @@ public class TestModuleCategoryInheritedProperties extends BaseTest {
         expectedValues.forEach((key, value) -> assertThat(tableDetails.getPropertyValue(key)).contains(value));
     }
 
-    private void verifyBlueArrowWork(EditorPage editorPage) {
+    private void verifyBlueArrowWork(EditorPage editorPage, String expectedSource) {
         RightTableDetailsComponent tableDetails = editorPage.getRightTableDetailsComponent();
 
         assertThat(tableDetails.isPropertyInherited("LOB"))
@@ -185,7 +185,7 @@ public class TestModuleCategoryInheritedProperties extends BaseTest {
         // carries LOB 001; that is the table the value comes from and the one the arrow leads to.
         assertThat(tableDetails.getInheritedPropertyTitle("LOB"))
                 .as("The panel should say where the inherited value comes from")
-                .isEqualTo("Inherited from the module properties table");
+                .isEqualTo(expectedSource);
 
         assertThat(tableDetails.getGoToPropertiesTableArrow("LOB").isVisible())
                 .as("The panel should offer to open the table the value is inherited from")

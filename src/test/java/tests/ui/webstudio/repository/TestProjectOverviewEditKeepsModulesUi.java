@@ -27,9 +27,9 @@ public class TestProjectOverviewEditKeepsModulesUi extends BaseTest {
 
     @Test
     @TestCaseId("EPBDS-16327")
-    @Description("Validates the EPBDS-16327 fix. A template project keeps its workbook in the project "
-            + "root, so the Overview offers Migrate instead of Edit; after migrating, Edit -> Save "
-            + "without changes must keep the project's modules both on Overview and in the Editor.")
+    @Description("Validates the EPBDS-16327 fix. A template project declares no module of its own — its "
+            + "workbook is matched by the standard layout — so Edit -> Save without changes must keep the "
+            + "project's modules both on Overview and in the Editor.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void testOverviewEditSaveKeepsModules() {
         String projectName = "OverviewEditModules_" + System.currentTimeMillis();
@@ -42,14 +42,10 @@ public class TestProjectOverviewEditKeepsModulesUi extends BaseTest {
         repositoryPage.createProject(CreateNewProjectComponent.TabName.TEMPLATE, projectName, TEMPLATE_NAME);
 
         ProjectDetailPage projectDetail = repositoryPage.openProjectsList().openProjectDetail(projectName);
-        assertThat(projectDetail.getOverviewModuleNames())
-                .as("The template's module should be listed before the descriptor is migrated")
-                .anyMatch(name -> name.contains(MODULE_NAME));
-
-        projectDetail.migrateOverviewDescriptor();
-
+        // The templates now carry the standard layout, so the workbook is matched as a module rather than
+        // declared, and there is nothing to migrate before the descriptor is written.
         assertThat(projectDetail.getOverviewMatchedModuleNames())
-                .as("Migrating the descriptor must keep the workbook matched as a module")
+                .as("The template's workbook should be matched as a module before anything is written")
                 .anyMatch(name -> name.contains(MODULE_NAME));
 
         projectDetail.editOverviewAndSave();

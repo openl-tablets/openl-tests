@@ -24,24 +24,26 @@ public class TestMigrateLegacyProjectUi extends BaseTest {
             + "matched as a module, Edit replaces Migrate, and the change lands as uncommitted workspace edits.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void testMigrateMovesRootWorkbookAndKeepsModules() {
-        String projectName = WorkflowService.loginCreateProjectFromTemplate(User.ADMIN, "Sample Project");
+        // The templates the product ships now carry the standard layout and a descriptor of their own, so a
+        // project with a workbook in its root — which is what there is to move — comes from an archive.
+        String projectName = WorkflowService.loginCreateProjectFromZip(User.ADMIN, "MigrateXlsProject.zip");
         RepositoryPage repositoryPage = new EditorPage().getTabSwitcherComponent()
                 .selectTab(TabSwitcherComponent.TabName.REPOSITORY);
         ProjectDetailPage detail = repositoryPage.openProjectDetail(projectName);
 
         assertThat(detail.isOverviewMigrateOffered())
-                .as("Precondition: a template project with a root workbook must offer Migrate")
+                .as("Precondition: a project with a workbook in its root must offer Migrate")
                 .isTrue();
         assertThat(detail.getOverviewModuleNames())
-                .as("Precondition: the template's module must be declared before the migration")
-                .anyMatch(name -> name.contains("Main"));
+                .as("Precondition: the module must be declared before the migration")
+                .anyMatch(name -> name.contains("LegacyOld"));
 
         detail.openOverviewTab();
         detail.migrateOverviewDescriptor();
 
         assertThat(detail.getOverviewMatchedModuleNames())
                 .as("The workbook must still be matched as a module after the migration")
-                .anyMatch(name -> name.contains("Main"));
+                .anyMatch(name -> name.contains("LegacyOld"));
         assertThat(detail.isOverviewEditOffered())
                 .as("Edit must replace Migrate once the descriptor is modern")
                 .isTrue();

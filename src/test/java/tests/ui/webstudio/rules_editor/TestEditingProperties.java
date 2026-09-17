@@ -57,13 +57,16 @@ public class TestEditingProperties extends BaseTest {
         editAndCheckProperty(editorPage, "ID", "id", "test2");
         editAndCheckProperty(editorPage, "Build Phase", "buildPhase", "Property2");
 
-        editAndCheckCheckboxProperty(editorPage, "Canada Region", "caRegions", "QC");
-        editAndCheckCheckboxProperty(editorPage, "Canada Province", "caProvinces", "NT", "YT");
-        editAndCheckCheckboxProperty(editorPage, "Countries", "country", "BY");
-        editAndCheckCheckboxProperty(editorPage, "Currency", "currency", "YER");
-        editAndCheckCheckboxProperty(editorPage, "Language", "lang", "SPA");
-        editAndCheckCheckboxProperty(editorPage, "US Region", "usregion", "NE");
-        editAndCheckCheckboxProperty(editorPage, "US States", "state", "WA", "WV");
+        // A value of a dimension is offered by the name it is known by and written down by its code, so each
+        // of these names the value the way the screen offers it and expects the code in the table.
+        editAndCheckCheckboxProperty(editorPage, "Canada Region", "caRegions", "QC", "Québec");
+        editAndCheckCheckboxProperty(editorPage, "Canada Province", "caProvinces", "NT,YT",
+                "Territoires du Nord-Ouest", "Yukon");
+        editAndCheckCheckboxProperty(editorPage, "Countries", "country", "BY", "Belarus");
+        editAndCheckCheckboxProperty(editorPage, "Currency", "currency", "YER", "Yemen, Rials");
+        editAndCheckCheckboxProperty(editorPage, "Language", "lang", "SPA", "Spanish");
+        editAndCheckCheckboxProperty(editorPage, "US Region", "usregion", "NE", "Northeast");
+        editAndCheckCheckboxProperty(editorPage, "US States", "state", "WA,WV", "Washington", "West Virginia");
 
         editAndCheckBooleanProperty(editorPage, "Cacheable", "cacheable", false);
 
@@ -101,12 +104,13 @@ public class TestEditingProperties extends BaseTest {
         waitForPropertyValue(editorPage, propertyTableName, newValue);
     }
 
-    private void editAndCheckCheckboxProperty(EditorPage editorPage, String propertyName, String propertyTableName, String... values) {
+    private void editAndCheckCheckboxProperty(EditorPage editorPage, String propertyName, String propertyTableName,
+                                              String expectedInTable, String... shownValues) {
         RightTableDetailsComponent tableDetails = editorPage.getRightTableDetailsComponent();
-        tableDetails.editCheckboxProperty(propertyName, values);
+        tableDetails.editCheckboxProperty(propertyName, shownValues);
         tableDetails.clickSaveBtn();
 
-        waitForPropertyValue(editorPage, propertyTableName, String.join(",", values));
+        waitForPropertyValue(editorPage, propertyTableName, expectedInTable);
     }
 
     private void editAndCheckBooleanProperty(EditorPage editorPage, String propertyName, String propertyTableName, boolean value) {
