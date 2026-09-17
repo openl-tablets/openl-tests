@@ -67,6 +67,7 @@ public class RunTestsMenuComponent extends BaseComponent implements IRunTestsMen
     }
 
     public void clickTestButton() {
+        closeWindowsOverTheScreen();
         testBtn.click();
     }
 
@@ -76,6 +77,7 @@ public class RunTestsMenuComponent extends BaseComponent implements IRunTestsMen
     }
 
     public void openDropdown() {
+        closeWindowsOverTheScreen();
         if (!runTestsBtn.isVisible(1000)) {
             dropdownToggle.click();
             runTestsBtn.waitForVisible(DEFAULT_TIMEOUT_MS);

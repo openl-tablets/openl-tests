@@ -111,13 +111,13 @@ public class TestDisplayChangedRowsCompareScreens extends BaseTest {
                 .selectTab(TabSwitcherComponent.TabName.REPOSITORY);
         ProjectDetailPage projectDetail = repositoryPage.openProjectDetail(projectName);
 
-        // The repo compare opens in a new browser tab (the legacy showDiff.xhtml). This build always renders the
-        // full table and highlights the changed cells green; unlike the old repo compare, "Show equal elements"
-        // no longer removes equal rows, so the repo half verifies the highlighting and the equal-rows filter
-        // stays covered above through the Local Changes compare.
+        // The comparison against the repository opens in a browser tab of its own, on the same screen the
+        // local changes are compared on: it opens with the rows that read the same left out, so they are
+        // asked for before the table is read line by line.
         CompareGitRevisionsDialogComponent repoCompareDialog = projectDetail.openRevisionCompare();
         repoCompareDialog.openTreeNode("Limit");
         repoCompareDialog.clickTreeNode("Rules Double BankLimitIndex (Bank bank, RatingGroup bankRatingGroup)");
+        repoCompareDialog.setShowEqualRows(true);
 
         validateRepositoryCompareWindowCells(repoCompareDialog);
         assertThat(repoCompareDialog.getNumberOfRows(1))
@@ -126,9 +126,14 @@ public class TestDisplayChangedRowsCompareScreens extends BaseTest {
                 .as("Repo right fragment should render the diff rows").isGreaterThan(0);
 
         // The toggle re-renders the diff without breaking it; the changed cells stay highlighted in both states.
+        repoCompareDialog.setShowEqualRows(false);
+        assertThat(repoCompareDialog.getHighlightedCellCount(1))
+                .as("The differences must still be shown in the working copy with the equal rows left out")
+                .isPositive();
+        assertThat(repoCompareDialog.getHighlightedCellCount(2))
+                .as("The differences must still be shown in the revision with the equal rows left out")
+                .isPositive();
         repoCompareDialog.setShowEqualRows(true);
-        repoCompareDialog.openTreeNode("Limit");
-        repoCompareDialog.clickTreeNode("Rules Double BankLimitIndex (Bank bank, RatingGroup bankRatingGroup)");
         validateRepositoryCompareWindowCells(repoCompareDialog);
         repoCompareDialog.close();
 

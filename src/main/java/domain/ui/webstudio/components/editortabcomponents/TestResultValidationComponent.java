@@ -35,7 +35,6 @@ public class TestResultValidationComponent extends BaseComponent {
     private List<WebElement> failedTableLinks;
     private List<WebElement> passedCases;
     private List<WebElement> failedCases;
-    private WebElement currentModuleOnlyCheckbox;
     private WebElement failuresOnlyCheckbox;
 
     public TestResultValidationComponent() {
@@ -60,10 +59,6 @@ public class TestResultValidationComponent extends BaseComponent {
         passedCases = createElementList(String.format(CASE_STATUS, "Passed"), "passedCases");
         failedCases = createElementList(RESULTS + "//table[starts-with(@data-testid,'test-results-')]"
                 + "//span[@title='Failed' or @title='Error']", "failedCases");
-        // The setting belongs to the launcher the run is started from, not to the window the results arrive in.
-        currentModuleOnlyCheckbox = new WebElement(page,
-                "xpath="
-                        + "//input[@data-testid='tests-module-only']", "currentModuleOnlyCheckbox");
         failuresOnlyCheckbox = new WebElement(page, RESULTS + "//input[@data-testid='tests-failures-only']", "failuresOnlyCheckbox");
     }
 
@@ -151,14 +146,6 @@ public class TestResultValidationComponent extends BaseComponent {
         if (!failedTableLinkTemplate.format(tableName).isVisible(PROBE_MS)) {
             throw new AssertionError("Expected test table '" + tableName + "' to have failures, but it passed");
         }
-    }
-
-    public boolean isCurrentModuleOnlyChecked() {
-        return currentModuleOnlyCheckbox.isChecked();
-    }
-
-    public boolean isCurrentModuleOnlyEnabled() {
-        return currentModuleOnlyCheckbox.isEnabled();
     }
 
     public boolean isFailuresOnlyFilterChecked() {

@@ -147,10 +147,14 @@ public class ResolveConflictsDialogComponent extends BaseComponent {
     }
 
     // Use for non-Excel (text) file conflicts: Compare opens a nested modal in the same page, not a popup.
+    /**
+     * Opens the comparison of the two versions of the conflicted file. It is drawn on the comparison screen,
+     * in a window of its own, the way every comparison the studio draws is.
+     */
     public CompareLocalChangesDialogComponent clickCompareLinkInCurrentPage() {
         compareLink.waitForVisible(10000);
-        compareLink.clickForce();
-        WaitUtil.sleep(500, "Waiting for text compare modal to open");
-        return new CompareLocalChangesDialogComponent(page, true);
+        Page compareWindow = page.waitForPopup(compareLink::clickForce);
+        compareWindow.waitForLoadState();
+        return new CompareLocalChangesDialogComponent(compareWindow, true);
     }
 }

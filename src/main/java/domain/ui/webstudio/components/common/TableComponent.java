@@ -112,7 +112,7 @@ public class TableComponent extends BaseComponent {
                 return false;
             }
             if (pressEnter) {
-                inputLocator.press("Enter");
+                inputLocator.press(keepsWhatIsWritten());
             }
             return true;
         }, 10000, 250, "Writing '" + text + "' into the editor of cell [" + rowIndex + "," + columnIndex + "]");
@@ -121,6 +121,12 @@ public class TableComponent extends BaseComponent {
                     + "] took neither the value nor a pick from a list");
         }
         WaitUtil.sleep(250, "Waiting for cell edit to be applied");
+    }
+
+    private String keepsWhatIsWritten() {
+        return new WebElement(page, "xpath=//textarea[@data-testid='table-cell-input']", "cellLinesEditor").exists()
+                ? "Control+Enter"
+                : "Enter";
     }
 
     private void waitUntilTheEditorIsDrawn() {

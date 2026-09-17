@@ -61,8 +61,16 @@ public class EditorTableActionsPanelComponent extends BaseComponent {
         waitWhileTablePanelActionExecuted();
         waitUntilSpinnerLoaded();
         page.waitForLoadState(LoadState.NETWORKIDLE, new Page.WaitForLoadStateOptions().setTimeout(5000));
+        WebElement writing = new WebElement(page, "xpath=//*[@data-testid='table-edit-saving']", "tableBeingWritten");
+        WaitUtil.waitForCondition(() -> !writing.exists(), SAVE_SETTLE_MS, 200,
+                "Waiting for the table to be written");
+        WebElement refusal = new WebElement(page,
+                "xpath=//div[contains(concat(' ',normalize-space(@class),' '),' ant-notification-notice-wrapper ')]"
+                        + "[.//*[normalize-space()='Failed to save the table']]",
+                "tableSaveRefused");
         boolean kept = WaitUtil.waitForCondition(
-                () -> !saveChangesBtn.isVisible(SAVE_PROBE_MS) || !saveChangesBtn.isEnabled(),
+                () -> !refusal.exists()
+                        && (!saveChangesBtn.isVisible(SAVE_PROBE_MS) || !saveChangesBtn.isEnabled()),
                 SAVE_SETTLE_MS, 250, "Waiting for the table changes to be kept");
         if (!kept) {
             throw new AssertionError("The table still has changes to keep, so keeping them was refused: "
@@ -73,9 +81,11 @@ public class EditorTableActionsPanelComponent extends BaseComponent {
     /** What the screen says about a refusal, while it is still saying it. */
     private String refusalSaid() {
         WebElement notice = new WebElement(page,
-                "xpath=//div[contains(@class,'ant-notification-notice')] | //div[contains(@class,'ant-message-notice')]",
+                "xpath=(//div[contains(concat(' ',normalize-space(@class),' '),' ant-notification-notice-wrapper ')]"
+                        + " | //div[contains(concat(' ',normalize-space(@class),' '),' ant-message-notice ')])[1]",
                 "saveRefusal");
-        return notice.isVisible(SAVE_PROBE_MS) ? notice.getInnerText().trim() : "the screen says nothing";
+        return notice.isVisible(SAVE_PROBE_MS) ? notice.getInnerText().trim().replace("\n", " ")
+                : "the screen says nothing";
     }
 
     /**

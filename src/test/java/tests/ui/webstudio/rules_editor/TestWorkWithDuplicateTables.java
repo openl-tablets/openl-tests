@@ -183,17 +183,14 @@ public class TestWorkWithDuplicateTables extends BaseTest {
         // Section 7: Test dropdown for decision table (diff modules) — WithinCurrentModuleOnly checked & disabled
         editorPage.getEditorLeftRulesTreeComponent().selectItemInFolder("Rules", "someLookupBig2");
         editorPage.getEditorToolbarPanelComponent().clickTableActionsTestDropdown();
-        assertThat(editorPage.getEditorToolbarPanelComponent().isWithinCurrentModuleOnlyInputArgsChecked())
+        assertThat(editorPage.getEditorToolbarPanelComponent().isWithinCurrentModuleOnlyTestTablesChecked())
                 .as("WithinCurrentModuleOnly should be checked in TestDropdown (diff modules)")
                 .isTrue();
-        assertThat(editorPage.getEditorToolbarPanelComponent().isWithinCurrentModuleOnlyInputArgsEnabled())
+        assertThat(editorPage.getEditorToolbarPanelComponent().isWithinCurrentModuleOnlyTestTablesEnabled())
                 .as("WithinCurrentModuleOnly should be disabled in TestDropdown (diff modules)")
                 .isFalse();
         editorPage.getEditorToolbarPanelComponent().clickTableActionsTestBtn();
         editorPage.getTestResultValidationComponent().checkAllTablesPassed();
-        assertThat(editorPage.getTestResultValidationComponent().isCurrentModuleOnlyChecked())
-                .as("currentModuleOnly checkbox should be checked in test results (diff modules)")
-                .isTrue();
 
         // Section 8: Top Panel Test — WithinCurrentModuleOnly unchecked & enabled, then set and run
         editorPage.getEditorLeftRulesTreeComponent().selectItemInFolder("Rules", "someLookupBig2");
