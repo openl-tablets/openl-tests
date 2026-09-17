@@ -45,6 +45,7 @@ public class TestEditingCommaSeparatedArrayValues extends BaseTest {
 
         TableComponent table = editorPage.getCenterTable();
         table.editCell(4, 2, "1,,2,3");
+        editorPage.getEditorTableActionsPanelComponent().clickSaveChanges();
 
         boolean failureMessageVisible = editorPage.getAllMessages().stream()
                 .anyMatch(msg -> msg.contains("Sorry! Server failed to apply your changes!"));
@@ -126,11 +127,11 @@ public class TestEditingCommaSeparatedArrayValues extends BaseTest {
         // following navigation does not trigger the "Discard changes" prompt.
         editorPage.getEditorTableActionsPanelComponent().clickSaveChanges();
 
-        // 2.1-2.2 — Decision/SimpleLookupTable: 6 chosen US states; add Florida → AK,CT,DC,DE,FL,GA,WY
+        // 2.1-2.2 — Decision/SimpleLookupTable: 6 chosen US states; add Florida → AK,CT,DC,DE,GA,WY,FL
         chooseTableAndVerifyCell(editorPage, table, multiselect, "Rules", "SimpleLookupTable",
                 Arrays.asList("Alaska", "Connecticut", "District of Columbia", "Delaware", "Georgia", "Wyoming"));
         multiselect.selectValues("Florida");
-        verifyValuesAfterDoneAndAfterSave(editorPage, "AK,CT,DC,DE,FL,GA,WY", 2, 3);
+        verifyValuesAfterDoneAndAfterSave(editorPage, "AK,CT,DC,DE,GA,WY,FL", 2, 3);
 
         // 2.3-2.4 — Decision/SimpleRulesTable: Alaska, Alabama; add Florida → AL,AK,FL
         chooseTableAndVerifyCell(editorPage, table, multiselect, "Rules", "SimpleRulesTable",
@@ -150,17 +151,17 @@ public class TestEditingCommaSeparatedArrayValues extends BaseTest {
         multiselect.selectValues("Ontario");
         verifyValuesAfterDoneAndAfterSave(editorPage, "PE,ON", 2, 3);
 
-        // 2.9-2.10 — Spreadsheet/SpreadsheetTable: Russia/Saudi Arabia; add Philippines → PHP,RUB,SAR
+        // 2.9-2.10 — Spreadsheet/SpreadsheetTable: Russia/Saudi Arabia; add Philippines → RUB,SAR,PHP
         chooseTableAndVerifyCell(editorPage, table, multiselect, "Spreadsheet", "SpreadsheetTable",
                 Arrays.asList("Russia, Rubles", "Saudi Arabia, Riyals"));
         multiselect.selectValues("Philippines, Pesos");
-        verifyValuesAfterDoneAndAfterSave(editorPage, "PHP,RUB,SAR", 2, 3);
+        verifyValuesAfterDoneAndAfterSave(editorPage, "RUB,SAR,PHP", 2, 3);
 
-        // 2.11-2.12 — TBasic/TBasicTable: Alabama, Utah; add Colorado → AL,CO,UT
+        // 2.11-2.12 — TBasic/TBasicTable: Alabama, Utah; add Colorado → AL,UT,CO
         chooseTableAndVerifyCell(editorPage, table, multiselect, "TBasic", "TBasicTable",
                 Arrays.asList("Alabama", "Utah"));
         multiselect.selectValues("Colorado");
-        verifyValuesAfterDoneAndAfterSave(editorPage, "AL,CO,UT", 2, 3);
+        verifyValuesAfterDoneAndAfterSave(editorPage, "AL,UT,CO", 2, 3);
 
         // 2.13-2.14 — Method/MethodTable: Americas, European Union; add APJ → NCSA,EU,APJ
         chooseTableAndVerifyCell(editorPage, table, multiselect, "Method", "MethodTable",
