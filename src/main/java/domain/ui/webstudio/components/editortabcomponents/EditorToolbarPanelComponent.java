@@ -439,6 +439,10 @@ public class EditorToolbarPanelComponent extends BaseComponent {
         return runTestsMenu.getTestButtonText();
     }
 
+    public String getTestCountWhenCounted(String expected) {
+        return runTestsMenu.getTestCountWhenCounted(expected);
+    }
+
     public String getTestCount() {
         return runTestsMenu.getTestCount();
     }

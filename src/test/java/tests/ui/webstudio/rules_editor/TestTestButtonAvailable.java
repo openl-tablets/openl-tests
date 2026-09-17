@@ -63,6 +63,9 @@ public class TestTestButtonAvailable extends BaseTest {
         editorPage = new EditorPage();
         editorPage.getProblemsPanelComponent().waitForCompilationToComplete();
         // The number of test tables is drawn as a badge on the button rather than written into its words.
+        assertThat(editorPage.getEditorToolbarPanelComponent().getTestCountWhenCounted("3"))
+                .as("The button should read Test and carry the number of test tables")
+                .isEqualTo("3");
         assertThat(editorPage.getEditorToolbarPanelComponent().getTestButtonText())
                 .as("The button should read Test and carry the number of test tables")
                 .isEqualTo("Test3");
@@ -79,6 +82,9 @@ public class TestTestButtonAvailable extends BaseTest {
         );
         // The button shows the plain "Test" label until the reloaded module finishes compiling.
         editorPage.getProblemsPanelComponent().waitForCompilationToComplete();
+        assertThat(editorPage.getEditorToolbarPanelComponent().getTestCountWhenCounted("3"))
+                .as("The button should read Test and carry the number of test tables after a full refresh")
+                .isEqualTo("3");
         assertThat(editorPage.getEditorToolbarPanelComponent().getTestButtonText())
                 .as("The button should read Test and carry the number of test tables after a full refresh")
                 .isEqualTo("Test3");
@@ -122,6 +128,9 @@ public class TestTestButtonAvailable extends BaseTest {
         editorPage.waitUntilAppIdle();
         editorPage.getProblemsPanelComponent().waitForCompilationToComplete();
 
+        assertThat(editorPage.getEditorToolbarPanelComponent().getTestCountWhenCounted("6"))
+                .as("The button should read Test and carry the number of test tables after the copy")
+                .isEqualTo("6");
         assertThat(editorPage.getEditorToolbarPanelComponent().getTestButtonText())
                 .as("The button should read Test and carry the number of test tables after the copy")
                 .isEqualTo("Test6");
@@ -135,6 +144,9 @@ public class TestTestButtonAvailable extends BaseTest {
         DriverPool.getPage().reload();
         editorPage = new EditorPage();
         editorPage.getProblemsPanelComponent().waitForCompilationToComplete();
+        assertThat(editorPage.getEditorToolbarPanelComponent().getTestCountWhenCounted("6"))
+                .as("The button should read Test and carry the number of test tables after a refresh")
+                .isEqualTo("6");
         assertThat(editorPage.getEditorToolbarPanelComponent().getTestButtonText())
                 .as("The button should read Test and carry the number of test tables after a refresh")
                 .isEqualTo("Test6");

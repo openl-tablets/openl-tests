@@ -15,6 +15,7 @@ public class RunTestsMenuComponent extends BaseComponent implements IRunTestsMen
 
     // Only one launcher stands open at a time, and it draws what it holds into the page.
     private static final String LAUNCHER = "xpath=";
+    private static final int COUNT_TIMEOUT_MS = 60000;
     private static final int PROBE_MS = 2000;
 
     private final WebElement testBtn;
@@ -55,6 +56,16 @@ public class RunTestsMenuComponent extends BaseComponent implements IRunTestsMen
      * How many test tables the button says there are. The number is drawn as a badge on the button rather
      * than written into its words, so it is read on its own.
      */
+    /**
+     * The number of test tables the button carries, once the module has told it. The count is drawn from
+     * what the module answers about itself, so it reaches the button a moment after the module is compiled.
+     */
+    public String getTestCountWhenCounted(String expected) {
+        WaitUtil.waitForCondition(() -> expected.equals(getTestCount()), COUNT_TIMEOUT_MS, 500,
+                "Waiting for the button to say there are " + expected + " test tables");
+        return getTestCount();
+    }
+
     public String getTestCount() {
         WebElement count = new WebElement(page,
                 "xpath=//*[@data-testid='module-test-count']//*[contains(@class,'ant-badge-count')][@title]",
