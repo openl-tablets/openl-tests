@@ -36,6 +36,7 @@ public class ProjectDetailPage extends BasePage {
     private WebElement filesTab;
     private WebElement historyTab;
     private WebElement managementTab;
+    private WebElement publishTab;
     private WebElement accessPanel;
     private ProjectHeaderActionsComponent headerActions;
     private ProjectOverviewTabComponent overview;
@@ -66,6 +67,7 @@ public class ProjectDetailPage extends BasePage {
         filesTab = new WebElement(page, "xpath=//div[@data-node-key='files']", "filesTab");
         historyTab = new WebElement(page, "xpath=//div[@data-node-key='history']", "historyTab");
         managementTab = new WebElement(page, "xpath=//div[@data-node-key='access']", "managementTab");
+        publishTab = new WebElement(page, "xpath=//div[@data-node-key='publish']", "publishTab");
         accessPanel = new WebElement(page, "xpath=//*[@data-testid='access-panel']", "accessPanel");
         headerActions = new ProjectHeaderActionsComponent(page);
         overview = new ProjectOverviewTabComponent(page);
@@ -90,6 +92,39 @@ public class ProjectDetailPage extends BasePage {
     public ProjectOverviewTabComponent getOverviewTab() {
         openOverviewTab();
         return overview;
+    }
+
+    /** Writes a service name into the deploy configuration and keeps it, which is an edit of that file. */
+    public ProjectDetailPage writeDeployConfigServiceName(String serviceName) {
+        openPublishTab();
+        new WebElement(page, "xpath=//*[@data-testid='deploy-config-edit']", "deployConfigEdit")
+                .waitForVisible(DEFAULT_TIMEOUT_MS).click();
+        new WebElement(page, "xpath=//input[@data-testid='deploy-service-name']", "deployServiceName")
+                .waitForVisible(DEFAULT_TIMEOUT_MS).fill(serviceName);
+        new WebElement(page, "xpath=//*[@data-testid='deploy-config-save']", "deployConfigSave")
+                .waitForVisible(DEFAULT_TIMEOUT_MS).click();
+        waitUntilSpinnerLoaded();
+        return this;
+    }
+
+    /** Whether the deploy configuration is offered to be migrated, which it is only while it is legacy. */
+    public boolean isDeployConfigMigrateOffered() {
+        openPublishTab();
+        return new WebElement(page, "xpath=//*[@data-testid='deploy-migrate']", "deployConfigMigrate")
+                .isVisible(DEFAULT_TIMEOUT_MS / 2);
+    }
+
+    public ProjectDetailPage migrateDeployConfig() {
+        openPublishTab();
+        new WebElement(page, "xpath=//*[@data-testid='deploy-migrate']", "deployConfigMigrate")
+                .waitForVisible(DEFAULT_TIMEOUT_MS).click();
+        waitUntilSpinnerLoaded();
+        return this;
+    }
+
+    private void openPublishTab() {
+        publishTab.waitForVisible(DEFAULT_TIMEOUT_MS).click();
+        waitUntilSpinnerLoaded();
     }
 
     /** Opens the Management tab and answers whether the roles of the project are drawn there. */

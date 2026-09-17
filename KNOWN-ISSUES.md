@@ -676,6 +676,7 @@ replaced it records a decision to change this.
 | EPBDS-16639 | `TestProjectWithoutDescriptorUi#testCopyToBranchWorksForAProjectWithoutDescriptor` | fails: *Failed to update project status.* |
 | EPBDS-16641 | `TestProjectWithoutDescriptorUi#testDeployWorksForAProjectWithoutDescriptor` | fails: the project is not offered to be deployed |
 | EPBDS-16652 | `TestProjectCreatedMessageUi#testProjectCreationSaysSo` | fails: creating a project says nothing |
+| EPBDS-16657 | `TestMigrateAfterDeployConfigEditUi#testMigrateIsNotOfferedAgainAfterEditingTheDeployConfig` | fails: Migrate is offered again after the deploy configuration is written through the studio |
 | EPBDS-16638 | `TestProjectWithoutDescriptorUi#testManagementTabOpensForAProjectWithoutDescriptor` | passes here: the 404 does not reproduce on the pinned build, so the test guards the behaviour |
 | EPBDS-16653 | `TestWithinCurrentModuleOnlyAfterModuleSwitch` | passes here: the box stays offered on this build, so the test guards the behaviour |
 
@@ -684,7 +685,8 @@ project attached to the ticket, and a Run table cannot be built from the templat
 that project holds. EPBDS-16650 needs a JDBC or S3 design repository, which this suite does not raise.
 EPBDS-16636 (409s in the browser console) and EPBDS-16634 (an XML parsing error in the browser log, raised
 against a JSF endpoint this build no longer has) are about what the browser logs rather than what the screen
-does.
+does. EPBDS-16651 (the theme not reaching the pop-up messages) needs the themes, which this build does not
+have: nothing in `studio-ui` knows of a night theme.
 
 ---
 
