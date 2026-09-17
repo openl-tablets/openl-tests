@@ -338,6 +338,29 @@ all.
 
 ---
 
+## 15. The tables tree no longer shows the order the workbook holds
+
+**What happens.** Every level of the rail is now sorted by name — the groups and the tables under them alike
+(`tableGrouping.ts`, `buildTableTree` and `tableNodes`, both ending in `.sort(byLabel)`). The **By Excel
+Sheet** view therefore lists the sheets alphabetically and the tables inside each sheet alphabetically, and a
+table moved up or down a sheet does not move in the rail.
+
+**What the product says it does.** The shipped user guide, unchanged: *"By default, tables are sorted by
+their location in Excel sheets"*, and of the Excel Sheet view: *"The following tree is sorted by the order
+the tables are stored in the Excel file"* (`Docs/user-guides/openl-studio/getting-started.md`). The old tree
+kept that order; the picture in the guide still shows it.
+
+**Why it matters.** Where a table sits in a workbook is the one thing this view was for: it is how an author
+finds the table they are looking at in Excel, and how they see that an insert landed where they meant it to.
+
+**Blocked tests.** `tests.ui.webstudio.rules_editor.TestOrderingModeTableList` — both scenarios are about
+that order. What each still asks is kept: that the view opens on Excel Sheet, that every sheet of the
+workbook is a group of its own, and that a table created or removed appears and disappears. The sequences —
+the sheets in workbook order, the tables in the order they sit on the sheet, the order changing after a row
+is inserted — are gone from them, and are the coverage to restore with the order.
+
+---
+
 ## Renamings that are not bugs
 
 For the record, so they are not raised twice. These are the same tree, named the way the tables API has named
@@ -367,6 +390,7 @@ the build under test (`6.5.0-b48c86279338`) and against the screens themselves.
 | The result of running a rule is a window of its own, with one column per input and one for the result. The row carries no number, and each value is shown as the literal its type reads as (`"Tom"`, not `Tom`). | The expected rows were rewritten to what the window shows, keeping the value equality the test was written for. |
 | Running anything opens a window that covers the screen, and the module cannot be worked on again until it is closed. | `TestResultValidationComponent.closeResults()` is pressed once the results have been read. |
 | A table is removed behind a question the screen asks in a window of its own, not behind the browser's own confirm dialog. | `removeCurrentTable()` answers the screen's window. |
+| A date is shown as the year, the month and the day in that order, on the table and in the properties panel alike, rather than in the format the workbook writes the cell with. The workbook itself is unchanged — a date written through the panel is still a date cell carrying Excel's own `mm-dd-yy` format (verified by exporting the workbook and reading `xl/styles.xml`), so nothing is lost; the screen simply no longer reads the cell's format. Worth confirming with development that this is meant. | The dates the tests expect are written the way the screen shows them. The values compared are the same dates. |
 | Creating a project from an OpenAPI specification no longer writes an `openapi` block into `rules.xml`: the normalized file in the project root is reconciled against, and nothing is generated again over later edits. Deliberate, with the user guides changed in the same commit — `e3edf4a6e8`, EPBDS-16415, *"Default new OpenAPI projects to reconciliation"* (`repository-editor.md`, `rules-editor.md`). | A freshly created project is expected to read in **Reconciliation** and to name no module to write into; the import dialog starts empty. Where a test drove an overwrite, it now names the modules to write over, as a reader must, so the overwrite itself is still covered. Note the knock-on: a project that declares no module is drawn with its module list read-only even while the card is open for writing (`OverviewPanel.tsx`, `modulesEditable`), which puts the rename and copy steps of the two creation tests under issue 8. |
 
 ## Class names of the component library, for whoever writes the next locator

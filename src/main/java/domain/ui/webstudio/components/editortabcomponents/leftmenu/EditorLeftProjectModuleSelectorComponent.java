@@ -128,7 +128,10 @@ public class EditorLeftProjectModuleSelectorComponent extends BaseComponent {
      * settings on sides of their own, and a reader who was last on one of those is still on it.
      */
     private void showModules() {
-        if (moduleOpenLinks.isEmpty() && overviewTab.isVisible(PROBE_MS)) {
+        if (!moduleOpenLinks.isEmpty() && moduleOpenLinks.get(0).isVisible(PROBE_MS)) {
+            return;
+        }
+        if (overviewTab.isVisible(PROBE_MS)) {
             overviewTab.click();
         }
     }

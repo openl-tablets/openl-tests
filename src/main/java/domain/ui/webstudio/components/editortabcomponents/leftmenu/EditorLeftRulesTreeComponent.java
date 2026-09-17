@@ -156,6 +156,16 @@ public class EditorLeftRulesTreeComponent extends BaseComponent {
                 .toList();
     }
 
+    /** The groups the rail draws, without the tables filed under them. */
+    public List<String> getFoldersVisible() {
+        waitUntilSpinnerLoaded();
+        return readRows().stream()
+                .filter(TreeRow::folder)
+                .map(TreeRow::title)
+                .filter(title -> !title.isEmpty())
+                .toList();
+    }
+
     public List<String> getAllEndNodesNames() {
         waitUntilSpinnerLoaded();
         return readRows().stream()

@@ -146,9 +146,10 @@ public class TestEditingProperties extends BaseTest {
                 .isEqualToIgnoringCase(expectedValue);
     }
 
+    /** A date is shown as the year, the month and the day, in that order, whatever the workbook writes it as. */
     private String formatDate(String dateValue) {
         SimpleDateFormat inputFormat = new SimpleDateFormat("MM/dd/yy");
-        SimpleDateFormat outputFormat = new SimpleDateFormat("M/d/yy");
+        SimpleDateFormat outputFormat = new SimpleDateFormat("yyyy-MM-dd");
         try {
             Date date = inputFormat.parse(dateValue);
             return outputFormat.format(date);

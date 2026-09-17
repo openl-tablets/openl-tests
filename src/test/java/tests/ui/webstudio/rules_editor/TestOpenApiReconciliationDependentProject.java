@@ -41,7 +41,9 @@ public class TestOpenApiReconciliationDependentProject extends BaseTest {
         editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName3);
 
-        editorPage.openManageDependenciesDialog().addDependency(projectName2, true);
+        // The archive declares a dependency on a project under the name it was packed with, which this
+        // workspace does not hold; the project is declared to depend on the one created here and no other.
+        editorPage.openManageDependenciesDialog().dependOnlyOn(projectName2, true);
         editorPage.waitUntilSpinnerLoaded();
 
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName3, "ArrValidation");

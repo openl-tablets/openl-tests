@@ -60,14 +60,18 @@ public class ManageDependenciesDialogComponent extends BaseComponent {
     }
 
     /**
-     * Declares one more project depended on. Each line is named after its place in the list, so the line
-     * added is the one after those already there.
+     * Declares that the project depends on that one project and no other, which is what the old dialog left
+     * behind when a reader ticked one project in its list. A project the workspace no longer holds is still
+     * declared in the file and would be reported as missing, so the lines standing are taken away first.
      */
-    public void addDependency(String projectName, boolean includeAllModules) {
-        int added = lines.getLocator().count();
+    public void dependOnlyOn(String projectName, boolean includeAllModules) {
+        for (int standing = lines.getLocator().count(); standing > 0; standing--) {
+            new WebElement(page, PANEL + "//button[@data-testid='edit-dependency-" + (standing - 1) + "-remove']",
+                    "removeDependencyBtn").click();
+        }
         addBtn.click();
-        pickInSelect(lineSelectTemplate.format(String.valueOf(added)), projectName);
-        WebElement auto = lineAutoTemplate.format(String.valueOf(added));
+        pickInSelect(lineSelectTemplate.format("0"), projectName);
+        WebElement auto = lineAutoTemplate.format("0");
         if (auto.isChecked() != includeAllModules) {
             auto.click();
         }
