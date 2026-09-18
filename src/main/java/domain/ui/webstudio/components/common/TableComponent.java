@@ -11,10 +11,9 @@ import java.util.List;
 public class TableComponent extends BaseComponent {
 
 
-    private WebElement editorWrapper;
+    private WebElement cellEditor;
     private WebElement firstRowLineNumber;
     private WebElement numberedFirstColumn;
-    private WebElement inputLocator;
     private List<PlaywrightTableRowComponent> rows;
     private WebElement propertyValueTemplate;
 
@@ -29,10 +28,9 @@ public class TableComponent extends BaseComponent {
     }
 
     private void initializeElements() {
-        editorWrapper = new WebElement(page, "xpath=//*[@data-testid='table-cell-input']", "editorWrapper");
+        cellEditor = new WebElement(page, "xpath=//*[@data-testid='table-cell-input']", "cellEditor");
         firstRowLineNumber = createScopedElement("xpath=./tbody/tr[1]//span[@data-testid='table-line-number']", "firstRowLineNumber");
         numberedFirstColumn = createScopedElement("xpath=./tbody/tr[last()]/td[1][.//span[@data-testid='table-line-number']]", "numberedFirstColumn");
-        inputLocator = new WebElement(page, "xpath=//*[@data-testid='table-cell-input']", "inputLocator");
         rows = createScopedComponentList(PlaywrightTableRowComponent.class, "xpath=.//tbody/tr", "rowSelectorTemplate");
         propertyValueTemplate = createScopedElement("xpath=//tr/td[text()='%s']/following-sibling::td[1]", "propertyValue");
     }
@@ -69,7 +67,7 @@ public class TableComponent extends BaseComponent {
         getCell(rowIndex, columnIndex).doubleClick();
     }
 
-    public void editCell(int rowIndex, int columnIndex, String text, boolean pressEnter) {
+    public WebElement openCellEditor(int rowIndex, int columnIndex) {
         waitUntilSpinnerLoaded();
         WaitUtil.retryOnException(() -> {
             try {
@@ -77,14 +75,19 @@ public class TableComponent extends BaseComponent {
             } catch (RuntimeException neverSettles) {
                 getCell(rowIndex, columnIndex).doubleClickWhenSettled();
             }
-            editorWrapper.waitForVisible(2000);
+            cellEditor.waitForVisible(2000);
             return true;
         }, 30000, 500, "Activating cell editor for cell [" + rowIndex + "," + columnIndex + "]");
 
         waitUntilTheEditorIsDrawn();
+        return cellEditor;
+    }
+
+    public void editCell(int rowIndex, int columnIndex, String text, boolean pressEnter) {
+        openCellEditor(rowIndex, columnIndex);
         boolean written = WaitUtil.waitForCondition(() -> {
-            if (String.valueOf(inputLocator.getAttribute("class")).contains("ant-select")) {
-                WebElement picker = new WebElement(inputLocator, "xpath=.//input", "cellValueInput");
+            if (String.valueOf(cellEditor.getAttribute("class")).contains("ant-select")) {
+                WebElement picker = new WebElement(cellEditor, "xpath=.//input", "cellValueInput");
                 pickInSelect(picker, text);
                 if (pressEnter) {
                     picker.press("Enter");
@@ -92,9 +95,9 @@ public class TableComponent extends BaseComponent {
                 return true;
             }
             try {
-                inputLocator.press("Control+A");
-                inputLocator.press("Delete");
-                inputLocator.fill(text);
+                cellEditor.press("Control+A");
+                cellEditor.press("Delete");
+                cellEditor.fill(text);
             } catch (PlaywrightException editorChanged) {
                 if (!String.valueOf(editorChanged.getMessage()).contains("Element is not an <input>")) {
                     throw editorChanged;
@@ -102,7 +105,7 @@ public class TableComponent extends BaseComponent {
                 return false;
             }
             if (pressEnter) {
-                inputLocator.press(keepsWhatIsWritten());
+                cellEditor.press(keepsWhatIsWritten());
             }
             return true;
         }, 10000, 250, "Writing '" + text + "' into the editor of cell [" + rowIndex + "," + columnIndex + "]");
@@ -122,7 +125,7 @@ public class TableComponent extends BaseComponent {
     private void waitUntilTheEditorIsDrawn() {
         String[] last = {null};
         WaitUtil.waitForCondition(() -> {
-            String drawn = String.valueOf(inputLocator.getAttribute("class"));
+            String drawn = String.valueOf(cellEditor.getAttribute("class"));
             boolean settled = drawn.equals(last[0]);
             last[0] = drawn;
             return settled;
