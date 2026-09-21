@@ -15,6 +15,7 @@ import domain.ui.webstudio.components.admincomponents.UsersPageComponent;
 import domain.ui.webstudio.components.editortabcomponents.EditorToolbarPanelComponent;
 import domain.ui.webstudio.components.editortabcomponents.leftmenu.EditorLeftRulesTreeComponent;
 import domain.ui.webstudio.pages.mainpages.EditorPage;
+import domain.ui.webstudio.pages.mainpages.LoginPage;
 import domain.ui.webstudio.pages.mainpages.RepositoryPage;
 import helpers.service.LoginService;
 import helpers.service.UserService;
@@ -95,8 +96,19 @@ public class TestAdminUserSettings extends BaseTest {
 
         myProfileComponent.setCurrentPassword("admin").setNewPassword("12345").setConfirmPassword("12345").saveProfile();
 
-        //TODO: Logout and test old password (should fail) - NOW NO ERRORS ON UI
         editorPage.openUserMenu().signOut();
+
+        LoginPage loginPage = new LoginPage();
+        loginPage.login(new UserData("admin", "admin"));
+        assertThat(loginPage.isLoginFormDisplayed(10000))
+                .as("The old password must not sign the user in after the password was changed")
+                .isTrue();
+        assertThat(loginPage.isLoginErrorDisplayed(10000))
+                .as("The login form must say that the old password was refused")
+                .isTrue();
+        assertThat(loginPage.getLoginErrorMessage())
+                .as("The refusal must name the credentials rather than fail silently")
+                .containsIgnoringCase("credentials");
 
         UserData newUserData = new UserData("admin", "12345");
         editorPage = loginService.login(newUserData);
