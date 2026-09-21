@@ -8,15 +8,14 @@ import helpers.utils.WaitUtil;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/** Searching a module's tables: the box above the tables rail, and the extended search it opens. */
 public class SearchFilterComponent extends BaseComponent {
 
     private static final String FORM = "xpath=//div[@data-testid='table-search-form']";
     private static final String RESULTS = "xpath=//div[@data-testid='table-search-results']";
     private static final int PROBE_MS = 1000;
     private static final int SETTLE_MS = 200;
-    // Short enough that a search lost with the screen it was opened onto is opened again rather than waited out.
     private static final int SEARCH_CLICK_TIMEOUT_MS = 3000;
+    private static final int COMPILATION_TIMEOUT_MS = 300000;
 
     private WebElement quickSearch;
     private WebElement openExtendedSearchBtn;
@@ -65,16 +64,7 @@ public class SearchFilterComponent extends BaseComponent {
                 + "//button[starts-with(@data-testid,'table-search-open-')]", "viewTableButtons");
     }
 
-    /**
-     * Searches for the text wherever it is written about a table, which is what the one search box of the
-     * old editor did: it matched the text against every cell the table is written in, and the line a table
-     * is headed by is one of those cells. That search is the field the extended search calls the text in
-     * the cells; the name beside it is a narrower question the old box could not ask.
-     */
     public SearchFilterComponent typeSearchAndEnter(String text) {
-        // The screen may still be settling on the table just opened, and a search opened onto a screen that
-        // is being replaced goes away with it — so what was typed is checked to be still there before the
-        // search is run, and the whole of it is done again when it is not.
         WaitUtil.retryOnException(() -> {
             openAdvancedSearch();
             textInput.fill(text);
@@ -91,7 +81,6 @@ public class SearchFilterComponent extends BaseComponent {
         return this;
     }
 
-    /** Filters the tables rail itself by name, without opening the extended search. */
     public SearchFilterComponent filterTablesRail(String text) {
         quickSearch.click();
         quickSearch.fill(text);
@@ -99,11 +88,6 @@ public class SearchFilterComponent extends BaseComponent {
         return this;
     }
 
-    /**
-     * Opens the extended search. The button stands in the tables rail, which is drawn anew whenever the
-     * module screen shows another table — opening one from the results is how the search ends — so a press
-     * can land on a rail that is being replaced and open nothing.
-     */
     public SearchFilterComponent openAdvancedSearch() {
         WaitUtil.requireCondition(() -> {
             if (form.isVisible(PROBE_MS)) {
@@ -140,8 +124,6 @@ public class SearchFilterComponent extends BaseComponent {
         for (String type : types) {
             pickInSelect(kindSelect, type);
         }
-        // Closing the list by pressing Escape would close the search itself, so the box is closed by
-        // pressing it again.
         kindSelect.click();
         return this;
     }
@@ -166,10 +148,6 @@ public class SearchFilterComponent extends BaseComponent {
         return this;
     }
 
-    /**
-     * Waits for the search that was started to report back. The previous results stay on screen while it
-     * runs, so what is waited for is the Search button coming back from its busy state.
-     */
     public SearchFilterComponent waitForSearchResult() {
         WaitUtil.requireCondition(() -> !searchBtn.getAttribute("class").contains("ant-btn-loading"),
                 DEFAULT_TIMEOUT_MS, SETTLE_MS, "Waiting for the search to report its results");
@@ -198,10 +176,15 @@ public class SearchFilterComponent extends BaseComponent {
                     + getTableNamesInSearchResults());
         }
         viewTableRows.get(index).click();
-        WebElement openedTable = new WebElement(page,
-                "xpath=//table[@data-testid='module-table']//tr[1]/td[1]", "openedTable");
-        WaitUtil.waitForCondition(() -> openedTable.isVisible(1000), DEFAULT_TIMEOUT_MS, 250,
-                "Waiting for the table '" + tableName + "' the search offered to be drawn");
+        WebElement compilingScreen = new WebElement(page,
+                "xpath=//div[@data-testid='module-compiling']", "moduleCompilingScreen");
+        WebElement namedTable = new WebElement(page,
+                "xpath=//table[@data-testid='module-table']//tr[1]/td[1][contains(normalize-space(.),'"
+                        + tableName + "')]", "openedTable[" + tableName + "]");
+        WaitUtil.requireCondition(
+                () -> compilingScreen.getLocator().count() == 0 && namedTable.isVisible(PROBE_MS),
+                COMPILATION_TIMEOUT_MS, 500,
+                "Waiting for the module holding '" + tableName + "' to compile and draw that table");
         return this;
     }
 
@@ -211,10 +194,6 @@ public class SearchFilterComponent extends BaseComponent {
         }
     }
 
-    /**
-     * The names of the tables found, read from the header each result shows: the header names the kind of the
-     * table and then the table itself, so the name is the last word before the signature.
-     */
     public List<String> getTableNamesInSearchResults() {
         return resultRows.stream().map(row -> {
             String header = row.getInnerText().lines()
@@ -229,11 +208,6 @@ public class SearchFilterComponent extends BaseComponent {
         }).collect(Collectors.toList());
     }
 
-    /**
-     * What the search can be narrowed to. The list is drawn outside the box it hangs under, and the box
-     * names an element that holds nothing readable, so the list is read where it is drawn — and only while
-     * it stands open, since a list closed before it stays in the page marked as hidden.
-     */
     public List<String> getScopeOptions() {
         openAdvancedSearch();
         if (!"true".equals(scopeSelect.getAttribute("aria-expanded"))) {

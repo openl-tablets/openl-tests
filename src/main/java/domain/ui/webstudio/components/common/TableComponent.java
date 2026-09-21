@@ -10,7 +10,6 @@ import java.util.List;
 
 public class TableComponent extends BaseComponent {
 
-
     private WebElement cellEditor;
     private WebElement firstRowLineNumber;
     private WebElement numberedFirstColumn;
@@ -40,8 +39,25 @@ public class TableComponent extends BaseComponent {
     }
 
     public WebElement getCell(int rowIndex, int columnIndex) {
-        WaitUtil.waitForListNotEmpty(() -> rows, DEFAULT_TIMEOUT_MS, 100, "Waiting for table rows to load before getting cell [" + rowIndex + "," + columnIndex + "]");
-        return rows.get(rowIndex - 1 + rowOffset()).getCells().get(columnIndex - 1);
+        WebElement[] drawn = new WebElement[1];
+        WaitUtil.requireCondition(() -> {
+            drawn[0] = cellIfDrawn(rowIndex, columnIndex);
+            return drawn[0] != null;
+        }, DEFAULT_TIMEOUT_MS, 100, "Waiting for cell [" + rowIndex + "," + columnIndex + "] to be drawn");
+        return drawn[0];
+    }
+
+    private WebElement cellIfDrawn(int rowIndex, int columnIndex) {
+        try {
+            int wanted = rowIndex - 1 + rowOffset();
+            if (rows.size() <= wanted) {
+                return null;
+            }
+            List<WebElement> cells = rows.get(wanted).getCells();
+            return cells.size() < columnIndex ? null : cells.get(columnIndex - 1);
+        } catch (RuntimeException beingRedrawn) {
+            return null;
+        }
     }
 
     private int rowOffset() {
@@ -147,8 +163,20 @@ public class TableComponent extends BaseComponent {
     }
 
     public PlaywrightTableRowComponent getRow(int rowIndex) {
-        WaitUtil.waitForListNotEmpty(() -> rows, DEFAULT_TIMEOUT_MS, 250, "Waiting for table rows before getting row " + rowIndex);
-        return rows.get(rowIndex - 1 + rowOffset());
+        PlaywrightTableRowComponent[] drawn = new PlaywrightTableRowComponent[1];
+        WaitUtil.requireCondition(() -> {
+            try {
+                int wanted = rowIndex - 1 + rowOffset();
+                if (rows.size() <= wanted) {
+                    return false;
+                }
+                drawn[0] = rows.get(wanted);
+                return true;
+            } catch (RuntimeException beingRedrawn) {
+                return false;
+            }
+        }, DEFAULT_TIMEOUT_MS, 100, "Waiting for row " + rowIndex + " to be drawn");
+        return drawn[0];
     }
 
     public String getCellHintText(int rowIndex, int columnIndex, String variableName) {
