@@ -12,6 +12,10 @@ the findings filed as EPBDS-16667 to EPBDS-16675 are carried by no test yet, and
 to be written. Nothing in the suite is skipped over a defect any more: a blocked scenario runs to the point
 where the product refuses it and fails there, which is what keeps the validation alive and the shard honest.
 
+The build under test moved from `6.5.0-b48c86279338` to `6.5.0-2b6429ad4b7d` on 21 September 2026. Findings
+the newer build fixed are kept below, marked **Fixed**, with the commit that fixed them and the test that now
+guards it; they are kept rather than deleted so the same ground is not walked twice.
+
 ---
 
 ## 1. "Hide Utility Tables" is gone and the setting cannot be reached
@@ -37,11 +41,16 @@ model; only the way to ask for it was removed.
 
 ---
 
-## 2. The "Vocabulary" group disappeared from the tables tree
+## 2. The "Vocabulary" group disappeared from the tables tree — Fixed
 
 **Filed as EPBDS-16654** (*Grouping by table type doesn't work properly for Vocabularies*, 17 Sep 2026).
-`TestOrderingModeDefaults#testDefaultOrderForMultiUser` asks the Type view for a Vocabulary group again and
-carries `@KnownIssue("EPBDS-16654")`.
+**Fixed in openl-tablets `916f5bacf8`, shipped in `6.5.0-2b6429ad4b7d`.** The Type view files an alias
+datatype under a `Vocabulary` group of its own again, and the groups carry the Editor's names and order.
+`TestOrderingModeDefaults#testDefaultOrderForMultiUser` asks for that group and no longer carries a
+`@KnownIssue`; `TestRangeDataTypes` reaches `Vocabulary1` through the `Vocabulary` folder again, and
+`TestTableIcons` expands it among the rest.
+
+The same fix renamed the folders the Type view draws — see *Renamings that are not bugs* below.
 
 **What changed.** In the JSF tree's *By Type* view, alias datatypes were grouped under their own
 `Vocabulary` node (`TableTreeNodeBuilder`, see `git show 6.4.0:.../ui/tree/TableTreeNodeBuilder.java`). The
@@ -58,15 +67,14 @@ Worth settling in the same ticket: the way a vocabulary is recognised also chang
 `<`…`>` in the table header (`OpenLTableUtils.isVocabularyTable`). Development should say which is
 authoritative.
 
-**Coverage dropped; the tests run.**
-- `tests.ui.webstudio.rules_editor.TestOrderingModeDefaults#testDefaultOrderForMultiUser` — step 2.7 asked for
-  a `Vocabulary` group in the Type view; it asks for the groups the view draws instead.
-- `tests.ui.webstudio.rules_editor.TestRangeDataTypes` — reaches `Vocabulary1` under the group the tree puts it
-  in now, in place of a `Vocabulary` folder.
-- `tests.ui.webstudio.studio_smoke.TestTableIcons` — expects the icon a vocabulary table wears now, which is
-  the datatype icon.
-What is not asked any more, and is the coverage to restore with the fix: that a vocabulary is told apart from
-a datatype anywhere in the tree.
+**Coverage restored.**
+- `tests.ui.webstudio.rules_editor.TestOrderingModeDefaults#testDefaultOrderForMultiUser` — asserts the Type
+  view draws a `Vocabulary` group beside `Decision`, `Spreadsheet`, `Test` and `Datatype`.
+- `tests.ui.webstudio.rules_editor.TestRangeDataTypes` — opens the range editor on `Vocabulary1` reached
+  through the `Vocabulary` folder.
+- `tests.ui.webstudio.studio_smoke.TestTableIcons` — expands `Vocabulary` among the groups of the Type view.
+  The icon is unchanged: the icon map is keyed by `kind`, and a vocabulary's kind is still `Datatype`, so a
+  vocabulary still wears the datatype glyph. Telling the two apart by icon was never part of the fix.
 
 ---
 
@@ -326,9 +334,18 @@ again — renames it a second time and asks for the conflict.
 
 ---
 
-## 14. The three category views of the tables tree draw one and the same tree
+## 14. The three category views of the tables tree draw one and the same tree — mostly fixed
 
 **Filed as EPBDS-16670**, which covers the lost fallback to the sheet and the category a table inherits. The separator (a dash before, a dot now) and whether a view chosen by hand should outlive the Default Order are for development to settle, and are not in the ticket.
+
+**Mostly fixed in openl-tablets `916f5bacf8`, shipped in `6.5.0-2b6429ad4b7d`** — the same commit that
+reworked the Type view. Checked in the running studio: a table that declares no category stands under its
+Excel sheet again, a table that declares one stands under it, the step separator is a dash again, and the
+three Category views gained `Module Properties` and `Category Properties` levels. Not checked, and still
+open in the ticket: the category a table inherits from the module or from a category properties table.
+
+Coverage to restore: steps 1.7, 1.10 and 2.4 of `TestOrderingModeDefaults` were cut down to a non-empty
+check over this, and can assert what the views draw again.
 
 **What happens.** The tables rail offers five ways of grouping what a module holds, three of them by the
 category a table declares: **Category**, **Category Detailed** (the first part of the category) and
@@ -472,9 +489,13 @@ holds. Showing a cell differently from Excel is exactly the difference they are 
 
 ---
 
-## 18. The Run menu no longer offers the test cases by range
+## 18. The Run menu no longer offers the test cases by range — Fixed
 
 **Already filed as EPBDS-16606** (*Functionality "Use the Range" is not available in "Run Test" menu*, 14 Sep 2026), which is the same defect.
+**Fixed in openl-tablets `b34b4eb8f9`, shipped in `6.5.0-2b6429ad4b7d`:** the launcher offers *Use the Range*
+again, with a field for the expression and the total beside it. The same commit removed the separate
+**All cases** box (`launch-all-cases`); taking every case is now the header box of the case table
+(`pick-all-cases`), which is what `TableInputLauncherComponent.allCasesBox()` reads.
 
 **What changed.** The contextual menu of Run / Test / Trace / Benchmark used to let a reader write which
 cases to run as a range — *2-4,7,10-12* or *id3-id7* — with a note beside the field saying how such a range
@@ -492,11 +513,11 @@ page at a time.
 before, built from the ticked ids (`TableInputLauncher.tsx`, `caseIds.join(',')`), and sends none at all
 when every case is taken; the server still reads a range expression.
 
-**Tests changed rather than blocked.** `TestRunContextualMenuRunAll` keeps what the screen still answers:
-that a table of several cases offers to take them all, that it does so unless the reader picks some, that
-picking one stops it, that taking them all again stands, and how many cases the table holds. What it no
-longer asks — the range filled in and locked by the box, the note beside the field, and the box being
-withheld for a table of twenty cases or fewer — is the coverage to restore with the range.
+**Tests.** `TestRunContextualMenuRunAll` asserts that a table of several cases offers to take them all,
+that it does so unless the reader picks some, that picking one stops it, that taking them all again stands,
+and how many cases the table holds. Still to be written now that the range is back: the range expression
+filled in and obeyed, and the note beside the field. The old rule that the cases stop being offered one by
+one past twenty is gone for good — the React launcher pages them instead.
 
 ---
 
@@ -702,6 +723,36 @@ replaced it records a decision to change this.
 
 ---
 
+## 24. The table properties panel keeps what it read before a save
+
+**Filed as EPBDS-16700.** Found on `6.5.0-2b6429ad4b7d`; both tests passed on `6.5.0-b48c86279338`.
+
+**What happens.** A property written through the panel is saved — the studio says so and the grid redraws
+with it — but the panel goes on showing what it read before the save, until the page is reloaded. On a table
+that declared nothing, that reads *This table declares no properties*. The write and the server are right:
+`GET /web/projects/{id}/tables/{tableId}/details` answers the property straight away.
+
+Only a save that leaves the table's id unchanged is affected. When the table has to be moved to grow,
+`updateTableProperties` answers a new id, the screen navigates to it and the panel is drawn again.
+
+**Probable cause, offered to development rather than asserted.** `ModuleWorkspace.tsx` renders the panel
+under `compilation.ready`. Before `46d1de540e` (EPBDS-16653) readiness was held in `wasReady` and reset on
+every `reloadToken` change, so a save dropped readiness, tore the panel down and rebuilt it, and its
+`useEffect` re-read the details. That commit keys readiness on a `compiledKeys` set recorded while the stale
+status still names the module, so readiness never drops and the panel is never remounted —
+`TableDetailsPanel.save()` never re-reads `details` itself. `TableDetailsPanel.tsx` is unchanged between the
+two builds.
+
+**Tests that report this as a known issue (they run and fail against it).**
+- `tests.ui.webstudio.studio_issues.TestAddProperty#testAddProperty`
+- `tests.ui.webstudio.studio_issues.TestAddPropertyInSpreadSheetTable#testAddPropertyInSpreadSheetTable`
+
+Both carry `@KnownIssue("EPBDS-16700")`. Other tests that write a property and read the grid rather than the
+panel — `TestAddPropertyExtraStateAppears`, `TestEditingProperties` — pass, which is what places the defect
+in the panel and not in the write.
+
+---
+
 ## Defects reported on 16-17 September, covered by tests of their own
 
 | Ticket | Test | State |
@@ -709,16 +760,17 @@ replaced it records a decision to change this.
 | EPBDS-16639 | `TestProjectWithoutDescriptorUi#testCopyToBranchWorksForAProjectWithoutDescriptor` | fails: *Failed to update project status.* |
 | EPBDS-16641 | `TestDeployProjectWithoutDescriptorUi#testDeployWorksForAProjectWithoutDescriptor` | fails: the deployment the studio confirmed stands nowhere among the deployments |
 | EPBDS-16652 | `TestProjectCreatedMessageUi#testProjectCreationSaysSo` | fails: creating a project says nothing |
-| EPBDS-16657 | `TestMigrateAfterDeployConfigEditUi#testMigrateIsNotOfferedAgainAfterEditingTheDeployConfig` | fails: Migrate is offered again after the deploy configuration is written through the studio |
+| EPBDS-16657 | `TestMigrateAfterDeployConfigEditUi#testMigrateIsNotOfferedAgainAfterEditingTheDeployConfig` | **fixed** in `4b9326fa1a`, passes on `6.5.0-2b6429ad4b7d`; the marker is removed and the test guards the fix |
 | EPBDS-16638 | `TestProjectWithoutDescriptorUi#testManagementTabOpensForAProjectWithoutDescriptor` | fails: the card opens and offers the Management tab, and pressing it answers 404 |
-| EPBDS-16635 | `TestRunTableResultUi#testRunTableReportsItsResults` | fails: the window of results holds no row for a Run table of a module that compiles clean (`test_data/TestRunTableResultUi/RunTableProject.xlsx`) |
-| EPBDS-16653 | `TestWithinCurrentModuleOnlyAfterModuleSwitch` | fails: the box is locked on the module reached through the module list of the breadcrumbs, which is the route the ticket takes |
-| EPBDS-16636 | `TestNoConflictsWhileRunningTestsUi#testRunningTestsIsNotRefusedWithConflict` | fails: reading the results of a run answers 409 — `GET /projects/{id}/tests/summary` — until the run has ended |
+| EPBDS-16635 | `TestRunTableResultUi#testRunTableReportsItsResults` | **fixed** in `69664a7e35`, passes on `6.5.0-2b6429ad4b7d`; the marker is removed and the test guards the fix |
+| EPBDS-16653 | `TestWithinCurrentModuleOnlyAfterModuleSwitch` | **fixed** in `46d1de540e`, passes on `6.5.0-2b6429ad4b7d`; the marker is removed and the test guards the fix |
+| EPBDS-16636 | `TestNoConflictsWhileRunningTestsUi#testRunningTestsIsNotRefusedWithConflict` | **fixed** in `3366a0f129`, passes on `6.5.0-2b6429ad4b7d`; the marker is removed and the test guards the fix |
 
 **Not covered, and why.** EPBDS-16650 needs a JDBC or S3 design repository, which this suite does not raise.
 EPBDS-16634 (an XML parsing error in the browser log) is raised against
-`faces/tableEditor/ajax/getCellEditor`, a JSF endpoint this build no longer has, and is already in testing. EPBDS-16651 (the theme not reaching the pop-up messages) needs the themes, which this build does not
-have: nothing in `studio-ui` knows of a night theme.
+`faces/tableEditor/ajax/getCellEditor`, a JSF endpoint this build no longer has, and is already in testing. EPBDS-16651 (the theme not reaching the pop-up messages) needed the themes, which `6.5.0-b48c86279338` did
+not have; `6.5.0-2b6429ad4b7d` ships them (`7863757f02`, `20f2745472`, `5043ae4161`, `000e6d889f`) and a
+theme switcher stands beside the avatar, so the scenario can be covered now — no test does yet.
 
 ---
 
@@ -736,18 +788,32 @@ issues rather than as failures. They are listed here so the count of what is red
 
 ## Renamings that are not bugs
 
-For the record, so they are not raised twice. These are the same tree, named the way the tables API has named
-it since `EPBDS-13931` (2023); `EPBDS-16599` only removed the second, JSF-only vocabulary:
+For the record, so they are not raised twice.
+
+Between `6.5.0-b48c86279338` and `6.5.0-2b6429ad4b7d` the folders of the **Type** view were renamed back to
+the Editor's own names by `916f5bacf8` (EPBDS-16654). The tables API still answers the same `kind` values —
+only the label the tree draws changed:
+
+| `kind` the server answers | Folder in the JSF tree (≤ 6.4.0) | `6.5.0-b48c86279338` | `6.5.0-2b6429ad4b7d` |
+|---|---|---|---|
+| `Rules` | `Decision` | `Rules` | `Decision` |
+| `Environment` | `Configuration` | `Environment` | `Configuration` |
+| `Datatype` with `tableType = Vocabulary` | `Vocabulary` | filed under `Datatype` | `Vocabulary` |
+
+The labels live in one place on the test side —
+`domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders` — so the next rename is one
+edit. Mind that `"Rules"` also names an Excel sheet in several fixtures and a node of the compare dialog's
+workbook tree; those are not this folder and must not follow it.
+
+The view names were renamed too, and were not renamed back:
 
 | JSF tree (≤ 6.4.0) | React tree (6.5.0-SNAPSHOT) |
 |---|---|
-| `Decision` | `Rules` |
-| `Configuration` | `Environment` |
 | `By Excel Sheet`, `By Type`, `By Category…` (view names in the tree) | `Excel Sheet`, `Type`, `Category…` |
 
-The tests were updated to the new names. Note that the *user settings* still offer the old wording
-(`By Excel Sheet` and friends come from the server-side tree profiles), so the same view is called two
-different things depending on the screen — worth tidying, but it breaks nothing.
+Note that the *user settings* still offer the old wording (`By Excel Sheet` and friends come from the
+server-side tree profiles), so the same view is called two different things depending on the screen — worth
+tidying, but it breaks nothing.
 
 ---
 

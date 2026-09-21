@@ -14,6 +14,7 @@ import org.testng.annotations.Test;
 import tests.BaseTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.DECISION;
 
 public class TestCompareSelectedVersions extends BaseTest {
 
@@ -30,8 +31,8 @@ public class TestCompareSelectedVersions extends BaseTest {
 
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Rules")
-                .selectItemInFolder("Rules", "Hello");
+                .expandFolderInTree(DECISION)
+                .selectItemInFolder(DECISION, "Hello");
 
         TableComponent table = editorPage.getCenterTable();
         table.editCell(8, 2, "5");

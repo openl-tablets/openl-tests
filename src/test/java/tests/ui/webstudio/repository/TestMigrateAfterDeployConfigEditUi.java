@@ -2,7 +2,6 @@ package tests.ui.webstudio.repository;
 
 import configuration.annotations.AppContainerConfig;
 import configuration.annotations.Description;
-import configuration.annotations.KnownIssue;
 import configuration.annotations.TestCaseId;
 import configuration.appcontainer.AppContainerStartParameters;
 import domain.serviceclasses.constants.User;
@@ -21,10 +20,8 @@ public class TestMigrateAfterDeployConfigEditUi extends BaseTest {
     @Test
     @TestCaseId("EPBDS-16657")
     @Description("The deploy configuration written through the studio is written in the form the studio asks "
-            + "for, so it is not offered to be migrated afterwards. Fails on EPBDS-16657: Migrate is offered "
-            + "again after every edit of the deploy configuration.")
+            + "for, so Migrate is not offered afterwards, which is the fix of EPBDS-16657 this test guards.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
-    @KnownIssue("EPBDS-16657")
     public void testMigrateIsNotOfferedAgainAfterEditingTheDeployConfig() {
         String projectName = WorkflowService.loginCreateProjectFromTemplate(User.ADMIN, "Sample Project");
         RepositoryPage repositoryPage = new EditorPage().getTabSwitcherComponent()

@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.DECISION;
+import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.CONFIGURATION;
 
 public class TestRestrictionsErrorMessagesForProperties extends BaseTest {
 
@@ -71,21 +73,21 @@ public class TestRestrictionsErrorMessagesForProperties extends BaseTest {
     private Map<List<String>, String[]> getTableTypeWithErrorMessagesMap() {
         Map<List<String>, String[]> testData = new HashMap<>();
 
-        testData.put(Arrays.asList("Rules", "CarPrice"), new String[]{
+        testData.put(Arrays.asList(DECISION, "CarPrice"), new String[]{
                 "Property 'autoType' cannot be defined in 'Decision' table",
                 "Property 'datatypePackage' cannot be defined in 'Decision' table",
                 "Property 'scope' cannot be defined in 'Decision' table",
                 "Property 'precision' cannot be defined in 'Decision' table"
         });
 
-        testData.put(Arrays.asList("Rules", "DriverPremium3"), new String[]{
+        testData.put(Arrays.asList(DECISION, "DriverPremium3"), new String[]{
                 "Property 'autoType' cannot be defined in 'Decision' table",
                 "Property 'datatypePackage' cannot be defined in 'Decision' table",
                 "Property 'scope' cannot be defined in 'Decision' table",
                 "Property 'precision' cannot be defined in 'Decision' table"
         });
 
-        testData.put(Arrays.asList("Rules", "DriverPremium4"), new String[]{
+        testData.put(Arrays.asList(DECISION, "DriverPremium4"), new String[]{
                 "Property 'autoType' cannot be defined in 'Decision' table",
                 "Property 'datatypePackage' cannot be defined in 'Decision' table",
                 "Property 'scope' cannot be defined in 'Decision' table",
@@ -177,7 +179,7 @@ public class TestRestrictionsErrorMessagesForProperties extends BaseTest {
                 "Property 'autoType' cannot be defined in 'Method' table"
         });
 
-        testData.put(Arrays.asList("Environment", "Environment"), new String[]{
+        testData.put(Arrays.asList(CONFIGURATION, "Environment"), new String[]{
                 "Property 'validateDT' cannot be defined in 'Environment' table",
                 "Property 'failOnMiss' cannot be defined in 'Environment' table",
                 "Property 'scope' cannot be defined in 'Environment' table",

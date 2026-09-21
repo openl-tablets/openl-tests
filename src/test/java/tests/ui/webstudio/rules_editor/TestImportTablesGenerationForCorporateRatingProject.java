@@ -22,6 +22,7 @@ import tests.BaseTest;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.CONFIGURATION;
 
 public class TestImportTablesGenerationForCorporateRatingProject extends BaseTest {
 
@@ -45,8 +46,6 @@ public class TestImportTablesGenerationForCorporateRatingProject extends BaseTes
         editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName);
 
-
-
         ImportOpenApiDialogComponent importDialog = editorPage.openImportOpenApiDialog();
         importDialog.waitForFilePathField();
         importDialog.setOpenApiFilePath(OPENAPI_FILE);
@@ -66,7 +65,6 @@ public class TestImportTablesGenerationForCorporateRatingProject extends BaseTes
         editorPage.waitUntilSpinnerLoaded();
         editorPage.getEditorToolbarPanelComponent().navigateToProjectRoot(projectName);
 
-        // Step 14.1: verify module list
         List<String> modules = editorPage.getEditorLeftProjectModuleSelectorComponent().getAllModuleNames(projectName);
         assertThat(modules).as("Models module should be created").contains("Models");
         assertThat(modules).as("Corporate Rating should still be present").contains("Corporate Rating");
@@ -77,19 +75,17 @@ public class TestImportTablesGenerationForCorporateRatingProject extends BaseTes
         assertThat(editorPage.getOpenApiPropertyValue("Services module")).isEqualTo("Algorithms");
         assertThat(editorPage.getOpenApiPropertyValue("Data types module")).isEqualTo("Models");
 
-        // Verify Algorithms module content and compilation
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Algorithms");
         editorPage.getProblemsPanelComponent().waitForCompilationToComplete();
         editorPage.getEditorLeftRulesTreeComponent().setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE);
 
         assertThat(editorPage.getEditorLeftRulesTreeComponent().isFolderExistsInTree("Spreadsheet"))
                 .as("Algorithms should contain Spreadsheet tables").isTrue();
-        assertThat(editorPage.getEditorLeftRulesTreeComponent().isFolderExistsInTree("Environment"))
+        assertThat(editorPage.getEditorLeftRulesTreeComponent().isFolderExistsInTree(CONFIGURATION))
                 .as("Algorithms should contain Configuration tables").isTrue();
     }
 
     private void uploadFileToProject(RepositoryPage repositoryPage, String projectName, String fileName) {
-        // React Files tab: upload through the project's own screen, then commit from the projects list.
         repositoryPage.openProjectsList().openProjectDetail(projectName)
                 .uploadFileAs(TestDataUtil.getFilePathFromResources(fileName), fileName);
         repositoryPage.openProjectsList().saveProject(projectName, "Uploaded " + fileName);

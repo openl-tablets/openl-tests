@@ -17,6 +17,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import domain.ui.webstudio.components.editortabcomponents.toolbar.IRunMenu;
+import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.DECISION;
 
 public class TestSimpleLookupSimpleRules extends BaseTest {
 
@@ -37,8 +38,8 @@ public class TestSimpleLookupSimpleRules extends BaseTest {
         editorPage.getEditorLeftProjectModuleSelectorComponent()
                 .selectModule(projectName, MODULE_NAME);
         rulesTree.setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Rules")
-                .selectItemInFolder("Rules", "SimpleREx1");
+                .expandFolderInTree(DECISION)
+                .selectItemInFolder(DECISION, "SimpleREx1");
 
         TableComponent table = editorPage.getCenterTable();
         assertThat(table.getColumn(1)).isEqualTo(List.of(
@@ -50,8 +51,8 @@ public class TestSimpleLookupSimpleRules extends BaseTest {
         editorPage.getProblemsPanelComponent().checkNoProblems();
 
         editorPage.getEditorToolbarPanelComponent().removeCurrentTable();
-        rulesTree.expandFolderInTree("Rules")
-                .checkRulesTableAbsent("Rules", "SimpleREx1");
+        rulesTree.expandFolderInTree(DECISION)
+                .checkRulesTableAbsent(DECISION, "SimpleREx1");
 
         editorPage.getEditorToolbarPanelComponent().clickCreateTable();
         CreateTableDialogComponent createTableDialog = editorPage.getCreateTableDialogComponent();
@@ -71,7 +72,7 @@ public class TestSimpleLookupSimpleRules extends BaseTest {
         assertThat(editorPage.getTestResultValidationComponent().getTestResult(1))
                 .isEqualTo(List.of("20", "\"female\"", "0.2"));
 
-        rulesTree.selectItemInFolder("Rules", "SimpleREx1");
+        rulesTree.selectItemInFolder(DECISION, "SimpleREx1");
         table.doubleClickCell(2, 2);
         editorPage.getEditorTableActionsPanelComponent().clickInsertColumnBefore();
         table.editCell(2, 2, "Status");
@@ -92,7 +93,7 @@ public class TestSimpleLookupSimpleRules extends BaseTest {
         editorPage.getEditorToolbarPanelComponent().copyTableAsBusinessDimension("Countries", "Australia");
         editorPage.waitUntilSpinnerLoaded();
         assertThat(rulesTree.getSelectedItemText()).isEqualTo("SimpleREx1 [country=AU]");
-        rulesTree.checkRulesTablePresent("Rules", "SimpleREx1");
+        rulesTree.checkRulesTablePresent(DECISION, "SimpleREx1");
         assertThat(table.getColumn(1)).isEqualTo(List.of(
                 "SimpleRules Double SimpleREx1 (Integer age, Marital_Status Status, Gender gender)",
                 "properties", "age", "18-30", "18-30", "31-60"));
@@ -100,7 +101,7 @@ public class TestSimpleLookupSimpleRules extends BaseTest {
         assertThat(table.getColumn(3)).isEqualTo(List.of("AU", "gender", "male", "female", "male"));
         assertThat(table.getColumn(4)).containsAll(List.of("Output", "0.1", "0.2", "0.3"));
 
-        rulesTree.selectItemInFolder("Rules", "SimpleLEx2");
+        rulesTree.selectItemInFolder(DECISION, "SimpleLEx2");
         editorPage.getProblemsPanelComponent().checkNoProblems();
         assertThat(normalizeNonBreakingSpaces(table.getColumn(1))).isEqualTo(List.of(
                 "SimpleLookup Double SimpleLEx2 (Gender gender, Marital_Status  status)",
@@ -112,15 +113,13 @@ public class TestSimpleLookupSimpleRules extends BaseTest {
         assertThat(editorPage.getTestResultValidationComponent().getTestResult(1))
                 .isEqualTo(List.of("\"female\"", "\"Single\"", "350"));
 
-        rulesTree.selectItemInFolder("Rules", "SimpleLEx2");
+        rulesTree.selectItemInFolder(DECISION, "SimpleLEx2");
         runSimpleLookup(editorPage, null, "Married");
         assertThat(editorPage.getTestResultValidationComponent().getTestResult(1))
                 .isEqualTo(List.of("null", "\"Married\"", "500"));
 
-        rulesTree.selectItemInFolder("Rules", "SimpleLEx2");
+        rulesTree.selectItemInFolder(DECISION, "SimpleLEx2");
         table.doubleClickCell(4, 1);
-        // The editor only adds a row under the one in hand now (see KNOWN-ISSUES.md, issue 6), so the new
-        // row is written from the row above the one this scenario used to insert before.
         editorPage.getEditorTableActionsPanelComponent().clickInsertRowAfter();
         table.editCell(5, 1, "male");
         table.editCell(5, 2, "700");

@@ -21,6 +21,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.DECISION;
 
 public class TestMigratedMethodFilterReloadUi extends BaseTest {
 
@@ -28,8 +29,6 @@ public class TestMigratedMethodFilterReloadUi extends BaseTest {
     private static final String MODULE_NAME = "Main";
     private static final String TABLE_NAME = "Hello";
     private static final int RELOAD_SETTLE_TIMEOUT_MS = 30000;
-    // A module's own filter is written the way the old descriptors wrote it: a regexp over the whole
-    // signature, which is what the migration lifts to the project as a glob over the method name.
     private static final String INCLUDED_METHODS = ".+ helloWorld\\(.+\\)";
     private static final String EXCLUDED_METHODS = ".+ internalOnly\\(.+\\)";
 
@@ -55,8 +54,6 @@ public class TestMigratedMethodFilterReloadUi extends BaseTest {
                 .as("The card should show the method filter the module declares")
                 .contains("helloWorld").contains("internalOnly");
 
-        // The filter of a module is lifted to the project by the same migration the card offers for the
-        // descriptor, and it is the reload after that migration this scenario is about.
         assertThat(card.isOverviewMigrateOffered())
                 .as("The card should offer to migrate while a module still carries a filter of its own")
                 .isTrue();
@@ -69,8 +66,8 @@ public class TestMigratedMethodFilterReloadUi extends BaseTest {
         editor.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, MODULE_NAME);
         editor.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Rules")
-                .selectItemInFolder("Rules", TABLE_NAME);
+                .expandFolderInTree(DECISION)
+                .selectItemInFolder(DECISION, TABLE_NAME);
 
         editor.getEditorToolbarPanelComponent().clickProjectRefresh();
 
@@ -94,10 +91,6 @@ public class TestMigratedMethodFilterReloadUi extends BaseTest {
                 .isTrue();
     }
 
-    /**
-     * The descriptor of the project with a method filter written into the module it declares. The project
-     * name is what the descriptor is refused without, so it is written in as the project was created.
-     */
     private static String descriptorDeclaringAMethodFilter(String projectName) throws IOException {
         String descriptor = "<project>\n"
                 + "    <name>" + projectName + "</name>\n"

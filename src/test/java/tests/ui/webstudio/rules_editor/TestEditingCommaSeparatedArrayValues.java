@@ -19,6 +19,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.DECISION;
 
 public class TestEditingCommaSeparatedArrayValues extends BaseTest {
 
@@ -72,7 +73,6 @@ public class TestEditingCommaSeparatedArrayValues extends BaseTest {
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, DDL_MODULE);
         rulesTree.setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE);
 
-        // 1.1-1.2 — open Data/DataDDL, capture cell content, verify multiselect popup state
         rulesTree.expandFolderInTree("Data").selectItemInFolder("Data", "DataDDL");
         TableComponent table = editorPage.getCenterTable();
         String cellContent = table.getCellText(4, 1);
@@ -83,87 +83,63 @@ public class TestEditingCommaSeparatedArrayValues extends BaseTest {
         multiselect.verifyChosenValues(Collections.singletonList(cellContent));
         multiselect.verifyNonChosenValues("0.001", "500", "1");
 
-        // 1.3 — Done with no changes preserves original cell content
         multiselect.clickActionButton("Done");
         verifyEditTableCellContent(table, 4, 1, cellContent);
 
-        // 1.4 — Select All checks all 4 values
         table.doubleClickCell(4, 1);
         multiselect.setAllValuesChosen(true);
         multiselect.verifyChosenValues(Arrays.asList("0.001", "-333", "500", "1"));
 
-        // 1.5 — Done + save: cell shows comma-separated joined value
         verifyValuesAfterDoneAndAfterSave(editorPage, "0.001,-333,500,1", 4, 1);
 
-        // 1.6 — Deselect All unchecks all values
         table.doubleClickCell(4, 1);
         multiselect.setAllValuesChosen(false);
         multiselect.verifyNonChosenValues("0.001", "-333", "500", "1");
 
-        // 1.7 — Done + save with no values selected leaves a single space cell
         verifyValuesAfterDoneAndAfterSave(editorPage, " ", 4, 1);
 
-        // 1.8 — choose only "1"
         table.doubleClickCell(4, 1);
         multiselect.selectValues("1");
         verifyValuesAfterDoneAndAfterSave(editorPage, "1", 4, 1);
 
-        // 1.9 — Type original value as text directly into the cell editor input, then re-open
-        // the multiselect and verify it reflects the original. Legacy used a "Formula Editor"
-        // right-click toggle for this; the toggle no longer exists in current OpenL Studio
-        // (Data Table cells have no oncontextmenu handler), but text entry via the cell's
-        // floating editor input (`_t_te_editorWrapper`) is the equivalent path and `editCell`
-        // already drives it. Legacy `editCell` saved automatically; our framework requires an
-        // explicit save before navigating away to avoid the "Discard changes" modal.
-        // A cell of a list holds what was picked from the list, and the list is all it offers — there is no
-        // box to write the value into as text, so the original value is written back by picking it.
         table.doubleClickCell(4, 1);
         multiselect.clearAllValues();
         multiselect.selectValues(cellContent);
         multiselect.clickActionButton("Done");
         editorPage.getEditorTableActionsPanelComponent().clickSaveChanges();
         verifyEditTableCellContent(table, 4, 1, cellContent);
-        // Done from a no-op popup state still flags the table as modified — save again so the
-        // following navigation does not trigger the "Discard changes" prompt.
         editorPage.getEditorTableActionsPanelComponent().clickSaveChanges();
 
-        // 2.1-2.2 — Decision/SimpleLookupTable: 6 chosen US states; add Florida → AK,CT,DC,DE,GA,WY,FL
-        chooseTableAndVerifyCell(editorPage, table, multiselect, "Rules", "SimpleLookupTable",
+        chooseTableAndVerifyCell(editorPage, table, multiselect, DECISION, "SimpleLookupTable",
                 Arrays.asList("Alaska", "Connecticut", "District of Columbia", "Delaware", "Georgia", "Wyoming"));
         multiselect.selectValues("Florida");
         verifyValuesAfterDoneAndAfterSave(editorPage, "AK,CT,DC,DE,GA,WY,FL", 2, 3);
 
-        // 2.3-2.4 — Decision/SimpleRulesTable: Alaska, Alabama; add Florida → AL,AK,FL
-        chooseTableAndVerifyCell(editorPage, table, multiselect, "Rules", "SimpleRulesTable",
+        chooseTableAndVerifyCell(editorPage, table, multiselect, DECISION, "SimpleRulesTable",
                 Arrays.asList("Alaska", "Alabama"));
         multiselect.selectValues("Florida");
         verifyValuesAfterDoneAndAfterSave(editorPage, "AL,AK,FL", 2, 3);
 
-        // 2.5-2.6 — Decision/SmartLookup1: Americas; add European Union → NCSA,EU
-        chooseTableAndVerifyCell(editorPage, table, multiselect, "Rules", "SmartLookup1",
+        chooseTableAndVerifyCell(editorPage, table, multiselect, DECISION, "SmartLookup1",
                 Collections.singletonList("Americas"));
         multiselect.selectValues("European Union");
         verifyValuesAfterDoneAndAfterSave(editorPage, "NCSA,EU", 2, 3);
 
-        // 2.7-2.8 — Decision/SmartRules1: Île-du-Prince-Édouard; add Ontario → PE,ON
-        chooseTableAndVerifyCell(editorPage, table, multiselect, "Rules", "SmartRules1",
+        chooseTableAndVerifyCell(editorPage, table, multiselect, DECISION, "SmartRules1",
                 Collections.singletonList("Île-du-Prince-Édouard"));
         multiselect.selectValues("Ontario");
         verifyValuesAfterDoneAndAfterSave(editorPage, "PE,ON", 2, 3);
 
-        // 2.9-2.10 — Spreadsheet/SpreadsheetTable: Russia/Saudi Arabia; add Philippines → RUB,SAR,PHP
         chooseTableAndVerifyCell(editorPage, table, multiselect, "Spreadsheet", "SpreadsheetTable",
                 Arrays.asList("Russia, Rubles", "Saudi Arabia, Riyals"));
         multiselect.selectValues("Philippines, Pesos");
         verifyValuesAfterDoneAndAfterSave(editorPage, "RUB,SAR,PHP", 2, 3);
 
-        // 2.11-2.12 — TBasic/TBasicTable: Alabama, Utah; add Colorado → AL,UT,CO
         chooseTableAndVerifyCell(editorPage, table, multiselect, "TBasic", "TBasicTable",
                 Arrays.asList("Alabama", "Utah"));
         multiselect.selectValues("Colorado");
         verifyValuesAfterDoneAndAfterSave(editorPage, "AL,UT,CO", 2, 3);
 
-        // 2.13-2.14 — Method/MethodTable: Americas, European Union; add APJ → NCSA,EU,APJ
         chooseTableAndVerifyCell(editorPage, table, multiselect, "Method", "MethodTable",
                 Arrays.asList("Americas", "European Union"));
         multiselect.selectValues("Asia Pacific; Japan");
@@ -186,8 +162,6 @@ public class TestEditingCommaSeparatedArrayValues extends BaseTest {
     private void verifyValuesAfterDoneAndAfterSave(EditorPage editorPage, String expectedValue, int row, int column) {
         TableComponent table = editorPage.getCenterTable();
         editorPage.getMultiselectArrayEditorComponent().clickActionButton("Done");
-        // Click any other cell — this commits the multiselect change to the underlying cell value.
-        // Anchor cell choice mirrors doubleClickCell's: a different row/column from the target.
         int anchorRow = row == 1 ? 2 : 1;
         int anchorCol = column == 1 ? 2 : 1;
         table.clickCell(anchorRow, anchorCol);

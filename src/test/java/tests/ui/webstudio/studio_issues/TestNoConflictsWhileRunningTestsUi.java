@@ -4,7 +4,6 @@ import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Response;
 import configuration.annotations.AppContainerConfig;
 import configuration.annotations.Description;
-import configuration.annotations.KnownIssue;
 import configuration.annotations.TestCaseId;
 import configuration.appcontainer.AppContainerStartParameters;
 import configuration.driver.DriverPool;
@@ -28,11 +27,9 @@ public class TestNoConflictsWhileRunningTestsUi extends BaseTest {
 
     @Test
     @TestCaseId("EPBDS-16636")
-    @Description("Running the tests of a module asks the server for the results without being refused. Fails "
-            + "on EPBDS-16636: the reading of the results answers 409 until the run has ended, and every "
-            + "refusal is logged in the browser as an error.")
+    @Description("Running the tests of a module asks the server for the results without being refused and "
+            + "without a 409 reaching the browser log, which is the fix of EPBDS-16636 this test guards.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
-    @KnownIssue("EPBDS-16636")
     public void testRunningTestsIsNotRefusedWithConflict() {
         String projectName = WorkflowService.loginCreateProjectFromTemplate(User.ADMIN, TEMPLATE);
         EditorPage editorPage = new EditorPage();

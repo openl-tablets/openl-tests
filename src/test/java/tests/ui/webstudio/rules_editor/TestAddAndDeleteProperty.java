@@ -24,6 +24,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.DECISION;
 
 public class TestAddAndDeleteProperty extends BaseTest {
 
@@ -45,8 +46,8 @@ public class TestAddAndDeleteProperty extends BaseTest {
                 .selectModule(PROJECT_NAME, PROJECT_NAME);
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Rules")
-                .selectItemInFolder("Rules", "MyRules2");
+                .expandFolderInTree(DECISION)
+                .selectItemInFolder(DECISION, "MyRules2");
 
         addAndCheckProperty(editorPage, "Category", "category", "MyCategory");
 
@@ -77,7 +78,7 @@ public class TestAddAndDeleteProperty extends BaseTest {
         addAndCheckDropdownProperty(editorPage, "Empty Result Processing", "emptyResultProcessing", "Return");
 
         editorPage.getEditorLeftRulesTreeComponent()
-                .selectItemInFolder("Rules", "MyRules1");
+                .selectItemInFolder(DECISION, "MyRules1");
 
         deletePropertyAndCheck(editorPage, "Category", "category");
         deletePropertyAndCheck(editorPage, "Description", "description");
@@ -104,7 +105,6 @@ public class TestAddAndDeleteProperty extends BaseTest {
         deletePropertyAndCheck(editorPage, "Nature", "nature");
         deletePropertyAndCheck(editorPage, "Empty Result Processing", "emptyResultProcessing");
     }
-
 
     private EditorPage loginAndCreateProject() {
         LoginService loginService = new LoginService(DriverPool.getPage());

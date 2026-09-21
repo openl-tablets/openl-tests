@@ -23,6 +23,7 @@ import tests.BaseTest;
 import domain.ui.webstudio.components.common.CreateNewProjectComponent;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.DECISION;
 
 public class TestSwitchModuleViaBreadcrumbsNavigation extends BaseTest {
 
@@ -55,7 +56,6 @@ public class TestSwitchModuleViaBreadcrumbsNavigation extends BaseTest {
                 .as("No errors should be present after switching to module_AZ")
                 .isFalse();
 
-        // 2 + 3 + 4: Switch through multiple modules via breadcrumbs
         editorPage.getEditorToolbarPanelComponent().selectProjectBreadcrumbs(NAME_PROJECT_FIRST);
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(NAME_PROJECT_FIRST, "module_AR");
         editorPage.getEditorToolbarPanelComponent().selectBreadcrumbModule(NAME_PROJECT_FIRST, "module_AZ");
@@ -74,8 +74,8 @@ public class TestSwitchModuleViaBreadcrumbsNavigation extends BaseTest {
         long startTime = System.currentTimeMillis();
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Rules")
-                .selectItemInFolder("Rules", "SmartRule1");
+                .expandFolderInTree(DECISION)
+                .selectItemInFolder(DECISION, "SmartRule1");
         long elapsedTime = System.currentTimeMillis() - startTime;
         assertThat(elapsedTime)
                 .as("Expanding and selecting tree item should fit into the framework's default wait")
@@ -101,13 +101,10 @@ public class TestSwitchModuleViaBreadcrumbsNavigation extends BaseTest {
         editorPage.getEditorLeftProjectModuleSelectorComponent()
                 .selectModule(projectName, "AutoPolicyTests");
 
-        // Open Table Dependencies from More menu
         editorPage.getEditorToolbarPanelComponent().clickMore().clickTableDependencies();
 
-        // Click on a table that belongs to a DIFFERENT module (AutoPolicyCalculation)
         editorPage.clickTableInDependenciesView("DetermineDriverPremium");
 
-        // EPBDS-12366: Breadcrumbs must show the correct module (AutoPolicyCalculation), not the previously opened one (AutoPolicyTests)
         String breadcrumbModule = editorPage.getEditorToolbarPanelComponent().getBreadcrumbsModuleName().trim();
         assertThat(breadcrumbModule)
                 .as("EPBDS-12366: Breadcrumb module must reflect the actual module of the opened table, not the previously selected module")

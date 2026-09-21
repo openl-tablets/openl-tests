@@ -14,6 +14,7 @@ import org.testng.annotations.Test;
 import tests.BaseTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.DECISION;
 
 public class TestDisplayChangedRowsTableStructure extends BaseTest {
 
@@ -30,8 +31,8 @@ public class TestDisplayChangedRowsTableStructure extends BaseTest {
                 .selectModule(projectName, "Bank Rating");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Rules")
-                .selectItemInFolder("Rules", "BankLimitIndex");
+                .expandFolderInTree(DECISION)
+                .selectItemInFolder(DECISION, "BankLimitIndex");
 
         editorPage.getEditorToolbarPanelComponent().copyTableAsNew("newTable", "");
         editorPage.waitUntilSpinnerLoaded();
@@ -79,8 +80,8 @@ public class TestDisplayChangedRowsTableStructure extends BaseTest {
                 .selectModule(projectName, "Main");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Rules")
-                .selectItemInFolder("Rules", "Hello");
+                .expandFolderInTree(DECISION)
+                .selectItemInFolder(DECISION, "Hello");
 
         editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
         editorPage.getCenterTable().editCell(2, 1, "changedValue");
@@ -146,14 +147,12 @@ public class TestDisplayChangedRowsTableStructure extends BaseTest {
                 .selectModule(projectName, "Main");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Rules")
-                .selectItemInFolder("Rules", "Hello");
+                .expandFolderInTree(DECISION)
+                .selectItemInFolder(DECISION, "Hello");
 
         editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
         editorPage.getCenterTable().clickCell(2, 2);
         editorPage.getEditorTableActionsPanelComponent().clickInsertColumnBefore();
-        // A column that was laid down and left empty is not kept: the screen refuses to keep a table with a
-        // blank line in it, so the new column is written in before the table is kept.
         editorPage.getCenterTable().editCell(2, 2, "addedValue");
         editorPage.getEditorTableActionsPanelComponent().clickSaveChanges();
 
@@ -169,8 +168,6 @@ public class TestDisplayChangedRowsTableStructure extends BaseTest {
         compareDialog.openTreeNode("Rules");
         compareDialog.clickTreeNode("Rules String Hello (Integer hour)");
 
-        // The table is nine rows; the heading is one cell banked across it, so it reads the same on both
-        // sides and the eight rows under it are the ones that differ.
         compareDialog.setShowEqualRows(false);
         assertThat(compareDialog.getNumberOfRows(1))
                 .as("Left fragment (original): the eight rows that differ")

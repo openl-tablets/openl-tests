@@ -13,8 +13,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.testng.annotations.Test;
 import tests.BaseTest;
 
-
 import static org.assertj.core.api.Assertions.assertThat;
+import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.DECISION;
 
 public class TestAddDeleteRowWithoutSaving extends BaseTest {
 
@@ -29,8 +29,8 @@ public class TestAddDeleteRowWithoutSaving extends BaseTest {
                 .selectModule(projectName, "Tutorial6 - Intro to Spreadsheet Tables");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Rules")
-                .selectItemInFolder("Rules", "LossFreeDiscount");
+                .expandFolderInTree(DECISION)
+                .selectItemInFolder(DECISION, "LossFreeDiscount");
 
         editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
         TableComponent table = editorPage.getCenterTable();
@@ -38,13 +38,11 @@ public class TestAddDeleteRowWithoutSaving extends BaseTest {
         editorPage.getEditorTableActionsPanelComponent().clickInsertRowAfter();
         table.editCell(6, 1, "444", true);
 
-        // Undo — verify the edit is reverted
         editorPage.getEditorTableActionsPanelComponent().undoClickChanges();
         assertThat(StringUtils.normalizeSpace(table.getCellText(6, 1)))
                 .as("Cell should be empty after undo")
                 .isEmpty();
 
-        // Redo — verify the edit is restored
         editorPage.getEditorTableActionsPanelComponent().redoClickChanges();
         assertThat(table.getCellText(6, 1))
                 .as("Cell should contain '444' after redo")
@@ -52,8 +50,6 @@ public class TestAddDeleteRowWithoutSaving extends BaseTest {
 
         editorPage.getEditorTableActionsPanelComponent().clickRemoveRow();
         assertThat(StringUtils.normalizeSpace(table.getCellText(6, 1))).isEmpty();
-        // The cell is formatted as a percentage in the workbook; the screen draws the number it holds
-        // (KNOWN-ISSUES.md #17).
         assertThat(table.getCellText(6, 2)).isEqualTo("0");
         editorPage.getEditorTableActionsPanelComponent().clickSaveChanges();
         assertThat(StringUtils.normalizeSpace(table.getCellText(6, 1))).isEmpty();

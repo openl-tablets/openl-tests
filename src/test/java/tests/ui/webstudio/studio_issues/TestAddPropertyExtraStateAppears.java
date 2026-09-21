@@ -13,8 +13,8 @@ import helpers.utils.WaitUtil;
 import org.testng.annotations.Test;
 import tests.BaseTest;
 
-
 import static org.assertj.core.api.Assertions.assertThat;
+import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.DECISION;
 
 public class TestAddPropertyExtraStateAppears extends BaseTest {
 
@@ -28,11 +28,8 @@ public class TestAddPropertyExtraStateAppears extends BaseTest {
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Test Project-CW-20200101-20200101");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Rules")
-                .selectItemInFolder("Rules", "MyDatatype");
-        // The property added is Category rather than Description: Description is one of the four the panel
-        // can no longer offer (KNOWN-ISSUES.md #7). What this test guards is that only the property added is
-        // written, which any property drives.
+                .expandFolderInTree(DECISION)
+                .selectItemInFolder(DECISION, "MyDatatype");
         editorPage.getRightTableDetailsComponent()
                 .addProperty(RightTableDetailsComponent.DropdownOptions.CATEGORY.getValue())
                 .setProperty(RightTableDetailsComponent.DropdownOptions.CATEGORY.getValue(), "Category details")

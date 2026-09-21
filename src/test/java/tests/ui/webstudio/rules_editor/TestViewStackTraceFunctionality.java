@@ -15,14 +15,15 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.DECISION;
 
 public class TestViewStackTraceFunctionality extends BaseTest {
 
     private static final List<List<String>> CATALOG_AND_TABLE_NAMES = Arrays.asList(
-            Arrays.asList("Rules", "SimpleLookupTable"),
-            Arrays.asList("Rules", "SimpleRulesTable"),
-            Arrays.asList("Rules", "SmartLookup1"),
-            Arrays.asList("Rules", "SmartRules1"),
+            Arrays.asList(DECISION, "SimpleLookupTable"),
+            Arrays.asList(DECISION, "SimpleRulesTable"),
+            Arrays.asList(DECISION, "SmartLookup1"),
+            Arrays.asList(DECISION, "SmartRules1"),
             Arrays.asList("Spreadsheet", "SpreadsheetTable"),
             Arrays.asList("TBasic", "TBasicTable"),
             Arrays.asList("Column Match", "ColumnMatchTable"),
@@ -55,28 +56,24 @@ public class TestViewStackTraceFunctionality extends BaseTest {
                 .expandFolderInTree(catalogName)
                 .selectItemInFolder(catalogName, tableName);
 
-        // Show problem description (stack trace) and verify it's visible
         editorPage.getEditorMainContentProblemsPanelComponent()
                 .expandProblemDescription(0);
         assertThat(editorPage.getEditorMainContentProblemsPanelComponent().isProblemDescriptionVisible(0))
                 .as("Problem description should be visible after expanding for %s/%s", catalogName, tableName)
                 .isTrue();
 
-        // Hide problem description and verify it's hidden
         editorPage.getEditorMainContentProblemsPanelComponent()
                 .hideProblemDescription(0);
         assertThat(editorPage.getEditorMainContentProblemsPanelComponent().isProblemDescriptionVisible(0))
                 .as("Problem description should be hidden after hiding for %s/%s", catalogName, tableName)
                 .isFalse();
 
-        // Show again
         editorPage.getEditorMainContentProblemsPanelComponent()
                 .expandProblemDescription(0);
         assertThat(editorPage.getEditorMainContentProblemsPanelComponent().isProblemDescriptionVisible(0))
                 .as("Problem description should be visible again after expanding for %s/%s", catalogName, tableName)
                 .isTrue();
 
-        // Hide again and verify it's hidden
         editorPage.getEditorMainContentProblemsPanelComponent()
                 .hideProblemDescription(0);
         assertThat(editorPage.getEditorMainContentProblemsPanelComponent().isProblemDescriptionVisible(0))

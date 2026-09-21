@@ -12,6 +12,7 @@ import org.testng.annotations.Test;
 import tests.BaseTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.DECISION;
 
 public class TestIncorrectTableNameWithLineBreak extends BaseTest {
 
@@ -29,12 +30,8 @@ public class TestIncorrectTableNameWithLineBreak extends BaseTest {
 
         EditorLeftRulesTreeComponent tree = editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Rules");
+                .expandFolderInTree(DECISION);
 
-        // EPBDS-13819: The table title is "SmartRules String FamilyDeductibleConversion (String \nparam)"
-        // with a line break before "param)".
-        // Bug: tree showed "param)" instead of "FamilyDeductibleConversion"
-        // Fix: tree must show "FamilyDeductibleConversion"
         assertThat(tree.isItemExistsInTree("FamilyDeductibleConversion"))
                 .as("EPBDS-13819: Table name should be 'FamilyDeductibleConversion', not a fragment like 'param)'")
                 .isTrue();

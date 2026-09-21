@@ -18,6 +18,7 @@ import org.testng.annotations.Test;
 import tests.BaseTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.DECISION;
 
 public class TestTestButtonAvailable extends BaseTest {
 
@@ -50,19 +51,18 @@ public class TestTestButtonAvailable extends BaseTest {
 
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Rules")
-                .selectItemInFolder("Rules", "AccidentPremium");
+                .expandFolderInTree(DECISION)
+                .selectItemInFolder(DECISION, "AccidentPremium");
         editorPage.getEditorToolbarPanelComponent().runAllTests();
         editorPage.getTestResultValidationComponent().checkAllTablesPassed();
 
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Rules")
-                .selectItemInFolder("Rules", "AccidentPremium");
+                .expandFolderInTree(DECISION)
+                .selectItemInFolder(DECISION, "AccidentPremium");
         DriverPool.getPage().reload();
         editorPage = new EditorPage();
         editorPage.getProblemsPanelComponent().waitForCompilationToComplete();
-        // The number of test tables is drawn as a badge on the button rather than written into its words.
         assertThat(editorPage.getEditorToolbarPanelComponent().getTestCountWhenCounted("3"))
                 .as("The button should read Test and carry the number of test tables")
                 .isEqualTo("3");
@@ -80,7 +80,6 @@ public class TestTestButtonAvailable extends BaseTest {
                 () -> editorPageRef2.getEditorToolbarPanelComponent().isTestButtonVisible(),
                 5000, 500, "Waiting for Test button after full refresh"
         );
-        // The button shows the plain "Test" label until the reloaded module finishes compiling.
         editorPage.getProblemsPanelComponent().waitForCompilationToComplete();
         assertThat(editorPage.getEditorToolbarPanelComponent().getTestCountWhenCounted("3"))
                 .as("The button should read Test and carry the number of test tables after a full refresh")
@@ -94,7 +93,6 @@ public class TestTestButtonAvailable extends BaseTest {
 
         editorPage.getEditorToolbarPanelComponent().selectProjectBreadcrumbs(nameExample3Project);
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(nameExample3Project, "AutoPolicyTests");
-        // A module is the workbook it is written in, so it is copied where the project's files are.
         editorPage.copyModuleWorkbook(nameExample3Project, "AutoPolicyTests.xlsx", "AutoPolicyTests2.xlsx");
 
         editorPage.getEditorToolbarPanelComponent().selectProjectBreadcrumbs(nameExample3Project);
@@ -109,8 +107,6 @@ public class TestTestButtonAvailable extends BaseTest {
         editorPage.getEditorTableActionsPanelComponent().clickSaveChanges();
         editorPage.waitUntilAppIdle();
 
-        // Until every duplicated test is renamed the module stays in error and the editor keeps re-rendering,
-        // which blocks the cell editor. A reload lands on a settled page where the next edit works.
         editorPage.reloadPage();
         editorPage = new EditorPage();
         editorPage.getEditorLeftRulesTreeComponent().selectItemInFolder("Test", "PolicyPremiumTest");
@@ -160,20 +156,15 @@ public class TestTestButtonAvailable extends BaseTest {
         editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(nameExample3Project);
         DriverPool.getPage().goBack();
-        // Going back restores the previous view without rebuilding the projects tree, so its nodes stay
-        // hidden; a reload renders the tree for the state the browser navigated to.
         editorPage = new EditorPage();
         editorPage.reloadPage();
         editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(NAME_PROJECT_MY, "module_KS");
         editorPage.getProblemsPanelComponent().waitForCompilationProgressBarToContain("Loaded", 200000);
     }
-    // Selecting a node loads its table asynchronously; editing a cell before that fails.
     private void waitForTable(EditorPage editorPage) {
         WaitUtil.waitForCondition(() -> editorPage.getCenterTable().isVisible(),
                 TABLE_LOAD_TIMEOUT_MS, 250, "Waiting for the table of the selected node");
-        // Selecting a node triggers a recompile that keeps redrawing the table, so an edit started before the
-        // compilation finishes never finds a stable cell.
         editorPage.waitUntilSpinnerLoaded();
         editorPage.getProblemsPanelComponent().waitForCompilationToComplete();
         editorPage.waitUntilAppIdle();

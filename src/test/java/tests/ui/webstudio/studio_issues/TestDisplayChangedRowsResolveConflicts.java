@@ -15,6 +15,7 @@ import org.testng.annotations.Test;
 import tests.BaseTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.DECISION;
 
 public class TestDisplayChangedRowsResolveConflicts extends BaseTest {
 
@@ -51,8 +52,6 @@ public class TestDisplayChangedRowsResolveConflicts extends BaseTest {
         compareDialog.openTreeNode("Sheet1");
         compareDialog.clickTreeNode("Test BenefitPremium");
 
-        // What differs is counted rather than pointed at by place: hiding the rows the two versions read the
-        // same renumbers everything below them, and a cell covered by a merge is not drawn at all.
         compareDialog.setShowEqualRows(false);
         assertThat(compareDialog.getNumberOfRows(1))
                 .as("Left fragment: only 1 changed row when equal rows hidden")
@@ -98,13 +97,10 @@ public class TestDisplayChangedRowsResolveConflicts extends BaseTest {
                 .selectModule(projectName, "Bank Rating");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Rules")
-                .selectItemInFolder("Rules", "BankLimitIndex");
+                .expandFolderInTree(DECISION)
+                .selectItemInFolder(DECISION, "BankLimitIndex");
 
         editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
-        // A row is laid down after the one the reader is standing on, so the last row is picked and the new
-        // one follows it — a row laid down anywhere else moves every row under it, and then every one of
-        // them differs instead of the added one alone. A blank line is not kept, so the new row is written in.
         TableComponent editedTable = editorPage.getCenterTable();
         int lastRow = editedTable.getRowsCount();
         editedTable.clickCell(lastRow, 1);
@@ -124,8 +120,6 @@ public class TestDisplayChangedRowsResolveConflicts extends BaseTest {
         compareDialog.openTreeNode("Limit");
         compareDialog.clickTreeNode("Rules Double BankLimitIndex (Bank bank, RatingGroup bankRatingGroup)");
 
-        // A row added at the end leaves the rows before it where they were, so the two sides are drawn whole
-        // and the added row is the one the comparison marks — the side it was added to has that row more.
         compareDialog.setShowEqualRows(false);
         int rowsBefore = compareDialog.getNumberOfRows(1);
         int rowsAfterAdding = compareDialog.getNumberOfRows(2);
@@ -168,8 +162,8 @@ public class TestDisplayChangedRowsResolveConflicts extends BaseTest {
                 .selectModule(projectName, "Bank Rating");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Rules")
-                .selectItemInFolder("Rules", "BankLimitIndex");
+                .expandFolderInTree(DECISION)
+                .selectItemInFolder(DECISION, "BankLimitIndex");
 
         editorPage.getEditorToolbarPanelComponent().removeCurrentTable();
         editorPage.waitUntilSpinnerLoaded();

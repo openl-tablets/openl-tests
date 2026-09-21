@@ -11,8 +11,8 @@ import helpers.service.WorkflowService;
 import org.testng.annotations.Test;
 import tests.BaseTest;
 
-
 import static org.assertj.core.api.Assertions.assertThat;
+import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.DECISION;
 
 public class TestAddSingleNumberIntoEmptyCell extends BaseTest {
 
@@ -26,8 +26,8 @@ public class TestAddSingleNumberIntoEmptyCell extends BaseTest {
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Bank Rating");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Rules")
-                .selectItemInFolder("Rules", "BankLimitIndex");
+                .expandFolderInTree(DECISION)
+                .selectItemInFolder(DECISION, "BankLimitIndex");
         editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
         editorPage.getCenterTable().clickCell(10, 1);
         editorPage.getEditorTableActionsPanelComponent().clickInsertRowAfter();

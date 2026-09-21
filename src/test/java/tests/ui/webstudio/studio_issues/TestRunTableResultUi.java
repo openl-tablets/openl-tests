@@ -2,7 +2,6 @@ package tests.ui.webstudio.studio_issues;
 
 import configuration.annotations.AppContainerConfig;
 import configuration.annotations.Description;
-import configuration.annotations.KnownIssue;
 import configuration.annotations.TestCaseId;
 import configuration.appcontainer.AppContainerStartParameters;
 import configuration.driver.DriverPool;
@@ -29,10 +28,9 @@ public class TestRunTableResultUi extends BaseTest {
 
     @Test
     @TestCaseId("EPBDS-16635")
-    @Description("A Run table run from the editor reports what its runs returned. Fails on EPBDS-16635: the "
-            + "window of results is empty.")
+    @Description("A Run table run from the editor reports what its runs returned, which is the fix of "
+            + "EPBDS-16635 this test guards.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
-    @KnownIssue("EPBDS-16635")
     public void testRunTableReportsItsResults() {
         String projectName = StringUtil.generateUniqueName("RunTable");
         EditorPage editorPage = new LoginService(DriverPool.getPage()).login(UserService.getUser(User.ADMIN));

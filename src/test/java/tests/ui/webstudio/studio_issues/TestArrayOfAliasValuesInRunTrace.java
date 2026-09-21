@@ -19,6 +19,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import domain.ui.webstudio.components.editortabcomponents.toolbar.IRunMenu;
 import domain.ui.webstudio.components.editortabcomponents.toolbar.ITraceMenu;
+import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.DECISION;
 
 public class TestArrayOfAliasValuesInRunTrace extends BaseTest {
 
@@ -37,10 +38,10 @@ public class TestArrayOfAliasValuesInRunTrace extends BaseTest {
 
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Rules");
+                .expandFolderInTree(DECISION);
 
         tables.forEach(tableName -> {
-            editorPage.getEditorLeftRulesTreeComponent().selectItemInFolder("Rules", tableName);
+            editorPage.getEditorLeftRulesTreeComponent().selectItemInFolder(DECISION, tableName);
 
             IRunMenu runMenu = editorPage.getEditorToolbarPanelComponent().clickRun();
             runMenu.clickCreateItem()

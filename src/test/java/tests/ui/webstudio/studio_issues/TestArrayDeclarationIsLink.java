@@ -16,6 +16,7 @@ import tests.BaseTest;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.DECISION;
 
 public class TestArrayDeclarationIsLink extends BaseTest {
 
@@ -30,17 +31,14 @@ public class TestArrayDeclarationIsLink extends BaseTest {
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "TestArrayDeclarationIsLink");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Rules")
-                .selectItemInFolder("Rules", "DetermineStatusByCodeRule");
+                .expandFolderInTree(DECISION)
+                .selectItemInFolder(DECISION, "DetermineStatusByCodeRule");
 
-        // A usage named in a cell is something to press, drawn in the colour a link is drawn in and
-        // underlined under the pointer rather than at rest.
         WaitUtil.waitForCondition(() -> editorPage.getCenterTable().isVisible(), 5000, 100, "Waiting for table to be visible...");
         List<WebElement> links = editorPage.createElementList(
                 "xpath=//td//button[starts-with(@data-testid,'cell-usage-')][normalize-space()='Procedure']");
         assertThat(links.size()).as("Should find exactly 12 procedure links").isEqualTo(12);
 
-        // What marks it as a link at rest is the colour it is drawn in; the underline comes under the pointer.
         String plain = editorPage.createElementList("xpath=//td[not(.//button)][normalize-space()!='']")
                 .get(0).getCssValue("color");
         links.forEach(link -> assertThat(link.getCssValue("color"))

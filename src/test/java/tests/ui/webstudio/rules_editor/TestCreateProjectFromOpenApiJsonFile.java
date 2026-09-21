@@ -22,6 +22,7 @@ import tests.BaseTest;
 import java.io.File;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.CONFIGURATION;
 
 public class TestCreateProjectFromOpenApiJsonFile extends BaseTest {
 
@@ -60,9 +61,6 @@ public class TestCreateProjectFromOpenApiJsonFile extends BaseTest {
         editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName);
 
-        // A project made from a specification is checked against it and not written from it again, so the
-        // card names the file it found and the reconciliation it does with it, and names no module to
-        // write into until a generation is asked for (EPBDS-16415).
         assertThat(editorPage.getOpenApiPropertyValue("File"))
                 .as("OpenAPI File property should reflect uploaded file name").isEqualTo("openapi.json");
         assertThat(editorPage.getOpenApiMode())
@@ -76,7 +74,7 @@ public class TestCreateProjectFromOpenApiJsonFile extends BaseTest {
         editorPage.getEditorLeftRulesTreeComponent().setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE);
         assertThat(editorPage.getEditorLeftRulesTreeComponent().isFolderExistsInTree("Spreadsheet"))
                 .as("Algorithms module should have Spreadsheet folder").isTrue();
-        assertThat(editorPage.getEditorLeftRulesTreeComponent().isFolderExistsInTree("Environment"))
+        assertThat(editorPage.getEditorLeftRulesTreeComponent().isFolderExistsInTree(CONFIGURATION))
                 .as("Algorithms module should have Configuration folder").isTrue();
         assertThat(editorPage.getEditorLeftRulesTreeComponent().isFolderExistsInTree("Datatype"))
                 .as("Algorithms module should NOT have Datatype folder").isFalse();
@@ -117,8 +115,6 @@ public class TestCreateProjectFromOpenApiJsonFile extends BaseTest {
                 .contains("<annotationTemplateClassName>org.openl.generated.services.Service</annotationTemplateClassName>");
 
         String rulesXml = ZipUtil.readFileFromZip(exportedZip, "rules.xml");
-        // The two modules are written where the engine looks for them anyway, so the descriptor says nothing
-        // about them and nothing about the generation either; both are found by the standard layout.
         assertThat(rulesXml).as("The descriptor repeats neither module, which the standard layout finds")
                 .doesNotContain("<modules>").doesNotContain("<rules-root");
         assertThat(rulesXml).as("The descriptor holds no generation settings, so later edits are not written over")
@@ -127,8 +123,6 @@ public class TestCreateProjectFromOpenApiJsonFile extends BaseTest {
                 .as("Both generated modules are read all the same")
                 .containsExactlyInAnyOrder("Algorithms", "Models");
 
-        // A module is named after the workbook it reads where the project finds its modules by the standard
-        // layout, so a module is renamed and copied by renaming and copying that workbook on the Files tab.
         editorPage.renameModuleWorkbook(projectName, "Algorithms.xlsx", "Algorithms_test.xlsx");
         editorPage.renameModuleWorkbook(projectName, "Models.xlsx", "Models_test.xlsx");
         assertThat(editorPage.getEditorLeftProjectModuleSelectorComponent().getAllModuleNames(projectName))

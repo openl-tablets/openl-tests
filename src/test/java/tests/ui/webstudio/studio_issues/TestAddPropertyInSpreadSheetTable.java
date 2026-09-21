@@ -1,6 +1,7 @@
 package tests.ui.webstudio.studio_issues;
 
 import configuration.annotations.Description;
+import configuration.annotations.KnownIssue;
 import configuration.annotations.TestCaseId;
 import configuration.annotations.AppContainerConfig;
 import configuration.appcontainer.AppContainerPool;
@@ -14,7 +15,6 @@ import helpers.utils.LogsUtil;
 import org.testng.annotations.Test;
 import tests.BaseTest;
 
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestAddPropertyInSpreadSheetTable extends BaseTest {
@@ -22,6 +22,7 @@ public class TestAddPropertyInSpreadSheetTable extends BaseTest {
     @Test
     @TestCaseId("EPBDS-7578")
     @Description("BUG: Exception appears in log file on adding properties for Spreadsheet")
+    @KnownIssue("EPBDS-16700")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void testAddPropertyInSpreadSheetTable() {
         String projectName = WorkflowService.loginCreateProjectFromExcelFile(User.ADMIN, "TestAddPropertyInSpreadSheetTable.xlsx");

@@ -18,6 +18,7 @@ import org.testng.annotations.Test;
 import tests.BaseTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.DECISION;
 
 public class TestLocalChangesLifecycleAndSettings extends BaseTest {
 
@@ -32,8 +33,8 @@ public class TestLocalChangesLifecycleAndSettings extends BaseTest {
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Main");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Rules")
-                .selectItemInFolder("Rules", "Hello");
+                .expandFolderInTree(DECISION)
+                .selectItemInFolder(DECISION, "Hello");
 
         editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
         editorPage.getCenterTable().editCell(6, 4, "Good Morning1");
@@ -54,8 +55,8 @@ public class TestLocalChangesLifecycleAndSettings extends BaseTest {
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Main");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Rules")
-                .selectItemInFolder("Rules", "Hello");
+                .expandFolderInTree(DECISION)
+                .selectItemInFolder(DECISION, "Hello");
 
         assertThat(editorPage.getCenterTable().getCellText(6, 4))
                 .as("Cell value should be reverted to original after close and reopen")
@@ -69,8 +70,8 @@ public class TestLocalChangesLifecycleAndSettings extends BaseTest {
                 .isEqualTo("No changes in history");
 
         editorPage.getEditorLeftRulesTreeComponent()
-                .expandFolderInTree("Rules")
-                .selectItemInFolder("Rules", "Hello");
+                .expandFolderInTree(DECISION)
+                .selectItemInFolder(DECISION, "Hello");
 
         editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
         editorPage.getCenterTable().editCell(7, 4, "Good Afternoon1");
@@ -104,8 +105,8 @@ public class TestLocalChangesLifecycleAndSettings extends BaseTest {
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Main");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Rules")
-                .selectItemInFolder("Rules", "Hello");
+                .expandFolderInTree(DECISION)
+                .selectItemInFolder(DECISION, "Hello");
 
         editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
         editorPage.getCenterTable().editCell(6, 4, "Good Morning1");
@@ -120,8 +121,8 @@ public class TestLocalChangesLifecycleAndSettings extends BaseTest {
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Main");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Rules")
-                .selectItemInFolder("Rules", "Hello");
+                .expandFolderInTree(DECISION)
+                .selectItemInFolder(DECISION, "Hello");
 
         ChangesDialogComponent changesDialog = editorPage.getEditorToolbarPanelComponent()
                 .clickMore()
@@ -145,8 +146,8 @@ public class TestLocalChangesLifecycleAndSettings extends BaseTest {
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Main");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Rules")
-                .selectItemInFolder("Rules", "Hello");
+                .expandFolderInTree(DECISION)
+                .selectItemInFolder(DECISION, "Hello");
 
         changesDialog = editorPage.getEditorToolbarPanelComponent()
                 .clickMore()
@@ -164,8 +165,8 @@ public class TestLocalChangesLifecycleAndSettings extends BaseTest {
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Main");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Rules")
-                .selectItemInFolder("Rules", "Hello");
+                .expandFolderInTree(DECISION)
+                .selectItemInFolder(DECISION, "Hello");
 
         editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
         editorPage.getCenterTable().editCell(7, 4, "Good Afternoon1");
@@ -187,8 +188,8 @@ public class TestLocalChangesLifecycleAndSettings extends BaseTest {
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Main");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Rules")
-                .selectItemInFolder("Rules", "Hello");
+                .expandFolderInTree(DECISION)
+                .selectItemInFolder(DECISION, "Hello");
 
         editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
         editorPage.getCenterTable().editCell(8, 4, "Good Evening3");
@@ -211,9 +212,6 @@ public class TestLocalChangesLifecycleAndSettings extends BaseTest {
         compareDialog.openTreeNode("Rules");
         compareDialog.clickTreeNode("Rules String Hello (Integer hour)");
 
-        // The value that was written is what the comparison must show as differing. Where it is drawn is
-        // the screen's business: the rows that read the same are left out, and a merged cell takes the
-        // place of the ones it covers.
         assertThat(compareDialog.isDifferenceShown(2, "Good Evening3"))
                 .as("The value the edit wrote must be shown as a difference in the version that carries it")
                 .isTrue();

@@ -17,6 +17,7 @@ import org.testng.annotations.Test;
 import tests.BaseTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.DECISION;
 
 public class TestLocalChangesCoreMechanics extends BaseTest {
 
@@ -31,8 +32,8 @@ public class TestLocalChangesCoreMechanics extends BaseTest {
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Main");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Rules")
-                .selectItemInFolder("Rules", "Hello");
+                .expandFolderInTree(DECISION)
+                .selectItemInFolder(DECISION, "Hello");
 
         ChangesDialogComponent changesDialog = editorPage.getEditorToolbarPanelComponent()
                 .clickMore()
@@ -42,8 +43,8 @@ public class TestLocalChangesCoreMechanics extends BaseTest {
                 .isEqualTo("No changes in history");
 
         editorPage.getEditorLeftRulesTreeComponent()
-                .expandFolderInTree("Rules")
-                .selectItemInFolder("Rules", "Hello");
+                .expandFolderInTree(DECISION)
+                .selectItemInFolder(DECISION, "Hello");
 
         editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
         editorPage.getCenterTable().editCell(6, 4, "Good Morning1");
@@ -57,8 +58,8 @@ public class TestLocalChangesCoreMechanics extends BaseTest {
                 .isEqualTo("No changes in history");
 
         editorPage.getEditorLeftRulesTreeComponent()
-                .expandFolderInTree("Rules")
-                .selectItemInFolder("Rules", "Hello");
+                .expandFolderInTree(DECISION)
+                .selectItemInFolder(DECISION, "Hello");
 
         editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
         editorPage.getCenterTable().editCell(6, 4, "Good Morning1");
@@ -87,8 +88,6 @@ public class TestLocalChangesCoreMechanics extends BaseTest {
         compareDialog.openTreeNode("Rules");
         compareDialog.clickTreeNode("Rules String Hello (Integer hour)");
 
-        // A cell is named by what it reads: which line a difference is drawn on depends on what the reader
-        // asked to be left out, and a cell covered by a merge is not drawn at all.
         assertThat(compareDialog.isDifferenceShown(1, "Good Morning"))
                 .as("The older state should show 'Good Morning' as what differs after the single edit")
                 .isTrue();
@@ -98,8 +97,8 @@ public class TestLocalChangesCoreMechanics extends BaseTest {
         compareDialog.close();
 
         editorPage.getEditorLeftRulesTreeComponent()
-                .expandFolderInTree("Rules")
-                .selectItemInFolder("Rules", "Hello");
+                .expandFolderInTree(DECISION)
+                .selectItemInFolder(DECISION, "Hello");
 
         editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
         editorPage.getCenterTable().editCell(7, 4, "Good Afternoon1");
@@ -145,8 +144,8 @@ public class TestLocalChangesCoreMechanics extends BaseTest {
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Main");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Rules")
-                .selectItemInFolder("Rules", "Hello");
+                .expandFolderInTree(DECISION)
+                .selectItemInFolder(DECISION, "Hello");
 
         editorPage.getEditorToolbarPanelComponent().clickMore().clickChanges();
         changesDialog.clickRestoreAtRow(2);
@@ -154,8 +153,8 @@ public class TestLocalChangesCoreMechanics extends BaseTest {
 
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Rules")
-                .selectItemInFolder("Rules", "Hello");
+                .expandFolderInTree(DECISION)
+                .selectItemInFolder(DECISION, "Hello");
 
         assertThat(editorPage.getCenterTable().getCellText(6, 4))
                 .as("Cell (6,4) should still have the first edit value after restoring to row 2")
@@ -176,8 +175,8 @@ public class TestLocalChangesCoreMechanics extends BaseTest {
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Main");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Rules")
-                .selectItemInFolder("Rules", "Hello");
+                .expandFolderInTree(DECISION)
+                .selectItemInFolder(DECISION, "Hello");
 
         editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
         editorPage.getCenterTable().editCell(6, 4, "Good Morning1");
@@ -209,8 +208,8 @@ public class TestLocalChangesCoreMechanics extends BaseTest {
 
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Rules")
-                .selectItemInFolder("Rules", "Hello");
+                .expandFolderInTree(DECISION)
+                .selectItemInFolder(DECISION, "Hello");
 
         assertThat(editorPage.getCenterTable().getCellText(6, 4))
                 .as("Cell (6,4) should retain first edit value after restoring to row 2")
@@ -230,8 +229,8 @@ public class TestLocalChangesCoreMechanics extends BaseTest {
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Main");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Rules")
-                .selectItemInFolder("Rules", "Hello");
+                .expandFolderInTree(DECISION)
+                .selectItemInFolder(DECISION, "Hello");
 
         changesDialog = editorPage.getEditorToolbarPanelComponent()
                 .clickMore()
@@ -256,8 +255,8 @@ public class TestLocalChangesCoreMechanics extends BaseTest {
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Main");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Rules")
-                .selectItemInFolder("Rules", "Hello");
+                .expandFolderInTree(DECISION)
+                .selectItemInFolder(DECISION, "Hello");
 
         editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
         editorPage.getCenterTable().editCell(6, 4, "Good Morning2");
@@ -283,7 +282,6 @@ public class TestLocalChangesCoreMechanics extends BaseTest {
         compareDialog.openTreeNode("Rules");
         compareDialog.clickTreeNode("Rules String Hello (Integer hour)");
 
-        // The cell read 'Good Morning1' when the project was saved, and reads 'Good Morning2' now.
         assertThat(compareDialog.isDifferenceShown(1, "Good Morning1"))
                 .as("The saved state should show 'Good Morning1' as what differs after the edit")
                 .isTrue();

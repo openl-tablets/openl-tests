@@ -17,6 +17,7 @@ import org.testng.annotations.Test;
 import tests.BaseTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.DECISION;
 
 public class TestConstructorNotFoundInDependentTable extends BaseTest {
 
@@ -28,14 +29,12 @@ public class TestConstructorNotFoundInDependentTable extends BaseTest {
         LoginService loginService = new LoginService(DriverPool.getPage());
         EditorPage editorPage = loginService.login(UserService.getUser(User.ADMIN));
 
-        // Create all 3 projects from attachments
         RepositoryPage repositoryPage = editorPage.getTabSwitcherComponent()
                 .selectTab(TabSwitcherComponent.TabName.REPOSITORY);
         repositoryPage.createProject(CreateNewProjectComponent.TabName.ZIP_ARCHIVE, "DoliMy", "EPBDS-12848_DoliMy.zip");
         repositoryPage.createProject(CreateNewProjectComponent.TabName.ZIP_ARCHIVE, "TheProejct", "EPBDS-12848_TheProejct.zip");
         repositoryPage.createProject(CreateNewProjectComponent.TabName.ZIP_ARCHIVE, "SomeTransProject", "EPBDS-12848_SomeTransProject.zip");
 
-        // Step 1: Open DoliMy → module DoliMy → table mySpr3 — should have no errors
         editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent()
                 .selectModule("DoliMy", "DoliMy");
@@ -47,24 +46,20 @@ public class TestConstructorNotFoundInDependentTable extends BaseTest {
                 .as("DoliMy/mySpr3 should have no errors initially")
                 .isFalse();
 
-        // Step 2: Open TheProejct → module TheModel → edit table someRule (rename it)
         editorPage.getEditorToolbarPanelComponent().getBreadcrumbsAllProjects().click();
         editorPage.getEditorLeftProjectModuleSelectorComponent()
                 .selectModule("TheProejct", "TheModel");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Rules")
-                .selectItemInFolder("Rules", "someRule");
+                .expandFolderInTree(DECISION)
+                .selectItemInFolder(DECISION, "someRule");
         editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
-        // The first cell of a table is its header, so renaming the rule means writing the header again
-        // rather than writing the name alone over it, which would stop the cell being a table at all.
         editorPage.getCenterTable().editCell(1, 1, "SimpleRules String someRuleModified()");
         editorPage.getEditorTableActionsPanelComponent().clickSaveChanges();
         editorPage.getEditorToolbarPanelComponent().clickSave();
         editorPage.getSaveChangesComponent().clickSave();
         editorPage.waitUntilSpinnerLoaded();
 
-        // Step 3: Go back to DoliMy → mySpr3 — EPBDS-12848: must still have NO errors
         editorPage.getEditorToolbarPanelComponent().getBreadcrumbsAllProjects().click();
         editorPage.getEditorLeftProjectModuleSelectorComponent()
                 .selectModule("DoliMy", "DoliMy");

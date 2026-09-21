@@ -15,6 +15,7 @@ import org.testng.annotations.Test;
 import tests.BaseTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.DECISION;
 
 public class TestTabRevisionsInEditor extends BaseTest {
 
@@ -41,8 +42,8 @@ public class TestTabRevisionsInEditor extends BaseTest {
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Main");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Rules")
-                .selectItemInFolder("Rules", "Hello");
+                .expandFolderInTree(DECISION)
+                .selectItemInFolder(DECISION, "Hello");
 
         editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
         editorPage.getCenterTable().editCell(6, 2, "100");
@@ -85,8 +86,8 @@ public class TestTabRevisionsInEditor extends BaseTest {
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Main");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Rules")
-                .selectItemInFolder("Rules", "Hello");
+                .expandFolderInTree(DECISION)
+                .selectItemInFolder(DECISION, "Hello");
         editorPage.getEditorToolbarPanelComponent().clickMore().clickRevisions();
 
         revisionsTab.waitForTableToLoad();
@@ -112,8 +113,8 @@ public class TestTabRevisionsInEditor extends BaseTest {
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Main");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Rules")
-                .selectItemInFolder("Rules", "Hello");
+                .expandFolderInTree(DECISION)
+                .selectItemInFolder(DECISION, "Hello");
 
         assertThat(editorPage.getCenterTable().getCellText(6, 2))
                 .as("Cell value should be the original value before the edit when viewing old revision")

@@ -19,6 +19,7 @@ import org.testng.annotations.Test;
 import tests.BaseTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.CONFIGURATION;
 
 public class TestImportCycleThroughModesForOpenApiProject extends BaseTest {
 
@@ -40,18 +41,14 @@ public class TestImportCycleThroughModesForOpenApiProject extends BaseTest {
                 .selectTab(TabSwitcherComponent.TabName.REPOSITORY);
         repositoryPage.createProjectFromOpenApi(OPENAPI_FILE_3, projectName);
 
-        // Step 6: Verify initial OpenAPI properties after creation from openapi3.json
         editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName);
 
-        // A project made from a specification keeps it under the name its format reads as and is reconciled
-        // against it, naming no module to write into until a generation is asked for (EPBDS-16415).
         assertThat(editorPage.getOpenApiMode()).isEqualTo("Reconciliation");
         assertThat(editorPage.getOpenApiPropertyValue("File")).isEqualTo(NORMALIZED_SPEC);
         assertThat(editorPage.hasOpenApiProperty("Services module")).isFalse();
         assertThat(editorPage.hasOpenApiProperty("Data types module")).isFalse();
 
-        // Step 6.1: Switch to Reconciliation mode import (using Generate from Rules, no file path needed)
         ImportOpenApiDialogComponent importDialog = editorPage.openImportOpenApiDialog();
         importDialog.clickImportReconciliation();
         editorPage.waitUntilSpinnerLoaded();
@@ -64,7 +61,6 @@ public class TestImportCycleThroughModesForOpenApiProject extends BaseTest {
         editorPage.getSaveChangesComponent().clickSave();
         editorPage.waitUntilSpinnerLoaded();
 
-        // Upload openapi2.json to repository
         repositoryPage = editorPage.getTabSwitcherComponent()
                 .selectTab(TabSwitcherComponent.TabName.REPOSITORY);
         uploadFileToProject(repositoryPage, projectName, OPENAPI_FILE);
@@ -85,7 +81,6 @@ public class TestImportCycleThroughModesForOpenApiProject extends BaseTest {
                 .as("Both modules already stand, so their workbooks are replaced")
                 .contains("Services module: Algorithms — the workbook rules/Algorithms.xlsx is replaced", "Data types module: Models — the workbook rules/Models.xlsx is replaced");
 
-        // Step 6.2: Import and override, save, verify properties and modules
         settingsDialog.clickImportAndOverride();
         editorPage.getEditorToolbarPanelComponent().clickSave();
         editorPage.getSaveChangesComponent().clickSave();
@@ -106,7 +101,6 @@ public class TestImportCycleThroughModesForOpenApiProject extends BaseTest {
         editorPage.getProblemsPanelComponent().waitForCompilationToComplete();
         editorPage.getProblemsPanelComponent().checkNoProblems();
 
-        // Step 6.3: Import openapi3.json in Tables Generation mode, verify Algorithms has Spreadsheet+Configuration
         editorPage.getEditorToolbarPanelComponent().navigateToProjectRoot(projectName);
         importDialog = editorPage.openImportOpenApiDialog();
         importDialog.waitForFilePathField();
@@ -132,14 +126,13 @@ public class TestImportCycleThroughModesForOpenApiProject extends BaseTest {
         assertThat(editorPage.getEditorLeftRulesTreeComponent().isFolderExistsInTree("Spreadsheet"))
                 .as("Algorithms should contain Spreadsheet tables after openapi3.json import")
                 .isTrue();
-        assertThat(editorPage.getEditorLeftRulesTreeComponent().isFolderExistsInTree("Environment"))
+        assertThat(editorPage.getEditorLeftRulesTreeComponent().isFolderExistsInTree(CONFIGURATION))
                 .as("Algorithms should contain Configuration tables after openapi3.json import")
                 .isTrue();
         editorPage.getProblemsPanelComponent().checkNoProblems();
     }
 
     private void uploadFileToProject(RepositoryPage repositoryPage, String projectName, String fileName) {
-        // React Files tab: upload through the project's own screen, then commit from the projects list.
         repositoryPage.openProjectsList().openProjectDetail(projectName)
                 .uploadFileAs(TestDataUtil.getFilePathFromResources(fileName), fileName);
         repositoryPage.openProjectsList().saveProject(projectName, "Uploaded " + fileName);

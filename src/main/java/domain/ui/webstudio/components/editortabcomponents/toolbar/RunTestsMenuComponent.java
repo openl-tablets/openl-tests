@@ -5,17 +5,10 @@ import configuration.core.ui.WebElement;
 import domain.ui.webstudio.components.BaseComponent;
 import helpers.utils.WaitUtil;
 
-/**
- * The Test area of the editor's top toolbar: the Test button, its dropdown with run settings
- * (tests per page, failures only, compound result, within-current-module-only) and the launch buttons.
- * Everything is scoped under the {@code testPanel} container (verified against the live 6.4.0 DOM,
- * where {@code ul#testSettings} renders inside {@code div#testPanel}).
- */
 public class RunTestsMenuComponent extends BaseComponent implements IRunTestsMenu {
 
-    // Only one launcher stands open at a time, and it draws what it holds into the page.
     private static final String LAUNCHER = "xpath=";
-    private static final int COUNT_TIMEOUT_MS = 120000;
+    private static final int COUNT_TIMEOUT_MS = 300000;
     private static final int PROBE_MS = 2000;
 
     private final WebElement testBtn;
@@ -32,8 +25,6 @@ public class RunTestsMenuComponent extends BaseComponent implements IRunTestsMen
 
     public RunTestsMenuComponent(WebElement rootLocator) {
         super(rootLocator);
-        // The Test button of the toolbar opens the launcher; the launcher carries the settings of the run and
-        // the button that starts it.
         testBtn = rootLocator;
         dropdownToggle = rootLocator;
         runTestsBtn = new WebElement(page, LAUNCHER + "//button[@data-testid='tests-start']", "runTestsBtn");
@@ -43,8 +34,6 @@ public class RunTestsMenuComponent extends BaseComponent implements IRunTestsMen
         withinCurrentModuleOnly = new WebElement(page, LAUNCHER + "//input[@data-testid='tests-module-only']", "withinCurrentModuleOnly");
     }
 
-    // ========== Test button ==========
-
     public String getTestButtonText() {
         if (testBtn.isVisible(2000)) {
             return testBtn.getText().trim();
@@ -52,20 +41,12 @@ public class RunTestsMenuComponent extends BaseComponent implements IRunTestsMen
         return "";
     }
 
-    /**
-     * The number of test tables the button carries, once the module has told it. The count is drawn from
-     * what the module answers about itself, so it reaches the button a moment after the module is compiled.
-     */
     public String getTestCountWhenCounted(String expected) {
         WaitUtil.waitForCondition(() -> expected.equals(getTestCount()), COUNT_TIMEOUT_MS, 500,
                 "Waiting for the button to say there are " + expected + " test tables");
         return getTestCount();
     }
 
-    /**
-     * Waits for the button to be pressable. It is withheld until the module has said how many test tables it
-     * holds, so a press the moment the module is compiled lands on a button that is still disabled.
-     */
     private void waitUntilTheModuleHasCounted() {
         if (!testBtn.isVisible(PROBE_MS)) {
             return;
@@ -105,7 +86,6 @@ public class RunTestsMenuComponent extends BaseComponent implements IRunTestsMen
         }
     }
 
-    /** Opens the dropdown and waits for the module-only checkbox state to settle after the server round-trip. */
     public void openDropdownAndWaitForSettings() {
         waitUntilSpinnerLoaded();
         openDropdown();
@@ -116,8 +96,6 @@ public class RunTestsMenuComponent extends BaseComponent implements IRunTestsMen
         runTestsBtn.waitForVisible();
         runTestsBtn.click();
     }
-
-    // ========== IRunTestsMenu ==========
 
     @Override
     public IRunTestsMenu setTestPerPage(String testsPerPage) {
@@ -165,8 +143,6 @@ public class RunTestsMenuComponent extends BaseComponent implements IRunTestsMen
         return compoundResultCheckbox.isChecked();
     }
 
-    // ========== Within Current Module Only (top panel) ==========
-
     public boolean isWithinCurrentModuleOnlyChecked() {
         return withinCurrentModuleOnly.isChecked();
     }
@@ -196,8 +172,6 @@ public class RunTestsMenuComponent extends BaseComponent implements IRunTestsMen
         }, 10000, 250, "Setting top panel WithinCurrentModuleOnly to " + value);
     }
 
-    // Waits until the checkbox's (checked, enabled) state stays unchanged for a short quiet window, i.e.
-    // the server round-trip that can flip/disable it during a recompile has settled.
     private void waitForWithinCurrentModuleOnlyToStabilize() {
         long stableWindowMs = 750;
         String[] lastState = {null};

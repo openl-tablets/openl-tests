@@ -15,6 +15,8 @@ import org.testng.annotations.Test;
 import tests.BaseTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.DECISION;
+import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.VOCABULARY;
 
 public class TestRangeDataTypes extends BaseTest {
 
@@ -36,20 +38,15 @@ public class TestRangeDataTypes extends BaseTest {
                 .selectModule(projectName, MODULE_NAME);
         rulesTree.setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE);
 
-        validateRangeEditorOpensAndCloses(editorPage, rulesTree, "Rules", "SimpleLookupTable", 3, 2);
-        validateRangeEditorOpensAndCloses(editorPage, rulesTree, "Rules", "SimpleRulesTable", 3, 2);
-        validateRangeEditorOpensAndCloses(editorPage, rulesTree, "Rules", "SmartLookup1", 3, 1);
-        validateRangeEditorOpensAndCloses(editorPage, rulesTree, "Rules", "SmartRules1", 5, 1);
+        validateRangeEditorOpensAndCloses(editorPage, rulesTree, DECISION, "SimpleLookupTable", 3, 2);
+        validateRangeEditorOpensAndCloses(editorPage, rulesTree, DECISION, "SimpleRulesTable", 3, 2);
+        validateRangeEditorOpensAndCloses(editorPage, rulesTree, DECISION, "SmartLookup1", 3, 1);
+        validateRangeEditorOpensAndCloses(editorPage, rulesTree, DECISION, "SmartRules1", 5, 1);
         validateRangeEditorOpensAndCloses(editorPage, rulesTree, "Data", "DataTable1", 4, 2);
-        // The run table is one column wide (B18:B21), and the numbers the editor draws beside its rows are
-        // not a column of it, so the range stands in the row's only cell.
         validateRangeEditorOpensAndCloses(editorPage, rulesTree, "Run", "RunTable", 4, 1);
         validateRangeEditorOpensAndCloses(editorPage, rulesTree, "Test", "Test2", 4, 2);
-        // An alias datatype is filed under Datatype: the tree no longer keeps a Vocabulary group of its own
-        // (see KNOWN-ISSUES.md #2).
-        validateRangeEditorOpensAndCloses(editorPage, rulesTree, "Datatype", "Vocabulary1", 2, 1);
+        validateRangeEditorOpensAndCloses(editorPage, rulesTree, VOCABULARY, "Vocabulary1", 2, 1);
         validateRangeEditorOpensAndCloses(editorPage, rulesTree, "Constants", "Constants", 2, 3);
-        // SpreadsheetTable validation skipped due to bug EPBDS-7484 (kept disabled in legacy as well).
     }
 
     private void validateRangeEditorOpensAndCloses(EditorPage editorPage,
@@ -65,7 +62,6 @@ public class TestRangeDataTypes extends BaseTest {
         rangeEditor.discardChangesIfPresent();
 
         TableComponent table = editorPage.getCenterTable();
-        // The table of a freshly selected node arrives asynchronously, so a double click can land on nothing.
         WaitUtil.waitForCondition(table::isVisible, TABLE_LOAD_TIMEOUT_MS, 250,
                 "Waiting for the table of the selected node");
         editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();

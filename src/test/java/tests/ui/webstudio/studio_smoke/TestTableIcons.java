@@ -24,6 +24,17 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.COLUMN_MATCH;
+import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.CONSTANTS;
+import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.DATA;
+import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.DATATYPE;
+import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.DECISION;
+import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.METHOD;
+import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.RUN;
+import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.SPREADSHEET;
+import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.TBASIC;
+import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.TEST;
+import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.VOCABULARY;
 
 public class TestTableIcons extends BaseTest {
 
@@ -32,16 +43,10 @@ public class TestTableIcons extends BaseTest {
     private static final String MODULE_NAME = "All_tables_type";
 
     private static final List<String> CATALOG_NAMES = Arrays.asList(
-            "Rules", "Spreadsheet", "TBasic", "Column Match",
-            "Data", "Run", "Test", "Datatype", "Method", "Constants"
+            DECISION, SPREADSHEET, TBASIC, COLUMN_MATCH,
+            DATA, RUN, TEST, DATATYPE, VOCABULARY, METHOD, CONSTANTS
     );
 
-    /**
-     * The glyph each table wears. The rail draws a named icon rather than a small picture, and the name of
-     * each was chosen to read as the picture the old Editor drew — a grid for a decision table, a banded
-     * grid for a spreadsheet, a cylinder for data, fx for a method, a ticked box for a test, a play triangle
-     * for a run table (`tableIcons.tsx` says so alongside the picture it replaces).
-     */
     private static final Map<String, String> TABLE_NAMES_AND_ICONS = new HashMap<>() {{
         put("SimpleLookupTable", "table");
         put("SimpleRulesTable", "table");
@@ -69,14 +74,11 @@ public class TestTableIcons extends BaseTest {
         RepositoryPage repositoryPage = editorPage.getTabSwitcherComponent()
                 .selectTab(TabSwitcherComponent.TabName.REPOSITORY);
 
-        // Create project from ZIP file
         repositoryPage.createProject(CreateNewProjectComponent.TabName.ZIP_ARCHIVE, PROJECT_NAME, ZIP_FILE_NAME);
 
-        // Switch to Editor tab and select module
         editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(PROJECT_NAME, MODULE_NAME);
 
-        // Expand all catalog folders
         EditorPage finalEditorPage = editorPage;
         finalEditorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE);
@@ -85,7 +87,6 @@ public class TestTableIcons extends BaseTest {
                     .expandFolderInTree(catalog)
         );
 
-        // Verify icons for each table
         TABLE_NAMES_AND_ICONS.forEach((tableName, expectedIcon) -> assertThat(
                 finalEditorPage.getEditorLeftRulesTreeComponent().getTableIconName(tableName))
                 .as("Table '%s' should wear the '%s' glyph", tableName, expectedIcon)

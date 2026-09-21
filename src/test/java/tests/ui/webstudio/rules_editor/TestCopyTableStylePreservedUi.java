@@ -13,11 +13,12 @@ import org.testng.annotations.Test;
 import tests.BaseTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.DECISION;
 
 public class TestCopyTableStylePreservedUi extends BaseTest {
 
     private static final String MODULE = "Main";
-    private static final String TABLE_FOLDER = "Rules";
+    private static final String TABLE_FOLDER = DECISION;
     private static final String TABLE_NAME = "Hello";
     private static final String COPY_NAME = "HelloStyledCopy";
 

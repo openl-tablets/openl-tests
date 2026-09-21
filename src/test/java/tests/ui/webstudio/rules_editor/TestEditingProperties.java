@@ -23,6 +23,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.DECISION;
 
 public class TestEditingProperties extends BaseTest {
 
@@ -40,15 +41,13 @@ public class TestEditingProperties extends BaseTest {
                 .selectModule(PROJECT_NAME, PROJECT_NAME);
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Rules")
-                .selectItemInFolder("Rules", "MyRules1");
+                .expandFolderInTree(DECISION)
+                .selectItemInFolder(DECISION, "MyRules1");
 
         editAndCheckProperty(editorPage, "Category", "category", "cat2");
         editAndCheckProperty(editorPage, "Description", "description", "Hello Kitty2");
         editAndCheckProperty(editorPage, "Tags", "tags", "Tag3,Tag4");
         editAndCheckProperty(editorPage, "Effective Date", "effectiveDate", "05/14/2018");
-        // The workbook already reads 05/16/2018 here, and the panel offers to keep only what was changed,
-        // so the date written is one the table does not already carry.
         editAndCheckProperty(editorPage, "Expiration Date", "expirationDate", "05/17/2018");
         editAndCheckProperty(editorPage, "Start Request Date", "startRequestDate", "05/14/2017");
         editAndCheckProperty(editorPage, "End Request Date", "endRequestDate", "04/13/2016");
@@ -57,8 +56,6 @@ public class TestEditingProperties extends BaseTest {
         editAndCheckProperty(editorPage, "ID", "id", "test2");
         editAndCheckProperty(editorPage, "Build Phase", "buildPhase", "Property2");
 
-        // A value of a dimension is offered by the name it is known by and written down by its code, so each
-        // of these names the value the way the screen offers it and expects the code in the table.
         editAndCheckCheckboxProperty(editorPage, "Canada Region", "caRegions", "QC", "Québec");
         editAndCheckCheckboxProperty(editorPage, "Canada Province", "caProvinces", "NT,YT",
                 "Territoires du Nord-Ouest", "Yukon");
@@ -68,7 +65,6 @@ public class TestEditingProperties extends BaseTest {
         editAndCheckCheckboxProperty(editorPage, "US Region", "usregion", "NE", "Northeast");
         editAndCheckCheckboxProperty(editorPage, "US States", "state", "WA,WV", "Washington", "West Virginia");
 
-        // The table already reads false here, and the panel offers to keep only what was changed.
         editAndCheckBooleanProperty(editorPage, "Cacheable", "cacheable", true);
 
         editAndCheckDropdownProperty(editorPage, "Origin", "origin", "Deviation");
@@ -130,9 +126,6 @@ public class TestEditingProperties extends BaseTest {
         waitForPropertyValueIgnoringCase(editorPage, propertyTableName, value);
     }
 
-    // The center table re-renders asynchronously after clickSaveBtn (RichFaces Ajax → React reconciliation).
-    // The static 500ms sleep inside clickSaveBtn is not always enough on a loaded CI runner — poll the
-    // value until it matches or the timeout expires, then make the final assertion for a readable diff.
     private void waitForPropertyValue(EditorPage editorPage, String propertyTableName, String expectedValue) {
         WaitUtil.waitForCondition(
                 () -> expectedValue.equals(editorPage.getCenterTable().getPropertyValue(propertyTableName)),
@@ -153,7 +146,6 @@ public class TestEditingProperties extends BaseTest {
                 .isEqualToIgnoringCase(expectedValue);
     }
 
-    /** A date is shown as the year, the month and the day, in that order, whatever the workbook writes it as. */
     private String formatDate(String dateValue) {
         SimpleDateFormat inputFormat = new SimpleDateFormat("MM/dd/yy");
         SimpleDateFormat outputFormat = new SimpleDateFormat("yyyy-MM-dd");

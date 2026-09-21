@@ -16,12 +16,9 @@ import tests.BaseTest;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.DECISION;
 
 public class TestModuleCategoryInheritedProperties extends BaseTest {
-
-    // A date is shown as the year, the month and the day, in that order, whatever the workbook writes it as.
-    // See KNOWN-ISSUES.md, "Behaviour the React screens changed".
-
 
     private final Map<String, String> valuesModuleProperties = Map.ofEntries(
         Map.entry("LOB", "001"),
@@ -114,8 +111,8 @@ public class TestModuleCategoryInheritedProperties extends BaseTest {
 
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Rules");
-        selectTable(editorPage, "Rules", "MyRules1");
+                .expandFolderInTree(DECISION);
+        selectTable(editorPage, DECISION, "MyRules1");
         verifyPropertiesInTableDetails(editorPage, valuesModuleProperties);
 
         verifyBlueArrowWork(editorPage, "Inherited from the module properties table");
@@ -130,14 +127,14 @@ public class TestModuleCategoryInheritedProperties extends BaseTest {
         assertThat(editorPage.getRightTableDetailsComponent().getPropertyValue("Precision"))
                 .contains("1");
 
-        selectTable(editorPage, "Rules", "MyRules2");
+        selectTable(editorPage, DECISION, "MyRules2");
         verifyPropertiesInTableDetails(editorPage, valuesModuleOverwrittenByTableProperties);
 
         selectTable(editorPage, "Test", "MyRules1Test");
         assertThat(editorPage.getRightTableDetailsComponent().getPropertyValue("Precision"))
                 .contains("2");
 
-        selectTable(editorPage, "Rules", "MyRules3");
+        selectTable(editorPage, DECISION, "MyRules3");
         verifyPropertiesInTableDetails(editorPage, valuesCategoryProperties);
 
         verifyBlueArrowWork(editorPage, "Inherited from the category properties table");
@@ -150,7 +147,7 @@ public class TestModuleCategoryInheritedProperties extends BaseTest {
         assertThat(editorPage.getRightTableDetailsComponent().getPropertyValue("Precision"))
                 .contains("3");
 
-        selectTable(editorPage, "Rules", "MyRules4");
+        selectTable(editorPage, DECISION, "MyRules4");
         verifyPropertiesInTableDetails(editorPage, valuesCategoryOverwrittenByTableProperties);
 
         selectTable(editorPage, "Spreadsheet", "MyRules8");
@@ -161,7 +158,7 @@ public class TestModuleCategoryInheritedProperties extends BaseTest {
         assertThat(editorPage.getRightTableDetailsComponent().getPropertyValue("Precision"))
                 .contains("4");
 
-        selectTable(editorPage, "Rules", "MyRules5");
+        selectTable(editorPage, DECISION, "MyRules5");
         verifyPropertiesInTableDetails(editorPage, valuesCategoryProperties);
     }
 
@@ -181,8 +178,6 @@ public class TestModuleCategoryInheritedProperties extends BaseTest {
         assertThat(tableDetails.isPropertyInherited("LOB"))
                 .as("LOB should be shown as a property the table did not set itself")
                 .isTrue();
-        // The table sits on the Rules sheet, whose properties table declares itself of Module scope and
-        // carries LOB 001; that is the table the value comes from and the one the arrow leads to.
         assertThat(tableDetails.getInheritedPropertyTitle("LOB"))
                 .as("The panel should say where the inherited value comes from")
                 .isEqualTo(expectedSource);
@@ -191,7 +186,5 @@ public class TestModuleCategoryInheritedProperties extends BaseTest {
                 .as("The panel should offer to open the table the value is inherited from")
                 .isTrue();
 
-        // Following the arrow opens that properties table, which the screen cannot draw: the table carries
-        // validateDT and the request for it answers 500. See KNOWN-ISSUES.md #16.
     }
 }

@@ -28,27 +28,8 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.DECISION;
 
-/**
- * Migrated from: SmokeStudio/TestDeployConfCreateDeployRedeploy.java
- * Ticket: IPBQA-30049
- *
- * Deploy lifecycle: deploy project to production repository (PostgreSQL via JDBC),
- * edit and redeploy, deploy dependent projects, and verify that deployed rules
- * are accessible via WebService REST endpoint.
- *
- * NOTE: The legacy "Deploy Configuration" entity was removed from WebStudio
- * (EPBDS-15093). Deployment now works directly from a project via DeployModal.
- * Dependencies are resolved automatically by the backend.
- *
- * Infrastructure (3 containers in shared Docker network):
- * - PostgreSQL (alias "postgres") — production repository storage
- * - WebStudio (app container) — deploys rules to PostgreSQL via Docker DNS
- * - WebService (alias "wscontainer") — picks up deployed rules from PostgreSQL,
- *   exposes REST endpoints
- *
- * All containers communicate via Docker DNS aliases (no host.docker.internal).
- */
 public class TestNewDeployPopup extends BaseTest {
 
     private static final int WS_PORT = 8080;
@@ -90,10 +71,6 @@ public class TestNewDeployPopup extends BaseTest {
         String nameProject = StringUtil.generateUniqueName("DeployTest");
         String deploymentName = StringUtil.generateUniqueName("Deploy");
 
-        // =========================================================================
-        // STEP 1: Login, create project from template, get initial revision
-        // Legacy steps: 1
-        // =========================================================================
         EditorPage editorPage = new LoginService(DriverPool.getPage())
                 .login(UserService.getUser(User.ADMIN));
         RepositoryPage repositoryPage = editorPage.getTabSwitcherComponent()
@@ -105,7 +82,6 @@ public class TestNewDeployPopup extends BaseTest {
         repositoryPage.openProjectsList();
         LOGGER.info("Step 1: Project '{}' created, initial revision: {}", nameProject, projectInitialRevision);
 
-        // STEP 2: Deploy project to production via the React DeployModal (project-row Deploy action)
         DeployModalComponent deployModal = repositoryPage.clickDeploy(nameProject);
         deployModal.deployWithAllFields(null, deploymentName, "First deploy to production");
         assertThat(deployModal.isSuccessNotificationVisible())
@@ -114,11 +90,6 @@ public class TestNewDeployPopup extends BaseTest {
         repositoryPage.closeAllMessages();
         LOGGER.info("Step 2: Project '{}' deployed to production as '{}'", nameProject, deploymentName);
 
-        // =========================================================================
-        // STEP 3: Create dependent projects from zip and deploy them
-        // Legacy steps: 12 (adapted — deploy each project directly,
-        // dependencies resolved automatically by backend)
-        // =========================================================================
         String nameDependentProject1 = "Tutorial 3 - More Advanced Decision and Data Tables";
         String nameDependentProject2 = "Tutorial 6 - Introduction to Spreadsheet Tables";
         String zipFile1 = "Tutorial 3 - More Advanced Decision and Data Tables.zip";
@@ -130,7 +101,6 @@ public class TestNewDeployPopup extends BaseTest {
         repositoryPage.createProject(CreateNewProjectComponent.TabName.ZIP_ARCHIVE,
                 nameDependentProject2, zipFile2);
 
-        // Deploy Tutorial 3 (backend auto-resolves the dependency on Tutorial 6)
         deployModal = repositoryPage.clickDeploy(nameDependentProject1);
         deployModal.deployWithAllFields(null, deploymentNameComplex, "Deploy dependent project");
         assertThat(deployModal.isSuccessNotificationVisible())
@@ -139,10 +109,6 @@ public class TestNewDeployPopup extends BaseTest {
         repositoryPage.closeAllMessages();
         LOGGER.info("Step 3: Dependent projects deployed as '{}'", deploymentNameComplex);
 
-        // =========================================================================
-        // STEP 4: Edit project table, save — new revision
-        // Legacy steps: 13
-        // =========================================================================
         editorPage = new EditorPage();
         editProjectCell(editorPage, nameProject, "1000");
 
@@ -157,7 +123,6 @@ public class TestNewDeployPopup extends BaseTest {
                 .isNotEqualTo(projectInitialRevision);
         LOGGER.info("Step 4: Project edited, new revision: {}", projectUpdatedRevision);
 
-        // STEP 5: Redeploy with the updated revision
         deployModal = repositoryPage.clickDeploy(nameProject);
         deployModal.deployWithAllFields(null, deploymentName, "Redeploy with updated revision");
         assertThat(deployModal.isSuccessNotificationVisible())
@@ -166,11 +131,6 @@ public class TestNewDeployPopup extends BaseTest {
         repositoryPage.closeAllMessages();
         LOGGER.info("Step 5: Project redeployed with updated revision");
 
-        // =========================================================================
-        // STEP 6: Edit again, resolve conflict if it occurs, deploy
-        // Legacy steps: 15 (conflict arose from DC save changing repo state;
-        // in new flow conflict may not occur — we handle both cases)
-        // =========================================================================
         editorPage = new EditorPage();
         editProjectCell(editorPage, nameProject, "2000");
 
@@ -178,7 +138,6 @@ public class TestNewDeployPopup extends BaseTest {
                 .selectTab(TabSwitcherComponent.TabName.REPOSITORY);
         repositoryPage.saveProject(nameProject, "Second edit to 2000");
 
-        // Resolve conflict if it appears (deploy targets the production repo, so usually none occurs)
         if (repositoryPage.getResolveConflictsDialogComponent().isDialogVisible()) {
             repositoryPage.getResolveConflictsDialogComponent().resolveConflictUseYours();
             LOGGER.info("Step 6: Conflict resolved using 'Use Yours'");
@@ -193,7 +152,6 @@ public class TestNewDeployPopup extends BaseTest {
                 .isNotEqualTo(projectUpdatedRevision);
         LOGGER.info("Step 6: Second edit done, revision: {}", projectSecondUpdatedRevision);
 
-        // Deploy after edit
         deployModal = repositoryPage.clickDeploy(nameProject);
         deployModal.deployWithAllFields(null, deploymentName, "Deploy after second edit");
         assertThat(deployModal.isSuccessNotificationVisible())
@@ -202,10 +160,6 @@ public class TestNewDeployPopup extends BaseTest {
         repositoryPage.closeAllMessages();
         LOGGER.info("Step 6: Deployed after second edit");
 
-        // =========================================================================
-        // STEP 7: Create and deploy another project (Tutorial 2)
-        // Legacy steps: 16 (adapted — deploy directly, not via DC)
-        // =========================================================================
         String nameProjectTutorial2 = "Tutorial 2 - Introduction to Data Tables";
         repositoryPage.createProject(CreateNewProjectComponent.TabName.TEMPLATE,
                 nameProjectTutorial2, nameProjectTutorial2);
@@ -218,10 +172,6 @@ public class TestNewDeployPopup extends BaseTest {
         repositoryPage.closeAllMessages();
         LOGGER.info("Step 7: Tutorial 2 deployed");
 
-        // =========================================================================
-        // STEP 8: Verify deployed services visible in WebService via browser
-        // Legacy steps: 18
-        // =========================================================================
         boolean isDockerMode = DriverPool.getCurrentExecutionMode() == configuration.driver.ExecutionMode.PLAYWRIGHT_DOCKER;
         String wsBaseUrl = isDockerMode
                 ? "http://wscontainer:" + WS_PORT
@@ -234,8 +184,6 @@ public class TestNewDeployPopup extends BaseTest {
                 () -> {
                     try {
                         DriverPool.getPage().navigate(wsBaseUrl);
-                        // Block until at least one service row (h3) appears in the DOM;
-                        // throws TimeoutError (caught below) if none within the default timeout
                         DriverPool.getPage().waitForSelector("xpath=//h3");
                         String pageContent = DriverPool.getPage().content();
                         List<String> missingProjects = expectedProjects.stream()
@@ -269,8 +217,8 @@ public class TestNewDeployPopup extends BaseTest {
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Bank Rating");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Rules")
-                .selectItemInFolder("Rules", "CapitalDynamicScore");
+                .expandFolderInTree(DECISION)
+                .selectItemInFolder(DECISION, "CapitalDynamicScore");
         editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
         editorPage.getCenterTable().editCell(6, 2, value);
         editorPage.getEditorTableActionsPanelComponent().clickSaveChanges();

@@ -15,6 +15,7 @@ import tests.BaseTest;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.DECISION;
 
 public class TestSmartLookupSmartRules extends BaseTest {
 
@@ -33,8 +34,8 @@ public class TestSmartLookupSmartRules extends BaseTest {
                 .selectModule(projectName, MODULE_NAME);
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Rules")
-                .selectItemInFolder("Rules", "MySmarRule");
+                .expandFolderInTree(DECISION)
+                .selectItemInFolder(DECISION, "MySmarRule");
 
         TableComponent table = editorPage.getCenterTable();
         assertThat(table.getColumn(1)).isEqualTo(List.of(
@@ -69,13 +70,13 @@ public class TestSmartLookupSmartRules extends BaseTest {
         editorPage.waitUntilSpinnerLoaded();
         assertThat(table.getRow(2).getValue()).containsAll(List.of("properties", "country", "FR"));
 
-        editorPage.getEditorLeftRulesTreeComponent().selectItemInFolder("Rules", "MySmarRule");
+        editorPage.getEditorLeftRulesTreeComponent().selectItemInFolder(DECISION, "MySmarRule");
         editorPage.getEditorToolbarPanelComponent().removeCurrentTable();
         editorPage.getEditorLeftRulesTreeComponent()
-                .expandFolderInTree("Rules")
-                .checkRulesTableAbsent("Rules", "MySmarRule [county=FR]");
+                .expandFolderInTree(DECISION)
+                .checkRulesTableAbsent(DECISION, "MySmarRule [county=FR]");
 
-        editorPage.getEditorLeftRulesTreeComponent().selectItemInFolder("Rules", "MySmartLookup");
+        editorPage.getEditorLeftRulesTreeComponent().selectItemInFolder(DECISION, "MySmartLookup");
         editorPage.getProblemsPanelComponent().checkNoProblems();
         assertThat(table.getColumn(1)).isEqualTo(List.of(
                 "SmartLookup Double MySmartLookup(Gender gender, Date dateOfBirth, Married status )", "Gender",
@@ -101,7 +102,6 @@ public class TestSmartLookupSmartRules extends BaseTest {
         editorPage.getEditorToolbarPanelComponent().createDefaultTestTable();
         editorPage.getEditorLeftRulesTreeComponent().checkRulesTablePresent("Test", "MySmartLookupTest");
         assertThat(editorPage.getEditorLeftRulesTreeComponent().getSelectedItemText()).isEqualTo("MySmartLookupTest");
-        // The row carries the editor's own numbering cell, so only the named columns are compared.
         assertThat(table.getRow(2).getValue().stream().filter(cell -> !cell.isBlank()).toList())
                 .isEqualTo(List.of("gender", "dateOfBirth", "status", "_res_"));
     }

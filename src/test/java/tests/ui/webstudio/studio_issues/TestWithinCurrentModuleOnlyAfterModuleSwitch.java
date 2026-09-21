@@ -2,7 +2,6 @@ package tests.ui.webstudio.studio_issues;
 
 import configuration.annotations.AppContainerConfig;
 import configuration.annotations.Description;
-import configuration.annotations.KnownIssue;
 import configuration.annotations.TestCaseId;
 import configuration.appcontainer.AppContainerStartParameters;
 import domain.serviceclasses.constants.User;
@@ -20,9 +19,8 @@ public class TestWithinCurrentModuleOnlyAfterModuleSwitch extends BaseTest {
     @Test
     @TestCaseId("EPBDS-16653")
     @Description("The tests launcher offers 'Within Current Module Only' on the module the reader moved to "
-            + "through the module list of the breadcrumbs. Fails on EPBDS-16653: the box is locked there.")
+            + "through the module list of the breadcrumbs, which is the fix of EPBDS-16653 this test guards.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
-    @KnownIssue("EPBDS-16653")
     public void testWithinCurrentModuleOnlyStaysOfferedAfterSwitchingModule() {
         String projectName = WorkflowService.loginCreateProjectFromTemplate(User.ADMIN, TEMPLATE);
         EditorPage editorPage = new EditorPage();

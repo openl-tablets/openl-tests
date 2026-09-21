@@ -15,6 +15,7 @@ import org.testng.annotations.Test;
 import tests.BaseTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.DECISION;
 
 public class TestSpecialCharsInNumericCell extends BaseTest {
 
@@ -38,8 +39,8 @@ public class TestSpecialCharsInNumericCell extends BaseTest {
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Bank Rating");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Rules")
-                .selectItemInFolder("Rules", "CapitalAdequacyScore");
+                .expandFolderInTree(DECISION)
+                .selectItemInFolder(DECISION, "CapitalAdequacyScore");
         editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
 
         TableComponent table = editorPage.getCenterTable();

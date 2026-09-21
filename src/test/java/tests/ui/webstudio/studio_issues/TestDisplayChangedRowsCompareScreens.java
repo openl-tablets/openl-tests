@@ -23,6 +23,7 @@ import org.testng.annotations.Test;
 import tests.BaseTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.DECISION;
 
 public class TestDisplayChangedRowsCompareScreens extends BaseTest {
 
@@ -41,8 +42,8 @@ public class TestDisplayChangedRowsCompareScreens extends BaseTest {
                 .selectModule(projectName, "Bank Rating");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Rules")
-                .selectItemInFolder("Rules", "BankLimitIndex");
+                .expandFolderInTree(DECISION)
+                .selectItemInFolder(DECISION, "BankLimitIndex");
 
         editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
         editorPage.getCenterTable().editCell(7, 5, "10");
@@ -74,18 +75,12 @@ public class TestDisplayChangedRowsCompareScreens extends BaseTest {
         int shownLeft = compareDialog.getNumberOfRows(1);
         int shownRight = compareDialog.getNumberOfRows(2);
         compareDialog.setShowEqualRows(false);
-        // What the toggle does is leave out the rows the two versions read the same. How many rows remain
-        // is the table's business — the old screen led each version with a header row of its own and this
-        // one does not — so what is asked is that fewer remain and that the edits are still among them.
         assertThat(compareDialog.getNumberOfRows(1))
                 .as("Hiding the rows that read the same must leave fewer rows in the left version")
                 .isLessThan(shownLeft);
         assertThat(compareDialog.getNumberOfRows(2))
                 .as("Hiding the rows that read the same must leave fewer rows in the right version")
                 .isLessThan(shownRight);
-        // With the rows that read the same left out, what remains is the differences themselves: both
-        // versions still carry them. Where they sit is no longer the place they sat in the whole table,
-        // which is what the rows being left out means.
         assertThat(compareDialog.getHighlightedCellCount(1))
                 .as("The differences must still be shown in the left version once the equal rows are hidden")
                 .isPositive();
@@ -102,18 +97,12 @@ public class TestDisplayChangedRowsCompareScreens extends BaseTest {
                 .as("Right fragment should have more than 4 rows after re-enabling equal rows")
                 .isGreaterThan(4);
         compareDialog.close();
-        // The history the comparison was started from stands over the module screen and is still open.
         changesDialog.closeIfOpen();
 
-        // Compare the working copy against the repository BEFORE committing: the repo compare screen always
-        // puts the working copy on the left, so the edited-but-unsaved project is what differs from HEAD.
         RepositoryPage repositoryPage = editorPage.getTabSwitcherComponent()
                 .selectTab(TabSwitcherComponent.TabName.REPOSITORY);
         ProjectDetailPage projectDetail = repositoryPage.openProjectDetail(projectName);
 
-        // The comparison against the repository opens in a browser tab of its own, on the same screen the
-        // local changes are compared on: it opens with the rows that read the same left out, so they are
-        // asked for before the table is read line by line.
         CompareGitRevisionsDialogComponent repoCompareDialog = projectDetail.openRevisionCompare();
         repoCompareDialog.openTreeNode("Limit");
         repoCompareDialog.clickTreeNode("Rules Double BankLimitIndex (Bank bank, RatingGroup bankRatingGroup)");
@@ -125,7 +114,6 @@ public class TestDisplayChangedRowsCompareScreens extends BaseTest {
         assertThat(repoCompareDialog.getNumberOfRows(2))
                 .as("Repo right fragment should render the diff rows").isGreaterThan(0);
 
-        // The toggle re-renders the diff without breaking it; the changed cells stay highlighted in both states.
         repoCompareDialog.setShowEqualRows(false);
         assertThat(repoCompareDialog.getHighlightedCellCount(1))
                 .as("The differences must still be shown in the working copy with the equal rows left out")
@@ -151,7 +139,6 @@ public class TestDisplayChangedRowsCompareScreens extends BaseTest {
     public void testDisplayChangedRowsUploadedFilesCompareScreen() {
         String projectName = WorkflowService.loginCreateProjectFromTemplate(User.ADMIN, "Sample Project");
         EditorPage editorPage = new EditorPage();
-        // The action stands in the More menu of a module, so a module is opened to reach it.
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Main");
 
         CompareExcelFilesDialogComponent compareDialog = editorPage
@@ -195,38 +182,31 @@ public class TestDisplayChangedRowsCompareScreens extends BaseTest {
 
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName);
 
-        // Save desc1 → revision 2
         editorPage.openEditProjectDialog(projectName).setDescription("desc1").clickUpdateButton();
         editorPage.getEditorToolbarPanelComponent().clickSave();
         editorPage.getSaveChangesComponent().clickSave();
         editorPage.waitUntilSpinnerLoaded();
 
-        // Save desc2 → revision 3 (HEAD)
         editorPage.openEditProjectDialog(projectName).setDescription("desc2").clickUpdateButton();
         editorPage.getEditorToolbarPanelComponent().clickSave();
         editorPage.getSaveChangesComponent().clickSave();
         editorPage.waitUntilSpinnerLoaded();
 
-        // Open revision 2 (one behind HEAD=rev3) — editing from here causes a conflict
         editorPage.getEditorToolbarPanelComponent().clickMore().clickRevisions();
         EditorRevisionsTabComponent revisionsTab = new EditorRevisionsTabComponent();
         revisionsTab.waitForTableToLoad();
         revisionsTab.openRevision(2);
 
-        // Edit description from old revision and save → triggers Resolve Conflicts
         editorPage.openEditProjectDialog(projectName).setDescription("desc3").clickUpdateButton();
         editorPage.getEditorToolbarPanelComponent().clickSave();
         editorPage.getSaveChangesComponent().clickSave();
         editorPage.waitUntilSpinnerLoaded();
 
-        // Resolve Conflicts dialog must appear because we edited from an old revision
         ResolveConflictsDialogComponent resolveConflictsDialog = new ResolveConflictsDialogComponent();
         assertThat(resolveConflictsDialog.isDialogVisible())
                 .as("Resolve Conflicts dialog should appear when saving from an old revision while HEAD has advanced")
                 .isTrue();
 
-        // The comparison of the conflicted file opens on the comparison screen, in a window of its own;
-        // a file that is not a workbook is compared as text, and there is no box about equal rows to offer.
         CompareLocalChangesDialogComponent compareDialog = resolveConflictsDialog.clickCompareLinkAsPopup();
         compareDialog.waitForTextCompareToAppear();
         assertThat(compareDialog.isShowEqualRowsCheckboxVisible())
@@ -234,13 +214,6 @@ public class TestDisplayChangedRowsCompareScreens extends BaseTest {
                 .isFalse();
     }
 
-    /**
-     * Each of the two edits must show as a difference, in both versions, on the line it was made on.
-     *
-     * <p>The line is what the two versions are asked about rather than the cell: a merged cell is drawn once
-     * and the cells it covers are not drawn at all, so which column a difference falls in is a matter of how
-     * the table is drawn, while which line it falls on is a matter of the table itself.
-     */
     private void validateCompareWindowCells(CompareLocalChangesDialogComponent dialog) {
         assertThat(dialog.isRowHighlighted(1, 7))
                 .as("The first edit must show as a difference on row 7 of the left version")
@@ -248,9 +221,6 @@ public class TestDisplayChangedRowsCompareScreens extends BaseTest {
         assertThat(dialog.isRowHighlighted(2, 7))
                 .as("The first edit must show as a difference on row 7 of the right version")
                 .isTrue();
-        // The other edit is on row 16. Which column it falls in is the grid's own counting — a merged cell
-        // is drawn once and the cells it covers take no place — so the row is what the versions are asked
-        // about here.
         assertThat(dialog.isRowHighlighted(1, 16))
                 .as("The second edit must show as a difference on row 16 of the left version")
                 .isTrue();
@@ -259,7 +229,6 @@ public class TestDisplayChangedRowsCompareScreens extends BaseTest {
                 .isTrue();
     }
 
-    /** The same two edits, held against the repository instead of against an earlier local version. */
     private void validateRepositoryCompareWindowCells(CompareGitRevisionsDialogComponent dialog) {
         assertThat(dialog.isRowHighlighted(1, 7))
                 .as("The first edit must show as a difference on row 7 of the working copy")
@@ -270,9 +239,6 @@ public class TestDisplayChangedRowsCompareScreens extends BaseTest {
         assertThat(dialog.isRowHighlighted(1, 16))
                 .as("The second edit must show as a difference on row 16 of the working copy")
                 .isTrue();
-        // The revision is a workbook of its own and its table need not begin on the line the working copy's
-        // does, so what it is asked for is that it carries the differences — which rows of it they fall on
-        // is answered by the side that was edited.
         assertThat(dialog.getHighlightedCellCount(2))
                 .as("The revision must show what the working copy differs from it in")
                 .isPositive();

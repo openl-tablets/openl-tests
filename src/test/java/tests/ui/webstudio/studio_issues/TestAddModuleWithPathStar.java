@@ -12,6 +12,7 @@ import org.testng.annotations.Test;
 import tests.BaseTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.DECISION;
 
 public class TestAddModuleWithPathStar extends BaseTest {
 
@@ -25,8 +26,8 @@ public class TestAddModuleWithPathStar extends BaseTest {
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Bank Rating");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree("Rules")
-                .selectItemInFolder("Rules", "EquityScore");
+                .expandFolderInTree(DECISION)
+                .selectItemInFolder(DECISION, "EquityScore");
 
         assertThat(editorPage.getCenterTable().getCellText(1, 1)).contains("SimpleLookup");
         assertThat(String.join("", editorPage.getProblemsPanelComponent().getAllErrors())).contains("ExcelParseException: Unknown file format");

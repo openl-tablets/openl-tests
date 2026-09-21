@@ -14,6 +14,7 @@ import org.testng.annotations.Test;
 import tests.BaseTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.DECISION;
 
 public class TestNavigationToTable extends BaseTest {
 
@@ -38,19 +39,19 @@ public class TestNavigationToTable extends BaseTest {
                 .selectModule(projectName, MODULE_NAME);
         rulesTree.setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE);
 
-        verifyNavigationWorkForTable(editorPage, rulesTree, "Rules", "SimpleLookupTable1", LINK_POSTFIX_TEST, HEADER_POSTFIX_TEST);
-        verifyNavigationWorkForTable(editorPage, rulesTree, "Rules", "SimpleRulesTable1", LINK_POSTFIX_TEST, HEADER_POSTFIX_TEST);
-        verifyNavigationWorkForTable(editorPage, rulesTree, "Rules", "SmartLookup1", LINK_POSTFIX_TEST, HEADER_POSTFIX_TEST);
-        verifyNavigationWorkForTable(editorPage, rulesTree, "Rules", "SmartRules1", LINK_POSTFIX_TEST, HEADER_POSTFIX_TEST);
+        verifyNavigationWorkForTable(editorPage, rulesTree, DECISION, "SimpleLookupTable1", LINK_POSTFIX_TEST, HEADER_POSTFIX_TEST);
+        verifyNavigationWorkForTable(editorPage, rulesTree, DECISION, "SimpleRulesTable1", LINK_POSTFIX_TEST, HEADER_POSTFIX_TEST);
+        verifyNavigationWorkForTable(editorPage, rulesTree, DECISION, "SmartLookup1", LINK_POSTFIX_TEST, HEADER_POSTFIX_TEST);
+        verifyNavigationWorkForTable(editorPage, rulesTree, DECISION, "SmartRules1", LINK_POSTFIX_TEST, HEADER_POSTFIX_TEST);
         verifyNavigationWorkForTable(editorPage, rulesTree, "Spreadsheet", "SpreadsheetTable1", LINK_POSTFIX_TEST, HEADER_POSTFIX_TEST);
         verifyNavigationWorkForTable(editorPage, rulesTree, "TBasic", "TBasicTable1", LINK_POSTFIX_TEST, HEADER_POSTFIX_TEST);
         verifyNavigationWorkForTable(editorPage, rulesTree, "Column Match", "ColumnMatchTable1", LINK_POSTFIX_TEST, HEADER_POSTFIX_TEST);
         verifyNavigationWorkForTable(editorPage, rulesTree, "Method", "MethodTable1", LINK_POSTFIX_TEST, HEADER_POSTFIX_TEST);
 
-        verifyNavigationWorkForTable(editorPage, rulesTree, "Rules", "SimpleLookupTable2", LINK_POSTFIX_RUN, HEADER_POSTFIX_RUN);
-        verifyNavigationWorkForTable(editorPage, rulesTree, "Rules", "SimpleRulesTable2", LINK_POSTFIX_RUN, HEADER_POSTFIX_RUN);
-        verifyNavigationWorkForTable(editorPage, rulesTree, "Rules", "SmartLookup2", LINK_POSTFIX_RUN, HEADER_POSTFIX_RUN);
-        verifyNavigationWorkForTable(editorPage, rulesTree, "Rules", "SmartRules2", LINK_POSTFIX_RUN, HEADER_POSTFIX_RUN);
+        verifyNavigationWorkForTable(editorPage, rulesTree, DECISION, "SimpleLookupTable2", LINK_POSTFIX_RUN, HEADER_POSTFIX_RUN);
+        verifyNavigationWorkForTable(editorPage, rulesTree, DECISION, "SimpleRulesTable2", LINK_POSTFIX_RUN, HEADER_POSTFIX_RUN);
+        verifyNavigationWorkForTable(editorPage, rulesTree, DECISION, "SmartLookup2", LINK_POSTFIX_RUN, HEADER_POSTFIX_RUN);
+        verifyNavigationWorkForTable(editorPage, rulesTree, DECISION, "SmartRules2", LINK_POSTFIX_RUN, HEADER_POSTFIX_RUN);
         verifyNavigationWorkForTable(editorPage, rulesTree, "Spreadsheet", "SpreadsheetTable2", LINK_POSTFIX_RUN, HEADER_POSTFIX_RUN);
         verifyNavigationWorkForTable(editorPage, rulesTree, "TBasic", "TBasicTable2", LINK_POSTFIX_RUN, HEADER_POSTFIX_RUN);
         verifyNavigationWorkForTable(editorPage, rulesTree, "Column Match", "ColumnMatchTable2", LINK_POSTFIX_RUN, HEADER_POSTFIX_RUN);
@@ -102,8 +103,6 @@ public class TestNavigationToTable extends BaseTest {
         assertThat(appearedTable.isVisible())
                 .as("Center table should be visible after navigation from %s/%s", folderName, tableName)
                 .isTrue();
-        // A table is headed by one line, which the grid draws as a single cell spanning its width rather
-        // than as the several cells the old editor split it into.
         assertThat(String.join(" ", appearedTable.getRow(1).getValue()))
                 .as("The line %s%s is headed by should name %s", tableName, headerPostfix, tableName)
                 .contains(tableName + headerPostfix);

@@ -25,13 +25,13 @@ import java.util.List;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.SPREADSHEET;
 
 public class TestMergeBranchesNoConflicts extends BaseTest {
 
     private static final String PROJECT_NAME = "NoConflicts";
     private static final String BRANCH_NAME = "MyBranch";
     private static final String MASTER_BRANCH = "master";
-    private static final String SPREADSHEET = "Spreadsheet";
 
     @Test
     @TestCaseId("IPBQA-29455")
