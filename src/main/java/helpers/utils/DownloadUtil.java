@@ -30,6 +30,14 @@ public class DownloadUtil {
     }
     
     public static File downloadFile(Locator trigger, int timeoutMs) {
+        return downloadFile(trigger::click, timeoutMs);
+    }
+
+    public static File downloadFile(Runnable trigger) {
+        return downloadFile(trigger, getDefaultTimeout());
+    }
+
+    public static File downloadFile(Runnable trigger, int timeoutMs) {
         if (isDockerMode()) {
             LOGGER.info("Downloading file in DOCKER mode using createReadStream()");
             return downloadFileFromContainer(trigger, timeoutMs);
@@ -39,11 +47,11 @@ public class DownloadUtil {
         }
     }
     
-    private static File downloadFileLocal(Locator trigger, int timeoutMs) {
+    private static File downloadFileLocal(Runnable trigger, int timeoutMs) {
         Page page = DriverPool.getPage();
 
         return WaitUtil.retryOnException(() -> {
-            Download download = page.waitForDownload(new Page.WaitForDownloadOptions().setTimeout(timeoutMs), trigger::click);
+            Download download = page.waitForDownload(new Page.WaitForDownloadOptions().setTimeout(timeoutMs), trigger);
 
             LOGGER.info("Download started: {}", download.suggestedFilename());
 
@@ -73,11 +81,11 @@ public class DownloadUtil {
         }, RETRY_TIMEOUT_MS, RETRY_INTERVAL_MS, "Download file in LOCAL mode");
     }
     
-    private static File downloadFileFromContainer(Locator trigger, int timeoutMs) {
+    private static File downloadFileFromContainer(Runnable trigger, int timeoutMs) {
         Page page = DockerDriverPool.getPage();
 
         return WaitUtil.retryOnException(() -> {
-            Download download = page.waitForDownload(new Page.WaitForDownloadOptions().setTimeout(timeoutMs), trigger::click);
+            Download download = page.waitForDownload(new Page.WaitForDownloadOptions().setTimeout(timeoutMs), trigger);
 
             LOGGER.info("Download started in container: {}", download.suggestedFilename());
 
