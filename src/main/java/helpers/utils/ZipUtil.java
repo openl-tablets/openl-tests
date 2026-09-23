@@ -3,12 +3,16 @@ package helpers.utils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -39,27 +43,38 @@ public class ZipUtil {
     }
 
     public static String readFileFromZip(File zipFile, String entryName) {
-        try (ZipInputStream zis = new ZipInputStream(new FileInputStream(zipFile))) {
-            ZipEntry entry;
-            while ((entry = zis.getNextEntry()) != null) {
-                String normalizedEntryName = normalizePath(entry.getName());
-                if (normalizedEntryName.equals(entryName) || normalizedEntryName.endsWith("/" + entryName)) {
-                    StringBuilder content = new StringBuilder();
-                    byte[] buffer = new byte[4096];
-                    int len;
-                    while ((len = zis.read(buffer)) > 0) {
-                        content.append(new String(buffer, 0, len, StandardCharsets.UTF_8));
-                    }
-                    LOGGER.info("Read file '{}' from archive {} ({} chars)", entryName, zipFile.getName(), content.length());
-                    return content.toString();
-                }
-                zis.closeEntry();
-            }
+        try (InputStream archive = new FileInputStream(zipFile)) {
+            String content = readEntry(archive, name -> name.equals(entryName) || name.endsWith("/" + entryName))
+                    .orElseThrow(() -> new RuntimeException("File '" + entryName + "' not found in ZIP archive: " + zipFile.getName()));
+            LOGGER.info("Read file '{}' from archive {} ({} chars)", entryName, zipFile.getName(), content.length());
+            return content;
         } catch (IOException e) {
             LOGGER.error("Failed to read file '{}' from ZIP: {}", entryName, zipFile.getName(), e);
             throw new RuntimeException("Failed to read file from ZIP archive: " + e.getMessage(), e);
         }
-        throw new RuntimeException("File '" + entryName + "' not found in ZIP archive: " + zipFile.getName());
+    }
+
+    public static String readFileFromZip(byte[] archive, String entryName) {
+        try {
+            return readEntry(new ByteArrayInputStream(archive), name -> name.equals(entryName))
+                    .orElseThrow(() -> new RuntimeException(
+                            "File '" + entryName + "' not found in ZIP archive of " + archive.length + " bytes"));
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to read file from ZIP archive: " + e.getMessage(), e);
+        }
+    }
+
+    private static Optional<String> readEntry(InputStream archive, Predicate<String> wanted) throws IOException {
+        try (ZipInputStream zis = new ZipInputStream(archive)) {
+            ZipEntry entry;
+            while ((entry = zis.getNextEntry()) != null) {
+                if (wanted.test(normalizePath(entry.getName()))) {
+                    return Optional.of(new String(zis.readAllBytes(), StandardCharsets.UTF_8));
+                }
+                zis.closeEntry();
+            }
+        }
+        return Optional.empty();
     }
 
     private static String normalizePath(String path) {
