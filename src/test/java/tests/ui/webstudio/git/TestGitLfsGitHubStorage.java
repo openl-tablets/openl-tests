@@ -2,6 +2,7 @@ package tests.ui.webstudio.git;
 
 import configuration.annotations.AppContainerConfig;
 import configuration.annotations.DedicatedWorkflow;
+import configuration.annotations.KnownIssue;
 import configuration.annotations.Description;
 import configuration.annotations.TestCaseId;
 import configuration.appcontainer.AppContainerPool;
@@ -97,6 +98,7 @@ public final class TestGitLfsGitHubStorage extends BaseTest {
     }
 
     @Test
+    @KnownIssue("EPBDS-16711")
     @TestCaseId("EPBDS-11591")
     @Description("Git LFS on GitHub - Studio opens a module whose LFS object is on GitHub and saves an edit of it back to GitHub LFS")
     @AppContainerConfig(startParams = AppContainerStartParameters.STUDIO_GIT)
