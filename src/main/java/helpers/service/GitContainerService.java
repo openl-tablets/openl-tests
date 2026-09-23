@@ -144,35 +144,33 @@ public class GitContainerService {
     }
 
     private void createOwner() {
-        Container.ExecResult result;
-        try {
-            result = container.execInContainerWithUser("git", "gitea", "admin", "user", "create",
-                    "--username", OWNER, "--password", OWNER_PASSWORD, "--email", OWNER + "@example.com",
-                    "--admin", "--must-change-password=false");
-        } catch (IOException e) {
-            throw new UncheckedIOException("Cannot create the Gitea user " + OWNER, e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new IllegalStateException("Interrupted while creating the Gitea user " + OWNER, e);
-        }
-        if (result.getExitCode() != 0) {
-            throw new IllegalStateException("Cannot create the Gitea user " + OWNER + ": "
-                    + result.getStdout() + result.getStderr());
-        }
+        runGitea("create the Gitea user " + OWNER, "admin", "user", "create",
+                "--username", OWNER, "--password=" + OWNER_PASSWORD, "--email", OWNER + "@example.com",
+                "--admin", "--must-change-password=false");
     }
 
     private void changeOwnerPassword() {
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("login_name", OWNER);
-        body.put("source_id", 0);
-        body.put("password", ownerPassword);
-        body.put("must_change_password", false);
-        Response response = RestAssured.given()
-                .contentType("application/json")
-                .auth().preemptive().basic(OWNER, OWNER_PASSWORD)
-                .body(body)
-                .patch(hostBaseUrl() + "/api/v1/admin/users/" + OWNER);
-        requireStatus(response, 200, "change the password of " + OWNER);
+        runGitea("change the password of the Gitea user " + OWNER, "admin", "user", "change-password",
+                "--username", OWNER, "--password=" + ownerPassword, "--must-change-password=false");
+    }
+
+    private void runGitea(String action, String... arguments) {
+        String[] command = new String[arguments.length + 1];
+        command[0] = "gitea";
+        System.arraycopy(arguments, 0, command, 1, arguments.length);
+        Container.ExecResult result;
+        try {
+            result = container.execInContainerWithUser("git", command);
+        } catch (IOException e) {
+            throw new UncheckedIOException("Cannot " + action, e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Interrupted while trying to " + action, e);
+        }
+        if (result.getExitCode() != 0) {
+            throw new IllegalStateException("Cannot " + action + ": "
+                    + (result.getStdout() + result.getStderr()).replace(ownerPassword, "***"));
+        }
     }
 
     private void createRepository() {
