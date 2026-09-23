@@ -108,7 +108,29 @@ jobs:
             --export-dir target/test-export \
             --queue-file target/queue/lfs.json
 
-      - name: Check the artifacts for the token
+      - name: Build the test report
+        id: report
+        if: always()
+        env:
+          BUILD_LABEL: ${{ inputs.application_version }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          mkdir -p report-input/openl-tests-lfs/target
+          cp -R target/test-export report-input/openl-tests-lfs/target/
+          python3 scripts/github-actions/generate-merged-report.py \
+            --input-root report-input \
+            --output-dir merged-report \
+            --step-summary report-summary.md \
+            --title "OpenL LFS Tests [${BUILD_LABEL}]" \
+            --build "${BUILD_LABEL}" \
+            --run-url "${RUN_URL}" \
+            --studio-image "ghcr.io/openl-tablets/webstudio:${BUILD_LABEL}" \
+            --tests-branch "${GITHUB_REF_NAME}" \
+            --playwright-version "${PLAYWRIGHT_NPM_PACKAGE#playwright@}" \
+            --java-version 21 \
+            --selective true > /dev/null
+
+      - name: Check the artifacts and the report for the token
         id: leaks
         if: always()
         env:
@@ -116,7 +138,12 @@ jobs:
         run: |
           python3 scripts/github-actions/check-secret-leaks.py \
             --secret-env GITHUB_TOKEN \
-            target generated-testng
+            target generated-testng merged-report report-summary.md
+
+      - name: Write the job summary
+        if: always() && steps.leaks.outcome == 'success'
+        run: |
+          if [ -f report-summary.md ]; then cat report-summary.md >> "${GITHUB_STEP_SUMMARY}"; fi
 
       - name: Upload test artifacts
         if: always() && steps.leaks.outcome == 'success'
@@ -132,6 +159,27 @@ jobs:
             target/videos/**
             target/logs/**
             generated-testng/**
+
+      - name: Upload the test report
+        if: always() && steps.leaks.outcome == 'success' && steps.report.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report-merged
+          if-no-files-found: error
+          retention-days: 3
+          path: merged-report/**
+
+      - name: Publish the report to GitHub Pages
+        if: always() && steps.leaks.outcome == 'success' && steps.report.outcome == 'success'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python3 scripts/github-actions/publish-report-pages.py \
+            --repo "${GITHUB_REPOSITORY}" \
+            --run-id "${GITHUB_RUN_ID}" \
+            --report-dir merged-report \
+            --pages-url "https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}" \
+            --keep 15
 
       - name: Remove the queue ref of this run attempt
         if: always()
