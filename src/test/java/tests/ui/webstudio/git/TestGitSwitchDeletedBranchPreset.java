@@ -55,8 +55,8 @@ public class TestGitSwitchDeletedBranchPreset extends BaseTest {
     protected Map<String, String> additionalContainerConfig() {
         return Map.of(
                 "repository.design.uri", gitContainer.getInNetworkUrl(),
-                "repository.design.login", GitRemote.ANONYMOUS,
-                "repository.design.password", GitRemote.ANONYMOUS
+                "repository.design.login", gitRemote.login(),
+                "repository.design.password", gitRemote.password()
         );
     }
 
@@ -92,10 +92,6 @@ public class TestGitSwitchDeletedBranchPreset extends BaseTest {
                 .isIn("Closed", "No Changes");
     }
 
-    /**
-     * The project the design repository holds. It is read from git when the repository is first read, so it
-     * is waited for rather than made: the scenario is about the branches of a project that is already there.
-     */
     private String projectOfTheRepository(RepositoryPage repositoryPage) {
         WaitUtil.requireCondition(() -> !repositoryPage.getAllVisibleProjectsInTable().isEmpty(),
                 30000, 1000, "Waiting for the projects of the design repository to be listed");

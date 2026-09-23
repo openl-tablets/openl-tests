@@ -1,35 +1,52 @@
 package helpers.service;
 
 import configuration.network.NetworkPool;
+import io.restassured.RestAssured;
+import io.restassured.response.Response;
+import io.restassured.specification.RequestSpecification;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.testcontainers.containers.Container;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
-import org.testcontainers.utility.MountableFile;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class GitContainerService {
 
     private static final Logger LOGGER = LogManager.getLogger(GitContainerService.class);
 
-    private static final int GIT_DAEMON_PORT = 9418;
+    private static final int HTTP_PORT = 3000;
     private static final String REPO_NAME = "design";
     private static final String FIXTURE_RESOURCE = "/git_daemon_repo";
     private static final String BRANCH = "master";
+    private static final String OWNER = "openl";
+    private static final String OWNER_PASSWORD = "openl-git-pass";
 
-    private static final String IMAGE = "alpine/git:2.49.1";
+    private static final String IMAGE = "gitea/gitea:1.27.3";
     private static final Duration STARTUP_TIMEOUT = Duration.ofMinutes(3);
 
     private final String alias;
     private final String repoName;
     private final String branch;
     private final Path fixtureDir;
+    private final List<String> lfsPatterns = new ArrayList<>();
     private GenericContainer<?> container;
 
     public GitContainerService(String alias) {
@@ -43,6 +60,11 @@ public class GitContainerService {
         this.fixtureDir = resolveFixtureDir(fixtureResource);
     }
 
+    public GitContainerService withLfsTracking(String pattern) {
+        lfsPatterns.add(pattern);
+        return this;
+    }
+
     public void start() {
         Network network = NetworkPool.getNetwork();
         if (network == null) {
@@ -52,26 +74,43 @@ public class GitContainerService {
         container = new GenericContainer<>(DockerImageName.parse(IMAGE))
                 .withNetwork(network)
                 .withNetworkAliases(alias)
-                .withExposedPorts(GIT_DAEMON_PORT)
-                .withCopyFileToContainer(MountableFile.forHostPath(fixtureDir, 0755), "/tmp/fixture")
-                .withCreateContainerCmdModifier(cmd -> cmd.withEntrypoint("sh"))
-                .withCommand("-c", setupScript())
-                .waitingFor(Wait.forListeningPort().withStartupTimeout(STARTUP_TIMEOUT));
-        LOGGER.info("Starting git daemon ({}) on network alias '{}'", IMAGE, alias);
+                .withExposedPorts(HTTP_PORT)
+                .withEnv("GITEA__security__INSTALL_LOCK", "true")
+                .withEnv("GITEA__database__DB_TYPE", "sqlite3")
+                .withEnv("GITEA__server__HTTP_PORT", String.valueOf(HTTP_PORT))
+                .withEnv("GITEA__server__ROOT_URL", inNetworkBaseUrl() + "/")
+                .withEnv("GITEA__server__DISABLE_SSH", "true")
+                .withEnv("GITEA__server__LFS_START_SERVER", "true")
+                .withEnv("GITEA__service__DISABLE_REGISTRATION", "true")
+                .withEnv("GITEA__service__REQUIRE_SIGNIN_VIEW", "false")
+                .waitingFor(Wait.forHttp("/api/healthz").forPort(HTTP_PORT).forStatusCode(200)
+                        .withStartupTimeout(STARTUP_TIMEOUT));
+        LOGGER.info("Starting Gitea ({}) on network alias '{}'", IMAGE, alias);
         container.start();
-        LOGGER.info("git daemon ready. Host URL: {} | in-network URL: {}", getHostUrl(), getInNetworkUrl());
+        createOwner();
+        createRepository();
+        commitFixture();
+        LOGGER.info("Gitea ready. Host URL: {} | in-network URL: {}", getHostUrl(), getInNetworkUrl());
     }
 
     public String getHostUrl() {
-        return "git://" + container.getHost() + ":" + container.getMappedPort(GIT_DAEMON_PORT) + "/" + repoName;
+        return hostBaseUrl() + "/" + OWNER + "/" + repoName + ".git";
     }
 
     public String getInNetworkUrl() {
-        return "git://" + alias + ":" + GIT_DAEMON_PORT + "/" + repoName;
+        return inNetworkBaseUrl() + "/" + OWNER + "/" + repoName + ".git";
     }
 
     public GitRemote asRemote() {
-        return GitRemote.anonymous(getHostUrl());
+        return new GitRemote(getHostUrl(), OWNER, OWNER_PASSWORD);
+    }
+
+    public byte[] readCommittedFile(String path) {
+        return readFile("raw", path);
+    }
+
+    public byte[] readLfsContent(String path) {
+        return readFile("media", path);
     }
 
     public void stop() {
@@ -80,23 +119,106 @@ public class GitContainerService {
         }
     }
 
-    private String setupScript() {
-        return """
-                set -e
-                apk add --no-cache git-daemon
-                mkdir -p /work /srv/git
-                cp -a /tmp/fixture/. /work/
-                cd /work
-                git config --global --add safe.directory /work
-                git config --global --add safe.directory /srv/git/%s.git
-                git init -b %s
-                git config user.email "test@example.com"
-                git config user.name "Test"
-                git add -A
-                git commit -m "Initial commit"
-                git clone --bare /work /srv/git/%s.git
-                exec git daemon --reuseaddr --enable=receive-pack --base-path=/srv/git --export-all --port=%d
-                """.formatted(repoName, branch, repoName, GIT_DAEMON_PORT);
+    private void createOwner() {
+        Container.ExecResult result;
+        try {
+            result = container.execInContainerWithUser("git", "gitea", "admin", "user", "create",
+                    "--username", OWNER, "--password", OWNER_PASSWORD, "--email", OWNER + "@example.com",
+                    "--admin", "--must-change-password=false");
+        } catch (IOException e) {
+            throw new UncheckedIOException("Cannot create the Gitea user " + OWNER, e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Interrupted while creating the Gitea user " + OWNER, e);
+        }
+        if (result.getExitCode() != 0) {
+            throw new IllegalStateException("Cannot create the Gitea user " + OWNER + ": "
+                    + result.getStdout() + result.getStderr());
+        }
+    }
+
+    private void createRepository() {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("name", repoName);
+        body.put("default_branch", branch);
+        body.put("private", false);
+        Response response = ownerRequest().body(body).post(hostBaseUrl() + "/api/v1/user/repos");
+        requireStatus(response, 201, "create the repository " + repoName);
+    }
+
+    private void commitFixture() {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("branch", branch);
+        body.put("message", "Initial commit");
+        body.put("files", fixtureFiles());
+        Response response = ownerRequest().body(body)
+                .post(hostBaseUrl() + "/api/v1/repos/" + OWNER + "/" + repoName + "/contents");
+        requireStatus(response, 201, "commit the fixture " + fixtureDir + " to " + repoName);
+    }
+
+    private List<Map<String, String>> fixtureFiles() {
+        List<Map<String, String>> files = new ArrayList<>();
+        if (!lfsPatterns.isEmpty()) {
+            files.add(createFileOperation(".gitattributes", lfsAttributes()));
+        }
+        try (Stream<Path> paths = Files.walk(fixtureDir)) {
+            paths.filter(Files::isRegularFile).sorted().forEach(file -> files.add(
+                    createFileOperation(fixtureDir.relativize(file).toString().replace('\\', '/'), readFixtureFile(file))));
+        } catch (IOException e) {
+            throw new UncheckedIOException("Cannot read the fixture " + fixtureDir, e);
+        }
+        return files;
+    }
+
+    private byte[] lfsAttributes() {
+        return lfsPatterns.stream()
+                .map(pattern -> pattern + " filter=lfs diff=lfs merge=lfs -text\n")
+                .collect(Collectors.joining())
+                .getBytes(StandardCharsets.UTF_8);
+    }
+
+    private static byte[] readFixtureFile(Path file) {
+        try {
+            return Files.readAllBytes(file);
+        } catch (IOException e) {
+            throw new UncheckedIOException("Cannot read the fixture file " + file, e);
+        }
+    }
+
+    private static Map<String, String> createFileOperation(String path, byte[] content) {
+        Map<String, String> operation = new LinkedHashMap<>();
+        operation.put("operation", "create");
+        operation.put("path", path);
+        operation.put("content", Base64.getEncoder().encodeToString(content));
+        return operation;
+    }
+
+    private byte[] readFile(String endpoint, String path) {
+        Response response = ownerRequest().queryParam("ref", branch)
+                .get(hostBaseUrl() + "/api/v1/repos/" + OWNER + "/" + repoName + "/" + endpoint + "/" + path);
+        requireStatus(response, 200, "read " + path + " from " + repoName);
+        return response.asByteArray();
+    }
+
+    private RequestSpecification ownerRequest() {
+        return RestAssured.given()
+                .contentType("application/json")
+                .auth().preemptive().basic(OWNER, OWNER_PASSWORD);
+    }
+
+    private static void requireStatus(Response response, int expected, String action) {
+        if (response.getStatusCode() != expected) {
+            throw new IllegalStateException("Gitea could not " + action + ": HTTP " + response.getStatusCode()
+                    + " " + response.asString());
+        }
+    }
+
+    private String hostBaseUrl() {
+        return "http://" + container.getHost() + ":" + container.getMappedPort(HTTP_PORT);
+    }
+
+    private String inNetworkBaseUrl() {
+        return "http://" + alias + ":" + HTTP_PORT;
     }
 
     private static Path resolveFixtureDir(String fixtureResource) {
