@@ -4,6 +4,7 @@ import base64
 import html
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -30,7 +31,7 @@ table{width:100%;border-collapse:separate;border-spacing:0} th{padding:12px 14px
 td{padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:top} tr:hover td{background:#f8fafc}
 .pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:600;margin-right:6px}
 .passed{color:#15803d;background:#dcfce7} .failed{color:#dc2626;background:#fee2e2} .known{color:#c2410c;background:#ffedd5} .fixed{color:#1d4ed8;background:#dbeafe} .skipped{color:#a16207;background:#fef9c3}
-small{color:var(--muted)} code{padding:1px 6px;border-radius:6px;background:#eef2f6;font-size:12px}
+small{color:var(--muted)} .workflow{display:inline-block;margin-bottom:4px;font-weight:600} code{padding:1px 6px;border-radius:6px;background:#eef2f6;font-size:12px}
 </style></head><body><div class="page">
 <h1>OpenL Tests reports</h1>
 <div class="meta">The last $count GitHub Actions runs, newest first. Every report is self-contained: step logs, Playwright traces, application logs and screenshots.</div>
@@ -89,6 +90,17 @@ def describe_application(application: dict) -> str:
     return e("; ".join(described))
 
 
+def workflow_of(run_dir: Path, run: dict) -> str:
+    if run.get("workflow"):
+        return str(run["workflow"])
+    report = run_dir / "index.html"
+    if not report.exists():
+        return ""
+    with report.open(encoding="utf-8", errors="replace") as page:
+        title = re.search(r"<title>(.*?)</title>", page.read(4096), re.S)
+    return html.unescape(re.sub(r"\s*\[[^\]]*\]\s*$", "", title.group(1))).strip() if title else ""
+
+
 def render_index(runs_root: Path, repository: str) -> str:
     rows = []
     for run_dir in run_dirs(runs_root):
@@ -106,11 +118,13 @@ def render_index(runs_root: Path, repository: str) -> str:
         applications = "<br>".join(describe_application(a) for a in (run.get("applications") or []) if isinstance(a, dict)) or e(summary.get("build", ""))
         tests_revision = f"<code>{e(run.get('testsBranch'))}</code> @ <code>{e(str(run.get('testsCommit'))[:12])}</code>" if run.get("testsCommit") else "—"
         selective = " <small>selective</small>" if run.get("selective") else ""
-        workflow = f" · <a href='https://github.com/{e(repository)}/actions/runs/{e(run_dir.name)}'>workflow</a>" if repository else ""
+        run_link = f" · <a href='https://github.com/{e(repository)}/actions/runs/{e(run_dir.name)}'>workflow</a>" if repository else ""
+        workflow_name = workflow_of(run_dir, run)
+        workflow_label = f"<span class='workflow'>{e(workflow_name)}</span><br>" if workflow_name else ""
         rows.append(
-            f"<tr><td><a href='{RUNS_DIR}/{e(run_dir.name)}/'>{e(run.get('startedAt') or run_dir.name)}</a>{selective}<br><small>run {e(run_dir.name)}</small></td>"
+            f"<tr><td>{workflow_label}<a href='{RUNS_DIR}/{e(run_dir.name)}/'>{e(run.get('startedAt') or run_dir.name)}</a>{selective}<br><small>run {e(run_dir.name)}</small></td>"
             f"<td>{applications}</td><td>{results}<br><small>{e(summary.get('total', ''))} tests</small></td><td>{tests_revision}</td>"
-            f"<td><a href='{RUNS_DIR}/{e(run_dir.name)}/'>open report</a>{workflow}</td></tr>"
+            f"<td><a href='{RUNS_DIR}/{e(run_dir.name)}/'>open report</a>{run_link}</td></tr>"
         )
     return INDEX_TEMPLATE.substitute(count=len(rows), rows="".join(rows) or "<tr><td colspan='5'>No reports published yet.</td></tr>")
 

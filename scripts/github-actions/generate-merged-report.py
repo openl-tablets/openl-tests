@@ -301,6 +301,7 @@ class RunInfo:
     java_version: str
     selective: bool
     run_url: str
+    workflow: str
 
     def commit_url(self) -> str:
         if self.tests_repository and self.tests_sha:
@@ -355,6 +356,7 @@ def run_info(records: list[TestRecord], args: argparse.Namespace) -> RunInfo:
         java_version=args.java_version,
         selective=str(args.selective).lower() == "true",
         run_url=args.run_url,
+        workflow=args.workflow,
     )
 
 
@@ -379,6 +381,7 @@ def describe_application(application: dict) -> str:
 
 def render_run_block(info: RunInfo) -> str:
     rows: list[tuple[str, str]] = [
+        ("Workflow", f"<a href='{e(info.run_url)}'>{e(info.workflow) or '—'}</a>" if info.run_url else e(info.workflow) or "—"),
         ("Run", f"{e(info.started_at)} → {e(info.finished_at)}" + (f" · {format_duration(info.wall_seconds * 1000)} wall time" if info.wall_seconds else "") + (" · selective run" if info.selective else "")),
     ]
     for application in info.applications:
@@ -792,6 +795,7 @@ def main() -> None:
     parser.add_argument("--playwright-version", default="")
     parser.add_argument("--java-version", default="")
     parser.add_argument("--selective", default="false")
+    parser.add_argument("--workflow", default=os.environ.get("GITHUB_WORKFLOW", ""), help="Name of the workflow that ran the tests.")
     args = parser.parse_args()
 
     if args.output_dir.exists():
@@ -824,6 +828,7 @@ def main() -> None:
                     "playwrightVersion": info.playwright_version,
                     "javaVersion": info.java_version,
                     "selective": info.selective,
+                    "workflow": info.workflow,
                     "workflowRunUrl": info.run_url,
                 },
                 "total": len(records),
