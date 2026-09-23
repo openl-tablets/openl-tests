@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from testgroups import TEST_SOURCES, ci_test_classes, discover_test_classes  # noqa: E402
+from testgroups import TEST_SOURCES, ci_test_classes, dedicated_workflow_classes, discover_test_classes  # noqa: E402
 
 CLASS_NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_.]*$")
 
@@ -20,7 +20,7 @@ def parse_selected_classes(raw: str) -> list[str]:
     return names
 
 
-def resolve_selected(names: list[str], known: dict[str, bool]) -> list[str]:
+def resolve_selected(names: list[str], known: dict[str, bool], dedicated: set[str]) -> list[str]:
     resolved: list[str] = []
     unknown: list[str] = []
     for name in names:
@@ -33,6 +33,9 @@ def resolve_selected(names: list[str], known: dict[str, bool]) -> list[str]:
                 resolved.append(match)
     if unknown:
         raise SystemExit(f"Test classes not found under {TEST_SOURCES}: {', '.join(unknown)}")
+    refused = [name for name in resolved if name in dedicated]
+    if refused:
+        raise SystemExit(f"Test classes annotated @DedicatedWorkflow run only in their own workflow: {', '.join(refused)}")
     return resolved
 
 
@@ -58,8 +61,9 @@ def main() -> None:
     args = parser.parse_args()
 
     known = discover_test_classes(args.sources)
+    dedicated = dedicated_workflow_classes(args.sources)
     selected = parse_selected_classes(args.classes)
-    classes = resolve_selected(selected, known) if selected else ci_test_classes(args.sources)
+    classes = resolve_selected(selected, known, dedicated) if selected else ci_test_classes(args.sources)
     if not classes:
         raise SystemExit("No test classes to run")
     if args.shards < 1:
@@ -69,6 +73,7 @@ def main() -> None:
     discovery = {
         "classes": classes,
         "localOnly": sorted(name for name, local_only in known.items() if local_only),
+        "dedicatedWorkflow": sorted(dedicated),
         "selective": bool(selected),
         "matrix": {"include": [{"shard": index, "display": f"shard-{index:02d}"} for index in range(1, shard_count + 1)]},
     }
@@ -79,6 +84,8 @@ def main() -> None:
         print(f"  {name}")
     if discovery["localOnly"]:
         print("Skipped as @LocalOnly: " + ", ".join(discovery["localOnly"]))
+    if discovery["dedicatedWorkflow"]:
+        print("Skipped as @DedicatedWorkflow: " + ", ".join(discovery["dedicatedWorkflow"]))
 
 
 if __name__ == "__main__":

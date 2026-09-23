@@ -131,7 +131,7 @@ public abstract class BaseTest implements ITest {
         if (configAnnotation != null) {
             containerConfig = configAnnotation.startParams().getParameterMap();
             containerConfig.putAll(additionalContainerConfig());
-            containerConfig.forEach((key, value) -> LOGGER.info(String.format("[%s] -> [%s]", key, value)));
+            containerConfig.forEach((key, value) -> LOGGER.info(String.format("[%s] -> [%s]", key, loggedValue(key, value))));
             Map<String, String> filesToCopy = new HashMap<>(additionalContainerFiles());
             if (!configAnnotation.copyFileFromPath().isEmpty() && !configAnnotation.copyFileToContainerPath().isEmpty()) {
                 filesToCopy.put(configAnnotation.copyFileFromPath(), configAnnotation.copyFileToContainerPath());
@@ -146,6 +146,11 @@ public abstract class BaseTest implements ITest {
             TestExportUtil.recordApplicationInfo(dockerImageName, Map.of());
             AppContainerPool.setAppContainer(appContainerName, network, AppContainerStartParameters.EMPTY.getParameterMap(), null, dockerImageName);
         }
+    }
+
+    private static String loggedValue(String key, String value) {
+        String name = key.toLowerCase();
+        return name.contains("password") || name.contains("token") || name.contains("secret") ? "***" : value;
     }
 
     protected Map<String, String> additionalContainerConfig() {

@@ -39,7 +39,7 @@ public class GitContainerService {
     private static final String OWNER = "openl";
     private static final String OWNER_PASSWORD = "openl-git-pass";
 
-    private static final String IMAGE = "gitea/gitea:1.27.3";
+    private static final String IMAGE = "gitea/gitea:1.27.3@sha256:87a67ee09d3ae0d1df5fda5dcda3e2a1f9236a45b0a59025d6e00e46adc43bef";
     private static final Duration STARTUP_TIMEOUT = Duration.ofMinutes(3);
 
     private final String alias;
@@ -47,6 +47,9 @@ public class GitContainerService {
     private final String branch;
     private final Path fixtureDir;
     private final List<String> lfsPatterns = new ArrayList<>();
+    private final Map<String, byte[]> replacedFiles = new LinkedHashMap<>();
+    private String externalLfsUrl;
+    private String ownerPassword = OWNER_PASSWORD;
     private GenericContainer<?> container;
 
     public GitContainerService(String alias) {
@@ -65,6 +68,21 @@ public class GitContainerService {
         return this;
     }
 
+    public GitContainerService withExternalLfs(String lfsUrl) {
+        externalLfsUrl = lfsUrl;
+        return this;
+    }
+
+    public GitContainerService withOwnerPassword(String password) {
+        ownerPassword = password;
+        return this;
+    }
+
+    public GitContainerService withFile(String path, byte[] content) {
+        replacedFiles.put(path, content);
+        return this;
+    }
+
     public void start() {
         Network network = NetworkPool.getNetwork();
         if (network == null) {
@@ -80,7 +98,7 @@ public class GitContainerService {
                 .withEnv("GITEA__server__HTTP_PORT", String.valueOf(HTTP_PORT))
                 .withEnv("GITEA__server__ROOT_URL", inNetworkBaseUrl() + "/")
                 .withEnv("GITEA__server__DISABLE_SSH", "true")
-                .withEnv("GITEA__server__LFS_START_SERVER", "true")
+                .withEnv("GITEA__server__LFS_START_SERVER", String.valueOf(externalLfsUrl == null))
                 .withEnv("GITEA__service__DISABLE_REGISTRATION", "true")
                 .withEnv("GITEA__service__REQUIRE_SIGNIN_VIEW", "false")
                 .waitingFor(Wait.forHttp("/api/healthz").forPort(HTTP_PORT).forStatusCode(200)
@@ -88,6 +106,9 @@ public class GitContainerService {
         LOGGER.info("Starting Gitea ({}) on network alias '{}'", IMAGE, alias);
         container.start();
         createOwner();
+        if (!OWNER_PASSWORD.equals(ownerPassword)) {
+            changeOwnerPassword();
+        }
         createRepository();
         commitFixture();
         LOGGER.info("Gitea ready. Host URL: {} | in-network URL: {}", getHostUrl(), getInNetworkUrl());
@@ -102,7 +123,7 @@ public class GitContainerService {
     }
 
     public GitRemote asRemote() {
-        return new GitRemote(getHostUrl(), OWNER, OWNER_PASSWORD);
+        return new GitRemote(getHostUrl(), OWNER, ownerPassword);
     }
 
     public byte[] readCommittedFile(String path) {
@@ -110,6 +131,9 @@ public class GitContainerService {
     }
 
     public byte[] readLfsContent(String path) {
+        if (externalLfsUrl != null) {
+            throw new IllegalStateException("LFS objects of " + repoName + " are stored at " + externalLfsUrl + ", not in Gitea");
+        }
         return readFile("media", path);
     }
 
@@ -137,6 +161,20 @@ public class GitContainerService {
         }
     }
 
+    private void changeOwnerPassword() {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("login_name", OWNER);
+        body.put("source_id", 0);
+        body.put("password", ownerPassword);
+        body.put("must_change_password", false);
+        Response response = RestAssured.given()
+                .contentType("application/json")
+                .auth().preemptive().basic(OWNER, OWNER_PASSWORD)
+                .body(body)
+                .patch(hostBaseUrl() + "/api/v1/admin/users/" + OWNER);
+        requireStatus(response, 200, "change the password of " + OWNER);
+    }
+
     private void createRepository() {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("name", repoName);
@@ -157,17 +195,21 @@ public class GitContainerService {
     }
 
     private List<Map<String, String>> fixtureFiles() {
-        List<Map<String, String>> files = new ArrayList<>();
+        Map<String, byte[]> files = new LinkedHashMap<>();
         if (!lfsPatterns.isEmpty()) {
-            files.add(createFileOperation(".gitattributes", lfsAttributes()));
+            files.put(".gitattributes", lfsAttributes());
+        }
+        if (externalLfsUrl != null) {
+            files.put(".lfsconfig", ("[lfs]\n\turl = " + externalLfsUrl + "\n").getBytes(StandardCharsets.UTF_8));
         }
         try (Stream<Path> paths = Files.walk(fixtureDir)) {
-            paths.filter(Files::isRegularFile).sorted().forEach(file -> files.add(
-                    createFileOperation(fixtureDir.relativize(file).toString().replace('\\', '/'), readFixtureFile(file))));
+            paths.filter(Files::isRegularFile).sorted().forEach(file ->
+                    files.put(fixtureDir.relativize(file).toString().replace('\\', '/'), readFixtureFile(file)));
         } catch (IOException e) {
             throw new UncheckedIOException("Cannot read the fixture " + fixtureDir, e);
         }
-        return files;
+        files.putAll(replacedFiles);
+        return files.entrySet().stream().map(file -> createFileOperation(file.getKey(), file.getValue())).toList();
     }
 
     private byte[] lfsAttributes() {
@@ -203,7 +245,7 @@ public class GitContainerService {
     private RequestSpecification ownerRequest() {
         return RestAssured.given()
                 .contentType("application/json")
-                .auth().preemptive().basic(OWNER, OWNER_PASSWORD);
+                .auth().preemptive().basic(OWNER, ownerPassword);
     }
 
     private static void requireStatus(Response response, int expected, String action) {

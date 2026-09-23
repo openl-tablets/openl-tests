@@ -1,0 +1,144 @@
+name: OpenL LFS Tests
+run-name: "OpenL LFS Tests [${{ inputs.application_version }}]"
+
+on:
+  workflow_dispatch:
+    inputs:
+      application_version:
+        description: "OpenL Studio Docker image tag (ghcr.io/openl-tablets/webstudio:<tag>); latest = the newest published build"
+        required: true
+        default: "latest"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: openl-lfs
+  cancel-in-progress: false
+
+env:
+  LFS_TEST_CLASS: tests.ui.webstudio.git.TestGitLfsGitHubStorage
+  PLAYWRIGHT_IMAGE: mcr.microsoft.com/playwright:v1.52.0-noble
+  PLAYWRIGHT_NPM_PACKAGE: playwright@1.52.0
+
+jobs:
+  lfs:
+    name: Git LFS on GitHub
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check the application image
+        env:
+          APPLICATION_VERSION: ${{ inputs.application_version }}
+        run: |
+          if ! printf '%s' "${APPLICATION_VERSION}" | grep -Eq '^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$'; then
+            echo "::error::application_version must be a Docker tag"
+            exit 1
+          fi
+          if ! docker manifest inspect "ghcr.io/openl-tablets/webstudio:${APPLICATION_VERSION}" > /dev/null 2>&1; then
+            echo "::error::Image ghcr.io/openl-tablets/webstudio:${APPLICATION_VERSION} does not exist in ghcr.io"
+            exit 1
+          fi
+
+      - name: Mask the credentials made of the token
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          for user in openl x-access-token; do
+            echo "::add-mask::$(printf '%s:%s' "${user}" "${GITHUB_TOKEN}" | base64 -w0)"
+          done
+
+      - name: Checkout tests
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Warm up the Playwright Server image and its npm cache
+        continue-on-error: true
+        run: |
+          PLAYWRIGHT_NPM_CACHE_DIR="${RUNNER_TEMP}/playwright-npm-cache"
+          mkdir -p "${PLAYWRIGHT_NPM_CACHE_DIR}"
+          docker pull -q "${PLAYWRIGHT_IMAGE}"
+          docker run --rm -v "${PLAYWRIGHT_NPM_CACHE_DIR}:/root/.npm" "${PLAYWRIGHT_IMAGE}" \
+            sh -c "npx -y ${PLAYWRIGHT_NPM_PACKAGE} --version"
+
+      - name: Compile tests
+        run: mvn --batch-mode --quiet test-compile
+
+      - name: Run the LFS test
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          APPLICATION_VERSION: ${{ inputs.application_version }}
+        run: |
+          STUDIO_IMAGE="ghcr.io/openl-tablets/webstudio:${APPLICATION_VERSION}"
+          PLAYWRIGHT_NPM_CACHE_DIR="${RUNNER_TEMP}/playwright-npm-cache"
+          echo "Using docker_image_name=${STUDIO_IMAGE}"
+          python3 scripts/github-actions/run-test-queue.py run \
+            --repo "${GITHUB_REPOSITORY}" \
+            --run-key "${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-lfs" \
+            --sha "${GITHUB_SHA}" \
+            --shard lfs \
+            --classes-json "[\"${LFS_TEST_CLASS}\"]" \
+            --suite-dir generated-testng \
+            --report-dir target/queue \
+            -- \
+            -Dexecution.mode=PLAYWRIGHT_DOCKER \
+            -Djava.net.preferIPv4Stack=true \
+            -Ddocker_image_name="${STUDIO_IMAGE}" \
+            -Dplaywright_default_timeout=20000 \
+            -Dapp_container_startup_timeout_minutes=10 \
+            -Dplaywright_server_startup_timeout_seconds=300 \
+            -Dplaywright_npm_cache_dir="${PLAYWRIGHT_NPM_CACHE_DIR}" \
+            -Dtest.export.dir=target/test-export
+
+      - name: Gate on the test result
+        if: always()
+        run: |
+          python3 scripts/github-actions/gate-shard-results.py \
+            --export-dir target/test-export \
+            --queue-file target/queue/lfs.json
+
+      - name: Check the artifacts for the token
+        id: leaks
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python3 scripts/github-actions/check-secret-leaks.py \
+            --secret-env GITHUB_TOKEN \
+            target generated-testng
+
+      - name: Upload test artifacts
+        if: always() && steps.leaks.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: openl-lfs
+          if-no-files-found: ignore
+          retention-days: 3
+          path: |
+            target/test-export/**
+            target/queue/**
+            target/screenshots/**
+            target/videos/**
+            target/logs/**
+            generated-testng/**
+
+      - name: Remove the queue ref of this run attempt
+        if: always()
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python3 scripts/github-actions/run-test-queue.py cleanup \
+            --repo "${GITHUB_REPOSITORY}" \
+            --run-key "${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-lfs"

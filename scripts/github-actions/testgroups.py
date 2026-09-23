@@ -6,6 +6,7 @@ TEST_SOURCES = Path("src/test/java")
 PACKAGE_PREFIXES = ("tests.ui.webstudio.", "tests.ui.", "tests.")
 TEST_ANNOTATION = re.compile(r"^\s*@Test\b", re.M)
 LOCAL_ONLY_ANNOTATION = re.compile(r"^\s*@LocalOnly\b", re.M)
+DEDICATED_WORKFLOW_ANNOTATION = re.compile(r"^\s*(?:@[\w.]+(?:\([^)]*\))?\s+)*@(?:configuration\.annotations\.)?DedicatedWorkflow\b", re.M)
 EXTENDS = re.compile(r"\bclass\s+(\w+)(?:<[^>]*>)?\s+extends\s+([\w.]+)")
 
 
@@ -50,5 +51,14 @@ def discover_test_classes(sources: Path = TEST_SOURCES) -> dict[str, bool]:
     return classes
 
 
+def dedicated_workflow_classes(sources: Path = TEST_SOURCES) -> set[str]:
+    return {
+        ".".join(source.relative_to(sources).with_suffix("").parts)
+        for source in sources.rglob("*.java")
+        if DEDICATED_WORKFLOW_ANNOTATION.search(source.read_text(encoding="utf-8", errors="replace"))
+    }
+
+
 def ci_test_classes(sources: Path = TEST_SOURCES) -> list[str]:
-    return [name for name, local_only in discover_test_classes(sources).items() if not local_only]
+    dedicated = dedicated_workflow_classes(sources)
+    return [name for name, local_only in discover_test_classes(sources).items() if not local_only and name not in dedicated]
