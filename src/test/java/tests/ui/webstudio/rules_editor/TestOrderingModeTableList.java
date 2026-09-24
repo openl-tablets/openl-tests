@@ -1,5 +1,6 @@
 package tests.ui.webstudio.rules_editor;
 
+import configuration.annotations.KnownIssue;
 import configuration.annotations.TestCaseId;
 import configuration.annotations.AppContainerConfig;
 import configuration.appcontainer.AppContainerStartParameters;
@@ -87,6 +88,7 @@ public class TestOrderingModeTableList extends BaseTest {
     @Test
     @TestCaseId("IPBQA-32507")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
+    @KnownIssue("EPBDS-16740")
     public void testSavedTableStaysOpenAfterItMoves() {
         String projectName = WorkflowService.loginCreateProjectFromExcelFile(User.ADMIN, "sortingtesting.xlsx");
         EditorPage editorPage = new EditorPage();

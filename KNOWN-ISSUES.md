@@ -12,8 +12,7 @@ Of the findings filed as EPBDS-16667 to EPBDS-16675, the table order (EPBDS-1666
 tables from a specification (EPBDS-16671 to EPBDS-16673) are guarded by tests now; the rest are carried by no
 test yet. Nothing in the suite is skipped over a defect any more: a blocked scenario runs to the point
 where the product refuses it and fails there, which is what keeps the validation alive and the shard honest.
-A defect found but not filed yet (issues 25 to 28) gets no marker: its test reports a plain failure until
-the ticket exists.
+A defect found but not filed yet gets no marker: its test reports a plain failure until the ticket exists.
 
 The build under test moved from `6.5.0-b48c86279338` to `6.5.0-2b6429ad4b7d` on 21 September 2026, and to
 `6.5.0-4513cebb5e74` on 24 September 2026. Findings a newer build fixed are kept below, marked **Fixed**, with
@@ -824,7 +823,7 @@ in the panel and not in the write.
 
 ## 25. After a save that moves a table, the editor opens the module's first table instead of it
 
-**Not filed yet.** Found on `6.5.0-4513cebb5e74`; hidden before EPBDS-16668, because a module listed by name
+**Filed as EPBDS-16740.** Found on `6.5.0-4513cebb5e74`; hidden before EPBDS-16668, because a module listed by name
 happened to put `_MyRules2` first.
 
 **What happens.** A table that has to grow — a row inserted below its last one — is moved on its sheet when
@@ -844,8 +843,9 @@ by no test. EPBDS-16703 (in testing, `701260705c`, not in
 `6.5.0-4513cebb5e74`) changes the same effect of `ModuleWorkspace` and is to be checked against this once a
 build carries it.
 
-**Test that fails on it, without a marker until the ticket exists.**
-`tests.ui.webstudio.rules_editor.TestOrderingModeTableList#testSavedTableStaysOpenAfterItMoves` — *expected
+**Test that reports this as a known issue.**
+`tests.ui.webstudio.rules_editor.TestOrderingModeTableList#testSavedTableStaysOpenAfterItMoves`, carrying
+`@KnownIssue("EPBDS-16740")` — *expected
 "_MyRules2" but was "MyRules1"*. The ordering scenario of the same class opens `_MyRules2` from the tree
 after the save, so it keeps guarding EPBDS-16668.
 
@@ -853,7 +853,7 @@ after the save, so it keeps guarding EPBDS-16668.
 
 ## 26. "Add a property" cannot be searched by the names it shows
 
-**Not filed yet.** Not a regression — `6.4.0` offered a plain list without a search — but a defect of the
+**Filed as EPBDS-16741.** Not a regression — `6.4.0` offered a plain list without a search — but a defect of the
 search the new panel added.
 
 **What happens.** The list shows the properties by their labels, and its search matches their technical
@@ -861,8 +861,8 @@ names. Typing `Countries` answers *No data*, `country` finds *Countries*; `Effec
 `effective` finds *Effective Date*; the same for *US States* (`state`) and *Language* (`lang`). The select in `TableDetailsPanel.tsx` is a bare `showSearch`, which filters by `value`; the
 copy-table dialog offers the same properties with `optionFilterProp: 'label'` and is searched by the label.
 
-**Test that fails on it, without a marker until the ticket exists.**
-`tests.ui.webstudio.rules_editor.TestAddAndDeleteProperty` — *'Effective Date' was not among what the list
+**Test that reports this as a known issue.**
+`tests.ui.webstudio.rules_editor.TestAddAndDeleteProperty`, carrying `@KnownIssue("EPBDS-16741")` — *'Effective Date' was not among what the list
 offered*. EPBDS-15705, the panel disappearing after some seven properties, is what it is expected to run
 into next.
 
@@ -870,22 +870,23 @@ into next.
 
 ## 27. Trace opens without what was entered in Run
 
-**Not filed yet; whether the React launchers are meant to share their input is for the product to say.**
+**Filed as EPBDS-16742.** EPBDS-16560, which moved Run and Trace to the new interface, says the rest of the
+workflow stays as it was.
 
 **What happens.** In `6.4.0` Run and Trace drew one and the same input form, so a value entered for Run —
 an element added to `my (myType[])` — was there when Trace was opened. In `6.5.0-4513cebb5e74` each launcher
 keeps its own state: Run shows `my = {1 elements}`, Trace opens with `my = {0 elements}`, and the input has to
 be entered again.
 
-**Test that fails on it, without a marker until the ticket exists.**
+**Test that reports this as a known issue.**
 `tests.ui.webstudio.studio_issues.TestArrayOfAliasValuesInRunTrace#testTraceKeepsArrayElementAddedInRun`, on
-`myRule2` — *actual: []*.
+`myRule2`, carrying `@KnownIssue("EPBDS-16742")` — *actual: []*.
 
 ---
 
 ## 28. A generation refused for a path the project's pattern reads has already written its workbooks
 
-**Not filed yet.** Of the family EPBDS-16672 (in testing) dealt with for the shape of a path
+**Filed as EPBDS-16743.** Of the family EPBDS-16672 (in testing) dealt with for the shape of a path
 (`4847806656`: *refused, but only after the other module has been replaced*), reached here through the
 descriptor's own check, which runs after the workbooks are written.
 
@@ -894,8 +895,10 @@ default patterns `rules/**/*.xlsx` and `tests/**/*.xlsx` (`ProjectDescriptorMana
 declared the two modules alone. The dialog accepts
 `rules/Alg12.xlsx` as the workbook of a new module `Alg`; the server answers 400 — *The path
 'rules/Alg12.xlsx' is already read by another module.* (`modules[4].rulesRootPath`), the pattern reading that
-workbook as a module of its own — and the dialog stays open. That refusal follows the descriptor's rule. What
-does not is that it comes last: on the *Example 1 - Bank Rating* template, `rules/Alg12.xlsx` and
+workbook as a module of its own — and the dialog stays open. `6.4.0` accepted the same choice (template
+*Example 1 - Bank Rating*, modules `Algo` and `Types`, data types workbook `rules/TypesCustom.xlsx`: generated,
+`Types` declared at that path), so any workbook under `rules/` named otherwise than its module can no longer be
+chosen. And the refusal comes last: on the *Example 1 - Bank Rating* template, `rules/Alg12.xlsx` and
 `rules/Mod.xlsx` stand in the project after the refusal, written by the generation that was refused
 (`ProjectOpenApiGenerationService.generateTables` writes the workbooks before the descriptor and puts nothing
 back). On a project created from `openapi1.json`, the same steps with workbooks outside the pattern
@@ -904,7 +907,24 @@ back). On a project created from `openapi1.json`, the same steps with workbooks 
 **Tests.** `TestImportNewModulesWithPathEditingAndMixedScenarios` restores the `e2469022` scenario with
 workbooks outside the pattern — `6.4.0` typed paths the project did not read yet, and in `6.5` `rules/` is read
 by the default pattern. Whether a refused generation leaves the project as it was is asked by a scenario of
-its own in the same class, which fails on this issue without a marker until the ticket exists.
+its own in the same class, `testRefusedGenerationWritesNoWorkbook`, carrying `@KnownIssue("EPBDS-16743")`.
+
+---
+
+## 29. The same name for both generated modules is refused only at Generate, after a workbook error
+
+**Filed as EPBDS-16744.** Regression against `6.4.0` in validation; nothing is written.
+
+**What happens.** On the project's card, OpenAPI with *Tables generation* and the same name for the services
+and the data types module is saved into `rules.xml` without a word. *Generate tables* then proposes one
+workbook for both and says only *The two modules cannot be written to one workbook*; once the workbooks are
+told apart, the server refuses with *The rules and the data types need a module each; one module cannot hold
+both.* Names are compared case-sensitively while paths are not: `Models` and `models` with the data types
+workbook moved to `rules/types/models.xlsx` are generated as two modules differing only by case. `6.4.0`
+refused both pairs where they were entered: *Module names cannot be the same.*
+
+**Tests.** `TestImportOpenApiModuleNamesValidation` asserts the server refusal once the workbooks differ, which
+is the name check that still exists; no test asserts the refusal where the names are entered yet.
 
 ---
 

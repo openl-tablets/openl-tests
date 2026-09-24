@@ -1,6 +1,7 @@
 package tests.ui.webstudio.rules_editor;
 
 import configuration.annotations.Description;
+import configuration.annotations.KnownIssue;
 import configuration.annotations.TestCaseId;
 import configuration.annotations.AppContainerConfig;
 import configuration.appcontainer.AppContainerStartParameters;
@@ -217,6 +218,7 @@ public class TestImportNewModulesWithPathEditingAndMixedScenarios extends BaseTe
     @TestCaseId("IPBQA-31035")
     @Description("A generation refused over a workbook path the default rules pattern already reads leaves no workbook of either module in the project.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
+    @KnownIssue("EPBDS-16743")
     public void testRefusedGenerationWritesNoWorkbook() {
         String projectName = "TestRefusedGeneration_" + System.currentTimeMillis();
         String refusal = "The path 'rules/Alg12.xlsx' is already read by another module.";

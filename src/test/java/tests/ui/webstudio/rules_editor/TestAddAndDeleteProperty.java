@@ -1,6 +1,7 @@
 package tests.ui.webstudio.rules_editor;
 
 import configuration.annotations.Description;
+import configuration.annotations.KnownIssue;
 import configuration.annotations.TestCaseId;
 import configuration.annotations.AppContainerConfig;
 import configuration.appcontainer.AppContainerStartParameters;
@@ -34,6 +35,7 @@ public class TestAddAndDeleteProperty extends BaseTest {
     @TestCaseId("IPBQA-25857")
     @Description("Rules Editor - Add and delete properties in table details.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
+    @KnownIssue("EPBDS-16741")
     public void testAddAndDeleteProperty() {
         EditorPage editorPage = loginAndCreateProject();
 

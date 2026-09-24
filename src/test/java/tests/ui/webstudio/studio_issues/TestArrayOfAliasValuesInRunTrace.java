@@ -2,6 +2,7 @@ package tests.ui.webstudio.studio_issues;
 
 import configuration.annotations.AppContainerConfig;
 import configuration.annotations.Description;
+import configuration.annotations.KnownIssue;
 import configuration.annotations.TestCaseId;
 import configuration.appcontainer.AppContainerStartParameters;
 import domain.serviceclasses.constants.User;
@@ -72,6 +73,7 @@ public class TestArrayOfAliasValuesInRunTrace extends BaseTest {
     @Description("The Trace menu keeps the element added in the Run menu to an array of the alias datatype and "
             + "offers the values of the alias for it, as the input form Run and Trace shared in 6.4.0 did.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
+    @KnownIssue("EPBDS-16742")
     public void testTraceKeepsArrayElementAddedInRun() {
         EditorPage editorPage = openDecisionTables();
         editorPage.getEditorLeftRulesTreeComponent().selectItemInFolder(DECISION, TABLE_FOR_SHARED_INPUT);
