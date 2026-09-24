@@ -29,7 +29,7 @@ public class TestImportPathValidationErrors extends BaseTest {
 
     @Test
     @TestCaseId("IPBQA-31035")
-    @Description("Path validation in OpenAPI Module Settings dialog: duplicate path error and same-paths error")
+    @Description("Path validation in the Generate tables dialog: workbook already held by the project, one workbook for both modules, non-Excel and empty workbook")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void testImportPathValidationErrors() {
         String projectName = "TestPathValidation_" + System.currentTimeMillis();
@@ -82,8 +82,56 @@ public class TestImportPathValidationErrors extends BaseTest {
                 .as("The dialog must name the data types module the specification is written into")
                 .isEqualTo("Mod");
 
+        settingsDialog.setWorkbook(SERVICES, "rules/Bank Rating.xlsx");
+        settingsDialog.clickGenerate();
+
+        assertThat(settingsDialog.getErrorMessagesUntilShown(pathTaken("rules/Bank Rating.xlsx")))
+                .as("A new services module cannot be written over a workbook the project already holds")
+                .contains(pathTaken("rules/Bank Rating.xlsx"));
+
+        settingsDialog.resetWorkbook(SERVICES);
+        settingsDialog.setWorkbook(DATA_TYPES, "rules/Models.xlsx");
+        settingsDialog.clickGenerate();
+
+        assertThat(settingsDialog.getErrorMessagesUntilShown(pathTaken("rules/Models.xlsx")))
+                .as("A new data types module cannot be written over a workbook the project already holds")
+                .contains(pathTaken("rules/Models.xlsx"));
+
+        settingsDialog.setWorkbook(SERVICES, "aaa.xlsx");
+        settingsDialog.setWorkbook(DATA_TYPES, "aaa.xlsx");
+
+        assertThat(settingsDialog.getSamePathError())
+                .as("Both modules cannot be written to one workbook")
+                .isEqualTo("The two modules cannot be written to one workbook");
+        assertThat(settingsDialog.isGenerateEnabled())
+                .as("Generate must not be offered while both modules name one workbook")
+                .isFalse();
+
+        settingsDialog.setWorkbook(DATA_TYPES, "aaa.txt");
+
+        assertThat(settingsDialog.getWorkbookError(DATA_TYPES))
+                .as("A module can only be written to an Excel workbook")
+                .isEqualTo("A module is written to an Excel workbook: .xlsx, .xls or .xlsm");
+        assertThat(settingsDialog.isGenerateEnabled())
+                .as("Generate must not be offered while a workbook is not an Excel file")
+                .isFalse();
+
+        settingsDialog.clearWorkbook(DATA_TYPES);
+
+        assertThat(settingsDialog.getWorkbookError(DATA_TYPES))
+                .as("A module needs a workbook to be written to")
+                .isEqualTo("Enter the workbook the module is written to");
+        assertThat(settingsDialog.isGenerateEnabled())
+                .as("Generate must not be offered while a workbook is empty")
+                .isFalse();
+
         settingsDialog.clickCancel();
         importDialog.clickCancel();
+    }
+
+    private static String pathTaken(String path) {
+        return String.format("The project already holds a file at '%s'. Name the module after the workbook it should read, "
+                + "or move that file away.", path);
     }
 
     private void uploadFileToProject(RepositoryPage repositoryPage, String projectName, String fileName) {
