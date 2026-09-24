@@ -12,9 +12,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -64,7 +66,7 @@ public class ExternalLfsService {
         }
         Response uploaded = RestAssured.given().config(TIMEOUTS)
                 .urlEncodingEnabled(false)
-                .headers(headersOf(upload))
+                .headers(withoutTransferEncoding(headersOf(upload)))
                 .header("Content-Type", "application/octet-stream")
                 .body(content)
                 .put((String) upload.get("href"));
@@ -74,13 +76,12 @@ public class ExternalLfsService {
             Map<String, Object> body = new LinkedHashMap<>();
             body.put("oid", pointer.oid());
             body.put("size", pointer.size());
-            Response verified = RestAssured.given().config(TIMEOUTS)
-                    .urlEncodingEnabled(false)
-                    .headers(headersOf(verify))
+            String verifyHref = (String) verify.get("href");
+            Response verified = verifyRequest(verifyHref, headersOf(verify))
                     .contentType(LFS_MEDIA_TYPE)
                     .accept(LFS_MEDIA_TYPE)
                     .body(body)
-                    .post((String) verify.get("href"));
+                    .post(verifyHref);
             requireSuccess(verified, "verify object " + pointer.oid());
         }
         LOGGER.info("Uploaded object {} ({} bytes) to {} LFS", pointer.oid(), pointer.size(), provider.displayName());
@@ -117,6 +118,30 @@ public class ExternalLfsService {
                 .post(lfsUrl() + "/objects/batch");
         requireSuccess(response, operation + " batch for " + pointer.oid());
         return new JsonPath(response.asString()).setRootPath("objects[0]");
+    }
+
+    private RequestSpecification verifyRequest(String href, Map<String, String> headers) {
+        RequestSpecification request = RestAssured.given().config(TIMEOUTS).urlEncodingEnabled(false).headers(headers);
+        boolean authorizedByProvider = headers.keySet().stream().anyMatch(name -> name.equalsIgnoreCase("Authorization"));
+        boolean needsCredentials = !authorizedByProvider && onProviderHost(href);
+        return needsCredentials ? request.auth().preemptive().basic(provider.login(), token) : request;
+    }
+
+    private boolean onProviderHost(String href) {
+        URI target = URI.create(href);
+        String host = target.getHost();
+        String providerHost = URI.create(repositoryUrl).getHost().toLowerCase(Locale.ROOT);
+        if (!"https".equalsIgnoreCase(target.getScheme()) || host == null) {
+            return false;
+        }
+        String candidate = host.toLowerCase(Locale.ROOT);
+        return candidate.equals(providerHost) || candidate.endsWith("." + providerHost);
+    }
+
+    private static Map<String, String> withoutTransferEncoding(Map<String, String> headers) {
+        Map<String, String> kept = new LinkedHashMap<>(headers);
+        kept.keySet().removeIf(name -> name.equalsIgnoreCase("Transfer-Encoding"));
+        return kept;
     }
 
     private RequestSpecification authorized() {
