@@ -1,7 +1,6 @@
 package tests.ui.webstudio.rules_editor;
 
 import configuration.annotations.Description;
-import configuration.annotations.KnownIssue;
 import configuration.annotations.TestCaseId;
 import configuration.annotations.AppContainerConfig;
 import configuration.appcontainer.AppContainerStartParameters;
@@ -23,15 +22,11 @@ public class TestCompareExcelFiles extends BaseTest {
     @Test
     @TestCaseId("IPBQA-28380")
     @Description("Compare Excel files: the action opens the comparison of two workbooks a reader uploads, "
-            + "which lists the sheets that differ and marks the cells that changed. Fails on EPBDS-16655: the "
-            + "action opens the comparison of the project against its own revisions instead, and the screen "
-            + "that compares two uploaded workbooks is left with no way into it.")
+            + "which lists the sheets that differ and marks the cells that changed.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
-    @KnownIssue("EPBDS-16655")
     public void testCompareExcelFiles() {
         String projectName = WorkflowService.loginCreateProjectFromTemplate(User.ADMIN, "Sample Project");
         EditorPage editorPage = new EditorPage();
-        // The action stands in the More menu of a module, so a module is opened to reach it.
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Main");
 
         CompareExcelFilesDialogComponent compareDialog = editorPage
@@ -49,7 +44,6 @@ public class TestCompareExcelFiles extends BaseTest {
                 .as("Both workbooks should be taken for the comparison")
                 .isEqualTo(2);
 
-        // What was uploaded can be taken back and uploaded again, and the comparison is offered either way.
         compareDialog.clearPickedFiles();
         assertThat(compareDialog.countPickedFiles())
                 .as("Clearing should leave no workbook picked")
@@ -64,8 +58,8 @@ public class TestCompareExcelFiles extends BaseTest {
                 .isTrue();
 
         compareDialog.clickCompareExcel();
+        compareDialog.setShowEqualRows(true);
 
-        // The sheets that differ are listed, and a sheet that reads the same on both sides is left out.
         assertThat(compareDialog.isTreeItemPresent("Rules")).as("Rules sheet differs").isTrue();
         assertThat(compareDialog.isTreeItemPresent("Old Sheet")).as("Old Sheet differs").isTrue();
         assertThat(compareDialog.isTreeItemPresent("New test tab")).as("New test tab differs").isTrue();
@@ -91,7 +85,6 @@ public class TestCompareExcelFiles extends BaseTest {
         verifyDifferenceInCells(compareDialog, "Conditions  testConditions", 4, 2, "Integer a", "Integer c");
         verifyDifferenceInCells(compareDialog, "Returns", 3, 2, "new Double[] {a, b, c, d}", "new Double[] {a, b, c}");
 
-        // A table only one of the two workbooks holds is drawn on that side alone.
         compareDialog.openTreeNode("ColumnMatch <MATCH> String ColumnMatchTable(Long RandNumber)");
         compareDialog.clickTreeNode("SmartRules DoubleValue SmartRules1(String stringValue, int integerValue)");
         assertThat(compareDialog.isFirstFragmentPresent()).as("SmartRules1 stands in the first workbook").isTrue();
@@ -110,8 +103,11 @@ public class TestCompareExcelFiles extends BaseTest {
         assertThat(compareDialog.isFirstFragmentPresent()).isFalse();
         assertThat(compareDialog.isSecondFragmentPresent()).isTrue();
 
-        // Asking for the elements that read the same brings the sheet that did not differ into the list.
+        compareDialog.backToFilePicking();
+        compareDialog.uploadFile(TestDataUtil.getFilePathFromResources(FILE_1));
+        compareDialog.uploadFile(TestDataUtil.getFilePathFromResources(FILE_2));
         compareDialog.setShowEqualElements(true);
+        compareDialog.clickCompareExcel();
         assertThat(compareDialog.isTreeItemPresent("Const"))
                 .as("A sheet that reads the same is listed once it is asked for")
                 .isTrue();

@@ -1,7 +1,6 @@
 package tests.ui.webstudio.studio_issues;
 
 import configuration.annotations.Description;
-import configuration.annotations.KnownIssue;
 import configuration.annotations.TestCaseId;
 import configuration.annotations.AppContainerConfig;
 import configuration.appcontainer.AppContainerPool;
@@ -22,7 +21,6 @@ public class TestAddPropertyInSpreadSheetTable extends BaseTest {
     @Test
     @TestCaseId("EPBDS-7578")
     @Description("BUG: Exception appears in log file on adding properties for Spreadsheet")
-    @KnownIssue("EPBDS-16700")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void testAddPropertyInSpreadSheetTable() {
         String projectName = WorkflowService.loginCreateProjectFromExcelFile(User.ADMIN, "TestAddPropertyInSpreadSheetTable.xlsx");

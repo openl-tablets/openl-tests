@@ -1,7 +1,6 @@
 package tests.ui.webstudio.repository;
 
 import configuration.annotations.Description;
-import configuration.annotations.KnownIssue;
 import configuration.annotations.TestCaseId;
 import configuration.annotations.AppContainerConfig;
 import configuration.appcontainer.AppContainerStartParameters;
@@ -64,7 +63,6 @@ public class TestMigrateLegacyProjectUi extends BaseTest {
             + "the root is what there is to move, so the migration moves it under rules/ and writes the "
             + "descriptor that names it.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
-    @KnownIssue("EPBDS-16666")
     public void testMigrateMovesRootWorkbookOfAProjectWithoutDescriptor() {
         String projectName = WorkflowService.loginCreateProjectFromZip(User.ADMIN, "MigrateXlsProject.zip");
         RepositoryPage repositoryPage = new EditorPage().getTabSwitcherComponent()

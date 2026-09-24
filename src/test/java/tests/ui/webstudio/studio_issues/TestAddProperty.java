@@ -1,7 +1,6 @@
 package tests.ui.webstudio.studio_issues;
 
 import configuration.annotations.Description;
-import configuration.annotations.KnownIssue;
 import configuration.annotations.TestCaseId;
 import configuration.annotations.AppContainerConfig;
 import configuration.appcontainer.AppContainerStartParameters;
@@ -20,7 +19,6 @@ public class TestAddProperty extends BaseTest {
     @Test
     @TestCaseId("EPBDS-6964")
     @Description("Exception occurs on adding property to the table with two columns - Playwright version")
-    @KnownIssue("EPBDS-16700")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void testAddProperty() {
         String projectName = WorkflowService.loginCreateProjectFromExcelFile(User.ADMIN, "StudioIssues_TestAddProperty.xlsx");

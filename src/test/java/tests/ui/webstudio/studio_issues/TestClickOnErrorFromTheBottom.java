@@ -1,7 +1,6 @@
 package tests.ui.webstudio.studio_issues;
 
 import configuration.annotations.Description;
-import configuration.annotations.KnownIssue;
 import configuration.annotations.TestCaseId;
 import configuration.annotations.AppContainerConfig;
 import com.microsoft.playwright.Page;
@@ -29,7 +28,6 @@ public class TestClickOnErrorFromTheBottom extends BaseTest {
     @TestCaseId("EPBDS-9309")
     @Description("Test clicking on error from the bottom problems panel by index - Playwright version")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
-    @KnownIssue("EPBDS-16662")
     public void testClickOnErrorFromTheBottom() {
         String projectName = WorkflowService.loginCreateProjectFromZip(User.ADMIN,
                 "TestClickOnErrorFromTheBottom.zip");

@@ -1,6 +1,5 @@
 package tests.ui.webstudio.rules_editor;
 
-import configuration.annotations.KnownIssue;
 import configuration.annotations.Description;
 import configuration.annotations.TestCaseId;
 import configuration.annotations.AppContainerConfig;
@@ -33,12 +32,8 @@ public class TestAddAndDeleteProperty extends BaseTest {
 
     @Test
     @TestCaseId("IPBQA-25857")
-    @Description("Rules Editor - Add and delete properties in table details. Fails on EPBDS-16664: the "
-            + "panel reads a dictionary that leaves the table-scope properties out, so Description is not "
-            + "offered. EPBDS-15705, the panel disappearing after some seven properties, is what it is "
-            + "expected to run into once that is fixed.")
+    @Description("Rules Editor - Add and delete properties in table details.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
-    @KnownIssue("EPBDS-16664")
     public void testAddAndDeleteProperty() {
         EditorPage editorPage = loginAndCreateProject();
 

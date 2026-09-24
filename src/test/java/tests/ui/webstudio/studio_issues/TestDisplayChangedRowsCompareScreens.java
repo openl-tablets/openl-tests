@@ -1,7 +1,6 @@
 package tests.ui.webstudio.studio_issues;
 
 import configuration.annotations.Description;
-import configuration.annotations.KnownIssue;
 import configuration.annotations.TestCaseId;
 import configuration.annotations.AppContainerConfig;
 import configuration.appcontainer.AppContainerStartParameters;
@@ -29,6 +28,7 @@ public class TestDisplayChangedRowsCompareScreens extends BaseTest {
 
     private static final String BANK_RATING_FILE_1 = "Bank_Rating_1.xlsx";
     private static final String BANK_RATING_FILE_2 = "Bank_Rating_2.xlsx";
+    private static final int BANK_LIMIT_INDEX_TOP_ROW = 8;
 
     @Test
     @TestCaseId("IPBQA-32105")
@@ -131,11 +131,8 @@ public class TestDisplayChangedRowsCompareScreens extends BaseTest {
     @Test
     @TestCaseId("IPBQA-32105")
     @Description("Display Changed Rows: the comparison of two uploaded workbooks draws the rows that differ, "
-            + "and drawing the equal ones as well is asked for with the toggle. Fails on EPBDS-16655: the "
-            + "action named after that screen opens the comparison of the project against its own revisions, "
-            + "so there is no way to the screen the scenario is about.")
+            + "and drawing the equal ones as well is asked for with the toggle.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
-    @KnownIssue("EPBDS-16655")
     public void testDisplayChangedRowsUploadedFilesCompareScreen() {
         String projectName = WorkflowService.loginCreateProjectFromTemplate(User.ADMIN, "Sample Project");
         EditorPage editorPage = new EditorPage();
@@ -215,18 +212,22 @@ public class TestDisplayChangedRowsCompareScreens extends BaseTest {
     }
 
     private void validateCompareWindowCells(CompareLocalChangesDialogComponent dialog) {
-        assertThat(dialog.isRowHighlighted(1, 7))
+        assertThat(dialog.isSheetRowHighlighted(1, bankLimitIndexSheetRow(7)))
                 .as("The first edit must show as a difference on row 7 of the left version")
                 .isTrue();
-        assertThat(dialog.isRowHighlighted(2, 7))
+        assertThat(dialog.isSheetRowHighlighted(2, bankLimitIndexSheetRow(7)))
                 .as("The first edit must show as a difference on row 7 of the right version")
                 .isTrue();
-        assertThat(dialog.isRowHighlighted(1, 16))
+        assertThat(dialog.isSheetRowHighlighted(1, bankLimitIndexSheetRow(16)))
                 .as("The second edit must show as a difference on row 16 of the left version")
                 .isTrue();
-        assertThat(dialog.isRowHighlighted(2, 16))
+        assertThat(dialog.isSheetRowHighlighted(2, bankLimitIndexSheetRow(16)))
                 .as("The second edit must show as a difference on row 16 of the right version")
                 .isTrue();
+    }
+
+    private static int bankLimitIndexSheetRow(int tableRow) {
+        return BANK_LIMIT_INDEX_TOP_ROW + tableRow - 1;
     }
 
     private void validateRepositoryCompareWindowCells(CompareGitRevisionsDialogComponent dialog) {
