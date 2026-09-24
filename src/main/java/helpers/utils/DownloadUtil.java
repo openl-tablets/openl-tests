@@ -3,6 +3,7 @@ package helpers.utils;
 import com.microsoft.playwright.Download;
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
+import com.microsoft.playwright.PlaywrightException;
 import configuration.driver.DockerDriverPool;
 import configuration.driver.DriverPool;
 import configuration.projectconfig.ProjectConfiguration;
@@ -33,11 +34,22 @@ public class DownloadUtil {
         return downloadFile(trigger::click, timeoutMs);
     }
 
-    public static File downloadFile(Runnable trigger) {
-        return downloadFile(trigger, getDefaultTimeout());
+    public static File downloadFromLink(String url) {
+        return downloadFile(() -> followLink(url), getDefaultTimeout());
     }
 
-    public static File downloadFile(Runnable trigger, int timeoutMs) {
+    private static void followLink(String url) {
+        try {
+            DriverPool.getPage().navigate(url);
+        } catch (PlaywrightException navigationTurnedIntoDownload) {
+            String message = navigationTurnedIntoDownload.getMessage();
+            if (!message.contains("net::ERR_ABORTED") && !message.contains("Download is starting")) {
+                throw navigationTurnedIntoDownload;
+            }
+        }
+    }
+
+    private static File downloadFile(Runnable trigger, int timeoutMs) {
         if (isDockerMode()) {
             LOGGER.info("Downloading file in DOCKER mode using createReadStream()");
             return downloadFileFromContainer(trigger, timeoutMs);
