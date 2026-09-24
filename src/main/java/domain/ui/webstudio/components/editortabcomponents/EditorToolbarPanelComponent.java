@@ -25,32 +25,18 @@ import lombok.Getter;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * The editor's toolbar, composed of scoped sub-components (see the {@code toolbar} package):
- * <ul>
- *   <li>{@link EditorBreadcrumbsComponent} — the Projects / project / branch / module breadcrumb strip;</li>
- *   <li>{@link RunTestsMenuComponent} — the top-panel Test button with its settings dropdown;</li>
- *   <li>{@link MoreMenuComponent} — the top-panel More dropdown;</li>
- *   <li>{@link TableToolbarComponent} — the second-line table toolbar (Run/Trace/Benchmark, table actions).</li>
- * </ul>
- * The public API is kept flat here so existing tests keep working; new code may also use the
- * sub-component getters directly.
- */
 public class EditorToolbarPanelComponent extends BaseComponent {
 
-    // As long as a toolbar button was given before the actions moved: a card still settling is normal.
     private static final int ACTION_PROBE_MS = DEFAULT_TIMEOUT_MS / 2;
+    private static final String PROJECT_ACTION = "xpath=//button[@data-testid='module-%1$s'] | //div[@data-testid='project-actions' or @data-testid='project-actions-overflow']//button[starts-with(@data-testid,'%1$s-') and not(substring(@data-testid, string-length(@data-testid) - 4) = '-more')]";
 
-    // TOP LINE TOOLBAR — plain buttons that belong to no dropdown
     private WebElement projectActionsMoreBtn;
     private WebElement verifyBtn;
     private WebElement createTableBtn;
     private WebElement refreshProjectBtn;
     private WebElement allTopToolbarLinks;
-    // Trace factor input in the launcher form (kept page-level: the menu exists in the DOM only while open)
     private WebElement factorTextField;
 
-    // Scoped sub-components
     @Getter
     private EditorBreadcrumbsComponent breadcrumbs;
     @Getter
@@ -79,11 +65,8 @@ public class EditorToolbarPanelComponent extends BaseComponent {
 
         breadcrumbs = new EditorBreadcrumbsComponent(page);
         runTestsMenu = new RunTestsMenuComponent(page);
-        // EditorPage passes div#tableToolbarPanel as this component's root — reuse it for the table toolbar.
         tableToolbar = new TableToolbarComponent(page);
     }
-
-    // ========== Top line toolbar ==========
 
     public void clickVerify() {
         verifyBtn.click();
@@ -105,25 +88,10 @@ public class EditorToolbarPanelComponent extends BaseComponent {
         createTableBtn.click();
     }
 
-    /**
-     * An action of the project, wherever the project is being looked at: on the module screen it stands in
-     * the module's action bar under {@code module-<action>}, and on the project card in the card's own bar
-     * under {@code <action>-<project>}, from where it falls into an overflow menu when the bar runs out of
-     * room. The element is the one the screen shows now; it is absent while the project does not offer the
-     * action at all.
-     */
     private WebElement projectAction(String action) {
-        return new WebElement(page, "xpath=//button[@data-testid='module-" + action + "']"
-                + " | //div[@data-testid='project-actions']//button[starts-with(@data-testid,'" + action + "-')]"
-                + " | //div[@data-testid='project-actions-overflow']//button[starts-with(@data-testid,'" + action + "-')]",
-                action + "Btn");
+        return new WebElement(page, String.format(PROJECT_ACTION, action), action + "Btn");
     }
 
-    /**
-     * Whether the project offers the action right now. The card folds the actions it has no room for into a
-     * menu behind a three-dots button, so an action that is not in sight may still be offered there; the
-     * menu is opened to look, and left as it was found.
-     */
     private boolean offersProjectAction(String action) {
         if (projectAction(action).isVisible(ACTION_PROBE_MS)) {
             return true;
@@ -137,10 +105,6 @@ public class EditorToolbarPanelComponent extends BaseComponent {
         return offered;
     }
 
-    /**
-     * Presses the action. What is waited for is the button itself, wherever it stands: pressing the
-     * three-dots button to look would close the menu the press before it opened.
-     */
     private void clickProjectAction(String action) {
         WebElement button = projectAction(action);
         if (!button.isVisible(ACTION_PROBE_MS) && projectActionsMoreBtn.isVisible(ACTION_PROBE_MS)) {
@@ -150,12 +114,10 @@ public class EditorToolbarPanelComponent extends BaseComponent {
         button.click();
     }
 
-    /** Saves the project, which is offered only while it has changes of its own to save. */
     public void clickSave() {
         clickProjectAction("save");
     }
 
-    /** The toolbar's Refresh, which reloads the project the editor is showing. */
     public void clickProjectRefresh() {
         refreshProjectBtn.waitForVisible(DEFAULT_TIMEOUT_MS).click();
     }
@@ -168,7 +130,6 @@ public class EditorToolbarPanelComponent extends BaseComponent {
     public boolean isSyncButtonVisible() {
         return offersProjectAction("sync");
     }
-
 
     public void clickExport() {
         clickProjectAction("export");
@@ -194,8 +155,6 @@ public class EditorToolbarPanelComponent extends BaseComponent {
         return actions;
     }
 
-    // ========== Breadcrumbs (delegated) ==========
-
     public void navigateToProjectsInBreadcrumbs() {
         breadcrumbs.navigateToProjectsList();
     }
@@ -204,11 +163,6 @@ public class EditorToolbarPanelComponent extends BaseComponent {
         return breadcrumbs.getAllProjectsLink();
     }
 
-    /**
-     * Goes to the project's own screen. Only a module screen carries a switcher to walk projects with; the
-     * project's screen has none, because it is already the project — so the way there is the way a reader
-     * takes it, whichever screen they stand on.
-     */
     public void navigateToProjectRoot(String projectName) {
         new EditorLeftProjectModuleSelectorComponent().selectProject(projectName);
     }
@@ -267,13 +221,10 @@ public class EditorToolbarPanelComponent extends BaseComponent {
         breadcrumbs.checkBreadcrumbs(category, project, module);
     }
 
-    // ========== Run / Trace / Benchmark (delegated to the table toolbar) ==========
-
     public IRunMenu clickRun() {
         return tableToolbar.clickRun();
     }
 
-    /** The Run launcher as it stands open, for what it offers beyond the input: the cases to run. */
     public RunMenuComponent getRunLauncher() {
         return new RunMenuComponent(page);
     }
@@ -315,8 +266,6 @@ public class EditorToolbarPanelComponent extends BaseComponent {
         return new TraceMenuComponent(page);
     }
 
-    // ========== Table actions (delegated to the table toolbar) ==========
-
     public WebElement getEditTableBtn() {
         return tableToolbar.getEditTableBtn();
     }
@@ -351,10 +300,6 @@ public class EditorToolbarPanelComponent extends BaseComponent {
         copyDialog.selectCopyAs("New Business Dimension Version").setProperty(propertyLabel, propertyValue).clickCopy();
     }
 
-    /**
-     * Removes the table the screen shows. The removal clears the table from the sheet it is written on, so
-     * it is asked about first, in a window of the screen's own rather than the browser's.
-     */
     public void removeCurrentTable() {
         clickRemove();
         WebElement confirmRemove = new WebElement(page,
@@ -366,8 +311,6 @@ public class EditorToolbarPanelComponent extends BaseComponent {
     }
 
     public void createDefaultTestTable() {
-        // Create Test now opens the React Create Table modal with the tested table already filled in, so the
-        // default test table is one press of Create away.
         tableToolbar.getCreateTestBtn().click();
         new CreateTableDialogComponent().waitForDialogToAppear().save();
         WaitUtil.sleep(500, "Waiting for created test table to open");
@@ -380,8 +323,6 @@ public class EditorToolbarPanelComponent extends BaseComponent {
     public void clickTableActionsTestDropdown() {
         tableToolbar.clickTableActionsTestDropdown();
     }
-
-    // ========== Target table and available test runs (delegated) ==========
 
     public String getTargetTableText() {
         return tableToolbar.getTargetTableText();
@@ -423,10 +364,7 @@ public class EditorToolbarPanelComponent extends BaseComponent {
         return tableToolbar.getAvailableTestRunsPopupText();
     }
 
-    // ========== Test menu (delegated) ==========
-
     public WebElement getTestDropdownBtn() {
-        // Kept for tests that click the dropdown toggle directly.
         return new WebElement(page, "xpath=//a[@title='Run Tests']/following-sibling::span[1]", "testDropdownBtn");
     }
 
@@ -467,8 +405,6 @@ public class EditorToolbarPanelComponent extends BaseComponent {
         runTestsMenu.clickRunTestsButton();
     }
 
-    // ========== Within Current Module Only (delegated) ==========
-
     public boolean isWithinCurrentModuleOnlyInputArgsChecked() {
         return tableToolbar.isWithinCurrentModuleOnlyInputArgsChecked();
     }
@@ -496,8 +432,6 @@ public class EditorToolbarPanelComponent extends BaseComponent {
     public void setTopPanelWithinCurrentModuleOnly(boolean value) {
         runTestsMenu.setWithinCurrentModuleOnly(value);
     }
-
-    // ========== More menu (delegated) ==========
 
     public IMoreMenu clickMore() {
         return new MoreMenuComponent(page).open();

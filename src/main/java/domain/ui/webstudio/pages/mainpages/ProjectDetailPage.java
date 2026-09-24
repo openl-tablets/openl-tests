@@ -14,12 +14,14 @@ import domain.ui.webstudio.components.projectdetail.ProjectOverviewTabComponent;
 import domain.ui.webstudio.components.repositorytabcomponents.CopyProjectDialogComponent;
 import domain.ui.webstudio.components.repositorytabcomponents.ExportProjectModalComponent;
 import domain.ui.webstudio.pages.BasePage;
+import helpers.utils.ProjectLinkUtil;
 import helpers.utils.WaitUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import lombok.Getter;
 
 import java.util.List;
+import java.util.regex.Pattern;
 
 public class ProjectDetailPage extends BasePage {
 
@@ -29,6 +31,7 @@ public class ProjectDetailPage extends BasePage {
     private static final int TAB_SWITCH_ATTEMPTS = 3;
     private static final int COMPARE_WINDOW_WIDTH = 1280;
     private static final int COMPARE_WINDOW_HEIGHT = 800;
+    private static final Pattern PROJECT_ADDRESS = Pattern.compile(".*/projects/[^/?]+.*");
 
     @Getter
     private TabSwitcherComponent tabSwitcherComponent;
@@ -386,6 +389,11 @@ public class ProjectDetailPage extends BasePage {
         clickHeaderAction("Export");
         exportProjectModalComponent.waitForDialogToAppear();
         return exportProjectModalComponent;
+    }
+
+    public String getProjectId() {
+        page.waitForURL(PROJECT_ADDRESS);
+        return ProjectLinkUtil.projectIdOf(page.url());
     }
 
     public String getOverviewPath() {

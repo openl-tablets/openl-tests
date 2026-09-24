@@ -10,6 +10,9 @@ import java.util.List;
 
 public class TableComponent extends BaseComponent {
 
+    private static final String RAISED_CELL_TEXTS = "cells => cells.filter(cell => getComputedStyle(cell).outlineStyle === 'solid' && getComputedStyle(cell).outlineColor === 'rgb(222, 32, 36)').map(cell => cell.innerText.trim())";
+
+    private WebElement allCells;
     private WebElement cellEditor;
     private WebElement firstRowLineNumber;
     private WebElement numberedFirstColumn;
@@ -27,6 +30,7 @@ public class TableComponent extends BaseComponent {
     }
 
     private void initializeElements() {
+        allCells = createScopedElement("xpath=.//td", "allCells");
         cellEditor = new WebElement(page, "xpath=//*[@data-testid='table-cell-input']", "cellEditor");
         firstRowLineNumber = createScopedElement("xpath=./tbody/tr[1]//span[@data-testid='table-line-number']", "firstRowLineNumber");
         numberedFirstColumn = createScopedElement("xpath=./tbody/tr[last()]/td[1][.//span[@data-testid='table-line-number']]", "numberedFirstColumn");
@@ -66,6 +70,15 @@ public class TableComponent extends BaseComponent {
 
     public String getCellText(int rowIndex, int columnIndex) {
         return getCell(rowIndex, columnIndex).getInnerText().trim();
+    }
+
+    public List<String> getCellTexts() {
+        return allCells.getLocator().allInnerTexts().stream().map(String::trim).toList();
+    }
+
+    @SuppressWarnings("unchecked")
+    public List<String> getRaisedCellTexts() {
+        return (List<String>) allCells.getLocator().evaluateAll(RAISED_CELL_TEXTS);
     }
 
     public List<String> getColumn(int columnIndex) {
