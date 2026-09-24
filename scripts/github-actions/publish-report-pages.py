@@ -17,6 +17,7 @@ PAGES_BRANCH = "gh-pages"
 RUNS_DIR = "runs"
 PUSH_ATTEMPTS = 5
 KNOWN_ISSUE = "KNOWN ISSUE"
+OPENL_COMMIT_URL = "https://github.com/openl-tablets/openl-tablets/commit/"
 FIXED_CANDIDATE = "FIXED?"
 
 INDEX_TEMPLATE = Template("""<!DOCTYPE html>
@@ -31,7 +32,8 @@ table{width:100%;border-collapse:separate;border-spacing:0} th{padding:12px 14px
 td{padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:top} tr:hover td{background:#f8fafc}
 .pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:600;margin-right:6px}
 .passed{color:#15803d;background:#dcfce7} .failed{color:#dc2626;background:#fee2e2} .known{color:#c2410c;background:#ffedd5} .fixed{color:#1d4ed8;background:#dbeafe} .skipped{color:#a16207;background:#fef9c3}
-small{color:var(--muted)} .workflow{display:inline-block;margin-bottom:4px;font-weight:600} code{padding:1px 6px;border-radius:6px;background:#eef2f6;font-size:12px}
+small{color:var(--muted)} .workflow{display:inline-block;margin-bottom:4px;font-weight:600}
+.tag-moving{display:inline-block;padding:1px 8px;border:1px solid #f5b37a;border-radius:999px;background:#fff1e5;color:#9a3412;font-weight:600;font-size:11px} code{padding:1px 6px;border-radius:6px;background:#eef2f6;font-size:12px}
 </style></head><body><div class="page">
 <h1>OpenL Tests reports</h1>
 <div class="meta">The last $count GitHub Actions runs, newest first. Every report is self-contained: step logs, Playwright traces, application logs and screenshots.</div>
@@ -80,14 +82,20 @@ def pill(css: str, label: str, count: int) -> str:
 def describe_application(application: dict) -> str:
     versions = application.get("versions") or []
     if not versions:
-        return e(application.get("image", ""))
-    described = []
-    for version in versions:
-        parts = [" ".join(p for p in (version.get("title") or "", version.get("version") or "") if p)]
-        if version.get("buildNumber"):
-            parts.append(f"build {version['buildNumber']}")
-        described.append(", ".join(p for p in parts if p))
-    return e("; ".join(described))
+        described = e(application.get("requested") or application.get("image", ""))
+    else:
+        parts_of_versions = []
+        for version in versions:
+            parts = [" ".join(p for p in (version.get("title") or "", version.get("version") or "") if p)]
+            if version.get("buildNumber"):
+                parts.append(f"build {version['buildNumber']}")
+            parts_of_versions.append(", ".join(p for p in parts if p))
+        described = e("; ".join(parts_of_versions))
+    if application.get("moving"):
+        revision = application.get("revision") or ""
+        resolved = f"<a href='{OPENL_COMMIT_URL}{e(revision)}'>{e(revision[:10])}</a>" if revision else e(application.get("digest", "")[:19])
+        described += f" <span class='tag-moving'>{e(application.get('requested', '').rsplit(':', 1)[-1])}</span> <small>→ {resolved}</small>"
+    return described
 
 
 def workflow_of(run_dir: Path, run: dict) -> str:
@@ -121,6 +129,9 @@ def render_index(runs_root: Path, repository: str) -> str:
         run_link = f" · <a href='https://github.com/{e(repository)}/actions/runs/{e(run_dir.name)}'>workflow</a>" if repository else ""
         workflow_name = workflow_of(run_dir, run)
         workflow_label = f"<span class='workflow'>{e(workflow_name)}</span><br>" if workflow_name else ""
+        pull_request = run.get("pullRequest") or {}
+        if pull_request.get("number"):
+            workflow_label += f"<a href='{e(pull_request.get('url', ''))}'>PR #{e(pull_request['number'])}</a> <small>{e(pull_request.get('title', ''))}</small><br>"
         rows.append(
             f"<tr><td>{workflow_label}<a href='{RUNS_DIR}/{e(run_dir.name)}/'>{e(run.get('startedAt') or run_dir.name)}</a>{selective}<br><small>run {e(run_dir.name)}</small></td>"
             f"<td>{applications}</td><td>{results}<br><small>{e(summary.get('total', ''))} tests</small></td><td>{tests_revision}</td>"
@@ -191,7 +202,7 @@ def main() -> None:
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--report-dir", required=True)
     parser.add_argument("--pages-url", required=True, help="Base URL of the GitHub Pages site, e.g. https://owner.github.io/repo")
-    parser.add_argument("--keep", type=int, default=15, help="How many latest runs to keep on the site.")
+    parser.add_argument("--keep", type=int, default=30, help="How many latest runs to keep on the site.")
     parser.add_argument("--step-summary", default=os.environ.get("GITHUB_STEP_SUMMARY"))
     args = parser.parse_args()
 

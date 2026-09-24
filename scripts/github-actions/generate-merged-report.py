@@ -32,6 +32,7 @@ APP_LOG_MARKERS = re.compile(r"\b(ERROR|WARN|WARNING|SEVERE)\b|\w*(Exception|Err
 STEPS_TAIL_LINES_PASSED = 50
 TRACE_HINT = "npx playwright show-trace trace.zip (or drop the file onto https://trace.playwright.dev)"
 REPORT_EXCLUDED_KINDS = {"video"}
+OPENL_COMMIT_URL = "https://github.com/openl-tablets/openl-tablets/commit/"
 
 
 @dataclass
@@ -302,6 +303,7 @@ class RunInfo:
     selective: bool
     run_url: str
     workflow: str
+    pull_request: dict
 
     def commit_url(self) -> str:
         if self.tests_repository and self.tests_sha:
@@ -322,8 +324,8 @@ def format_instant(value: datetime | None) -> str:
     return value.strftime("%Y-%m-%d %H:%M:%S UTC") if value else "—"
 
 
-def observed_applications(records: list[TestRecord], declared_images: list[str]) -> list[dict]:
-    by_image: dict[str, dict] = {image: {"image": image, "versions": [], "tests": 0, "errors": []} for image in declared_images if image}
+def observed_applications(records: list[TestRecord], declared_images: list[dict]) -> list[dict]:
+    by_image: dict[str, dict] = {d["image"]: {**d, "versions": [], "tests": 0, "errors": []} for d in declared_images if d.get("image")}
     for record in records:
         if not record.app_image:
             continue
@@ -348,7 +350,7 @@ def run_info(records: list[TestRecord], args: argparse.Namespace) -> RunInfo:
         started_at=format_instant(started),
         finished_at=format_instant(finished),
         wall_seconds=int((finished - started).total_seconds()) if started and finished else 0,
-        applications=observed_applications(records, [args.studio_image, args.ws_image]),
+        applications=observed_applications(records, declared_images(args)),
         tests_repository=first.repository,
         tests_branch=args.tests_branch or first.git_branch,
         tests_sha=first.git_sha,
@@ -357,7 +359,29 @@ def run_info(records: list[TestRecord], args: argparse.Namespace) -> RunInfo:
         selective=str(args.selective).lower() == "true",
         run_url=args.run_url,
         workflow=args.workflow,
+        pull_request={"number": args.pr_number, "title": args.pr_title, "url": args.pr_url} if args.pr_number else {},
     )
+
+
+def declared_images(args: argparse.Namespace) -> list[dict]:
+    if args.images:
+        return json.loads(args.images)
+    return [{"image": args.studio_image}, {"image": args.ws_image}]
+
+
+def describe_resolution(application: dict, html: bool) -> str:
+    digest, revision, created = application["digest"][:19], application.get("revision") or "", application.get("created") or ""
+    if html:
+        digest, created = f"<code>{e(digest)}</code>", e(created)
+        revision_text = f"<a href='{OPENL_COMMIT_URL}{e(revision)}' target='_blank'>{e(revision[:10])}</a>"
+    else:
+        revision_text = revision[:10]
+    parts = [f"resolved at run start to {digest}"]
+    if revision:
+        parts.append(f"openl-tablets {revision_text}")
+    if created:
+        parts.append(f"image built {created}")
+    return ", ".join(parts)
 
 
 def describe_version(version: dict) -> str:
@@ -382,6 +406,7 @@ def describe_application(application: dict) -> str:
 def render_run_block(info: RunInfo) -> str:
     rows: list[tuple[str, str]] = [
         ("Workflow", f"<a href='{e(info.run_url)}'>{e(info.workflow) or '—'}</a>" if info.run_url else e(info.workflow) or "—"),
+        *([("Pull request", f"<a href='{e(info.pull_request['url'])}' target='_blank'>#{e(info.pull_request['number'])}</a> {e(info.pull_request['title'])}")] if info.pull_request else []),
         ("Run", f"{e(info.started_at)} → {e(info.finished_at)}" + (f" · {format_duration(info.wall_seconds * 1000)} wall time" if info.wall_seconds else "") + (" · selective run" if info.selective else "")),
     ]
     for application in info.applications:
@@ -393,7 +418,12 @@ def render_run_block(info: RunInfo) -> str:
             observed = f"{application['tests']} test(s), version not observed (the container did not start or the tests stopped before the info call)"
         else:
             observed = "<span class='hint'>not used by any test in this run</span>"
-        rows.append((f"Image <code>{e(application['image'])}</code>", observed))
+        label = f"Image <code>{e(application.get('requested') or application['image'])}</code>"
+        if application.get("moving"):
+            label += " <span class='tag-moving'>moving tag</span>"
+        if application.get("requested"):
+            observed += f"<br><small>{describe_resolution(application, html=True)}</small>"
+        rows.append((label, observed))
     tests = f"{e(info.tests_branch) or '—'}"
     if info.tests_sha:
         short = e(info.tests_sha[:12])
@@ -493,6 +523,8 @@ header.top{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:spac
 h1{margin:0;font-size:26px;font-weight:700;letter-spacing:-.02em}
 .meta{display:flex;flex-wrap:wrap;gap:8px;align-items:center;color:var(--muted);font-size:13px}
 .meta .chip{background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px 10px;color:var(--text)}
+.meta .chip.moving,.tag-moving{border:1px solid #f5b37a;background:#fff1e5;color:#9a3412;font-weight:600}
+.tag-moving{display:inline-block;padding:1px 8px;border-radius:999px;font-size:11px}
 .cards{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;margin:0 0 20px}
 .card{position:relative;overflow:hidden;min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 14px 14px 18px;box-shadow:var(--shadow);color:var(--muted);font-size:clamp(10px,.85vw,12px);font-weight:600;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap;text-overflow:ellipsis}
 .card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--card-color,var(--line-strong))}
@@ -542,7 +574,7 @@ code{padding:1px 6px;border-radius:6px;background:#eef2f6;font-family:var(--mono
 </style></head><body>
 <div class="page">
 <header class="top"><h1>$title</h1>
-<div class="meta"><span class="chip">Build $build</span><span class="chip">$total tests</span><span class="chip">$total_duration of test time</span><a href="$run_url">workflow run</a> · <a href="debug/index.json">debug/index.json</a> · <a href="debug/README.md">how to debug with an AI assistant</a></div></header>
+<div class="meta"><span class="chip$build_class">Build $build</span><span class="chip">$total tests</span><span class="chip">$total_duration of test time</span><a href="$run_url">workflow run</a> · <a href="debug/index.json">debug/index.json</a> · <a href="debug/README.md">how to debug with an AI assistant</a></div></header>
 $run_block
 <div class="cards"><div class="card" style="--card-color:#15803d">Passed<b>$passed</b></div><div class="card" style="--card-color:#dc2626">Failed<b>$failed</b></div><div class="card" style="--card-color:#ca8a04">Skipped<b>$skipped</b></div><div class="card" style="--card-color:#ea580c">Known issues<b>$known</b></div><div class="card" style="--card-color:#2563eb">Fixed?<b>$fixed</b></div><div class="card">Shards<b>$shards</b></div></div>
 <div class="controls"><label>Status <select id="status"><option value="">all</option><option value="failed">failed</option><option value="skipped">skipped</option><option value="known">known issue</option><option value="fixed">fixed?</option><option value="passed">passed</option></select></label>
@@ -591,9 +623,11 @@ def render_html(records: list[TestRecord], title: str, run_url: str, build: str,
             f"<tr class='details-row {css}' id='d{index}' hidden><td colspan='6'>{detail_html}</td></tr>"
         )
     suites = sorted({record.suite for record in records})
+    moving = any(a.get("moving") for a in info.applications)
     return PAGE_TEMPLATE.substitute(
         title=e(title),
-        build=e(build),
+        build=e(build) + (" — moving tag, see the images below" if moving else ""),
+        build_class=" moving" if moving else "",
         total=len(records),
         total_duration=format_duration(sum(record.duration_ms for record in records)),
         run_url=e(run_url),
@@ -733,8 +767,14 @@ def write_debug_bundles(records: list[TestRecord], output_dir: Path, build: str,
 
 def write_step_summary(records: list[TestRecord], title: str, build: str, summary_path: str | None, info: RunInfo) -> str:
     counts = Counter(record.outcome for record in records)
-    applications = "; ".join(f"`{a['image']}` → {describe_application(a)}" for a in info.applications)
+    applications = "; ".join(
+        f"`{a.get('requested') or a['image']}` → {describe_application(a)}" + (f" ({describe_resolution(a, html=False)})" if a.get("requested") else "")
+        + (" ⚠️ moving tag" if a.get("moving") else "")
+        for a in info.applications
+    )
     facts = [f"Run {info.started_at} → {info.finished_at}"]
+    if info.pull_request:
+        facts.insert(0, f"[PR #{info.pull_request['number']}]({info.pull_request['url']}) {info.pull_request['title']}")
     if info.tests_branch or info.tests_sha:
         facts.append("tests " + " @ ".join(part for part in (f"`{info.tests_branch}`" if info.tests_branch else "", f"`{info.tests_sha[:12]}`" if info.tests_sha else "") if part))
     if info.playwright_version:
@@ -791,6 +831,10 @@ def main() -> None:
     parser.add_argument("--step-summary", default=os.environ.get("GITHUB_STEP_SUMMARY"))
     parser.add_argument("--studio-image", default="", help="Declared Studio image; the observed OpenL version is taken from the tests.")
     parser.add_argument("--ws-image", default="", help="Declared Rule Services image; the observed OpenL version is taken from the tests.")
+    parser.add_argument("--images", default="", help="JSON list of the images the run resolved (resolve-images.py); replaces --studio-image and --ws-image.")
+    parser.add_argument("--pr-number", default="")
+    parser.add_argument("--pr-title", default="")
+    parser.add_argument("--pr-url", default="")
     parser.add_argument("--tests-branch", default="")
     parser.add_argument("--playwright-version", default="")
     parser.add_argument("--java-version", default="")
@@ -830,6 +874,7 @@ def main() -> None:
                     "selective": info.selective,
                     "workflow": info.workflow,
                     "workflowRunUrl": info.run_url,
+                    "pullRequest": info.pull_request,
                 },
                 "total": len(records),
                 "counts": dict(Counter(record.status for record in records)),

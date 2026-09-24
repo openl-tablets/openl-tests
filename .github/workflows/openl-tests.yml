@@ -1,7 +1,10 @@
 name: OpenL Tests
-run-name: "OpenL Tests [${{ inputs.application_version }}]"
+run-name: "${{ github.event_name == 'pull_request' && format('OpenL Tests [latest] PR #{0}: {1}', github.event.pull_request.number, github.event.pull_request.title) || format('OpenL Tests [{0}]', inputs.application_version) }}"
 
 on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
     inputs:
       application_version:
@@ -27,6 +30,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: openl-tests-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 env:
   SELECTED_TESTS: ${{ inputs.tests }}
   SHARDS: ${{ inputs.shards }}
@@ -37,11 +44,16 @@ env:
 jobs:
   discover-tests:
     name: Discover tests
+    if: github.event_name == 'workflow_dispatch' || (!github.event.pull_request.draft && github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]')
     runs-on: ubuntu-latest
     outputs:
       classes: ${{ steps.discover.outputs.classes }}
       matrix: ${{ steps.discover.outputs.matrix }}
       selective: ${{ steps.discover.outputs.selective }}
+      application_version: ${{ steps.images.outputs.application_version }}
+      studio_image: ${{ steps.images.outputs.studio_image }}
+      ws_image: ${{ steps.images.outputs.ws_image }}
+      images: ${{ steps.images.outputs.images }}
 
     steps:
       - name: Checkout tests
@@ -49,20 +61,11 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Check that the application images exist
+      - name: Resolve the application images
+        id: images
         env:
-          APPLICATION_VERSION: ${{ inputs.application_version }}
-        run: |
-          missing=0
-          for image in "ghcr.io/openl-tablets/webstudio:${APPLICATION_VERSION}" "ghcr.io/openl-tablets/ws:${APPLICATION_VERSION}-all"; do
-            if docker manifest inspect "${image}" > /dev/null 2>&1; then
-              echo "Found ${image}"
-            else
-              echo "::error::Image ${image} does not exist in ghcr.io; check the application_version input"
-              missing=1
-            fi
-          done
-          exit "${missing}"
+          APPLICATION_VERSION: ${{ inputs.application_version || 'latest' }}
+        run: python3 scripts/github-actions/resolve-images.py --tag "${APPLICATION_VERSION}"
 
       - name: Discover test classes
         id: discover
@@ -108,14 +111,13 @@ jobs:
       - name: Run the test queue
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          APPLICATION_VERSION: ${{ inputs.application_version }}
+          STUDIO_IMAGE: ${{ needs.discover-tests.outputs.studio_image }}
+          WS_IMAGE: ${{ needs.discover-tests.outputs.ws_image }}
           SELECTIVE_RUN: ${{ needs.discover-tests.outputs.selective }}
           QUEUED_CLASSES: ${{ needs.discover-tests.outputs.classes }}
           SHARD_DISPLAY: ${{ matrix.display }}
           PLAYWRIGHT_JAVA_SRC: src/test/java:src/main/java
         run: |
-          STUDIO_IMAGE="ghcr.io/openl-tablets/webstudio:${APPLICATION_VERSION}"
-          WS_IMAGE="ghcr.io/openl-tablets/ws:${APPLICATION_VERSION}-all"
           PLAYWRIGHT_NPM_CACHE_DIR="${RUNNER_TEMP}/playwright-npm-cache"
           echo "Using docker_image_name=${STUDIO_IMAGE}"
           echo "Using ws_docker_image_name=${WS_IMAGE}"
@@ -171,7 +173,7 @@ jobs:
     needs:
       - discover-tests
       - test-shard
-    if: always() && needs.discover-tests.result == 'success'
+    if: ${{ !cancelled() && needs.discover-tests.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -193,10 +195,14 @@ jobs:
         id: report
         if: always()
         env:
-          BUILD_LABEL: ${{ inputs.application_version }}
-          TESTS_BRANCH: ${{ inputs.tests_branch }}
+          BUILD_LABEL: ${{ needs.discover-tests.outputs.application_version }}
+          IMAGES: ${{ needs.discover-tests.outputs.images }}
+          TESTS_BRANCH: ${{ inputs.tests_branch || format('{0} merged into {1}', github.head_ref, github.base_ref) }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           SELECTIVE_RUN: ${{ needs.discover-tests.outputs.selective }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
         run: |
           python3 scripts/github-actions/generate-merged-report.py \
             --input-root downloaded-artifacts \
@@ -204,8 +210,10 @@ jobs:
             --title "OpenL Tests [${BUILD_LABEL}]" \
             --build "${BUILD_LABEL}" \
             --run-url "${RUN_URL}" \
-            --studio-image "ghcr.io/openl-tablets/webstudio:${BUILD_LABEL}" \
-            --ws-image "ghcr.io/openl-tablets/ws:${BUILD_LABEL}-all" \
+            --images "${IMAGES}" \
+            --pr-number "${PR_NUMBER}" \
+            --pr-title "${PR_TITLE}" \
+            --pr-url "${PR_URL}" \
             --tests-branch "${TESTS_BRANCH}" \
             --playwright-version "${PLAYWRIGHT_NPM_PACKAGE#playwright@}" \
             --java-version 21 \
@@ -230,10 +238,27 @@ jobs:
             --run-id "${GITHUB_RUN_ID}" \
             --report-dir merged-report \
             --pages-url "https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}" \
-            --keep 15
+            --keep 30
+
+
+  cleanup-queue:
+    name: Remove the queue refs
+    needs:
+      - discover-tests
+      - test-shard
+      - merge-report
+    if: always() && needs.discover-tests.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout tests
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Remove the queue refs of this run attempt
-        if: always()
         continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ github.token }}
