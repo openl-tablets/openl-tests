@@ -10,6 +10,7 @@ import domain.ui.webstudio.components.common.CreateNewProjectComponent;
 import domain.ui.webstudio.components.common.TabSwitcherComponent;
 import domain.ui.webstudio.components.editortabcomponents.ImportOpenApiDialogComponent;
 import domain.ui.webstudio.components.editortabcomponents.OpenApiModuleSettingsDialogComponent;
+import domain.ui.webstudio.components.editortabcomponents.OpenApiModuleSettingsDialogComponent.ModulePlan;
 import domain.ui.webstudio.pages.mainpages.EditorPage;
 import domain.ui.webstudio.pages.mainpages.RepositoryPage;
 import helpers.service.LoginService;
@@ -18,12 +19,16 @@ import helpers.utils.TestDataUtil;
 import org.testng.annotations.Test;
 import tests.BaseTest;
 
+import static domain.ui.webstudio.components.editortabcomponents.OpenApiModuleSettingsDialogComponent.PlanModule.DATA_TYPES;
+import static domain.ui.webstudio.components.editortabcomponents.OpenApiModuleSettingsDialogComponent.PlanModule.SERVICES;
+import static domain.ui.webstudio.components.editortabcomponents.OpenApiModuleSettingsDialogComponent.NoticeTone.WARNING;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestImportTablesGenerationOverwriteWarning extends BaseTest {
 
     private static final String OPENAPI_FILE = "openapi2.json";
     private static final String OPENAPI_FILE_1 = "openapi1.json";
+    private static final String OVERWRITTEN = "Warning! This module already exists and all of its content is going to be overwritten.";
 
     @Test
     @TestCaseId("IPBQA-31035")
@@ -35,7 +40,6 @@ public class TestImportTablesGenerationOverwriteWarning extends BaseTest {
         LoginService loginService = new LoginService(DriverPool.getPage());
         EditorPage editorPage = loginService.login(UserService.getUser(User.ADMIN));
 
-        // Create project from openapi1.json with custom module names and paths
         RepositoryPage repositoryPage = editorPage.getTabSwitcherComponent()
                 .selectTab(TabSwitcherComponent.TabName.REPOSITORY);
         repositoryPage.getCreateProjectLink().click();
@@ -51,7 +55,6 @@ public class TestImportTablesGenerationOverwriteWarning extends BaseTest {
         repositoryPage.fillCommitInfo();
         repositoryPage.waitUntilSpinnerLoaded();
 
-        // Step 2: Upload openapi2.json and do Reconciliation import
         uploadFileToProject(repositoryPage, projectName, OPENAPI_FILE);
 
         editorPage = new EditorPage();
@@ -62,16 +65,12 @@ public class TestImportTablesGenerationOverwriteWarning extends BaseTest {
         importDialog.clickImportReconciliation();
         editorPage.waitUntilSpinnerLoaded();
 
-        // Navigate to Algorithms_test module to allow compilation to complete
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Algorithms_test");
         editorPage.getProblemsPanelComponent().waitForCompilationToComplete();
 
-        // Step 3: Navigate back to project, open dialog in Tables Generation mode, trigger overwrite warning
         editorPage.getEditorToolbarPanelComponent().navigateToProjectRoot(projectName);
         importDialog = editorPage.openImportOpenApiDialog();
         importDialog.selectTablesGenerationMode();
-        // Creating a project from a specification no longer writes down what to generate into (EPBDS-16415),
-        // so the modules to write over are named here, as a reader would name them.
         importDialog.setRulesModuleName("Algorithms_test");
         importDialog.setDataModuleName("Models_test");
         importDialog.clickImportTablesGeneration();
@@ -79,15 +78,19 @@ public class TestImportTablesGenerationOverwriteWarning extends BaseTest {
         OpenApiModuleSettingsDialogComponent settingsDialog = editorPage.getOpenApiModuleSettingsDialogComponent();
         settingsDialog.waitForVisible();
 
-        assertThat(settingsDialog.getPlanLines())
-                .as("Both modules already stand, so the workbooks the project declares for them are replaced")
-                .contains("Services module: Algorithms_test — the workbook rules1/Algorithms_test1.xlsx is replaced",
-                        "Data types module: Models_test — the workbook rules2/Models_test2.xlsx is replaced");
+        assertThat(settingsDialog.getModulePlan(SERVICES))
+                .as("Algorithms_test already stands, so the dialog warns that the workbook the project declares for it is overwritten")
+                .isEqualTo(new ModulePlan(WARNING, OVERWRITTEN, "Algorithms_test", "rules1/Algorithms_test1.xlsx"));
+        assertThat(settingsDialog.getModulePlan(DATA_TYPES))
+                .as("Models_test already stands, so the dialog warns that the workbook the project declares for it is overwritten")
+                .isEqualTo(new ModulePlan(WARNING, OVERWRITTEN, "Models_test", "rules2/Models_test2.xlsx"));
+        assertThat(settingsDialog.getGenerateButtonText())
+                .as("The button says it overwrites when existing modules would be overwritten")
+                .isEqualTo("Generate and overwrite");
         assertThat(settingsDialog.isVisible())
                 .as("Settings dialog with Cancel button should be visible")
                 .isTrue();
 
-        // Step 3.1: Cancel, re-open settings dialog, confirm import with overwrite
         settingsDialog.clickCancel();
         importDialog.selectTablesGenerationMode();
         importDialog.setRulesModuleName("Algorithms_test");
@@ -102,7 +105,6 @@ public class TestImportTablesGenerationOverwriteWarning extends BaseTest {
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Algorithms_test");
         editorPage.getProblemsPanelComponent().checkNoProblems();
 
-        // Step 3.2: Verify OpenAPI properties after Tables Generation import
         editorPage.getEditorToolbarPanelComponent().navigateToProjectRoot(projectName);
         assertThat(editorPage.getOpenApiMode())
                 .as("Mode should be 'Tables generation' after Tables Generation import with overwrite")
@@ -119,7 +121,6 @@ public class TestImportTablesGenerationOverwriteWarning extends BaseTest {
     }
 
     private void uploadFileToProject(RepositoryPage repositoryPage, String projectName, String fileName) {
-        // React Files tab: upload through the project's own screen, then commit from the projects list.
         repositoryPage.openProjectsList().openProjectDetail(projectName)
                 .uploadFileAs(TestDataUtil.getFilePathFromResources(fileName), fileName);
         repositoryPage.openProjectsList().saveProject(projectName, "Uploaded " + fileName);

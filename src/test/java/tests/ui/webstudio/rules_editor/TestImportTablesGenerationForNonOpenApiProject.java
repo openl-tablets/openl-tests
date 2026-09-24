@@ -10,6 +10,7 @@ import domain.ui.webstudio.components.common.CreateNewProjectComponent;
 import domain.ui.webstudio.components.common.TabSwitcherComponent;
 import domain.ui.webstudio.components.editortabcomponents.ImportOpenApiDialogComponent;
 import domain.ui.webstudio.components.editortabcomponents.OpenApiModuleSettingsDialogComponent;
+import domain.ui.webstudio.components.editortabcomponents.OpenApiModuleSettingsDialogComponent.ModulePlan;
 import domain.ui.webstudio.pages.mainpages.EditorPage;
 import domain.ui.webstudio.pages.mainpages.RepositoryPage;
 import helpers.service.LoginService;
@@ -20,12 +21,18 @@ import tests.BaseTest;
 
 import java.util.List;
 
+import static domain.ui.webstudio.components.editortabcomponents.OpenApiModuleSettingsDialogComponent.PlanModule.DATA_TYPES;
+import static domain.ui.webstudio.components.editortabcomponents.OpenApiModuleSettingsDialogComponent.PlanModule.SERVICES;
+import static domain.ui.webstudio.components.editortabcomponents.OpenApiModuleSettingsDialogComponent.NoticeTone.SECONDARY;
+import static domain.ui.webstudio.components.editortabcomponents.OpenApiModuleSettingsDialogComponent.NoticeTone.WARNING;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestImportTablesGenerationForNonOpenApiProject extends BaseTest {
 
     private static final String OPENAPI_FILE = "openapi2.json";
     private static final String TEMPLATE_NAME = "Example 1 - Bank Rating";
+    private static final String OVERWRITTEN = "Warning! This module already exists and all of its content is going to be overwritten.";
+    private static final String CREATED = "This module does not exist yet and is going to be created.";
 
     @Test
     @TestCaseId("IPBQA-31035")
@@ -73,12 +80,12 @@ public class TestImportTablesGenerationForNonOpenApiProject extends BaseTest {
 
         OpenApiModuleSettingsDialogComponent settingsDialog = editorPage.getOpenApiModuleSettingsDialogComponent();
         settingsDialog.waitForVisible();
-        assertThat(settingsDialog.getPlanLines())
-                .as("Bank Rating is a workbook the project already reads, so it is written over")
-                .contains("Services module: Bank Rating — the workbook rules/Bank Rating.xlsx is replaced");
-        assertThat(settingsDialog.getPlanLines())
-                .as("The data types are written into Models, in the workbook the project names for it")
-                .anySatisfy(line -> assertThat(line).contains("Data types module: Models", "rules/Models.xlsx"));
+        assertThat(settingsDialog.getModulePlan(SERVICES))
+                .as("Bank Rating is a module the project already reads, so the dialog warns that its workbook is overwritten")
+                .isEqualTo(new ModulePlan(WARNING, OVERWRITTEN, "Bank Rating", "rules/Bank Rating.xlsx"));
+        assertThat(settingsDialog.getModulePlan(DATA_TYPES))
+                .as("Models does not exist yet, so it is created in the proposed workbook")
+                .isEqualTo(new ModulePlan(SECONDARY, CREATED, "Models", "rules/Models.xlsx"));
         settingsDialog.clickImportAndOverride();
 
         editorPage.waitUntilAppIdle();

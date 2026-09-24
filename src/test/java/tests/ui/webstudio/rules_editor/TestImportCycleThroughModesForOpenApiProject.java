@@ -9,6 +9,7 @@ import domain.serviceclasses.constants.User;
 import domain.ui.webstudio.components.common.TabSwitcherComponent;
 import domain.ui.webstudio.components.editortabcomponents.ImportOpenApiDialogComponent;
 import domain.ui.webstudio.components.editortabcomponents.OpenApiModuleSettingsDialogComponent;
+import domain.ui.webstudio.components.editortabcomponents.OpenApiModuleSettingsDialogComponent.ModulePlan;
 import domain.ui.webstudio.components.editortabcomponents.leftmenu.EditorLeftRulesTreeComponent;
 import domain.ui.webstudio.pages.mainpages.EditorPage;
 import domain.ui.webstudio.pages.mainpages.RepositoryPage;
@@ -18,6 +19,9 @@ import helpers.utils.TestDataUtil;
 import org.testng.annotations.Test;
 import tests.BaseTest;
 
+import static domain.ui.webstudio.components.editortabcomponents.OpenApiModuleSettingsDialogComponent.PlanModule.DATA_TYPES;
+import static domain.ui.webstudio.components.editortabcomponents.OpenApiModuleSettingsDialogComponent.PlanModule.SERVICES;
+import static domain.ui.webstudio.components.editortabcomponents.OpenApiModuleSettingsDialogComponent.NoticeTone.WARNING;
 import static org.assertj.core.api.Assertions.assertThat;
 import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.CONFIGURATION;
 
@@ -26,6 +30,7 @@ public class TestImportCycleThroughModesForOpenApiProject extends BaseTest {
     private static final String OPENAPI_FILE = "openapi2.json";
     private static final String OPENAPI_FILE_3 = "openapi3.json";
     private static final String NORMALIZED_SPEC = "openapi.json";
+    private static final String OVERWRITTEN = "Warning! This module already exists and all of its content is going to be overwritten.";
 
     @Test
     @TestCaseId("IPBQA-31035")
@@ -77,9 +82,15 @@ public class TestImportCycleThroughModesForOpenApiProject extends BaseTest {
         OpenApiModuleSettingsDialogComponent settingsDialog = editorPage.getOpenApiModuleSettingsDialogComponent();
         settingsDialog.waitForVisible();
 
-        assertThat(settingsDialog.getPlanLines())
-                .as("Both modules already stand, so their workbooks are replaced")
-                .contains("Services module: Algorithms — the workbook rules/Algorithms.xlsx is replaced", "Data types module: Models — the workbook rules/Models.xlsx is replaced");
+        assertThat(settingsDialog.getModulePlan(SERVICES))
+                .as("Algorithms already stands, so the dialog warns that its workbook is overwritten")
+                .isEqualTo(new ModulePlan(WARNING, OVERWRITTEN, "Algorithms", "rules/Algorithms.xlsx"));
+        assertThat(settingsDialog.getModulePlan(DATA_TYPES))
+                .as("Models already stands, so the dialog warns that its workbook is overwritten")
+                .isEqualTo(new ModulePlan(WARNING, OVERWRITTEN, "Models", "rules/Models.xlsx"));
+        assertThat(settingsDialog.getGenerateButtonText())
+                .as("The button says it overwrites when a module the project reads is among the two")
+                .isEqualTo("Generate and overwrite");
 
         settingsDialog.clickImportAndOverride();
         editorPage.getEditorToolbarPanelComponent().clickSave();

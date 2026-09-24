@@ -10,6 +10,7 @@ import domain.ui.webstudio.components.common.CreateNewProjectComponent;
 import domain.ui.webstudio.components.common.TabSwitcherComponent;
 import domain.ui.webstudio.components.editortabcomponents.ImportOpenApiDialogComponent;
 import domain.ui.webstudio.components.editortabcomponents.OpenApiModuleSettingsDialogComponent;
+import domain.ui.webstudio.components.editortabcomponents.OpenApiModuleSettingsDialogComponent.ModulePlan;
 import domain.ui.webstudio.pages.mainpages.EditorPage;
 import domain.ui.webstudio.pages.mainpages.RepositoryPage;
 import helpers.service.LoginService;
@@ -20,14 +21,19 @@ import tests.BaseTest;
 
 import java.util.List;
 
+import static domain.ui.webstudio.components.editortabcomponents.OpenApiModuleSettingsDialogComponent.PlanModule.DATA_TYPES;
+import static domain.ui.webstudio.components.editortabcomponents.OpenApiModuleSettingsDialogComponent.PlanModule.SERVICES;
+import static domain.ui.webstudio.components.editortabcomponents.OpenApiModuleSettingsDialogComponent.NoticeTone.SECONDARY;
+import static domain.ui.webstudio.components.editortabcomponents.OpenApiModuleSettingsDialogComponent.NoticeTone.WARNING;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestImportNewModulesWithPathEditingAndMixedScenarios extends BaseTest {
 
     private static final String OPENAPI_FILE = "openapi2.json";
     private static final String OPENAPI_FILE_1 = "openapi1.json";
-    /** What the project calls the specification it was created from: the name its format reads as. */
     private static final String NORMALIZED_SPEC = "openapi.json";
+    private static final String OVERWRITTEN = "Warning! This module already exists and all of its content is going to be overwritten.";
+    private static final String CREATED = "This module does not exist yet and is going to be created.";
 
     @Test
     @TestCaseId("IPBQA-31035")
@@ -72,8 +78,6 @@ public class TestImportNewModulesWithPathEditingAndMixedScenarios extends BaseTe
         editorPage.getEditorToolbarPanelComponent().navigateToProjectRoot(projectName);
         importDialog = editorPage.openImportOpenApiDialog();
         importDialog.selectTablesGenerationMode();
-        // The project was made from a specification, which no longer writes down what to generate into
-        // (EPBDS-16415), so the modules to write over are named here, as a reader would name them.
         importDialog.setRulesModuleName("Algorithms_test");
         importDialog.setDataModuleName("Models_test");
         importDialog.clickImportTablesGeneration();
@@ -96,14 +100,13 @@ public class TestImportNewModulesWithPathEditingAndMixedScenarios extends BaseTe
         settingsDialog = editorPage.getOpenApiModuleSettingsDialogComponent();
         settingsDialog.waitForVisible();
 
-        assertThat(settingsDialog.getPlanLines())
-                .as("The plan must name both modules and the workbook the project writes each into")
-                .anySatisfy(line -> assertThat(line).contains("Services module: Alg", "rules/Alg.xlsx"))
-                .anySatisfy(line -> assertThat(line).contains("Data types module: " + moduleName,
-                        String.format("rules/%s.xlsx", moduleName)));
+        assertThat(settingsDialog.getModulePlan(SERVICES))
+                .as("Alg does not exist yet, so it is created in the proposed workbook")
+                .isEqualTo(new ModulePlan(SECONDARY, CREATED, "Alg", "rules/Alg.xlsx"));
+        assertThat(settingsDialog.getModulePlan(DATA_TYPES))
+                .as("Mod-123 does not exist yet, so it is created in the proposed workbook")
+                .isEqualTo(new ModulePlan(SECONDARY, CREATED, moduleName, String.format("rules/%s.xlsx", moduleName)));
 
-        // Where each module is written is the project's own answer now, named in the plan above; the
-        // screen no longer offers it to be typed over. See KNOWN-ISSUES.md #10.
         settingsDialog.clickCancel();
         importDialog.selectTablesGenerationMode();
 
@@ -142,15 +145,12 @@ public class TestImportNewModulesWithPathEditingAndMixedScenarios extends BaseTe
         settingsDialog = editorPage.getOpenApiModuleSettingsDialogComponent();
         settingsDialog.waitForVisible();
 
-        // One module is new and the other already stands, which the plan says a line each: what the plan
-        // no longer says is carried by the button, which reads the same whatever it is about to do.
-        assertThat(settingsDialog.getPlanLines())
-                .as("Alg1 is written into a workbook of its own")
-                .anySatisfy(line -> assertThat(line).contains("Services module: Alg1", "rules/Alg1.xlsx"));
-        assertThat(settingsDialog.getPlanLines())
-                .as("Mod-123 already exists, so the workbook it was written into is replaced")
-                .contains(String.format("Data types module: %s — the workbook rules/%s.xlsx is replaced",
-                        moduleName, moduleName));
+        assertThat(settingsDialog.getModulePlan(SERVICES))
+                .as("Alg1 does not exist yet, so it is created in the proposed workbook")
+                .isEqualTo(new ModulePlan(SECONDARY, CREATED, "Alg1", "rules/Alg1.xlsx"));
+        assertThat(settingsDialog.getModulePlan(DATA_TYPES))
+                .as("Mod-123 already exists, so the dialog warns that the workbook it was written into is overwritten")
+                .isEqualTo(new ModulePlan(WARNING, OVERWRITTEN, moduleName, String.format("rules/%s.xlsx", moduleName)));
 
         settingsDialog.clickCancel();
         importDialog.selectTablesGenerationMode();
@@ -161,12 +161,12 @@ public class TestImportNewModulesWithPathEditingAndMixedScenarios extends BaseTe
         settingsDialog = editorPage.getOpenApiModuleSettingsDialogComponent();
         settingsDialog.waitForVisible();
 
-        assertThat(settingsDialog.getPlanLines())
-                .as("Alg already exists, so the workbook the project wrote it into is replaced")
-                .contains("Services module: Alg — the workbook rules/Alg.xlsx is replaced");
-        assertThat(settingsDialog.getPlanLines())
-                .as("Mod1 is written into a workbook of its own")
-                .anySatisfy(line -> assertThat(line).contains("Data types module: Mod1", "rules/Mod1.xlsx"));
+        assertThat(settingsDialog.getModulePlan(SERVICES))
+                .as("Alg already exists, so the dialog warns that the workbook the project wrote it into is overwritten")
+                .isEqualTo(new ModulePlan(WARNING, OVERWRITTEN, "Alg", "rules/Alg.xlsx"));
+        assertThat(settingsDialog.getModulePlan(DATA_TYPES))
+                .as("Mod1 does not exist yet, so it is created in the proposed workbook")
+                .isEqualTo(new ModulePlan(SECONDARY, CREATED, "Mod1", "rules/Mod1.xlsx"));
 
         settingsDialog.clickImportAndOverride();
         editorPage.waitUntilSpinnerLoaded();

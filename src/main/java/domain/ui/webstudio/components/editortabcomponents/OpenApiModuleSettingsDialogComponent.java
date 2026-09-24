@@ -5,27 +5,43 @@ import configuration.driver.DriverPool;
 import domain.ui.webstudio.components.BaseComponent;
 import helpers.utils.WaitUtil;
 
-import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Set;
 
-/**
- * What the project asks before it writes the tables its specification describes: the plan of the writing.
- *
- * <p>The plan names each module the specification is generated into and says what becomes of the workbook
- * behind it — the one there is replaced, or one is added where none stands. Where the module is written is
- * the project's own business now: the settings name the module, and the project answers with the path.
- */
 public class OpenApiModuleSettingsDialogComponent extends BaseComponent {
 
-    private static final String PLAN_DIALOG = "xpath=//div[contains(@class,'ant-modal-confirm')]"
-            + "[.//ul[@data-testid='openapi-generation-plan']]";
+    public enum PlanModule {
+        SERVICES("algorithm"),
+        DATA_TYPES("model");
+
+        private final String testId;
+
+        PlanModule(String testId) {
+            this.testId = testId;
+        }
+    }
+
+    public enum NoticeTone {
+        WARNING,
+        SECONDARY
+    }
+
+    public record ModulePlan(NoticeTone tone, String notice, String name, String workbook) {
+    }
+
+    private static final String SUBMIT = "//button[@data-testid='openapi-generate-submit']";
+    private static final String DIALOG = "xpath=//div[@role='dialog'][." + SUBMIT + "]";
+    private static final String TYPOGRAPHY = "contains(concat(' ',normalize-space(@class),' '),' ant-typography ')";
+    private static final String NAME = DIALOG + "//span[@data-testid='openapi-plan-%s-name']";
+    private static final String REFUSAL = "xpath=//div[contains(concat(' ',normalize-space(@class),' '),' ant-notification-notice ')]"
+            + "[.//div[contains(@class,'ant-notification-notice-title')][normalize-space()='Failed to generate the tables']]";
     private static final int PROBE_MS = 3000;
 
-    private WebElement planBody;
     private WebElement generateBtn;
     private WebElement cancelBtn;
-    private List<WebElement> planLines;
+    private WebElement samePathError;
+    private WebElement refusalDescriptions;
 
     public OpenApiModuleSettingsDialogComponent() {
         super(DriverPool.getPage());
@@ -38,62 +54,143 @@ public class OpenApiModuleSettingsDialogComponent extends BaseComponent {
     }
 
     private void initializeElements() {
-        planBody = new WebElement(page, PLAN_DIALOG + "//div[contains(@class,'ant-modal-confirm-content')]", "openApiPlanBody");
-        generateBtn = new WebElement(page, PLAN_DIALOG + "//button[contains(@class,'ant-btn-primary')]", "openApiGenerateBtn");
-        cancelBtn = new WebElement(page, PLAN_DIALOG + "//div[contains(@class,'ant-modal-confirm-btns')]"
-                + "//button[not(contains(@class,'ant-btn-primary'))]", "openApiPlanCancelBtn");
-        planLines = createElementList(PLAN_DIALOG + "//ul[@data-testid='openapi-generation-plan']/li", "openApiPlanLines");
+        generateBtn = new WebElement(page, "xpath=" + SUBMIT, "openApiGenerateBtn");
+        cancelBtn = new WebElement(page, DIALOG + "//div[contains(@class,'ant-modal-footer')]"
+                + "//button[not(@data-testid='openapi-generate-submit')]", "openApiGenerateCancelBtn");
+        samePathError = new WebElement(page, DIALOG + "//*[@data-testid='openapi-plan-same-path']", "openApiSamePathError");
+        refusalDescriptions = new WebElement(page, REFUSAL + "//div[contains(@class,'ant-notification-notice-description')]",
+                "openApiRefusalDescriptions");
     }
 
-    /** What the plan says, line by line, as it is read on the screen. */
-    public String getContentText() {
-        return Arrays.stream(planBody.getInnerTextAfterDelay(1000).split("\n"))
-                .map(line -> line.replaceAll("\\s+", " ").trim())
-                .filter(line -> !line.isEmpty())
-                .collect(Collectors.joining("\n"));
+    private WebElement name(PlanModule module) {
+        return new WebElement(page, String.format(NAME, module.testId), "openApiPlanName_" + module.testId);
     }
 
-    /** The modules the specification is written into, one line each. */
-    public List<String> getPlanLines() {
-        WaitUtil.waitForListNotEmpty(() -> planLines, DEFAULT_TIMEOUT_MS, 250,
-                "Waiting for the plan of the generation to be drawn");
-        return planLines.stream().map(WebElement::getText).map(line -> line.replaceAll("\\s+", " ").trim()).toList();
+    private WebElement notice(PlanModule module) {
+        return new WebElement(page, String.format(NAME, module.testId)
+                + "/ancestor::div[./*[" + TYPOGRAPHY + "]][1]/*[" + TYPOGRAPHY + "]", "openApiPlanNotice_" + module.testId);
     }
 
-    public String getImportButtonText() {
+    private WebElement workbook(PlanModule module) {
+        return new WebElement(page, DIALOG + "//*[@data-testid='openapi-plan-" + module.testId + "-path']",
+                "openApiPlanWorkbook_" + module.testId);
+    }
+
+    private WebElement workbookInput(PlanModule module) {
+        return new WebElement(page, DIALOG + "//input[@data-testid='openapi-plan-" + module.testId + "-path']",
+                "openApiPlanWorkbookInput_" + module.testId);
+    }
+
+    private WebElement workbookReset(PlanModule module) {
+        return new WebElement(page, DIALOG + "//button[@data-testid='openapi-plan-" + module.testId + "-path-reset']",
+                "openApiPlanWorkbookReset_" + module.testId);
+    }
+
+    private WebElement workbookError(PlanModule module) {
+        return new WebElement(page, DIALOG + "//*[@data-testid='openapi-plan-" + module.testId + "-path-error']",
+                "openApiPlanWorkbookError_" + module.testId);
+    }
+
+    public ModulePlan getModulePlan(PlanModule module) {
+        WebElement notice = notice(module);
+        return new ModulePlan(toneOf(notice.getAttribute("class")), notice.getText().trim(),
+                getModuleName(module), getWorkbook(module));
+    }
+
+    private static NoticeTone toneOf(String noticeClass) {
+        List<String> classes = List.of(noticeClass.trim().split("\\s+"));
+        if (classes.contains("ant-typography-warning")) {
+            return NoticeTone.WARNING;
+        }
+        if (classes.contains("ant-typography-secondary")) {
+            return NoticeTone.SECONDARY;
+        }
+        throw new IllegalStateException("The notice of the module is drawn neither as a warning nor as secondary text: "
+                + noticeClass);
+    }
+
+    public String getModuleName(PlanModule module) {
+        return name(module).getText().trim();
+    }
+
+    public String getWorkbook(PlanModule module) {
+        return isWorkbookEditable(module)
+                ? workbookInput(module).getCurrentInputValue()
+                : workbook(module).getText().trim();
+    }
+
+    public boolean isWorkbookEditable(PlanModule module) {
+        name(module).waitForVisible(DEFAULT_TIMEOUT_MS);
+        return workbookInput(module).exists();
+    }
+
+    public void setWorkbook(PlanModule module, String path) {
+        WebElement input = workbookInput(module);
+        input.clear();
+        input.fillSequentially(path);
+    }
+
+    public void clearWorkbook(PlanModule module) {
+        workbookInput(module).clear();
+    }
+
+    public void resetWorkbook(PlanModule module) {
+        workbookReset(module).click();
+    }
+
+    public String getWorkbookError(PlanModule module) {
+        WebElement error = workbookError(module);
+        return error.isVisible(PROBE_MS) ? error.getText().trim() : "";
+    }
+
+    public String getSamePathError() {
+        return samePathError.isVisible(PROBE_MS) ? samePathError.getText().trim() : "";
+    }
+
+    public boolean isGenerateEnabled() {
+        generateBtn.waitForVisible(DEFAULT_TIMEOUT_MS);
+        return generateBtn.isEnabled();
+    }
+
+    public String getGenerateButtonText() {
         return generateBtn.getText().trim();
     }
 
-    /**
-     * Goes ahead with the writing the plan describes, and waits for the question to be done with: the plan
-     * stands over the project's screen, which cannot be read while it is there.
-     */
-    public void clickImportAndOverride() {
+    public void clickGenerate() {
         generateBtn.waitForVisible(DEFAULT_TIMEOUT_MS);
         generateBtn.click();
-        WaitUtil.requireCondition(() -> !generateBtn.isVisible(PROBE_MS), DEFAULT_TIMEOUT_MS * 2, 250,
-                "Waiting for the tables the specification describes to be written");
+    }
+
+    public void clickImportAndOverride() {
+        List<String> shownBefore = getErrorMessages();
+        clickGenerate();
+        Set<String> refusals = new LinkedHashSet<>();
+        boolean closed = WaitUtil.waitForCondition(() -> {
+            getErrorMessages().stream().filter(message -> !shownBefore.contains(message)).forEach(refusals::add);
+            return !refusals.isEmpty() || !generateBtn.isVisible();
+        }, DEFAULT_TIMEOUT_MS * 2L, 250, "Waiting for the tables the specification describes to be written");
+        if (!refusals.isEmpty() || !closed) {
+            throw new AssertionError("The Generate tables dialog stayed open after Generate; refusals shown: " + refusals);
+        }
         waitUntilSpinnerLoaded();
     }
 
     public void clickCancel() {
         cancelBtn.click();
-    }
-
-    /** What the project says went wrong, which it says in a notice of its own rather than beside a field. */
-    public String getErrorMessage() {
-        WebElement notice = new WebElement(page,
-                "xpath=(//div[contains(@class,'ant-notification-notice-description')])[1]", "openApiGenerateError");
-        return notice.isVisible(PROBE_MS) ? notice.getText().trim() : "";
+        generateBtn.waitForHidden(DEFAULT_TIMEOUT_MS);
     }
 
     public List<String> getErrorMessages() {
-        List<WebElement> notices = createElementList(
-                "xpath=//div[contains(@class,'ant-notification-notice-description')]"
-                        + " | //div[contains(@class,'ant-notification-notice-message')]", "openApiGenerateErrors");
-        WaitUtil.waitForListNotEmpty(() -> notices, DEFAULT_TIMEOUT_MS, 250,
-                "Waiting for the project to say what went wrong");
-        return notices.stream().map(WebElement::getText).map(String::trim).toList();
+        return refusalDescriptions.getLocator().allTextContents().stream().map(String::trim).toList();
+    }
+
+    public List<String> getErrorMessagesUntilShown(String expected) {
+        Set<String> seen = new LinkedHashSet<>();
+        WaitUtil.waitForCondition(() -> {
+            seen.addAll(getErrorMessages());
+            return seen.contains(expected);
+        }, DEFAULT_TIMEOUT_MS, 250, "Waiting for the generation to be refused with: " + expected);
+        return List.copyOf(seen);
     }
 
     public boolean isVisible() {

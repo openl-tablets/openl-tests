@@ -10,6 +10,7 @@ import domain.ui.webstudio.components.common.CreateNewProjectComponent;
 import domain.ui.webstudio.components.common.TabSwitcherComponent;
 import domain.ui.webstudio.components.editortabcomponents.ImportOpenApiDialogComponent;
 import domain.ui.webstudio.components.editortabcomponents.OpenApiModuleSettingsDialogComponent;
+import domain.ui.webstudio.components.editortabcomponents.OpenApiModuleSettingsDialogComponent.ModulePlan;
 import domain.ui.webstudio.components.editortabcomponents.leftmenu.EditorLeftRulesTreeComponent;
 import domain.ui.webstudio.pages.mainpages.EditorPage;
 import domain.ui.webstudio.pages.mainpages.RepositoryPage;
@@ -21,6 +22,9 @@ import tests.BaseTest;
 
 import java.util.List;
 
+import static domain.ui.webstudio.components.editortabcomponents.OpenApiModuleSettingsDialogComponent.PlanModule.DATA_TYPES;
+import static domain.ui.webstudio.components.editortabcomponents.OpenApiModuleSettingsDialogComponent.PlanModule.SERVICES;
+import static domain.ui.webstudio.components.editortabcomponents.OpenApiModuleSettingsDialogComponent.NoticeTone.SECONDARY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.CONFIGURATION;
 
@@ -28,6 +32,7 @@ public class TestImportTablesGenerationForCorporateRatingProject extends BaseTes
 
     private static final String OPENAPI_FILE = "openapi2.json";
     private static final String TEMPLATE_CORPORATE = "Example 2 - Corporate Rating";
+    private static final String CREATED = "This module does not exist yet and is going to be created.";
 
     @Test
     @TestCaseId("IPBQA-31035")
@@ -55,11 +60,15 @@ public class TestImportTablesGenerationForCorporateRatingProject extends BaseTes
         OpenApiModuleSettingsDialogComponent settingsDialog = editorPage.getOpenApiModuleSettingsDialogComponent();
         settingsDialog.waitForVisible();
 
-        assertThat(settingsDialog.getPlanLines())
-                .as("The plan must write the services into Algorithms and the data types into Models, each "
-                        + "into the workbook the project names for it")
-                .anySatisfy(line -> assertThat(line).contains("Services module: Algorithms", "rules/Algorithms.xlsx"))
-                .anySatisfy(line -> assertThat(line).contains("Data types module: Models", "rules/Models.xlsx"));
+        assertThat(settingsDialog.getModulePlan(SERVICES))
+                .as("Corporate Rating has no Algorithms module, so it is created in the proposed workbook")
+                .isEqualTo(new ModulePlan(SECONDARY, CREATED, "Algorithms", "rules/Algorithms.xlsx"));
+        assertThat(settingsDialog.getModulePlan(DATA_TYPES))
+                .as("Corporate Rating has no Models module, so it is created in the proposed workbook")
+                .isEqualTo(new ModulePlan(SECONDARY, CREATED, "Models", "rules/Models.xlsx"));
+        assertThat(settingsDialog.getGenerateButtonText())
+                .as("The button says it generates when neither module exists yet")
+                .isEqualTo("Generate tables");
 
         settingsDialog.clickImportAndOverride();
         editorPage.waitUntilSpinnerLoaded();

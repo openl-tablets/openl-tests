@@ -18,6 +18,8 @@ import helpers.utils.TestDataUtil;
 import org.testng.annotations.Test;
 import tests.BaseTest;
 
+import static domain.ui.webstudio.components.editortabcomponents.OpenApiModuleSettingsDialogComponent.PlanModule.DATA_TYPES;
+import static domain.ui.webstudio.components.editortabcomponents.OpenApiModuleSettingsDialogComponent.PlanModule.SERVICES;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestImportPathValidationErrors extends BaseTest {
@@ -35,7 +37,6 @@ public class TestImportPathValidationErrors extends BaseTest {
         LoginService loginService = new LoginService(DriverPool.getPage());
         EditorPage editorPage = loginService.login(UserService.getUser(User.ADMIN));
 
-        // Setup: Create Bank Rating project, upload openapi2.json, do Reconciliation import
         RepositoryPage repositoryPage = editorPage.getTabSwitcherComponent()
                 .selectTab(TabSwitcherComponent.TabName.REPOSITORY);
         repositoryPage.createProject(CreateNewProjectComponent.TabName.TEMPLATE, projectName, TEMPLATE_NAME);
@@ -51,7 +52,6 @@ public class TestImportPathValidationErrors extends BaseTest {
         editorPage.getSaveChangesComponent().clickSave();
         editorPage.waitUntilSpinnerLoaded();
 
-        // Setup: Tables Generation import with Bank Rating rules module to create Models module (needed for path validation)
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Bank Rating");
         editorPage.getProblemsPanelComponent().waitForCompilationToComplete();
         editorPage.getEditorToolbarPanelComponent().navigateToProjectRoot(projectName);
@@ -65,9 +65,6 @@ public class TestImportPathValidationErrors extends BaseTest {
         editorPage.getSaveChangesComponent().clickSave();
         editorPage.waitUntilSpinnerLoaded();
 
-        // Now: Bank Rating.xlsx and rules/Models.xlsx both exist in the project
-
-        // Step 12: Try to import with paths pointing to already-existing files
         editorPage.getEditorToolbarPanelComponent().navigateToProjectRoot(projectName);
         importDialog = editorPage.openImportOpenApiDialog();
         importDialog.selectTablesGenerationMode();
@@ -78,20 +75,18 @@ public class TestImportPathValidationErrors extends BaseTest {
         OpenApiModuleSettingsDialogComponent settingsDialog = editorPage.getOpenApiModuleSettingsDialogComponent();
         settingsDialog.waitForVisible();
 
-        // Where the modules are written is the project's own answer now, so the two refusals this step
-        // used to provoke — a path already taken by a file, and both modules sharing one path — can no
-        // longer be provoked from the screen. The plan says instead what becomes of each workbook.
-        // See KNOWN-ISSUES.md #10.
-        assertThat(settingsDialog.getPlanLines())
-                .as("The plan must name both modules the specification is written into")
-                .hasSize(2);
+        assertThat(settingsDialog.getModuleName(SERVICES))
+                .as("The dialog must name the services module the specification is written into")
+                .isEqualTo("Alg");
+        assertThat(settingsDialog.getModuleName(DATA_TYPES))
+                .as("The dialog must name the data types module the specification is written into")
+                .isEqualTo("Mod");
 
         settingsDialog.clickCancel();
         importDialog.clickCancel();
     }
 
     private void uploadFileToProject(RepositoryPage repositoryPage, String projectName, String fileName) {
-        // React Files tab: upload through the project's own screen, then commit from the projects list.
         repositoryPage.openProjectsList().openProjectDetail(projectName)
                 .uploadFileAs(TestDataUtil.getFilePathFromResources(fileName), fileName);
         repositoryPage.openProjectsList().saveProject(projectName, "Uploaded " + fileName);
