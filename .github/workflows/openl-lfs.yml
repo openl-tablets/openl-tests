@@ -12,26 +12,37 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: openl-lfs
-  cancel-in-progress: false
-
 env:
   LFS_TEST_CLASSES: >-
     ["tests.ui.webstudio.git.TestGitLfsDesignRepository",
     "tests.ui.webstudio.git.TestGitLfsGitHubStorage",
     "tests.ui.webstudio.git.TestGitLfsGitLabStorage",
     "tests.ui.webstudio.git.TestGitLfsBitbucketStorage"]
+  UPLOADED_PATHS: |
+    target/test-export
+    target/queue
+    target/screenshots
+    target/videos
+    target/logs
+    generated-testng
   PLAYWRIGHT_IMAGE: mcr.microsoft.com/playwright:v1.52.0-noble
   PLAYWRIGHT_NPM_PACKAGE: playwright@1.52.0
 
 jobs:
-  lfs:
-    name: Git LFS on Gitea, GitHub, GitLab and Bitbucket
+  lfs-shard:
+    name: ${{ matrix.display }}
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 45
     permissions:
       contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - display: lfs-01
+          - display: lfs-02
+          - display: lfs-03
+          - display: lfs-04
 
     steps:
       - name: Check the application image
@@ -85,7 +96,7 @@ jobs:
       - name: Compile tests
         run: mvn --batch-mode --quiet test-compile
 
-      - name: Run the LFS tests
+      - name: Run the LFS test queue
         env:
           GITHUB_TOKEN: ${{ github.token }}
           LFS_GITLAB_TOKEN: ${{ secrets.LFS_GITLAB_TOKEN }}
@@ -93,6 +104,7 @@ jobs:
           LFS_GITLAB_REPO: ${{ secrets.LFS_GITLAB_REPO }}
           LFS_BITBUCKET_REPO: ${{ secrets.LFS_BITBUCKET_REPO }}
           APPLICATION_VERSION: ${{ inputs.application_version }}
+          SHARD_DISPLAY: ${{ matrix.display }}
         run: |
           STUDIO_IMAGE="ghcr.io/openl-tablets/webstudio:${APPLICATION_VERSION}"
           PLAYWRIGHT_NPM_CACHE_DIR="${RUNNER_TEMP}/playwright-npm-cache"
@@ -101,7 +113,7 @@ jobs:
             --repo "${GITHUB_REPOSITORY}" \
             --run-key "${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-lfs" \
             --sha "${GITHUB_SHA}" \
-            --shard lfs \
+            --shard "${SHARD_DISPLAY}" \
             --classes-json "${LFS_TEST_CLASSES}" \
             --suite-dir generated-testng \
             --report-dir target/queue \
@@ -115,12 +127,14 @@ jobs:
             -Dplaywright_npm_cache_dir="${PLAYWRIGHT_NPM_CACHE_DIR}" \
             -Dtest.export.dir=target/test-export
 
-      - name: Gate on the test result
+      - name: Gate on the shard results
         if: always()
+        env:
+          SHARD_DISPLAY: ${{ matrix.display }}
         run: |
           python3 scripts/github-actions/gate-shard-results.py \
             --export-dir target/test-export \
-            --queue-file target/queue/lfs.json
+            --queue-file "target/queue/${SHARD_DISPLAY}.json"
 
       - name: Replace the secrets with their variable names
         id: redact
@@ -135,31 +149,9 @@ jobs:
           python3 scripts/github-actions/redact-secrets.py \
             --token-env GITHUB_TOKEN --token-env LFS_GITLAB_TOKEN --token-env LFS_BITBUCKET_TOKEN \
             --url-env LFS_GITLAB_REPO --url-env LFS_BITBUCKET_REPO \
-            target generated-testng
+            ${UPLOADED_PATHS}
 
-      - name: Build the test report
-        id: report
-        if: always()
-        env:
-          BUILD_LABEL: ${{ inputs.application_version }}
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        run: |
-          mkdir -p report-input/openl-tests-lfs/target
-          cp -R target/test-export report-input/openl-tests-lfs/target/
-          python3 scripts/github-actions/generate-merged-report.py \
-            --input-root report-input \
-            --output-dir merged-report \
-            --step-summary report-summary.md \
-            --title "OpenL LFS Tests [${BUILD_LABEL}]" \
-            --build "${BUILD_LABEL}" \
-            --run-url "${RUN_URL}" \
-            --studio-image "ghcr.io/openl-tablets/webstudio:${BUILD_LABEL}" \
-            --tests-branch "${GITHUB_REF_NAME}" \
-            --playwright-version "${PLAYWRIGHT_NPM_PACKAGE#playwright@}" \
-            --java-version 21 \
-            --selective true > /dev/null
-
-      - name: Check the artifacts and the report for the secrets
+      - name: Check the shard artifacts for the secrets
         id: leaks
         if: always()
         env:
@@ -172,30 +164,94 @@ jobs:
           python3 scripts/github-actions/check-secret-leaks.py \
             --secret-env GITHUB_TOKEN --secret-env LFS_GITLAB_TOKEN --secret-env LFS_BITBUCKET_TOKEN \
             --url-env LFS_GITLAB_REPO --url-env LFS_BITBUCKET_REPO \
-            target generated-testng merged-report report-summary.md
-
-      - name: Write the job summary
-        if: always() && steps.redact.outcome == 'success' && steps.leaks.outcome == 'success'
-        run: |
-          if [ -f report-summary.md ]; then cat report-summary.md >> "${GITHUB_STEP_SUMMARY}"; fi
+            ${UPLOADED_PATHS}
 
       - name: Upload test artifacts
         if: always() && steps.redact.outcome == 'success' && steps.leaks.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
-          name: openl-lfs
+          name: openl-tests-${{ matrix.display }}
           if-no-files-found: ignore
           retention-days: 3
-          path: |
-            target/test-export/**
-            target/queue/**
-            target/screenshots/**
-            target/videos/**
-            target/logs/**
-            generated-testng/**
+          path: ${{ env.UPLOADED_PATHS }}
+
+  merge-report:
+    name: Merge test report
+    needs: lfs-shard
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout tests
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Download shard artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: openl-tests-*
+          path: downloaded-artifacts
+          merge-multiple: false
+
+      - name: Build the test report
+        id: report
+        if: always()
+        env:
+          BUILD_LABEL: ${{ inputs.application_version }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          python3 scripts/github-actions/generate-merged-report.py \
+            --input-root downloaded-artifacts \
+            --output-dir merged-report \
+            --step-summary report-summary.md \
+            --title "OpenL LFS Tests [${BUILD_LABEL}]" \
+            --build "${BUILD_LABEL}" \
+            --run-url "${RUN_URL}" \
+            --studio-image "ghcr.io/openl-tablets/webstudio:${BUILD_LABEL}" \
+            --tests-branch "${GITHUB_REF_NAME}" \
+            --playwright-version "${PLAYWRIGHT_NPM_PACKAGE#playwright@}" \
+            --java-version 21 \
+            --selective true > /dev/null
+
+      - name: Check the report for the secrets
+        id: leaks
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          LFS_GITLAB_TOKEN: ${{ secrets.LFS_GITLAB_TOKEN }}
+          LFS_BITBUCKET_TOKEN: ${{ secrets.LFS_BITBUCKET_TOKEN }}
+          LFS_GITLAB_REPO: ${{ secrets.LFS_GITLAB_REPO }}
+          LFS_BITBUCKET_REPO: ${{ secrets.LFS_BITBUCKET_REPO }}
+        run: |
+          python3 scripts/github-actions/check-secret-leaks.py \
+            --secret-env GITHUB_TOKEN --secret-env LFS_GITLAB_TOKEN --secret-env LFS_BITBUCKET_TOKEN \
+            --url-env LFS_GITLAB_REPO --url-env LFS_BITBUCKET_REPO \
+            merged-report report-summary.md
+
+      - name: Check that every LFS class is in the report
+        id: complete
+        if: always() && steps.report.outcome == 'success'
+        run: |
+          python3 - <<'PY'
+          import json, os, sys
+          reported = {test["class"] for test in json.load(open("merged-report/summary.json"))["tests"]}
+          missing = [name for name in json.loads(os.environ["LFS_TEST_CLASSES"]) if name not in reported]
+          if missing:
+              print(f"::error::Missing from the report, because their shard uploaded no clean artifact: {', '.join(missing)}")
+              sys.exit(1)
+          print(f"All {len(reported)} LFS classes are in the report")
+          PY
+
+      - name: Write the job summary
+        if: always() && steps.leaks.outcome == 'success'
+        run: |
+          if [ -f report-summary.md ]; then cat report-summary.md >> "${GITHUB_STEP_SUMMARY}"; fi
 
       - name: Upload the test report
-        if: always() && steps.redact.outcome == 'success' && steps.leaks.outcome == 'success' && steps.report.outcome == 'success'
+        if: always() && steps.leaks.outcome == 'success' && steps.report.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: test-report-merged
@@ -204,7 +260,7 @@ jobs:
           path: merged-report/**
 
       - name: Publish the report to GitHub Pages
-        if: always() && steps.redact.outcome == 'success' && steps.leaks.outcome == 'success' && steps.report.outcome == 'success'
+        if: always() && steps.leaks.outcome == 'success' && steps.report.outcome == 'success' && steps.complete.outcome == 'success'
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
@@ -215,7 +271,7 @@ jobs:
             --pages-url "https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}" \
             --keep 15
 
-      - name: Remove the queue ref of this run attempt
+      - name: Remove the queue refs of this run attempt
         if: always()
         continue-on-error: true
         env:

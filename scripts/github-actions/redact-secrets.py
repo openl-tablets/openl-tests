@@ -45,38 +45,30 @@ def members(data: bytes, kind: str) -> list[tuple[zipfile.ZipInfo | None, bytes]
     return [(None, gzip.decompress(data))]
 
 
-def has_secret(name: str, data: bytes, pairs) -> bool:
-    if any(pattern.search(data) for pattern, _ in pairs):
-        return True
+def redact(name: str, data: bytes, pairs) -> tuple[bytes, bool]:
     kind = archive_kind(data)
-    if not kind:
-        return False
-    try:
-        return any(has_secret(f"{name}!{info.filename if info else 'gunzip'}", inner, pairs) for info, inner in members(data, kind))
-    except (zipfile.BadZipFile, OSError, EOFError, RuntimeError, NotImplementedError):
-        return False
-
-
-def redact(name: str, data: bytes, pairs) -> bytes:
-    if not has_secret(name, data, pairs):
-        return data
-    kind = archive_kind(data)
-    try:
-        if kind == "zip":
+    if kind:
+        try:
+            parts = members(data, kind)
+        except (zipfile.BadZipFile, OSError, EOFError, RuntimeError, NotImplementedError):
+            parts = None
+        if parts is not None:
+            redacted = [(info, *redact(f"{name}!{info.filename if info else 'gunzip'}", inner, pairs)) for info, inner in parts]
+            if not any(changed for _, _, changed in redacted):
+                return data, False
+            if kind == "gzip":
+                return gzip.compress(redacted[0][1]), True
             buffer = io.BytesIO()
             with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as target:
-                for info, inner in members(data, kind):
-                    target.writestr(info, redact(f"{name}!{info.filename}", inner, pairs))
-            return buffer.getvalue()
-        if kind == "gzip":
-            return gzip.compress(redact(f"{name}!gunzip", members(data, kind)[0][1], pairs))
-    except (zipfile.BadZipFile, OSError, EOFError, RuntimeError, NotImplementedError):
-        pass
+                for info, inner, _ in redacted:
+                    target.writestr(info, inner)
+            return buffer.getvalue(), True
     if Path(name.rsplit("!", 1)[-1]).suffix.lower() in MEDIA_SUFFIXES:
-        return data
+        return data, False
+    result = data
     for pattern, placeholder in pairs:
-        data = pattern.sub(lambda _: placeholder, data)
-    return data
+        result = pattern.sub(lambda _: placeholder, result)
+    return result, result != data
 
 
 def main() -> None:
@@ -95,9 +87,8 @@ def main() -> None:
         if not root.exists():
             continue
         for path in [root] if root.is_file() else sorted(p for p in root.rglob("*") if p.is_file()):
-            data = path.read_bytes()
-            result = redact(str(path), data, pairs)
-            if result != data:
+            result, changed = redact(str(path), path.read_bytes(), pairs)
+            if changed:
                 path.write_bytes(result)
                 redacted.append(str(path))
     print(f"Replaced secret values with variable names in {len(redacted)} file(s)")
