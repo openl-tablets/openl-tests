@@ -240,25 +240,34 @@ public final class TestExportUtil {
             payload.put("stackTrace", stackTrace(throwable));
         }
 
-        knownIssueOf(result).ifPresent(ticket -> {
+        knownIssueOf(result).ifPresent(declared -> {
             Map<String, Object> knownIssue = new LinkedHashMap<>();
-            knownIssue.put("ticket", ticket);
-            knownIssue.put("url", ISSUE_TRACKER_BROWSE_URL + ticket);
+            knownIssue.put("ticket", declared.value());
+            knownIssue.put("url", ISSUE_TRACKER_BROWSE_URL + declared.value());
             knownIssue.put("outcome", statusName(result.getStatus()) + "_WITH_KNOWN_ISSUE");
+            knownIssue.put("failsWith", declared.failsWith());
+            knownIssue.put("causeMatched", failsWithDeclaredCause(throwable, declared));
             payload.put("knownIssue", knownIssue);
         });
 
         writeJson(context.testDirectory().resolve("result.json"), payload);
     }
 
-    public static Optional<String> knownIssueOf(ITestResult result) {
+    public static Optional<KnownIssue> knownIssueOf(ITestResult result) {
         Method method = result.getMethod().getConstructorOrMethod().getMethod();
         KnownIssue onMethod = method.getAnnotation(KnownIssue.class);
         if (onMethod != null) {
-            return Optional.of(onMethod.value());
+            return Optional.of(onMethod);
         }
-        KnownIssue onClass = testClassOf(result, method).getAnnotation(KnownIssue.class);
-        return Optional.ofNullable(onClass).map(KnownIssue::value);
+        return Optional.ofNullable(testClassOf(result, method).getAnnotation(KnownIssue.class));
+    }
+
+    private static boolean failsWithDeclaredCause(Throwable throwable, KnownIssue declared) {
+        if (throwable == null || throwable.getMessage() == null) {
+            return false;
+        }
+        String cause = StringUtil.oneLine(declared.failsWith(), 0);
+        return !cause.isEmpty() && StringUtil.oneLine(throwable.getMessage(), 0).contains(cause);
     }
 
     private static Class<?> testClassOf(ITestResult result, Method method) {

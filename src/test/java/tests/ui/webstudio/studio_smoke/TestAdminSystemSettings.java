@@ -32,7 +32,7 @@ public class TestAdminSystemSettings extends BaseTest {
     @TestCaseId("IPBQA-30651")
     @Description("System Settings - Test Dispatching Validation, Verify on Edit, and Thread Number validation.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
-    @KnownIssue("EPBDS-15704")
+    @KnownIssue(value = "EPBDS-15704", failsWith = "A thread count of 'aaa' must be refused")
     public void testSystemSettings() {
         String projectNameForVerification = WorkflowService.loginCreateProjectFromTemplate(User.ADMIN, "Sample Project");
         EditorPage editorPage = new EditorPage();
@@ -172,6 +172,8 @@ public class TestAdminSystemSettings extends BaseTest {
                                          String expectedErrorMessage) {
         systemSettings.setTestThreadCount(invalidValue);
         systemSettings.clickApplyButton();
-        assertThat(systemSettings.getAllMessages()).contains(expectedErrorMessage);
+        assertThat(systemSettings.getAllMessages())
+                .as("A thread count of '%s' must be refused", invalidValue)
+                .contains(expectedErrorMessage);
     }
 }

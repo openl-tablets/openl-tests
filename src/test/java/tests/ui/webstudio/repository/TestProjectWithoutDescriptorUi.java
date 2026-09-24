@@ -24,7 +24,7 @@ public class TestProjectWithoutDescriptorUi extends BaseTest {
     @Description("The card of a project whose rules.xml was deleted opens and its Management tab lists the "
             + "roles of the project. Fails on EPBDS-16638: the card answers 404.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
-    @KnownIssue("EPBDS-16638")
+    @KnownIssue(value = "EPBDS-16638", failsWith = "Opening the Management tab should read the roles, not answer 404")
     public void testManagementTabOpensForAProjectWithoutDescriptor() {
         ProjectDetailPage card = projectWithoutDescriptor();
         assertThat(card.isManagementTabOffered())
@@ -47,7 +47,7 @@ public class TestProjectWithoutDescriptorUi extends BaseTest {
     @Description("A project whose rules.xml was deleted is copied to a branch of its own. Fails on "
             + "EPBDS-16639: the copy is refused.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
-    @KnownIssue("EPBDS-16639")
+    @KnownIssue(value = "EPBDS-16639", failsWith = "Copying the project to a branch should not be refused")
     public void testCopyToBranchWorksForAProjectWithoutDescriptor() {
         ProjectDetailPage card = projectWithoutDescriptor();
         String branch = StringUtil.generateUniqueName("branch");

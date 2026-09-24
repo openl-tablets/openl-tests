@@ -73,7 +73,7 @@ public class TestArrayOfAliasValuesInRunTrace extends BaseTest {
     @Description("The Trace menu keeps the element added in the Run menu to an array of the alias datatype and "
             + "offers the values of the alias for it, as the input form Run and Trace shared in 6.4.0 did.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
-    @KnownIssue("EPBDS-16742")
+    @KnownIssue(value = "EPBDS-16742", failsWith = "should keep the element added to 'my' in the Run menu")
     public void testTraceKeepsArrayElementAddedInRun() {
         EditorPage editorPage = openDecisionTables();
         editorPage.getEditorLeftRulesTreeComponent().selectItemInFolder(DECISION, TABLE_FOR_SHARED_INPUT);

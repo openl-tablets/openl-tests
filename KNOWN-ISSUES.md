@@ -7,7 +7,8 @@ interface offered is gone from the product. Each one names the tests that stay r
 is decided.
 
 Every finding that is a defect carries its JIRA key, named under its heading. Where a test catches the
-defect it carries `@KnownIssue("<key>")` and the report shows it as a known issue rather than as a failure.
+defect it carries `@KnownIssue(value = "<key>", failsWith = "<the failure that shows it>")` and the report shows it
+as a known issue rather than as a failure.
 Of the findings filed as EPBDS-16667 to EPBDS-16675, the table order (EPBDS-16668) and the generation of
 tables from a specification (EPBDS-16671 to EPBDS-16673) are guarded by tests now; the rest are carried by no
 test yet. Nothing in the suite is skipped over a defect any more: a blocked scenario runs to the point
@@ -19,10 +20,11 @@ The build under test moved from `6.5.0-b48c86279338` to `6.5.0-2b6429ad4b7d` on 
 the commit that fixed them and the test that now guards it; they are kept rather than deleted so the same
 ground is not walked twice.
 
-A marker says which ticket a test is expected to fail on, not why it failed: the gate counts every failure
-under a marker as known, whatever it failed on. On `6.5.0-4513cebb5e74` eight of the sixteen marked failures
-were no longer their ticket's — the fix had shipped and the test failed on a defect of its own — so a marked
-failure is read against its ticket whenever the build moves.
+A marker names the ticket and, in `failsWith`, the failure that shows it: the gate and the report count a
+marked failure as known only when its message contains that text, and any other failure of a marked test
+blocks. Before that check the gate took every failure under a marker as known, and on `6.5.0-4513cebb5e74`
+eight of the sixteen marked failures were no longer their ticket's — the fix had shipped and the test failed
+on a defect of its own.
 
 ---
 

@@ -704,7 +704,7 @@ GitHub Actions does not read the TestNG suite files. `scripts/github-actions/dis
 
 The `shards` input (default 20) only sets the number of parallel jobs. The classes form one queue: `scripts/github-actions/run-test-queue.py` makes every shard claim the next unclaimed class by creating the git ref `refs/openl-queue/<run id>/<class name>` through the GitHub API (creating a ref is atomic, the second shard gets HTTP 422 and moves on), run it with `mvn surefire:test` on a generated one-class TestNG suite and claim again until the queue is empty. Shards therefore finish within one class duration of each other with no duration bookkeeping; the queue refs are invisible in the GitHub UI and the "Remove the queue refs" job deletes them, also when the run is cancelled. The workflow needs `contents: write` on the default token for the refs. Every shard runs with both images available: Studio from `docker_image_name` and Rule Services from `ws_docker_image_name`; a class that needs Rule Services declares `dockerImageProperty = PropertyNameSpace.WS_DOCKER_IMAGE_NAME` in its `@AppContainerConfig`. Instead of a suite name, the test export and the merged report group tests by the test package: `tests.ui.webstudio.git` becomes `git`, `tests.ui.webservice` becomes `webservice` (`TestGroupUtil` in Java, `testgroups.py` in the scripts).
 
-A shard job fails only through `scripts/github-actions/gate-shard-results.py`, which reads the shard's test export and its queue record (`target/queue/<shard>.json`): any failed test without a known issue, any skipped test (a skipped test means a configuration method failed, usually a container start), a Maven run that exited with an error and a claimed class that exported no result fail the job, everything else passes.
+A shard job fails only through `scripts/github-actions/gate-shard-results.py`, which reads the shard's test export and its queue record (`target/queue/<shard>.json`): any failed test without a known issue or failing on something else than its known issue (see below), any skipped test (a skipped test means a configuration method failed, usually a container start), a Maven run that exited with an error and a claimed class that exported no result fail the job, everything else passes.
 
 ### Git LFS tests
 
@@ -725,15 +725,15 @@ The repository URLs are internal paths, so they are secrets too: the artifacts, 
 
 ### Known issues: keeping the CI green while a product bug stays open
 
-A test that fails because of an open product bug is annotated with the ticket, on the method or on the whole class:
+A test that fails because of an open product bug is annotated with the ticket and with the part of the failure message that shows that bug, on the method or on the whole class:
 
 ```java
-@KnownIssue("EPBDS-15705")
+@KnownIssue(value = "EPBDS-16741", failsWith = "'Effective Date' was not among what the list offered")
 @Test
 public void testAddAndDeleteProperty() { ... }
 ```
 
-The test itself is not changed and still asserts the correct behaviour, so it keeps failing in TestNG. The framework records the ticket in the test's `result.json` (`knownIssue` with the ticket, the tracker URL and the outcome), the shard gate ignores such failures, the merged report shows the test with an orange `KNOWN ISSUE` badge and a link to the ticket instead of a red `FAILED`, and the job summary lists the known issues in their own table. When a test with `@KnownIssue` passes, the report shows it in blue as `FIXED?`: verify the fix, then remove the annotation. The tracker URL prefix comes from the system property `issue.tracker.browse.url` (default `https://jira.eisgroup.com/browse/`).
+`failsWith` is best the `.as(...)` description of the assertion the bug trips, which stays the same whatever values it reports. The test itself is not changed and still asserts the correct behaviour, so it keeps failing in TestNG. The framework records the ticket in the test's `result.json` (`knownIssue` with the ticket, the tracker URL, the outcome, `failsWith` and `causeMatched` — whether the failure message, whitespace collapsed, contains `failsWith`). Only a failure that matches is known: the shard gate ignores it, the merged report shows the test with an orange `KNOWN ISSUE` badge and a link to the ticket instead of a red `FAILED`, and the job summary lists the known issues in their own table. A test whose failure does not contain `failsWith` — its ticket fixed and the test failing at another step on a defect of its own, a locator, a timeout — stays a blocking red `FAILED`, and the report says it failed on something else than its known issue. The check tells failures apart by their message only: a failure at the very assertion `failsWith` names, for whatever reason, still counts as the known issue. When a test with `@KnownIssue` passes, the report shows it in blue as `FIXED?`: verify the fix, then remove the annotation. The tracker URL prefix comes from the system property `issue.tracker.browse.url` (default `https://jira.eisgroup.com/browse/`).
 
 ### Merged test report on GitHub Actions
 

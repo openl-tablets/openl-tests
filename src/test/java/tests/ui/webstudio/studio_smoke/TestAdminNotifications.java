@@ -28,7 +28,7 @@ public class TestAdminNotifications extends BaseTest {
     @TestCaseId("IPBQA-30617")
     @Description("Test notifications: send to all users, display, delete, validate message length and empty messages.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
-    @KnownIssue("EPBDS-15703")
+    @KnownIssue(value = "EPBDS-15703", failsWith = "A notification of whitespace only must be refused, not shown")
     public void testNotifications() {
         LoginService loginService = new LoginService(DriverPool.getPage());
         EditorPage editorPage = loginService.login(UserService.getUser(User.ADMIN));
@@ -92,6 +92,7 @@ public class TestAdminNotifications extends BaseTest {
                 .as("an empty notification must not be shown").isTrue();
 
         notificationComponent.sendNotification("   ");
-        assertThat(notificationComponent.isNotificationVisible()).isFalse();
+        assertThat(notificationComponent.isNotificationVisible())
+                .as("A notification of whitespace only must be refused, not shown").isFalse();
     }
 }

@@ -76,7 +76,7 @@ public class TestProjectNameValidationUi extends BaseTest {
     @Description("A name containing '/' must get the same specific forbidden-characters validation message as every "
             + "other forbidden character instead of a generic API error.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
-    @KnownIssue("EPBDS-16439")
+    @KnownIssue(value = "EPBDS-16439", failsWith = "must be rejected with the specific forbidden-characters message")
     public void testSlashNameShowsSpecificValidationMessage() {
         EditorPage editorPage = new LoginService(DriverPool.getPage()).login(UserService.getUser(User.ADMIN));
         RepositoryPage repositoryPage = editorPage.getTabSwitcherComponent()

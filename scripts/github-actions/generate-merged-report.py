@@ -65,6 +65,8 @@ class TestRecord:
     repository: str = ""
     known_issue: str = ""
     known_issue_url: str = ""
+    known_issue_fails_with: str = ""
+    known_issue_matched: bool = False
     app_image: str = ""
     app_version: str = ""
     app_build_number: str = ""
@@ -75,7 +77,7 @@ class TestRecord:
 
     @property
     def outcome(self) -> str:
-        if self.known_issue and self.status == "FAILED":
+        if self.known_issue and self.status == "FAILED" and self.known_issue_matched:
             return KNOWN_ISSUE
         if self.known_issue and self.status == "PASSED":
             return FIXED_CANDIDATE
@@ -159,6 +161,8 @@ def collect_from_test_export(input_root: Path, output_dir: Path) -> tuple[list[T
                 repository=str(manifest_data.get("githubRepository") or ""),
                 known_issue=str(known_issue.get("ticket") or ""),
                 known_issue_url=str(known_issue.get("url") or ""),
+                known_issue_fails_with=str(known_issue.get("failsWith") or ""),
+                known_issue_matched=known_issue.get("causeMatched") is True,
                 app_image=str(application.get("image") or ""),
                 app_version=str(application.get("version") or ""),
                 app_build_number=str(application.get("buildNumber") or ""),
@@ -231,6 +235,17 @@ def status_rank(status: str) -> int:
 
 def sort_records(records: list[TestRecord]) -> list[TestRecord]:
     return sorted(records, key=lambda r: (status_rank(r.outcome), r.suite, r.shard, r.class_name, r.method))
+
+
+def known_issue_verdict(record: TestRecord) -> str:
+    if record.outcome == KNOWN_ISSUE:
+        return " — the test still fails as expected"
+    if record.status == "PASSED":
+        return " — the test PASSED: verify the fix and remove @KnownIssue"
+    if record.status != "FAILED":
+        return f" — the test was {e(record.status)} and did not reach the check of this issue"
+    return (f" — the test FAILED on something else: its failure does not contain "
+            f"'{e(record.known_issue_fails_with)}'")
 
 
 def known_issue_link(record: TestRecord) -> str:
@@ -446,7 +461,7 @@ def render_tabs(record: TestRecord, index: int, build: str) -> str:
         ("Class", f"<code>{e(record.class_name)}</code>" + (f" · <a href='{e(record.source_url())}' target='_blank'>source</a>" if record.source_url() else "")),
         ("Method", f"<code>{e(record.display_name)}</code>"),
         ("Test case", e(record.test_case_id) or "—"),
-        ("Known issue", (known_issue_link(record) + (" — the test still fails as expected" if record.outcome == KNOWN_ISSUE else " — the test PASSED: verify the fix and remove @KnownIssue")) if record.known_issue else "—"),
+        ("Known issue", (known_issue_link(record) + known_issue_verdict(record)) if record.known_issue else "—"),
         ("Description", e(record.description) or "—"),
         ("Started / finished", f"{e(record.started_at) or '—'} → {e(record.finished_at) or '—'} ({format_duration(record.duration_ms)})"),
         ("Application build", e(build) or "—"),
@@ -673,6 +688,8 @@ def debug_bundle(record: TestRecord, build: str, run_url: str) -> dict:
             "status": record.status,
             "outcome": record.outcome,
             "knownIssue": record.known_issue,
+            "knownIssueFailsWith": record.known_issue_fails_with,
+            "knownIssueCauseMatched": record.known_issue_matched,
             "knownIssueUrl": record.known_issue_url,
             "startedAt": record.started_at,
             "finishedAt": record.finished_at,
@@ -747,6 +764,8 @@ def write_debug_bundles(records: list[TestRecord], output_dir: Path, build: str,
             "errorMessage": record.error_message,
             "outcome": record.outcome,
             "knownIssue": record.known_issue,
+            "knownIssueFailsWith": record.known_issue_fails_with,
+            "knownIssueCauseMatched": record.known_issue_matched,
             "bundle": "",
         }
         if record.status != "PASSED":
@@ -887,6 +906,8 @@ def main() -> None:
                         "status": r.status,
                         "outcome": r.outcome,
                         "knownIssue": r.known_issue,
+                        "knownIssueFailsWith": r.known_issue_fails_with,
+                        "knownIssueCauseMatched": r.known_issue_matched,
                         "durationMs": r.duration_ms,
                         "testCaseId": r.test_case_id,
                         "errorMessage": r.error_message,

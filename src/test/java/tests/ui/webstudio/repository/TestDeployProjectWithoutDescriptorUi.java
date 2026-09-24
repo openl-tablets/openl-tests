@@ -58,7 +58,7 @@ public class TestDeployProjectWithoutDescriptorUi extends BaseTest {
     @Description("A project whose rules.xml was deleted is deployed and stands among the deployments. Fails "
             + "on EPBDS-16641: nothing is deployed.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEPLOY_STUDIO_PARAMS)
-    @KnownIssue("EPBDS-16641")
+    @KnownIssue(value = "EPBDS-16641", failsWith = "The deployment should stand among the deployments")
     public void testDeployWorksForAProjectWithoutDescriptor() {
         String projectName = WorkflowService.loginCreateProjectWithoutDescriptor(User.ADMIN, TEMPLATE);
         String deployment = StringUtil.generateUniqueName("Deploy");

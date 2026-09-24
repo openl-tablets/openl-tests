@@ -218,7 +218,7 @@ public class TestImportNewModulesWithPathEditingAndMixedScenarios extends BaseTe
     @TestCaseId("IPBQA-31035")
     @Description("A generation refused over a workbook path the default rules pattern already reads leaves no workbook of either module in the project.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
-    @KnownIssue("EPBDS-16743")
+    @KnownIssue(value = "EPBDS-16743", failsWith = "The refused generation must not leave the workbook it was refused over")
     public void testRefusedGenerationWritesNoWorkbook() {
         String projectName = "TestRefusedGeneration_" + System.currentTimeMillis();
         String refusal = "The path 'rules/Alg12.xlsx' is already read by another module.";

@@ -63,7 +63,7 @@ public class TestDeployProjectMessagesAndValidationUi extends BaseTest {
     @Description("A successful deploy must report that the project was deployed and must not name the removed "
             + "\"Deploy Configuration\" feature.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEPLOY_STUDIO_PARAMS)
-    @KnownIssue("EPBDS-16273")
+    @KnownIssue(value = "EPBDS-16273", failsWith = "must not name the removed \"Deploy Configuration\" feature")
     public void testDeploySuccessMessageNamesTheProject() {
         RepositoryPage repositoryPage = openRepositoryWithProject("DeployMsg");
         String projectName = lastCreatedProject;
@@ -84,7 +84,7 @@ public class TestDeployProjectMessagesAndValidationUi extends BaseTest {
     @TestCaseId("EPBDS-16271")
     @Description("The Deployment Name field must reject forbidden characters, as the REST deploy API does.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEPLOY_STUDIO_PARAMS)
-    @KnownIssue("EPBDS-16271")
+    @KnownIssue(value = "EPBDS-16271", failsWith = "The refusal should name the problem with the deployment name")
     public void testDeploymentNameRejectsForbiddenCharacters() {
         RepositoryPage repositoryPage = openRepositoryWithProject("DeployName");
         String projectName = lastCreatedProject;
