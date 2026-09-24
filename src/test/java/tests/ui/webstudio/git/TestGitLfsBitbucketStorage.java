@@ -18,7 +18,7 @@ public final class TestGitLfsBitbucketStorage extends GitLfsExternalStorageTest 
     }
 
     @Test
-    @TestCaseId("EPBDS-11591")
+    @TestCaseId("IPBQA-33055")
     @Description("Git LFS on Bitbucket - Studio opens a module whose LFS object is on Bitbucket and saves an edit of it back to Bitbucket LFS")
     @AppContainerConfig(startParams = AppContainerStartParameters.STUDIO_GIT)
     public void testGitLfsBitbucketStorage() {

@@ -70,7 +70,7 @@ public class TestGitLfsDesignRepository extends BaseTest {
     }
 
     @Test
-    @TestCaseId("EPBDS-11591")
+    @TestCaseId("IPBQA-33052")
     @Description("Git LFS - Studio opens a module stored in LFS and saves an edit of it back to LFS")
     @AppContainerConfig(startParams = AppContainerStartParameters.STUDIO_GIT)
     public void testGitLfsDesignRepository() {

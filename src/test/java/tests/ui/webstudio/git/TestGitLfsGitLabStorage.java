@@ -18,7 +18,7 @@ public final class TestGitLfsGitLabStorage extends GitLfsExternalStorageTest {
     }
 
     @Test
-    @TestCaseId("EPBDS-11591")
+    @TestCaseId("IPBQA-33054")
     @Description("Git LFS on GitLab - Studio opens a module whose LFS object is on GitLab and saves an edit of it back to GitLab LFS")
     @AppContainerConfig(startParams = AppContainerStartParameters.STUDIO_GIT)
     public void testGitLfsGitLabStorage() {
