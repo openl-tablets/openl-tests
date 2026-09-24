@@ -12,24 +12,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-/**
- * The tables rail of the module screen: the tree of the module's tables, the view it is grouped by and the
- * search above it.
- *
- * <p>The tree is an Ant Design tree, so its rows are siblings in the DOM and the hierarchy is carried by the
- * indent each row draws: a row's depth is the number of indent units before it, and the items of a folder are
- * the rows that follow it until the next row at its own depth or shallower. The rail also draws only the rows
- * it has room for, so reading the whole tree means scrolling it.
- */
 public class EditorLeftRulesTreeComponent extends BaseComponent {
 
-    /** The list the Select last opened: a list closed before it stays in the page, and the newest is last. */
     private static final String OPEN_DROPDOWN = "(//div[contains(@class,'ant-select-dropdown')][not(contains(@class,'ant-select-dropdown-hidden'))])[last()]";
 
     private static final String TREE = "xpath=//div[@data-testid='module-tables-tree']";
     private static final String TREE_NODE = TREE + "//div[contains(@class,'ant-tree-treenode')]";
-    // A row carrying errors writes their number beside its name, so what a row is called is the innermost
-    // span of its title rather than everything the title holds.
     private static final String ROW_NAME = "//span[contains(@class,'ant-tree-title')]"
             + "//span[not(.//span)][not(@data-testid='module-table-errors')]";
     private static final int SETTLE_POLL_MS = 200;
@@ -37,9 +25,9 @@ public class EditorLeftRulesTreeComponent extends BaseComponent {
     private static final int NODE_CLICK_MS = 3000;
     private static final int PROBE_MS = 1000;
     private static final long EXPAND_TIMEOUT_MS = 10000;
-    // The rail is emptied while the module compiles again after a change and drawn back with what the module
-    // then holds, so the tree is waited for as long as that compilation may take.
     private static final long TREE_DRAWN_TIMEOUT_MS = 90000;
+    private static final String FILTER_DIALOG = "//div[contains(@class,'ant-modal-wrap')]"
+            + "[.//input[@data-testid='module-tables-other']]";
 
     private static final String READ_ROWS_SCRIPT = """
             async () => {
@@ -58,7 +46,6 @@ public class EditorLeftRulesTreeComponent extends BaseComponent {
                     for (const node of find(".//div[contains(@class,'ant-tree-treenode')]", tree)) {
                         if (!seen.has(node.id)) {
                             const [title] = find(".//span[contains(@class,'ant-tree-title')]", node);
-                            // A row carrying errors writes their number beside its name; the name is the row.
                             const named = title?.cloneNode(true);
                             named?.querySelectorAll("[data-testid='module-table-errors']").forEach(count => count.remove());
                             seen.set(node.id, {
@@ -123,6 +110,12 @@ public class EditorLeftRulesTreeComponent extends BaseComponent {
     private WebElement tree;
     private WebElement selectedNodeTitle;
     private WebElement tableIconTemplate;
+    private WebElement filterBtn;
+    private WebElement filterDialog;
+    private WebElement showUtilityTablesCheckbox;
+    private WebElement filterApplyBtn;
+    private WebElement filterCancelBtn;
+    private WebElement tablesReloading;
 
     public EditorLeftRulesTreeComponent() {
         super(DriverPool.getPage());
@@ -142,11 +135,19 @@ public class EditorLeftRulesTreeComponent extends BaseComponent {
         extendedSearchBtn = new WebElement(page, "xpath=//button[@data-testid='module-tables-search-extended']", "extendedSearchBtn");
         tree = new WebElement(page, TREE, "tablesTree");
         selectedNodeTitle = new WebElement(page, TREE + "//div[contains(@class,'ant-tree-treenode-selected')]" + ROW_NAME, "selectedNodeTitle");
-        // A group may be named after a table it gathers — the Constants group holds the Constants table — so
-        // the row read here is the table's: a group's row is named after what it groups by.
         tableIconTemplate = new WebElement(page, TREE_NODE + "[not(contains(@id,'-grp-'))]"
                 + "[." + ROW_NAME + "[normalize-space()='%s']]"
                 + "//span[contains(@class,'ant-tree-iconEle')]", "tableIcon");
+        filterBtn = new WebElement(page, "xpath=//button[@data-testid='module-tables-filter']", "tablesFilterBtn");
+        filterDialog = new WebElement(page, "xpath=" + FILTER_DIALOG, "tablesFilterDialog");
+        showUtilityTablesCheckbox = new WebElement(page, "xpath=" + FILTER_DIALOG
+                + "//input[@data-testid='module-tables-other']", "showUtilityTablesCheckbox");
+        filterApplyBtn = new WebElement(page, "xpath=" + FILTER_DIALOG
+                + "//div[contains(@class,'ant-modal-footer')]//button[normalize-space()='Apply']", "tablesFilterApplyBtn");
+        filterCancelBtn = new WebElement(page, "xpath=" + FILTER_DIALOG
+                + "//div[contains(@class,'ant-modal-footer')]//button[normalize-space()='Cancel']", "tablesFilterCancelBtn");
+        tablesReloading = new WebElement(page, "xpath=//div[@data-testid='module-tables-reloading']"
+                + "[contains(concat(' ',normalize-space(@class),' '),' ant-spin-spinning ')]", "tablesReloading");
     }
 
     private record TreeRow(int index, int depth, String title, boolean folder, boolean expanded, String nodeId, WebElement node) {
@@ -157,7 +158,6 @@ public class EditorLeftRulesTreeComponent extends BaseComponent {
         return viewSelectValue.getText().trim();
     }
 
-    /** The names the tree shows right now: the folders it groups by, and whatever stands open inside them. */
     public List<String> getCategoriesVisible() {
         waitUntilSpinnerLoaded();
         return readRows().stream()
@@ -166,7 +166,6 @@ public class EditorLeftRulesTreeComponent extends BaseComponent {
                 .toList();
     }
 
-    /** The groups the rail draws, without the tables filed under them. */
     public List<String> getFoldersVisible() {
         waitUntilSpinnerLoaded();
         return readRows().stream()
@@ -176,26 +175,22 @@ public class EditorLeftRulesTreeComponent extends BaseComponent {
                 .toList();
     }
 
-    /** The tables of that name the rail draws, in the order it draws them. */
     private List<TreeRow> leavesNamed(String tableName) {
         return readRows().stream()
                 .filter(row -> !row.folder() && tableName.equals(row.title()))
                 .toList();
     }
 
-    /** How many tables of that name the rail draws. Several versions of one table share its name. */
     public int countLeavesNamed(String tableName) {
         return leavesNamed(tableName).size();
     }
 
-    /** How many of them the rail draws as no longer answering — the versions that were set aside. */
     public long countInactiveLeavesNamed(String tableName) {
         return leavesNamed(tableName).stream()
                 .filter(row -> "module-table-inactive".equals(row.node().getAttribute("data-testid")))
                 .count();
     }
 
-    /** Opens one of the tables of that name, counted from one in the order the rail draws them. */
     public EditorLeftRulesTreeComponent selectLeafNamed(String tableName, int occurrence) {
         List<TreeRow> drawn = leavesNamed(tableName);
         if (drawn.size() < occurrence) {
@@ -205,11 +200,6 @@ public class EditorLeftRulesTreeComponent extends BaseComponent {
         return this;
     }
 
-    /**
-     * Opens the one table of that name in the folder that errors were raised about, which the rail marks by
-     * writing their number beside its name. Two tables of one name are told apart by that mark rather than
-     * by the order they happen to be drawn in.
-     */
     public EditorLeftRulesTreeComponent selectItemInFolderRaisingErrors(String folderName, String itemName,
                                                                        boolean raisingErrors) {
         waitUntilSpinnerLoaded();
@@ -229,7 +219,6 @@ public class EditorLeftRulesTreeComponent extends BaseComponent {
         return this;
     }
 
-    /** Whether the rail writes a number of errors beside the row's name. */
     private boolean raisesErrors(TreeRow row) {
         return row.node().getLocator().locator("xpath=.//*[@data-testid='module-table-errors']").count() > 0;
     }
@@ -248,7 +237,6 @@ public class EditorLeftRulesTreeComponent extends BaseComponent {
         return this;
     }
 
-    /** Selects a leaf of the tree, tolerating a tree that is still being rebuilt after a save. */
     public EditorLeftRulesTreeComponent selectVisibleLeafNode(String itemName) {
         waitUntilSpinnerLoaded();
         TreeRow leaf = WaitUtil.waitForResult(() -> readRows().stream()
@@ -298,7 +286,6 @@ public class EditorLeftRulesTreeComponent extends BaseComponent {
                 LOGGER.info("The folder '{}' could not be pressed, trying again: {}", folderName, covered.getMessage());
                 return false;
             }
-            // The row redraws as it opens, so its state is read back before another press is considered.
             return WaitUtil.waitForCondition(
                     () -> findFolder(folderName).map(TreeRow::expanded).orElse(false),
                     EXPAND_TIMEOUT_MS, SETTLE_POLL_MS, "Waiting for folder '" + folderName + "' to open");
@@ -306,10 +293,6 @@ public class EditorLeftRulesTreeComponent extends BaseComponent {
         return this;
     }
 
-    /**
-     * Selects an item of a folder. Saving a table makes the project recompile and the tree is rebuilt while
-     * that runs, so the lookup is retried rather than failing on a tree that is mid-refresh.
-     */
     public EditorLeftRulesTreeComponent selectItemInFolder(String folderName, String itemName) {
         return selectItemInFolderByIndex(folderName, itemName, 1);
     }
@@ -317,8 +300,6 @@ public class EditorLeftRulesTreeComponent extends BaseComponent {
     public EditorLeftRulesTreeComponent selectItemInFolderByIndex(String folderName, String itemName, int index) {
         waitUntilSpinnerLoaded();
         expandFolderInTree(folderName);
-        // A group may be named after the tables it gathers, so what is opened is a table of that name and
-        // never the group standing over them.
         TreeRow item = WaitUtil.waitForResult(() -> itemsOfFolder(folderName).stream()
                         .filter(row -> !row.folder())
                         .filter(row -> itemName.equals(row.title()))
@@ -373,10 +354,6 @@ public class EditorLeftRulesTreeComponent extends BaseComponent {
         }, DEFAULT_TIMEOUT_MS, SETTLE_POLL_MS, "Checking if item '" + itemName + "' exists in folder '" + folderName + "'");
     }
 
-    /**
-     * Whether the folder is without the item. The tree has to be drawn first, so a tree still being rebuilt
-     * after a save is not mistaken for a tree the item has gone from.
-     */
     public boolean isItemNotExistsInFolder(String folderName, String itemName) {
         waitForTreeFoldersToLoad();
         if (findFolder(folderName).isEmpty()) {
@@ -390,24 +367,17 @@ public class EditorLeftRulesTreeComponent extends BaseComponent {
         return tableIconTemplate.format(tableName);
     }
 
-    /**
-     * The name of the glyph a table wears. The rail draws a drawn icon rather than a small picture, and each
-     * one names itself, so what a table wears is read by that name.
-     */
     public String getTableIconName(String tableName) {
-        // The rail draws only the rows a reader could see, so the row is scrolled to before it is read.
         TreeRow row = readRows().stream()
                 .filter(drawn -> tableName.equals(drawn.title()) && !drawn.folder())
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("The tables tree lists no table named " + tableName));
         revealNode(row.nodeId());
-        // A table some test exercises wears a tick over its own icon, so the first glyph is the table's.
         WebElement icon = row.node().child("xpath=(.//span[contains(@class,'ant-tree-iconEle')]//*[@data-icon])[1]");
         icon.waitForVisible(DEFAULT_TIMEOUT_MS);
         return icon.getAttribute("data-icon");
     }
 
-    /** Filters the tree by the name typed into the search box above it. */
     public EditorLeftRulesTreeComponent searchByName(String text) {
         searchInput.click();
         searchInput.fill(text);
@@ -419,6 +389,30 @@ public class EditorLeftRulesTreeComponent extends BaseComponent {
         extendedSearchBtn.click();
     }
 
+    public EditorLeftRulesTreeComponent showUtilityTables() {
+        waitUntilSpinnerLoaded();
+        closeWindowsOverTheScreen();
+        filterBtn.click();
+        if (showUtilityTablesCheckbox.isChecked()) {
+            filterCancelBtn.click();
+        } else {
+            showUtilityTablesCheckbox.check();
+            page.waitForResponse(
+                    response -> response.url().contains("/tables?") && response.url().contains("includeOther=true"),
+                    filterApplyBtn::click);
+        }
+        filterDialog.waitForHidden(DEFAULT_TIMEOUT_MS);
+        tablesReloading.waitForHidden(TREE_DRAWN_TIMEOUT_MS);
+        return this;
+    }
+
+    public List<String> getTablesOfFolder(String folderName) {
+        expandFolderInTree(folderName);
+        return itemsOfFolder(folderName).stream()
+                .filter(row -> !row.folder())
+                .map(TreeRow::title)
+                .toList();
+    }
 
     private Optional<TreeRow> findFolder(String folderName) {
         return readRows().stream()
@@ -426,7 +420,6 @@ public class EditorLeftRulesTreeComponent extends BaseComponent {
                 .findFirst();
     }
 
-    /** The rows that sit under the folder: everything down to the next row at its own depth or shallower. */
     private List<TreeRow> itemsOfFolder(String folderName) {
         List<TreeRow> rows = readRows();
         TreeRow folder = rows.stream()
@@ -476,12 +469,6 @@ public class EditorLeftRulesTreeComponent extends BaseComponent {
         return new WebElement(page, TREE + "//div[@id=\"" + nodeId + "\"]", "treeNode[" + nodeId + "]");
     }
 
-    /**
-     * Selects the row. The rail draws itself anew whenever the module is read again — after a run, a save or
-     * a table opened — and gives every row a fresh id as it does, so a row read a moment ago may no longer be
-     * the row standing in the page. The row is therefore looked up again by what names it rather than by the
-     * id it was read under.
-     */
     private void clickNode(TreeRow row) {
         closeWindowsOverTheScreen();
         WaitUtil.requireCondition(() -> {
@@ -493,8 +480,6 @@ public class EditorLeftRulesTreeComponent extends BaseComponent {
             if (!title.isVisible(NODE_PROBE_MS)) {
                 return false;
             }
-            // The rail names a row in a label under the pointer, and that label lies over the rows beside
-            // it until the pointer leaves the row it belongs to.
             movePointerAway();
             try {
                 title.click(NODE_CLICK_MS);
@@ -504,17 +489,10 @@ public class EditorLeftRulesTreeComponent extends BaseComponent {
             }
             return true;
         }, DEFAULT_TIMEOUT_MS, SETTLE_POLL_MS, "Selecting '" + row.title() + "' in the tables tree");
-        // Pressing a row puts the pointer on it, and the label naming the row then stands over whatever is
-        // beside the rail — the toolbar among it — until the pointer leaves again.
         movePointerAway();
         waitUntilSpinnerLoaded();
     }
 
-    /**
-     * The row now standing where the given one stood: the one carrying its id while the rail is unchanged,
-     * and otherwise the one drawn under the same name at the same depth, nearest to where it stood — which
-     * is what tells two tables of one name apart.
-     */
     private TreeRow rowStandingFor(TreeRow wanted) {
         List<TreeRow> rows = readRows();
         return rows.stream()
@@ -528,7 +506,6 @@ public class EditorLeftRulesTreeComponent extends BaseComponent {
                         .orElse(null));
     }
 
-    /** Scrolls the rail until the row is drawn: a row the rail has no room for is not in the page at all. */
     private void revealNode(String nodeId) {
         if (!Boolean.TRUE.equals(page.evaluate(REVEAL_NODE_SCRIPT, nodeId))) {
             throw new RuntimeException("The tables tree never drew the row " + nodeId + ", even scrolled to the end");

@@ -9,6 +9,7 @@ import domain.ui.webstudio.components.editortabcomponents.RightTableDetailsCompo
 import domain.ui.webstudio.components.editortabcomponents.leftmenu.EditorLeftRulesTreeComponent;
 import domain.ui.webstudio.pages.mainpages.EditorPage;
 import helpers.service.WorkflowService;
+import helpers.utils.WaitUtil;
 import org.testng.annotations.Test;
 import tests.BaseTest;
 
@@ -27,6 +28,8 @@ public class TestVersioningByFolders extends BaseTest {
     private static final String PROPERTY_TABLE_NAME = "lob";
     private static final String INHERITED_VALUE = "001";
     private static final String OVERRIDDEN_VALUE = "777";
+    private static final long TREE_SETTLE_TIMEOUT_MS = 60000;
+    private static final long TREE_SETTLE_POLL_MS = 500;
 
     @Test
     @TestCaseId("IPBQA-30979")
@@ -67,11 +70,11 @@ public class TestVersioningByFolders extends BaseTest {
         tableDetails.editTextProperty(PROPERTY_NAME, OVERRIDDEN_VALUE);
         tableDetails.clickSaveBtn();
 
-        rulesTree.setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree(BASE_FOLDER);
-        List<String> versions = rulesTree.getAllEndNodesNames().stream()
-                .filter(name -> name.startsWith(VERSION_FOLDER + " ["))
-                .toList();
+        rulesTree.setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE);
+        WaitUtil.requireCondition(() -> versionsFolderOpened(rulesTree),
+                TREE_SETTLE_TIMEOUT_MS, TREE_SETTLE_POLL_MS,
+                "Opening the '" + VERSION_FOLDER + "' versions folder of '" + BASE_FOLDER + "'");
+        List<String> versions = versionLeaves(rulesTree);
 
         assertThat(versions)
                 .as("Both versions should still stand in the rail after saving an override")
@@ -80,6 +83,21 @@ public class TestVersioningByFolders extends BaseTest {
                 .as("Overriding a property in one version should not affect the other version")
                 .contains(PROPERTY_TABLE_NAME + "=" + INHERITED_VALUE)
                 .contains(PROPERTY_TABLE_NAME + "=" + OVERRIDDEN_VALUE);
+    }
+
+    private boolean versionsFolderOpened(EditorLeftRulesTreeComponent rulesTree) {
+        try {
+            rulesTree.expandFolderInTree(BASE_FOLDER).expandFolderInTree(VERSION_FOLDER);
+            return !versionLeaves(rulesTree).isEmpty();
+        } catch (RuntimeException treeIsBeingRebuilt) {
+            return false;
+        }
+    }
+
+    private List<String> versionLeaves(EditorLeftRulesTreeComponent rulesTree) {
+        return rulesTree.getAllEndNodesNames().stream()
+                .filter(name -> name.startsWith(VERSION_FOLDER + " ["))
+                .toList();
     }
 
     private void verifyInheritedProperty(RightTableDetailsComponent tableDetails, String expectedValue) {
