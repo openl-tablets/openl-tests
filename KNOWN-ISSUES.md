@@ -7,20 +7,35 @@ interface offered is gone from the product. Each one names the tests that stay r
 is decided.
 
 Every finding that is a defect carries its JIRA key, named under its heading. Where a test catches the
-defect it carries `@KnownIssue("<key>")` and the report shows it as a known issue rather than as a failure;
-the findings filed as EPBDS-16667 to EPBDS-16675 are carried by no test yet, and the tests for them are still
-to be written. Nothing in the suite is skipped over a defect any more: a blocked scenario runs to the point
+defect it carries `@KnownIssue("<key>")` and the report shows it as a known issue rather than as a failure.
+Of the findings filed as EPBDS-16667 to EPBDS-16675, the table order (EPBDS-16668) and the generation of
+tables from a specification (EPBDS-16671 to EPBDS-16673) are guarded by tests now; the rest are carried by no
+test yet. Nothing in the suite is skipped over a defect any more: a blocked scenario runs to the point
 where the product refuses it and fails there, which is what keeps the validation alive and the shard honest.
+A defect found but not filed yet (issues 25 to 28) gets no marker: its test reports a plain failure until
+the ticket exists.
 
-The build under test moved from `6.5.0-b48c86279338` to `6.5.0-2b6429ad4b7d` on 21 September 2026. Findings
-the newer build fixed are kept below, marked **Fixed**, with the commit that fixed them and the test that now
-guards it; they are kept rather than deleted so the same ground is not walked twice.
+The build under test moved from `6.5.0-b48c86279338` to `6.5.0-2b6429ad4b7d` on 21 September 2026, and to
+`6.5.0-4513cebb5e74` on 24 September 2026. Findings a newer build fixed are kept below, marked **Fixed**, with
+the commit that fixed them and the test that now guards it; they are kept rather than deleted so the same
+ground is not walked twice.
+
+A marker says which ticket a test is expected to fail on, not why it failed: the gate counts every failure
+under a marker as known, whatever it failed on. On `6.5.0-4513cebb5e74` eight of the sixteen marked failures
+were no longer their ticket's — the fix had shipped and the test failed on a defect of its own — so a marked
+failure is read against its ticket whenever the build moves.
 
 ---
 
-## 1. "Hide Utility Tables" is gone and the setting cannot be reached
+## 1. "Hide Utility Tables" is gone and the setting cannot be reached — Fixed
 
-**Filed as EPBDS-16665.**
+**Filed as EPBDS-16665.** **Fixed in openl-tablets `3cdfddcb3e`, shipped in `6.5.0-4513cebb5e74`.** The
+module screen's filter button offers *Show utility tables* again; the tree asks for the free-form tables
+with `includeOther=true` and hides them by default, as the guide says.
+`TestOrderingModeTableList#testTableListOrdering2` reads the sheet before and after turning it on — `_MyRules,
+MyRules, MyRules, Atable`, then `_MyRules, Test123, MyRules, MyRules, Test123, Atable`, the order the
+development ITEST `task_EPBDS-16668-table-order` expects of the same workbook — and no longer carries a
+`@KnownIssue`.
 
 **What changed.** The JSF tables tree had a filter dialog with a *Hide Utility Tables* checkbox, on by
 default. `EPBDS-16599` deleted the dialog together with the tree, and the React module screen offers no
@@ -133,9 +148,14 @@ is both labelled and implemented as "before", so only the row action is affected
 and writes it from the row above, which reaches the same table and keeps the assertion. Nothing covers
 "insert above" any more, because the product no longer does it.
 
-## 7. Half the table properties cannot be added: the screens ask for the wrong dictionary
+## 7. Half the table properties cannot be added: the screens ask for the wrong dictionary — Fixed
 
-**Filed as EPBDS-16664.**
+**Filed as EPBDS-16664.** **Fixed in openl-tablets `9648b20081`, shipped in `6.5.0-4513cebb5e74`:** the panel
+reads the dictionary of the table's own kind — on the running build "Add a property" offers Description and
+Tags again — and the dictionary read with no kind, which the extended search asks for, is now every property
+a table may carry. `TestAddAndDeleteProperty` no longer carries `@KnownIssue("EPBDS-16664")`; it now fails
+on issue 26 — the list cannot be searched by the name it shows. The coverage listed below is not restored
+yet.
 
 **What changed.** Two screens read the dictionary of properties the same wrong way. The table details panel
 offers "Add a property" from a dictionary it reads with `getProjectProperties(projectId)` — without a table
@@ -203,7 +223,19 @@ the project reloads once and settles, with the table still there.
 
 ---
 
-## 9. "Compare Excel files" no longer opens the comparison of two Excel files
+## 9. "Compare Excel files" no longer opens the comparison of two Excel files — Fixed
+
+**Fixed in openl-tablets `758a7d55ff`, already shipped in `6.5.0-2b6429ad4b7d`:** the menu item opens the
+picker of two Excel files again. Both tests below kept failing after the fix on defects of their own, which
+the marker hid: `TestCompareExcelFiles` asked for the node `Conditions  testConditions`, two spaces and
+all, while the locator compared it with the node's title passed through `normalize-space()`; and both tests
+counted rows from the first cell drawn, which with *Show equal rows* off is the first changed row. The name
+is normalised on both sides now, and `TestDisplayChangedRowsCompareScreens` addresses a row from the table's
+real start (`C8`, the sheet rows 14 and 23) with *Show equal rows* off and on; `TestCompareExcelFiles` turns
+*Show equal rows* on before it reads cells. `TestCompareExcelFiles` also changed its steps: the result screen offers no
+*Show equal elements* while it offers *Back* (`ComparePage.tsx`), so the test goes back, loads the two files
+again with that box ticked and compares, as the original scenario did. Both pass on `6.5.0-4513cebb5e74` and
+no longer carry `@KnownIssue("EPBDS-16655")`.
 
 **Filed as EPBDS-16655** (*The feature "Compare Excel Files" disappeared*, 17 Sep 2026). The two scenarios
 are no longer stopped: each asks the action to open the comparison of two uploaded workbooks and carries
@@ -243,9 +275,16 @@ reachable, so `TestGitSortingExcelFilesInComparePopUp`, which uses that one, run
 
 ---
 
-## 10. Where a generated module is written can no longer be chosen
+## 10. Where a generated module is written can no longer be chosen — Fixed
 
 **Filed as EPBDS-16671**; the lost rule that a generated module must be an Excel workbook as EPBDS-16672.
+**Fixed in openl-tablets `681a4099d9`, `f6e344c8c0` and `4847806656`, shipped in `6.5.0-4513cebb5e74`.** The
+confirmation is a *Generate tables* dialog again: a new module's workbook can be typed over and reset to the
+proposed path, a declared one is stated, the button reads *Generate tables* or *Generate and overwrite*, and a
+path that is empty, not an Excel workbook, shared by both modules or already taken is refused.
+`OpenApiModuleSettingsDialogComponent` drives that dialog; `TestImportPathValidationErrors` and
+`TestImportNewModulesWithPathEditingAndMixedScenarios` type paths again, the scenarios of `e2469022` restored
+against it; a second scenario of `TestImportNewModulesWithPathEditingAndMixedScenarios` fails on issue 28.
 
 **What changed.** Generating tables from an OpenAPI specification used to ask where each module goes: the
 dialog showed the path of the rules module and of the data module, each could be typed over and reset back.
@@ -295,9 +334,11 @@ a trailing space find different numbers of tables; it asserts what the search st
 
 ---
 
-## 12. The generation plan says a workbook is replaced when none stands there
+## 12. The generation plan says a workbook is replaced when none stands there — Fixed
 
-**Filed as EPBDS-16673.**
+**Filed as EPBDS-16673.** **Fixed in openl-tablets `b839c9d9a1`, shipped in `6.5.0-4513cebb5e74`:** the
+dialog warns that a module is overwritten only where its workbook stands, and says *This module does not
+exist yet and is going to be created* elsewhere. The generation tests assert that notice for each module.
 
 **What happens.** Before writing the tables a specification describes, the project shows what it will do to
 each module: `the workbook <path> is replaced`, or `a workbook is added at <path>`. Which of the two it says
@@ -395,7 +436,14 @@ all.
 
 ---
 
-## 15. The tables tree no longer shows the order the workbook holds
+## 15. The tables tree no longer shows the order the workbook holds — Fixed
+
+**Fixed in openl-tablets `793747e639`, shipped in `6.5.0-4513cebb5e74`.** The listing is asked with
+`sort=position` and the Excel Sheet view keeps the workbook's order. `TestOrderingModeTableList#testTableListOrdering`
+asserts the sequences again — the sheets `Sheet1, Asheet, すsupersheet`, the tables of each sheet, and
+`MyRules1, MyRules1, _MyRules2` once an inserted row has moved `_MyRules2` down its sheet — the order
+`6.4.0` shows for the same steps. On `6.5.0-2b6429ad4b7d`, which sorted by name, the same test fails on the
+first of them. The fix uncovered issue 25.
 
 **Filed as EPBDS-16668.** Worth knowing for whoever takes it: the order is lost before the browser sees
 it — the listing the rail is drawn from is sorted by name on the server
@@ -521,9 +569,11 @@ one past twenty is gone for good — the React launcher pages them instead.
 
 ---
 
-## 19. A table without a body takes the whole module's tables listing down with it
+## 19. A table without a body takes the whole module's tables listing down with it — Fixed
 
-**Filed as EPBDS-16662.**
+**Filed as EPBDS-16662.** **Fixed in openl-tablets `acf869790f`, shipped in `6.5.0-4513cebb5e74`:** the
+module whose table is a header alone is listed, and its error reaches the problems panel.
+`TestClickOnErrorFromTheBottom` passes and no longer carries `@KnownIssue("EPBDS-16662")`.
 
 **What happens.** A module holding a table whose header stands alone — `Spreadsheet ` in a cell with nothing
 written under it — cannot be opened at all. `GET /web/projects/{id}/tables?module={name}` answers HTTP 500
@@ -564,9 +614,11 @@ Reproduced on `ghcr.io/openl-tablets/webstudio:6.5.0-b48c86279338`:
 
 ---
 
-## 20. Migrating a project that declares nothing always fails, and leaves it broken
+## 20. Migrating a project that declares nothing always fails, and leaves it broken — Fixed
 
-**Filed as EPBDS-16666.**
+**Filed as EPBDS-16666.** **Fixed in openl-tablets `0eb6d8f604`, shipped in `6.5.0-4513cebb5e74`:** the
+migrate names the project in the `rules.xml` it writes. `TestMigrateLegacyProjectUi#testMigrateMovesRootWorkbookOfAProjectWithoutDescriptor`
+passes and no longer carries `@KnownIssue("EPBDS-16666")`.
 
 **Of the same family as EPBDS-16638, EPBDS-16639 and EPBDS-16641** — a project left without a descriptor
 while *Detect projects by Excel files* is off also answers 404 on its Management tab, refuses a copy to a
@@ -613,9 +665,11 @@ Reproduced on `ghcr.io/openl-tablets/webstudio:6.5.0-b48c86279338`: upload `Migr
 ## 21. The OpenAPI section keeps a specification that has been deleted
 
 **Filed as EPBDS-16656** (*The message "The project declares no OpenAPI specification." is displayed when
-openAPI file was generated*, 17 Sep 2026) — the same section reading its files once.
-`TestGenerateOpenApiDefaultDate#testCardNamesTheSpecificationJustGenerated` asks the card to name the
-specification a generation has just written and carries `@KnownIssue("EPBDS-16656")`.
+openAPI file was generated*, 17 Sep 2026) — the same section reading its files once. The ticket's own case
+is **fixed in openl-tablets `c3524fddb1`**: the card names the specification a generation has just written.
+`TestGenerateOpenApiDefaultDate#testCardNamesTheSpecificationJustGenerated` asserts it once the generation
+has finished — it used to read the card while the generation was still running — and no longer carries
+`@KnownIssue("EPBDS-16656")`. The deletion described below is not the ticket's case and is not re-checked.
 
 **What happens.** A project made from a specification declares none in its descriptor: the file lying in the
 project under the name its format reads as is what is read against, and the card names it, marked
@@ -635,7 +689,16 @@ one thing that section is there to answer.
 start before reading the section. What is not asked, and is the coverage to restore with the fix, is that the
 section answers the deletion by itself.
 
-## 22. The values of an alias datatype never reach the Run/Trace launcher
+## 22. The values of an alias datatype never reach the Run/Trace launcher — Fixed
+
+**Filed as EPBDS-16660.** **Fixed in openl-tablets `c6068156fd`, shipped in `6.5.0-4513cebb5e74`:** the
+launcher's schema carries the `enum` of an alias datatype, the element of an array of one included, and the
+launcher draws a list. `TestArrayOfAliasValuesInRunTrace#testArrayOfAliasValuesInRunTrace` checks bla1, bla2,
+bla3 in Run and in Trace for all seven tables — adding the element in Trace itself, since Trace no longer
+keeps what Run was given (issue 27) — and no longer carries `@KnownIssue("EPBDS-16660")`;
+`TestSimpleLookupSimpleRules` picks `Gender` and `Marital_Status` from their lists. The old list also offered
+an empty value `""`; the new one clears the value with its cross instead, which the ticket's expected result
+(bla1, bla2, bla3) already reflects. The second scenario of the class fails on issue 27.
 
 **What happens.** A parameter whose type is an alias datatype — `myType`, declaring bla1, bla2, bla3 — is
 offered as a plain text box in the Run and Trace launchers, where the old launcher offered the three values
@@ -677,9 +740,12 @@ now takes anything typed into the box.
 of picking them from lists; what the run returns is still checked in full. Picking them from a list is the
 coverage to restore with the fix.
 
-## 23. Generating tables lays a second module beside the one the project already has
+## 23. Generating tables lays a second module beside the one the project already has — Fixed
 
-**Filed as EPBDS-16661.**
+**Filed as EPBDS-16661.** **Fixed in openl-tablets `2aaa5319d2`, shipped in `6.5.0-4513cebb5e74`:** the
+generation writes over the workbook a pattern-matched module reads — the dialog states
+`tests/AutoPolicyTests.xlsx` for `AutoPolicyTests`. `TestLocalChangesAfterReImportForTemplateProject` passes
+and no longer carries `@KnownIssue("EPBDS-16661")`.
 
 **What happens.** A project whose modules come from patterns — every project made from a template; the
 descriptor of *Example 3 - Auto Policy Calculation* is `<project/>`, so the defaults `rules/**/*.xlsx` and
@@ -723,9 +789,12 @@ replaced it records a decision to change this.
 
 ---
 
-## 24. The table properties panel keeps what it read before a save
+## 24. The table properties panel keeps what it read before a save — Fixed
 
 **Filed as EPBDS-16700.** Found on `6.5.0-2b6429ad4b7d`; both tests passed on `6.5.0-b48c86279338`.
+**Fixed in openl-tablets `3bf590d6a8`** (committed under EPBDS-16664: *Read a table's properties again once
+the module is compiled after writing them*), **shipped in `6.5.0-4513cebb5e74`.** Both tests below pass and
+no longer carry `@KnownIssue("EPBDS-16700")`. The ticket itself was still open on 24 September.
 
 **What happens.** A property written through the panel is saved — the studio says so and the grid redraws
 with it — but the panel goes on showing what it read before the save, until the page is reloaded. On a table
@@ -753,13 +822,99 @@ in the panel and not in the write.
 
 ---
 
+## 25. After a save that moves a table, the editor opens the module's first table instead of it
+
+**Not filed yet.** Found on `6.5.0-4513cebb5e74`; hidden before EPBDS-16668, because a module listed by name
+happened to put `_MyRules2` first.
+
+**What happens.** A table that has to grow — a row inserted below its last one — is moved on its sheet when
+it is saved and gets a new id. The save is right, but the editor then opens the first table of the module
+instead of the saved one. With `sortingtesting.xlsx`: open `_MyRules2`, Edit, *Insert Row After* on the row
+`200 | 2`, type 1 and 1, Save — `_MyRules2` is written at `B12:C16` under a new id, and within half a second
+the editor shows `MyRules1(int a, int b)`. `6.4.0`, the same steps: `_MyRules2` stays open under its new id.
+
+**Where it probably comes from, offered rather than asserted.** `TableEditor.save()` asks to navigate to the
+new id while its unsaved-changes blocker still holds; the list refresh unmounts the editor, the blocked
+navigation is lost, and the workspace, not finding the old id in the new list, opens `tables[0]`
+(`ModuleWorkspace.tsx`). The CI trace of 24 September shows the same jump once after a properties save that
+moved a table (`TestVersioningByFolders`), which a local repeat did not reproduce. That test is about the
+versions in the rail, so it now opens the version folders itself after the save and no longer notices such a
+jump; the jump after an inserted row is asked about by the test below, and the jump after a properties save
+by no test. EPBDS-16703 (in testing, `701260705c`, not in
+`6.5.0-4513cebb5e74`) changes the same effect of `ModuleWorkspace` and is to be checked against this once a
+build carries it.
+
+**Test that fails on it, without a marker until the ticket exists.**
+`tests.ui.webstudio.rules_editor.TestOrderingModeTableList#testSavedTableStaysOpenAfterItMoves` — *expected
+"_MyRules2" but was "MyRules1"*. The ordering scenario of the same class opens `_MyRules2` from the tree
+after the save, so it keeps guarding EPBDS-16668.
+
+---
+
+## 26. "Add a property" cannot be searched by the names it shows
+
+**Not filed yet.** Not a regression — `6.4.0` offered a plain list without a search — but a defect of the
+search the new panel added.
+
+**What happens.** The list shows the properties by their labels, and its search matches their technical
+names. Typing `Countries` answers *No data*, `country` finds *Countries*; `Effective Date` answers *No data*,
+`effective` finds *Effective Date*; the same for *US States* (`state`) and *Language* (`lang`). The select in `TableDetailsPanel.tsx` is a bare `showSearch`, which filters by `value`; the
+copy-table dialog offers the same properties with `optionFilterProp: 'label'` and is searched by the label.
+
+**Test that fails on it, without a marker until the ticket exists.**
+`tests.ui.webstudio.rules_editor.TestAddAndDeleteProperty` — *'Effective Date' was not among what the list
+offered*. EPBDS-15705, the panel disappearing after some seven properties, is what it is expected to run
+into next.
+
+---
+
+## 27. Trace opens without what was entered in Run
+
+**Not filed yet; whether the React launchers are meant to share their input is for the product to say.**
+
+**What happens.** In `6.4.0` Run and Trace drew one and the same input form, so a value entered for Run —
+an element added to `my (myType[])` — was there when Trace was opened. In `6.5.0-4513cebb5e74` each launcher
+keeps its own state: Run shows `my = {1 elements}`, Trace opens with `my = {0 elements}`, and the input has to
+be entered again.
+
+**Test that fails on it, without a marker until the ticket exists.**
+`tests.ui.webstudio.studio_issues.TestArrayOfAliasValuesInRunTrace#testTraceKeepsArrayElementAddedInRun`, on
+`myRule2` — *actual: []*.
+
+---
+
+## 28. A generation refused for a path the project's pattern reads has already written its workbooks
+
+**Not filed yet.** Of the family EPBDS-16672 (in testing) dealt with for the shape of a path
+(`4847806656`: *refused, but only after the other module has been replaced*), reached here through the
+descriptor's own check, which runs after the workbooks are written.
+
+**What happens.** A project created from a specification in `6.5` declares its two modules and, beside them, the
+default patterns `rules/**/*.xlsx` and `tests/**/*.xlsx` (`ProjectDescriptorManager.registerModule`); `6.4.0`
+declared the two modules alone. The dialog accepts
+`rules/Alg12.xlsx` as the workbook of a new module `Alg`; the server answers 400 — *The path
+'rules/Alg12.xlsx' is already read by another module.* (`modules[4].rulesRootPath`), the pattern reading that
+workbook as a module of its own — and the dialog stays open. That refusal follows the descriptor's rule. What
+does not is that it comes last: on the *Example 1 - Bank Rating* template, `rules/Alg12.xlsx` and
+`rules/Mod.xlsx` stand in the project after the refusal, written by the generation that was refused
+(`ProjectOpenApiGenerationService.generateTables` writes the workbooks before the descriptor and puts nothing
+back). On a project created from `openapi1.json`, the same steps with workbooks outside the pattern
+(`rules1/…`, `rules3/…`) go through.
+
+**Tests.** `TestImportNewModulesWithPathEditingAndMixedScenarios` restores the `e2469022` scenario with
+workbooks outside the pattern — `6.4.0` typed paths the project did not read yet, and in `6.5` `rules/` is read
+by the default pattern. Whether a refused generation leaves the project as it was is asked by a scenario of
+its own in the same class, which fails on this issue without a marker until the ticket exists.
+
+---
+
 ## Defects reported on 16-17 September, covered by tests of their own
 
 | Ticket | Test | State |
 |---|---|---|
 | EPBDS-16639 | `TestProjectWithoutDescriptorUi#testCopyToBranchWorksForAProjectWithoutDescriptor` | fails: *Failed to update project status.* |
 | EPBDS-16641 | `TestDeployProjectWithoutDescriptorUi#testDeployWorksForAProjectWithoutDescriptor` | fails: the deployment the studio confirmed stands nowhere among the deployments |
-| EPBDS-16652 | `TestProjectCreatedMessageUi#testProjectCreationSaysSo` | fails: creating a project says nothing |
+| EPBDS-16652 | `TestProjectCreatedMessageUi#testProjectCreationSaysSo` | **fixed** in `cd540c5343`, shipped in `6.5.0-4513cebb5e74`; the test looked for the pop-up seven seconds late, after it had closed, and now reads it right after Create; the marker is removed |
 | EPBDS-16657 | `TestMigrateAfterDeployConfigEditUi#testMigrateIsNotOfferedAgainAfterEditingTheDeployConfig` | **fixed** in `4b9326fa1a`, passes on `6.5.0-2b6429ad4b7d`; the marker is removed and the test guards the fix |
 | EPBDS-16638 | `TestProjectWithoutDescriptorUi#testManagementTabOpensForAProjectWithoutDescriptor` | fails: the card opens and offers the Management tab, and pressing it answers 404 |
 | EPBDS-16635 | `TestRunTableResultUi#testRunTableReportsItsResults` | **fixed** in `69664a7e35`, passes on `6.5.0-2b6429ad4b7d`; the marker is removed and the test guards the fix |
