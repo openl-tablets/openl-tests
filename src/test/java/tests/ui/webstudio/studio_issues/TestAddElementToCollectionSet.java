@@ -31,12 +31,16 @@ public class TestAddElementToCollectionSet extends BaseTest {
 
         var runMenu = editorPage.getEditorToolbarPanelComponent().clickRun();
         runMenu.clickAddElementToCollectionBtn("a");
-        assertThat(editorPage.isStudioMessageDisplayed("Sorry! Something went wrong.")).isFalse();
-        
+        assertThat(editorPage.getShownErrors())
+                .as("Adding an element to the Collection input 'a' should not end in an error shown to the user")
+                .isEmpty();
+
         runMenu.clickAddedElementsExpander("a")
                .clickAddElementToCollectionBtn("d");
-        assertThat(editorPage.isStudioMessageDisplayed("Sorry! Something went wrong.")).isFalse();
-        
+        assertThat(editorPage.getShownErrors())
+                .as("Adding an element to the Set input 'd' should not end in an error shown to the user")
+                .isEmpty();
+
         runMenu.clickAddedElementsExpander("d");
     }
 }

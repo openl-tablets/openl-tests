@@ -1,6 +1,8 @@
 package domain.ui.webstudio.pages;
 
+import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
+import com.microsoft.playwright.PlaywrightException;
 import com.microsoft.playwright.options.BoundingBox;
 import configuration.core.ui.CorePage;
 import configuration.core.ui.WebElement;
@@ -11,21 +13,33 @@ import helpers.utils.WaitUtil;
 import lombok.Getter;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
-// This class is separated from CorePage and created for specific element storage
 public abstract class BasePage extends CorePage {
+
+    private static final long ERROR_WATCH_MS = 3000;
+    private static final long ERROR_POLL_MS = 250;
+    private static final int ERROR_READ_TIMEOUT_MS = 500;
+    private static final String SHOWN_ERRORS = "xpath="
+            + "//div[" + hasClass("ant-notification-notice-error") + "]"
+            + " | " + statusPage("500", "Internal server error.")
+            + " | " + statusPage("404", "Page not found.")
+            + " | " + statusPage("403", "Access denied.")
+            + " | //div[" + hasClass("ant-result-error") + "]"
+            + " | //div[h2[normalize-space(.)='Oops! Something went wrong']]"
+            + " | //div[" + hasClass("ant-alert-error") + "][" + testIdEndsWith("-error") + " or " + testIdEndsWith("-failed") + "]";
 
     private WebElement userLogo;
     @Getter
     private List<MessageComponent> messages;
+    private WebElement shownErrors;
     private WebElement userMenuDrawer;
     private WebElement contentLoadingSpinner;
     @Getter
     private WebElement modalOkBtn;
     private WebElement notificationPanel;
-    // JSF closable messages: <div class="message closable error/info/warning"> at top of page
-    // Legacy locator: //div[contains(@class, 'message closable')] | //div[@class='messages']
     private WebElement closableMessage;
 
     public BasePage() {
@@ -39,12 +53,10 @@ public abstract class BasePage extends CorePage {
     }
 
     private void initializeComponents() {
-        // The mark a reader opens their own menu by. The administration screens carry it without the
-        // banner the workspace screens put it in, and the menu it opens shows it again inside itself, so
-        // what is named is the one standing outside that menu.
         userLogo = new WebElement(page, "xpath=//span[contains(@class,'ant-avatar')][.//span[@aria-label='user']]"
                 + "[not(ancestor::div[contains(@class,'ant-drawer')])]", "User Logo");
         messages = createComponentList(MessageComponent.class, "xpath=//div[contains(@class,'ant-notification-notice-wrapper')]", "Studio Messages");
+        shownErrors = new WebElement(page, SHOWN_ERRORS, "Errors Shown To The User");
         userMenuDrawer = new WebElement(page, "xpath=//div[contains(@class,'ant-drawer') and contains(@class,'ant-drawer-open')]//div[contains(@class,'ant-drawer-section')]", "User Menu Drawer");
         contentLoadingSpinner = new WebElement(page, "xpath=//div[@id='loadingPanel']", "contentLoadingSpinner");
         modalOkBtn = new WebElement(page, "xpath=//div[contains(@class,'ant-modal-container')]//button[./span[contains(text(),'OK')]]", "applyChangesBtn");
@@ -89,19 +101,51 @@ public abstract class BasePage extends CorePage {
         return messagesTextList;
     }
 
-    public boolean isStudioMessageDisplayed(String text) {
-        try {
-            return messages.stream().anyMatch(m -> m.getMessageText().contains(text));
-        } catch (Exception e) {
-            LOGGER.debug("Ignoring exception during message check (likely due to DOM update): {}", e.getMessage());
-            return false;
+    public List<String> getShownErrors() {
+        WebElement.waitForAppReady(page);
+        Set<String> shown = new LinkedHashSet<>();
+        int passesRead = 0;
+        PlaywrightException lastFailure = null;
+        long deadline = System.currentTimeMillis() + ERROR_WATCH_MS;
+        do {
+            try {
+                for (Locator error : shownErrors.getLocator().all()) {
+                    if (error.isVisible()) {
+                        shown.add(normalized(error.innerText(new Locator.InnerTextOptions().setTimeout(ERROR_READ_TIMEOUT_MS))));
+                    }
+                }
+                passesRead++;
+            } catch (PlaywrightException e) {
+                lastFailure = e;
+                LOGGER.debug("Ignoring exception during error collection (likely due to DOM update): {}", e.getMessage());
+            }
+            WaitUtil.sleep(ERROR_POLL_MS, "Watching for an error shown to the user");
+        } while (System.currentTimeMillis() < deadline);
+        if (passesRead == 0) {
+            throw new IllegalStateException("The errors shown to the user could not be read", lastFailure);
         }
+        LOGGER.info("Errors shown to the user: {}", shown);
+        return new ArrayList<>(shown);
+    }
+
+    private static String normalized(String text) {
+        return text.replaceAll("\\s+", " ").trim();
+    }
+
+    private static String hasClass(String className) {
+        return "contains(concat(' ',normalize-space(@class),' '),' " + className + " ')";
+    }
+
+    private static String testIdEndsWith(String suffix) {
+        return "substring(@data-testid,string-length(@data-testid)-" + (suffix.length() - 1) + ")='" + suffix + "'";
+    }
+
+    private static String statusPage(String code, String message) {
+        return "//div[normalize-space(.)='" + code + "'][following-sibling::div[1][starts-with(normalize-space(.),'" + message + "')]]/..";
     }
 
     public UserSlidingRightMenuComponent openUserMenu() {
         closeAllMessages();
-        // A window the reader opened over the screen keeps them from reaching their own menu, so it is
-        // closed first — which is what they would do.
         ScreenWindows.closeAll(getPage());
         userLogo.click();
         userMenuDrawer.waitForVisible();
@@ -110,29 +154,17 @@ public abstract class BasePage extends CorePage {
 
     public void waitUntilSpinnerLoaded() {
         contentLoadingSpinner.waitForHidden(DEFAULT_TIMEOUT_MS * 100L);
-        // Also wait out the new React full-screen loading overlay (EPBDS-16241 replaced #loadingPanel).
         WebElement.waitForAppReady(page);
     }
 
-    // Debounced settle: waits until the React loading overlay stays absent continuously, so a following
-    // click (e.g. a tab switch right after a recompile) isn't intercepted by the overlay flickering back.
-    // Bounded (never throws): if the app is still churning it just proceeds and relies on click retries.
-    // The returned flag tells whether the app really settled — an overlay that never leaves is the
-    // EPBDS-16275 reload loop, so guard tests must assert on it instead of ignoring it.
     public boolean waitUntilAppIdle() {
         return WebElement.waitForAppIdle(page, 30000L);
     }
 
-    /**
-     * Whether the page is wider than the window, i.e. it scrolls sideways.
-     *
-     * <p>Measured from the body's own box against the viewport, so no page script is involved.
-     */
     public boolean hasHorizontalScroll() {
         waitUntilSpinnerLoaded();
         BoundingBox body = page.locator("xpath=//body").boundingBox();
         int viewportWidth = page.viewportSize().width;
-        // A pixel of slack: rounding of a fractional layout width is not a scrollbar.
         return body != null && body.width > viewportWidth + 1;
     }
 

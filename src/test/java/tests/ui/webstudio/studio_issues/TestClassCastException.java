@@ -34,21 +34,19 @@ public class TestClassCastException extends BaseTest {
                 .selectItemInFolder("Spreadsheet", "calc");
 
         editorPage.getEditorToolbarPanelComponent().clickRun().clickRunInsideMenu();
-        
-        // Check that "Something went wrong" error is NOT visible
-        assertThat(editorPage.isStudioMessageDisplayed("Sorry! Something went wrong."))
-                .as("'Something went wrong' message should not be displayed")
-                .isFalse();
-        
-        // Validate result table presence and header
+
         TestResultValidationComponent resultComponent = editorPage.getTestResultValidationComponent();
         assertThat(resultComponent.getResultTable().isVisible(30000))
                 .as("Result table should be present after running spreadsheet")
                 .isTrue();
-        
+
         assertThat(resultComponent.getResultTableHeader())
                 .as("Result table header should contain 'Result'")
                 .contains("Result");
+
+        assertThat(editorPage.getShownErrors())
+                .as("Running the spreadsheet should not end in an error shown to the user")
+                .isEmpty();
 
         LogsUtil.inspectLogFile(AppContainerPool.get());
     }

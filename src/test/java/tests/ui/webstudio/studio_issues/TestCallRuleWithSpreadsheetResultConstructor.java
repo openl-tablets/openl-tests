@@ -29,19 +29,16 @@ public class TestCallRuleWithSpreadsheetResultConstructor extends BaseTest {
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
                 .expandFolderInTree("Test")
                 .selectItemInFolder("Test", "test");
-        
-        // Run the tests
+
         editorPage.getEditorToolbarPanelComponent().clickRun().clickRunInsideMenu();
-        
-        // Check that "Something went wrong" error is NOT visible
-        assertThat(editorPage.isStudioMessageDisplayed("Sorry! Something went wrong."))
-                .as("'Something went wrong' message should not be displayed")
-                .isFalse();
-        
-        // Validate that the test table failed as expected
+
         assertThat(editorPage.getTestResultValidationComponent().isTestTableFailed())
                 .as("Test table '%s' should have failed status", "test")
                 .isTrue();
+
+        assertThat(editorPage.getShownErrors())
+                .as("Running the test table should not end in an error shown to the user")
+                .isEmpty();
         LogsUtil.inspectLogFile(AppContainerPool.get());
     }
 }

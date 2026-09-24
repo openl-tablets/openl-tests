@@ -8,6 +8,9 @@ import java.util.List;
 
 public class MessageComponent extends BaseComponent {
 
+    private static final int CLOSE_TIMEOUT_MS = 500;
+    private static final String IS_NOTICE = "contains(concat(' ',normalize-space(@class),' '),' ant-notification-notice ')";
+
     private List<WebElement> message;
     private WebElement closeBtn;
 
@@ -22,8 +25,10 @@ public class MessageComponent extends BaseComponent {
     }
 
     private void initializeComponents() {
-        message = createScopedElementList("xpath=.//div[contains(@class,'ant-notification-notice-message')]", "Message Content List");
-        closeBtn = createScopedElement("xpath=.//a[@aria-label='Close'] | .//button[@class='ant-notification-notice-close']", "Close Message Button");
+        message = createScopedElementList("xpath=.//div[contains(@class,'ant-notification-notice-title')]"
+                + " | .//div[contains(@class,'ant-notification-notice-message')]", "Message Content List");
+        closeBtn = createScopedElement("xpath=./parent::div[" + IS_NOTICE + "]/button[contains(@class,'ant-notification-notice-close')]"
+                + " | .//a[@aria-label='Close'] | .//button[@class='ant-notification-notice-close']", "Close Message Button");
     }
 
     public String getMessageText() {
@@ -41,7 +46,7 @@ public class MessageComponent extends BaseComponent {
 
     public void closeMessage() {
         try {
-            closeBtn.click();
+            closeBtn.click(CLOSE_TIMEOUT_MS);
         } catch (Exception ignored) {}
     }
 }

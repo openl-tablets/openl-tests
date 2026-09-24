@@ -26,15 +26,13 @@ public class TestClickOnOpenApiError extends BaseTest {
         EditorPage editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent()
                 .selectModule(projectName, "Algorithm");
-        
-        // Click on the specific OpenAPI error in the problems panel
+
         editorPage.getProblemsPanelComponent()
                 .selectProblemByText("OpenAPI Reconciliation: Expected method is not found for path ");
-        
-        // Check that "Something went wrong" error is NOT visible
-        assertThat(editorPage.isStudioMessageDisplayed("Sorry! Something went wrong."))
-                .as("'Something went wrong' message should not be displayed")
-                .isFalse();
+
+        assertThat(editorPage.getShownErrors())
+                .as("Opening the OpenAPI problem from the bottom panel should not end in an error shown to the user")
+                .isEmpty();
 
         LogsUtil.inspectLogFile(AppContainerPool.get());
     }

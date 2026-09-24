@@ -48,11 +48,9 @@ public class TestEditingCommaSeparatedArrayValues extends BaseTest {
         table.editCell(4, 2, "1,,2,3");
         editorPage.getEditorTableActionsPanelComponent().clickSaveChanges();
 
-        boolean failureMessageVisible = editorPage.getAllMessages().stream()
-                .anyMatch(msg -> msg.contains("Sorry! Server failed to apply your changes!"));
-        assertThat(failureMessageVisible)
-                .as("'Sorry! Server failed to apply your changes!' message should NOT be visible — empty elements must be silently allowed")
-                .isFalse();
+        assertThat(editorPage.getShownErrors())
+                .as("Saving '1,,2,3' should not end in an error shown to the user — empty elements must be silently allowed")
+                .isEmpty();
 
         domain.ui.webstudio.pages.mainpages.RepositoryPage repositoryPage = editorPage.getTabSwitcherComponent()
                 .selectTab(domain.ui.webstudio.components.common.TabSwitcherComponent.TabName.REPOSITORY);

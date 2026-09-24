@@ -53,10 +53,10 @@ public class TestClickOnErrorFromTheBottom extends BaseTest {
         }
 
         editorPage.getProblemsPanelComponent().selectProblemByIndex(1);
-        
-        assertThat(editorPage.isStudioMessageDisplayed("Sorry! Something went wrong."))
-                .as("'Something went wrong' message should not be displayed")
-                .isFalse();
+
+        assertThat(editorPage.getShownErrors())
+                .as("Opening the problem from the bottom panel should not end in an error shown to the user")
+                .isEmpty();
 
         assertThat(editorPage.getEditorMainContentProblemsPanelComponent().isErrorMessageListPresent())
                 .as("Error message should be present in top problems panel")
