@@ -18,10 +18,7 @@ public class ProjectHeaderActionsComponent extends BaseComponent {
 
     public ProjectHeaderActionsComponent(WebElement rootLocator) {
         super(rootLocator);
-        actionByLabel = createScopedElement(
-                "xpath=.//button[starts-with(@data-testid,'%s-')"
-                        + " and not(substring(@data-testid, string-length(@data-testid) - 4) = '-more')]",
-                "headerAction");
+        actionByLabel = createScopedElement("xpath=.//button[starts-with(@data-testid,'%s-') and not(substring(@data-testid, string-length(@data-testid) - 4) = '-more')]", "headerAction");
         moreBtn = createScopedElement("xpath=.//*[@data-testid='project-actions-more']", "headerMoreBtn");
         overflowItem = new WebElement(page, "xpath=//div[contains(@class,'ant-dropdown')][not(contains(@class,'ant-dropdown-hidden'))]//button[normalize-space()='%s']", "headerOverflowItem");
     }
