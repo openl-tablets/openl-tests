@@ -142,16 +142,16 @@ public class TestSimpleLookupSimpleRules extends BaseTest {
         editorPage.getEditorToolbarPanelComponent()
                 .clickRun()
                 .setInputTextField("1", age)
-                .setInputTextField("2", gender)
+                .setInputSelectField("1", gender)
                 .clickRunInsideMenu();
     }
 
     private void runSimpleLookup(EditorPage editorPage, String gender, String status) {
         IRunMenu runMenu = editorPage.getEditorToolbarPanelComponent().clickRun();
         if (gender != null) {
-            runMenu.setInputTextField("1", gender);
+            runMenu.setInputSelectField("1", gender);
         }
-        runMenu.setInputTextField("2", status)
+        runMenu.setInputSelectField("2", status)
                 .clickRunInsideMenu();
     }
 

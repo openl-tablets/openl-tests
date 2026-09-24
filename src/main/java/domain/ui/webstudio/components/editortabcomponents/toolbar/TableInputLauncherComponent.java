@@ -8,6 +8,9 @@ import helpers.utils.WaitUtil;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Supplier;
+import java.util.regex.Pattern;
 
 public abstract class TableInputLauncherComponent extends BaseComponent {
 
@@ -117,10 +120,57 @@ public abstract class TableInputLauncherComponent extends BaseComponent {
                 .orElseThrow(() -> new AssertionError("The launcher draws no field called '" + name + "': " + drawnPaths()));
     }
 
+    public boolean offersTheFirstElementAsAList() {
+        return isFieldChosenFromList(firstElementPath());
+    }
+
+    public List<String> getAliasDropdownValues() {
+        return fieldOptions(firstElementPath());
+    }
+
+    public List<String> getElementsOf(String name) {
+        String path = pathOf(name);
+        String elementPattern = Pattern.quote(path) + "\\[[^\\[\\]]*\\]";
+        Supplier<List<String>> elements = () -> drawnPaths().stream().filter(drawn -> drawn.matches(elementPattern)).toList();
+        WaitUtil.isListNotEmpty(elements, PROBE_MS, 200, "Looking for the elements drawn under " + path);
+        return elements.get();
+    }
+
+    protected String firstElementPath() {
+        waitForFields();
+        return WaitUtil.waitForResult(() -> drawnPaths().stream().filter(path -> path.endsWith("]")).findFirst(),
+                        DEFAULT_TIMEOUT_MS, 200, "Waiting for an element of a collection to be drawn")
+                .orElseThrow(() -> new AssertionError("The launcher holds no element of a collection: " + drawnPaths()));
+    }
+
+    protected void createFirstUnsetStructure() {
+        waitForFields();
+        List<WebElement> creators = createElementList(
+                "xpath=//button[starts-with(@data-testid,'create-')]", "createButtons");
+        if (!creators.isEmpty()) {
+            creators.get(0).click();
+        }
+    }
+
+    protected void expandFirstCollection() {
+        waitForFields();
+        List<WebElement> switchers = createElementList(
+                "xpath=//div[contains(@class,'ant-tree-treenode')][.//button[starts-with(@data-testid,'add-')]]"
+                        + "/span[contains(@class,'ant-tree-switcher') and not(contains(@class,'ant-tree-switcher-noop'))"
+                        + " and not(contains(@class,'ant-tree-switcher_open'))]", "collectionSwitchers");
+        if (!switchers.isEmpty()) {
+            switchers.get(0).click();
+        }
+    }
+
     protected List<String> drawnPaths() {
-        List<String> paths = new java.util.ArrayList<>(testIdsStartingWith("value-"));
-        testIdsStartingWith("input-").stream().filter(path -> !paths.contains(path)).forEach(paths::add);
-        return paths;
+        return createElementList("xpath=//*[starts-with(@data-testid,'value-') or starts-with(@data-testid,'input-')]",
+                "drawnRows").stream()
+                .map(element -> element.getAttribute("data-testid"))
+                .filter(Objects::nonNull)
+                .map(testId -> testId.substring(testId.indexOf('-') + 1))
+                .distinct()
+                .toList();
     }
 
     protected List<String> writablePaths() {
@@ -166,12 +216,19 @@ public abstract class TableInputLauncherComponent extends BaseComponent {
         if (!"true".equals(select.getAttribute("aria-expanded"))) {
             select.click();
         }
+        String listId = WaitUtil.waitForResult(
+                        () -> Optional.ofNullable(select.getAttribute("aria-controls")).filter(id -> !id.isBlank()),
+                        DEFAULT_TIMEOUT_MS, 200, "Waiting for the list of " + path + " to open")
+                .orElseThrow(() -> new AssertionError("The field " + path + " opens no list of values"));
         List<WebElement> options = createElementList(
                 "xpath=//div[contains(@class,'ant-select-dropdown')][not(contains(@class,'ant-select-dropdown-hidden'))]"
-                        + "//div[contains(@class,'ant-select-item-option')][@title]", "fieldOptions");
+                        + "[.//*[@id=\"" + listId + "\"]]"
+                        + "//div[contains(@class,'ant-select-item-option')][@title]", "fieldOptions[" + path + "]");
         WaitUtil.waitForListNotEmpty(() -> options, DEFAULT_TIMEOUT_MS, 200,
                 "Waiting for the values of " + path + " to be listed");
-        return options.stream().map(WebElement::getText).map(String::trim).toList();
+        List<String> values = options.stream().map(WebElement::getText).map(String::trim).toList();
+        closeListOf(path);
+        return values;
     }
 
     protected boolean isFieldChosenFromList(String path) {
@@ -179,6 +236,18 @@ public abstract class TableInputLauncherComponent extends BaseComponent {
         WebElement asList = new WebElement(page,
                 "xpath=//div[@data-testid='input-" + path + "'][contains(@class,'ant-select')]", "fieldIsList[" + path + "]");
         return asList.isVisible(PROBE_MS);
+    }
+
+    protected void closeListOf(String path) {
+        WebElement select = selectInputOf(path);
+        if (!"true".equals(select.getAttribute("aria-expanded"))) {
+            return;
+        }
+        String listId = select.getAttribute("aria-controls");
+        page.keyboard().press("Escape");
+        Locator list = page.locator("xpath=//div[contains(@class,'ant-select-dropdown')][.//*[@id=\"" + listId + "\"]]");
+        WaitUtil.requireCondition(() -> !"true".equals(select.getAttribute("aria-expanded")) && !list.first().isVisible(),
+                DEFAULT_TIMEOUT_MS, 100, "Waiting for the list of " + path + " to close");
     }
 
     protected void openFieldForWriting(String path) {

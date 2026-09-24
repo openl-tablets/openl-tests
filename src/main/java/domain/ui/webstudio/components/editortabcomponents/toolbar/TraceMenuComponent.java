@@ -4,12 +4,6 @@ import com.microsoft.playwright.Page;
 import configuration.core.ui.WebElement;
 import helpers.utils.WaitUtil;
 
-import java.util.List;
-
-/**
- * The Trace launcher of the table toolbar: the input the rule is traced with, whether the trace is followed
- * step by step, and the buttons that start it. The trace itself opens in a window of its own.
- */
 public class TraceMenuComponent extends TableInputLauncherComponent implements ITraceMenu {
 
     private static final int POPUP_TIMEOUT_MS = 60000;
@@ -40,10 +34,24 @@ public class TraceMenuComponent extends TableInputLauncherComponent implements I
         return this;
     }
 
-    /**
-     * Writes the whole input as the JSON a service takes, which the launcher offers instead of the fields.
-     * The text is typed into the editor, which holds no value of its own to be filled.
-     */
+    @Override
+    public ITraceMenu clickCreateItem() {
+        createFirstUnsetStructure();
+        return this;
+    }
+
+    @Override
+    public ITraceMenu clickAddElementToCollectionBtn(String parameterName) {
+        growStructure(parameterName);
+        return this;
+    }
+
+    @Override
+    public ITraceMenu clickExpandCollection() {
+        expandFirstCollection();
+        return this;
+    }
+
     @Override
     public ITraceMenu selectJSONTrace(String json) {
         jsonModeBtn.waitForVisible(DEFAULT_TIMEOUT_MS);
@@ -68,25 +76,17 @@ public class TraceMenuComponent extends TableInputLauncherComponent implements I
         return clickTraceInsideMenu(true);
     }
 
-    /** Follows the trace step by step, which the launcher does only when it is asked to. */
     @Override
     public ITraceWindow clickTraceInsideMenu(boolean isPopupExpected) {
         requestAdvancedTrace();
         return startTrace(isPopupExpected);
     }
 
-    /** Reads the trace as the rules read: which rule fired, and on what. */
     @Override
     public ITraceWindow clickTraceInsideMenuBusiness() {
         return startTrace(true);
     }
 
-    @Override
-    public List<String> getAliasDropdownValues() {
-        return fieldOptions(firstElementPath());
-    }
-
-    /** The trace is followed step by step only when the launcher is asked for it before it starts. */
     private void requestAdvancedTrace() {
         advancedCheckbox.waitForVisible(DEFAULT_TIMEOUT_MS);
         if (!advancedCheckbox.isChecked()) {
@@ -106,18 +106,5 @@ public class TraceMenuComponent extends TableInputLauncherComponent implements I
         popup.waitForLoadState();
         popup.waitForSelector("xpath=//div[@id='trace-view']", new Page.WaitForSelectorOptions().setTimeout(DEFAULT_TIMEOUT_MS));
         return new TraceWindowComponent(popup);
-    }
-
-    @Override
-    public boolean offersTheFirstElementAsAList() {
-        return isFieldChosenFromList(firstElementPath());
-    }
-
-    private String firstElementPath() {
-        waitForFields();
-        return writablePaths().stream()
-                .filter(path -> path.endsWith("]"))
-                .findFirst()
-                .orElseThrow(() -> new AssertionError("The launcher holds no element of a collection"));
     }
 }
