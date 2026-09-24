@@ -17,15 +17,19 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  LFS_TEST_CLASS: tests.ui.webstudio.git.TestGitLfsGitHubStorage
+  LFS_TEST_CLASSES: >-
+    ["tests.ui.webstudio.git.TestGitLfsDesignRepository",
+    "tests.ui.webstudio.git.TestGitLfsGitHubStorage",
+    "tests.ui.webstudio.git.TestGitLfsGitLabStorage",
+    "tests.ui.webstudio.git.TestGitLfsBitbucketStorage"]
   PLAYWRIGHT_IMAGE: mcr.microsoft.com/playwright:v1.52.0-noble
   PLAYWRIGHT_NPM_PACKAGE: playwright@1.52.0
 
 jobs:
   lfs:
-    name: Git LFS on GitHub
+    name: Git LFS on Gitea, GitHub, GitLab and Bitbucket
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
     permissions:
       contents: write
 
@@ -43,18 +47,24 @@ jobs:
             exit 1
           fi
 
-      - name: Mask the credentials made of the token
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        run: |
-          for user in openl x-access-token; do
-            echo "::add-mask::$(printf '%s:%s' "${user}" "${GITHUB_TOKEN}" | base64 -w0)"
-          done
-
       - name: Checkout tests
         uses: actions/checkout@v4
         with:
           persist-credentials: false
+
+      - name: Check and mask the secrets
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          LFS_GITLAB_TOKEN: ${{ secrets.LFS_GITLAB_TOKEN }}
+          LFS_BITBUCKET_TOKEN: ${{ secrets.LFS_BITBUCKET_TOKEN }}
+          LFS_GITLAB_REPO: ${{ secrets.LFS_GITLAB_REPO }}
+          LFS_BITBUCKET_REPO: ${{ secrets.LFS_BITBUCKET_REPO }}
+        run: |
+          python3 scripts/github-actions/secretforms.py \
+            --basic GITHUB_TOKEN=x-access-token \
+            --basic LFS_GITLAB_TOKEN=openl-lfs-test \
+            --basic LFS_BITBUCKET_TOKEN=x-bitbucket-api-token-auth \
+            --url-env LFS_GITLAB_REPO --url-env LFS_BITBUCKET_REPO
 
       - name: Set up Java
         uses: actions/setup-java@v4
@@ -75,9 +85,13 @@ jobs:
       - name: Compile tests
         run: mvn --batch-mode --quiet test-compile
 
-      - name: Run the LFS test
+      - name: Run the LFS tests
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          LFS_GITLAB_TOKEN: ${{ secrets.LFS_GITLAB_TOKEN }}
+          LFS_BITBUCKET_TOKEN: ${{ secrets.LFS_BITBUCKET_TOKEN }}
+          LFS_GITLAB_REPO: ${{ secrets.LFS_GITLAB_REPO }}
+          LFS_BITBUCKET_REPO: ${{ secrets.LFS_BITBUCKET_REPO }}
           APPLICATION_VERSION: ${{ inputs.application_version }}
         run: |
           STUDIO_IMAGE="ghcr.io/openl-tablets/webstudio:${APPLICATION_VERSION}"
@@ -88,7 +102,7 @@ jobs:
             --run-key "${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-lfs" \
             --sha "${GITHUB_SHA}" \
             --shard lfs \
-            --classes-json "[\"${LFS_TEST_CLASS}\"]" \
+            --classes-json "${LFS_TEST_CLASSES}" \
             --suite-dir generated-testng \
             --report-dir target/queue \
             -- \
@@ -107,6 +121,21 @@ jobs:
           python3 scripts/github-actions/gate-shard-results.py \
             --export-dir target/test-export \
             --queue-file target/queue/lfs.json
+
+      - name: Replace the secrets with their variable names
+        id: redact
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          LFS_GITLAB_TOKEN: ${{ secrets.LFS_GITLAB_TOKEN }}
+          LFS_BITBUCKET_TOKEN: ${{ secrets.LFS_BITBUCKET_TOKEN }}
+          LFS_GITLAB_REPO: ${{ secrets.LFS_GITLAB_REPO }}
+          LFS_BITBUCKET_REPO: ${{ secrets.LFS_BITBUCKET_REPO }}
+        run: |
+          python3 scripts/github-actions/redact-secrets.py \
+            --token-env GITHUB_TOKEN --token-env LFS_GITLAB_TOKEN --token-env LFS_BITBUCKET_TOKEN \
+            --url-env LFS_GITLAB_REPO --url-env LFS_BITBUCKET_REPO \
+            target generated-testng
 
       - name: Build the test report
         id: report
@@ -130,23 +159,28 @@ jobs:
             --java-version 21 \
             --selective true > /dev/null
 
-      - name: Check the artifacts and the report for the token
+      - name: Check the artifacts and the report for the secrets
         id: leaks
         if: always()
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          LFS_GITLAB_TOKEN: ${{ secrets.LFS_GITLAB_TOKEN }}
+          LFS_BITBUCKET_TOKEN: ${{ secrets.LFS_BITBUCKET_TOKEN }}
+          LFS_GITLAB_REPO: ${{ secrets.LFS_GITLAB_REPO }}
+          LFS_BITBUCKET_REPO: ${{ secrets.LFS_BITBUCKET_REPO }}
         run: |
           python3 scripts/github-actions/check-secret-leaks.py \
-            --secret-env GITHUB_TOKEN \
+            --secret-env GITHUB_TOKEN --secret-env LFS_GITLAB_TOKEN --secret-env LFS_BITBUCKET_TOKEN \
+            --url-env LFS_GITLAB_REPO --url-env LFS_BITBUCKET_REPO \
             target generated-testng merged-report report-summary.md
 
       - name: Write the job summary
-        if: always() && steps.leaks.outcome == 'success'
+        if: always() && steps.redact.outcome == 'success' && steps.leaks.outcome == 'success'
         run: |
           if [ -f report-summary.md ]; then cat report-summary.md >> "${GITHUB_STEP_SUMMARY}"; fi
 
       - name: Upload test artifacts
-        if: always() && steps.leaks.outcome == 'success'
+        if: always() && steps.redact.outcome == 'success' && steps.leaks.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: openl-lfs
@@ -161,7 +195,7 @@ jobs:
             generated-testng/**
 
       - name: Upload the test report
-        if: always() && steps.leaks.outcome == 'success' && steps.report.outcome == 'success'
+        if: always() && steps.redact.outcome == 'success' && steps.leaks.outcome == 'success' && steps.report.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: test-report-merged
@@ -170,7 +204,7 @@ jobs:
           path: merged-report/**
 
       - name: Publish the report to GitHub Pages
-        if: always() && steps.leaks.outcome == 'success' && steps.report.outcome == 'success'
+        if: always() && steps.redact.outcome == 'success' && steps.leaks.outcome == 'success' && steps.report.outcome == 'success'
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |

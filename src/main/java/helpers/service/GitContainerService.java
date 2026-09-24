@@ -1,6 +1,7 @@
 package helpers.service;
 
 import configuration.network.NetworkPool;
+import helpers.utils.SecretText;
 import io.restassured.RestAssured;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
@@ -36,7 +37,7 @@ public class GitContainerService {
     private static final String REPO_NAME = "design";
     private static final String FIXTURE_RESOURCE = "/git_daemon_repo";
     private static final String BRANCH = "master";
-    private static final String OWNER = "openl";
+    private static final String DEFAULT_OWNER = "openl";
     private static final String OWNER_PASSWORD = "openl-git-pass";
 
     private static final String IMAGE = "gitea/gitea:1.27.3@sha256:87a67ee09d3ae0d1df5fda5dcda3e2a1f9236a45b0a59025d6e00e46adc43bef";
@@ -49,6 +50,7 @@ public class GitContainerService {
     private final List<String> lfsPatterns = new ArrayList<>();
     private final Map<String, byte[]> replacedFiles = new LinkedHashMap<>();
     private String externalLfsUrl;
+    private String owner = DEFAULT_OWNER;
     private String ownerPassword = OWNER_PASSWORD;
     private GenericContainer<?> container;
 
@@ -73,7 +75,8 @@ public class GitContainerService {
         return this;
     }
 
-    public GitContainerService withOwnerPassword(String password) {
+    public GitContainerService withOwner(String login, String password) {
+        owner = login;
         ownerPassword = password;
         return this;
     }
@@ -115,15 +118,15 @@ public class GitContainerService {
     }
 
     public String getHostUrl() {
-        return hostBaseUrl() + "/" + OWNER + "/" + repoName + ".git";
+        return hostBaseUrl() + "/" + owner + "/" + repoName + ".git";
     }
 
     public String getInNetworkUrl() {
-        return inNetworkBaseUrl() + "/" + OWNER + "/" + repoName + ".git";
+        return inNetworkBaseUrl() + "/" + owner + "/" + repoName + ".git";
     }
 
     public GitRemote asRemote() {
-        return new GitRemote(getHostUrl(), OWNER, ownerPassword);
+        return new GitRemote(getHostUrl(), owner, ownerPassword);
     }
 
     public byte[] readCommittedFile(String path) {
@@ -132,7 +135,7 @@ public class GitContainerService {
 
     public byte[] readLfsContent(String path) {
         if (externalLfsUrl != null) {
-            throw new IllegalStateException("LFS objects of " + repoName + " are stored at " + externalLfsUrl + ", not in Gitea");
+            throw new IllegalStateException("LFS objects of " + repoName + " are stored outside Gitea");
         }
         return readFile("media", path);
     }
@@ -144,14 +147,14 @@ public class GitContainerService {
     }
 
     private void createOwner() {
-        runGitea("create the Gitea user " + OWNER, "admin", "user", "create",
-                "--username", OWNER, "--password=" + OWNER_PASSWORD, "--email", OWNER + "@example.com",
+        runGitea("create the Gitea user " + owner, "admin", "user", "create",
+                "--username", owner, "--password=" + OWNER_PASSWORD, "--email", owner + "@example.com",
                 "--admin", "--must-change-password=false");
     }
 
     private void changeOwnerPassword() {
-        runGitea("change the password of the Gitea user " + OWNER, "admin", "user", "change-password",
-                "--username", OWNER, "--password=" + ownerPassword, "--must-change-password=false");
+        runGitea("change the password of the Gitea user " + owner, "admin", "user", "change-password",
+                "--username", owner, "--password=" + ownerPassword, "--must-change-password=false");
     }
 
     private void runGitea(String action, String... arguments) {
@@ -168,8 +171,8 @@ public class GitContainerService {
             throw new IllegalStateException("Interrupted while trying to " + action, e);
         }
         if (result.getExitCode() != 0) {
-            throw new IllegalStateException("Cannot " + action + ": "
-                    + (result.getStdout() + result.getStderr()).replace(ownerPassword, "***"));
+            throw new IllegalStateException(SecretText.redact("Cannot " + action + ": "
+                    + result.getStdout() + result.getStderr()).replace(ownerPassword, "***"));
         }
     }
 
@@ -188,7 +191,7 @@ public class GitContainerService {
         body.put("message", "Initial commit");
         body.put("files", fixtureFiles());
         Response response = ownerRequest().body(body)
-                .post(hostBaseUrl() + "/api/v1/repos/" + OWNER + "/" + repoName + "/contents");
+                .post(hostBaseUrl() + "/api/v1/repos/" + owner + "/" + repoName + "/contents");
         requireStatus(response, 201, "commit the fixture " + fixtureDir + " to " + repoName);
     }
 
@@ -235,7 +238,7 @@ public class GitContainerService {
 
     private byte[] readFile(String endpoint, String path) {
         Response response = ownerRequest().queryParam("ref", branch)
-                .get(hostBaseUrl() + "/api/v1/repos/" + OWNER + "/" + repoName + "/" + endpoint + "/" + path);
+                .get(hostBaseUrl() + "/api/v1/repos/" + owner + "/" + repoName + "/" + endpoint + "/" + path);
         requireStatus(response, 200, "read " + path + " from " + repoName);
         return response.asByteArray();
     }
@@ -243,13 +246,13 @@ public class GitContainerService {
     private RequestSpecification ownerRequest() {
         return RestAssured.given()
                 .contentType("application/json")
-                .auth().preemptive().basic(OWNER, ownerPassword);
+                .auth().preemptive().basic(owner, ownerPassword);
     }
 
     private static void requireStatus(Response response, int expected, String action) {
         if (response.getStatusCode() != expected) {
-            throw new IllegalStateException("Gitea could not " + action + ": HTTP " + response.getStatusCode()
-                    + " " + response.asString());
+            throw new IllegalStateException(SecretText.redact("Gitea could not " + action + ": HTTP " + response.getStatusCode()
+                    + " " + response.asString()));
         }
     }
 

@@ -1,31 +1,19 @@
 #!/usr/bin/env python3
 import argparse
-import base64
 import gzip
 import io
-import os
 import sys
-import urllib.parse
 import zipfile
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from secretforms import Secret, load  # noqa: E402
 
 MAX_DEPTH = 5
 
 
-def needles(secret: str) -> list[bytes]:
-    raw = secret.encode()
-    found = {raw, urllib.parse.quote(secret, safe="").encode()}
-    for shift in range(3):
-        for encode in (base64.b64encode, base64.urlsafe_b64encode):
-            encoded = encode(b"\0" * shift + raw)
-            start = (shift * 4 + 2) // 3 + 1 if shift else 0
-            found.add(encoded[start:len(encoded) - 4])
-    return [needle for needle in found if len(needle) >= 16]
-
-
-def contains_secret(data: bytes, patterns: list[bytes]) -> bool:
-    joined = data.replace(b"\r", b"").replace(b"\n", b"")
-    return any(pattern in data or pattern in joined for pattern in patterns)
+def contains_secret(data: bytes, secret: Secret) -> bool:
+    return secret.found_in(data) or secret.found_in(data.replace(b"\r", b"").replace(b"\n", b""))
 
 
 def unpacked(name: str, data: bytes) -> list[tuple[str, bytes]]:
@@ -40,28 +28,28 @@ def unpacked(name: str, data: bytes) -> list[tuple[str, bytes]]:
     return []
 
 
-def leaks_in(name: str, data: bytes, patterns: list[bytes], depth: int = 0) -> list[str]:
-    leaked = [name] if contains_secret(data, patterns) else []
+def leaks_in(name: str, data: bytes, secret: Secret, depth: int = 0) -> list[str]:
+    leaked = [name] if contains_secret(data, secret) else []
     if depth < MAX_DEPTH:
         for inner_name, inner in unpacked(name, data):
-            leaked += leaks_in(inner_name, inner, patterns, depth + 1)
+            leaked += leaks_in(inner_name, inner, secret, depth + 1)
     return leaked
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Fail when a secret is found in files about to be uploaded: raw, URL-encoded, inside any base64 "
-                    "(such as Basic credentials), split across lines, or inside zip and gzip archives at any depth. "
-                    "Only file names are printed.")
-    parser.add_argument("--secret-env", required=True, help="Name of the environment variable holding the secret")
+        description="Fail when a secret is found in files about to be uploaded. Tokens are looked for raw, URL-encoded, "
+                    "inside any base64 (such as Basic credentials) and split across lines; repository URLs in every form "
+                    "that names the repository path; both inside zip and gzip archives at any depth. "
+                    "Only variable and file names are printed.")
+    parser.add_argument("--secret-env", action="append", default=[], help="Variable holding a token")
+    parser.add_argument("--url-env", action="append", default=[], help="Variable holding a repository URL")
     parser.add_argument("paths", nargs="+", type=Path)
     args = parser.parse_args()
+    if not args.secret_env and not args.url_env:
+        raise SystemExit("Name at least one --secret-env or --url-env")
 
-    secret = os.environ.get(args.secret_env, "")
-    if len(secret) < 16:
-        raise SystemExit(f"{args.secret_env} is empty or too short to look for")
-    patterns = needles(secret)
-
+    secrets = load(args.secret_env, args.url_env)
     scanned = 0
     leaked: list[str] = []
     for root in args.paths:
@@ -69,11 +57,13 @@ def main() -> None:
             continue
         for path in [root] if root.is_file() else sorted(p for p in root.rglob("*") if p.is_file()):
             scanned += 1
-            leaked += leaks_in(str(path), path.read_bytes(), patterns)
+            data = path.read_bytes()
+            for secret in secrets:
+                leaked += [f"{place} ({secret.name})" for place in leaks_in(str(path), data, secret)]
 
-    print(f"Scanned {scanned} file(s) for {args.secret_env}")
+    print(f"Scanned {scanned} file(s) for {', '.join(secret.name for secret in secrets)}")
     if leaked:
-        print(f"::error::{args.secret_env} found in {len(leaked)} place(s), nothing is uploaded:")
+        print(f"::error::Secrets found in {len(leaked)} place(s), nothing is uploaded:")
         for name in leaked:
             print(f"  {name}")
         sys.exit(1)

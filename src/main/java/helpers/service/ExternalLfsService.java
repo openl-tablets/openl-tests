@@ -1,6 +1,7 @@
 package helpers.service;
 
 import helpers.utils.LfsPointer;
+import helpers.utils.SecretText;
 import io.restassured.RestAssured;
 import io.restassured.config.HttpClientConfig;
 import io.restassured.config.RestAssuredConfig;
@@ -17,28 +18,35 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-public class GitHubLfsService {
+public class ExternalLfsService {
 
-    private static final Logger LOGGER = LogManager.getLogger(GitHubLfsService.class);
+    private static final Logger LOGGER = LogManager.getLogger(ExternalLfsService.class);
 
-    private static final String DEFAULT_REPOSITORY = "openl-tablets/openl-tests";
     private static final String LFS_MEDIA_TYPE = "application/vnd.git-lfs+json";
-    private static final String TOKEN_USER = "x-access-token";
     private static final RestAssuredConfig TIMEOUTS = RestAssuredConfig.config().httpClient(HttpClientConfig.httpClientConfig()
             .setParam("http.connection.timeout", 30_000)
             .setParam("http.socket.timeout", 120_000));
 
-    private final String repository;
+    private final LfsProvider provider;
+    private final String repositoryUrl;
     private final String token;
 
-    public GitHubLfsService() {
-        String fromEnvironment = System.getenv("GITHUB_REPOSITORY");
-        repository = fromEnvironment == null || fromEnvironment.isBlank() ? DEFAULT_REPOSITORY : fromEnvironment;
-        token = resolveToken();
+    public ExternalLfsService(LfsProvider provider) {
+        this.provider = provider;
+        this.repositoryUrl = provider.repositoryUrl();
+        this.token = resolveToken(provider);
+    }
+
+    public LfsProvider provider() {
+        return provider;
     }
 
     public String lfsUrl() {
-        return "https://github.com/" + repository + ".git/info/lfs";
+        return repositoryUrl + "/info/lfs";
+    }
+
+    public String login() {
+        return provider.login();
     }
 
     public String token() {
@@ -51,7 +59,7 @@ public class GitHubLfsService {
         requireNoError(object, "upload", pointer);
         Map<String, Object> upload = object.getMap("actions.upload");
         if (upload == null) {
-            LOGGER.info("GitHub LFS of {} already holds object {}", repository, pointer.oid());
+            LOGGER.info("{} LFS already holds object {}", provider.displayName(), pointer.oid());
             return pointer;
         }
         Response uploaded = RestAssured.given().config(TIMEOUTS)
@@ -75,7 +83,7 @@ public class GitHubLfsService {
                     .post((String) verify.get("href"));
             requireSuccess(verified, "verify object " + pointer.oid());
         }
-        LOGGER.info("Uploaded object {} ({} bytes) to GitHub LFS of {}", pointer.oid(), pointer.size(), repository);
+        LOGGER.info("Uploaded object {} ({} bytes) to {} LFS", pointer.oid(), pointer.size(), provider.displayName());
         return pointer;
     }
 
@@ -84,7 +92,7 @@ public class GitHubLfsService {
         requireNoError(object, "download", pointer);
         Map<String, Object> download = object.getMap("actions.download");
         if (download == null) {
-            throw new IllegalStateException("GitHub LFS of " + repository + " offers no download of " + pointer.oid());
+            throw new IllegalStateException(provider.displayName() + " LFS offers no download of " + pointer.oid());
         }
         Response downloaded = RestAssured.given().config(TIMEOUTS)
                 .urlEncodingEnabled(false)
@@ -112,21 +120,21 @@ public class GitHubLfsService {
     }
 
     private RequestSpecification authorized() {
-        return RestAssured.given().config(TIMEOUTS).auth().preemptive().basic(TOKEN_USER, token);
+        return RestAssured.given().config(TIMEOUTS).auth().preemptive().basic(provider.login(), token);
     }
 
     private void requireNoError(JsonPath object, String operation, LfsPointer pointer) {
         Map<String, Object> error = object.getMap("error");
         if (error != null) {
-            throw new IllegalStateException("GitHub LFS of " + repository + " refused to " + operation + " "
-                    + pointer.oid() + ": " + error);
+            throw new IllegalStateException(SecretText.redact(provider.displayName() + " LFS refused to " + operation + " "
+                    + pointer.oid() + ": " + error));
         }
     }
 
     private void requireSuccess(Response response, String action) {
         if (response.getStatusCode() < 200 || response.getStatusCode() > 299) {
-            throw new IllegalStateException("GitHub LFS of " + repository + " could not " + action + ": HTTP "
-                    + response.getStatusCode() + " " + response.asString());
+            throw new IllegalStateException(SecretText.redact(provider.displayName() + " LFS could not " + action + ": HTTP "
+                    + response.getStatusCode() + " " + response.asString()));
         }
     }
 
@@ -136,11 +144,22 @@ public class GitHubLfsService {
         return headers == null ? Map.of() : (Map<String, String>) headers;
     }
 
-    private static String resolveToken() {
-        String fromEnvironment = System.getenv("GITHUB_TOKEN");
+    private static String resolveToken(LfsProvider provider) {
+        String fromEnvironment = System.getenv(provider.tokenVariable());
         if (fromEnvironment != null && !fromEnvironment.isBlank()) {
-            return fromEnvironment;
+            return fromEnvironment.trim();
         }
+        if (provider == LfsProvider.GITHUB) {
+            String fromGh = ghAuthToken();
+            if (fromGh != null) {
+                return fromGh;
+            }
+            throw new IllegalStateException("GitHub LFS needs a token: set GITHUB_TOKEN or log in with 'gh auth login'");
+        }
+        throw new IllegalStateException(provider.displayName() + " LFS needs a token in " + provider.tokenVariable());
+    }
+
+    private static String ghAuthToken() {
         try {
             Process gh = new ProcessBuilder("gh", "auth", "token")
                     .redirectError(ProcessBuilder.Redirect.DISCARD)
@@ -158,6 +177,6 @@ public class GitHubLfsService {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
-        throw new IllegalStateException("A GitHub token is required: set GITHUB_TOKEN or log in with 'gh auth login'");
+        return null;
     }
 }

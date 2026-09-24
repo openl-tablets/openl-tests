@@ -3,27 +3,25 @@ package tests.ui.webstudio.git;
 import configuration.annotations.AppContainerConfig;
 import configuration.annotations.DedicatedWorkflow;
 import configuration.annotations.Description;
-import configuration.annotations.KnownIssue;
 import configuration.annotations.TestCaseId;
 import configuration.appcontainer.AppContainerStartParameters;
 import helpers.service.LfsProvider;
 import org.testng.annotations.Test;
 
 @DedicatedWorkflow(workflow = GitLfsExternalStorageTest.WORKFLOW,
-        reason = "Stores LFS objects in the GitHub LFS of this repository with the workflow token")
-public final class TestGitLfsGitHubStorage extends GitLfsExternalStorageTest {
+        reason = "Stores LFS objects in the GitLab repository of LFS_GITLAB_REPO with the LFS_GITLAB_TOKEN secret")
+public final class TestGitLfsGitLabStorage extends GitLfsExternalStorageTest {
 
     @Override
     protected LfsProvider provider() {
-        return LfsProvider.GITHUB;
+        return LfsProvider.GITLAB;
     }
 
     @Test
-    @KnownIssue("EPBDS-16711")
     @TestCaseId("EPBDS-11591")
-    @Description("Git LFS on GitHub - Studio opens a module whose LFS object is on GitHub and saves an edit of it back to GitHub LFS")
+    @Description("Git LFS on GitLab - Studio opens a module whose LFS object is on GitLab and saves an edit of it back to GitLab LFS")
     @AppContainerConfig(startParams = AppContainerStartParameters.STUDIO_GIT)
-    public void testGitLfsGitHubStorage() {
+    public void testGitLfsGitLabStorage() {
         verifyStudioKeepsModuleInExternalLfs();
     }
 }

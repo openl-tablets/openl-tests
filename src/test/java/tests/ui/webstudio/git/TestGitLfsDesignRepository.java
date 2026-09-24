@@ -1,6 +1,7 @@
 package tests.ui.webstudio.git;
 
 import configuration.annotations.AppContainerConfig;
+import configuration.annotations.DedicatedWorkflow;
 import configuration.annotations.Description;
 import configuration.annotations.TestCaseId;
 import configuration.appcontainer.AppContainerStartParameters;
@@ -26,6 +27,8 @@ import java.util.Map;
 import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.DECISION;
 import static org.assertj.core.api.Assertions.assertThat;
 
+@DedicatedWorkflow(workflow = GitLfsExternalStorageTest.WORKFLOW,
+        reason = "Git LFS tests run together in the LFS workflow")
 public class TestGitLfsDesignRepository extends BaseTest {
 
     private static final String GIT_CONTAINER_ALIAS = "git-container-lfs";
