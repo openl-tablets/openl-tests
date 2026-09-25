@@ -14,7 +14,6 @@ import helpers.service.GitContainerService;
 import helpers.service.GitRemote;
 import helpers.service.LoginService;
 import helpers.service.UserService;
-import helpers.utils.WaitUtil;
 import org.testng.annotations.Test;
 import tests.BaseTest;
 
@@ -94,15 +93,10 @@ public class TestProjectDiscoveryByExcelFiles extends BaseTest {
         systemSettings.setDetectProjectsByExcelFiles(true);
         systemSettings.applySettingsAndRelogin(User.ADMIN);
 
-        RepositoryPage repositoryAfterRestart = new RepositoryPage();
-        WaitUtil.waitForCondition(
-                () -> repositoryAfterRestart.openProjectsList()
-                        .getAllVisibleProjectsInTable()
-                        .contains(EXCEL_ONLY_PROJECT),
-                60000, 2000,
-                "Waiting for the design repository to be re-read after the setting was applied");
+        RepositoryPage projectsAfterSettingApplied = new RepositoryPage()
+                .waitUntilProjectListed(EXCEL_ONLY_PROJECT);
 
-        assertThat(repositoryAfterRestart.getAllVisibleProjectsInTable())
+        assertThat(projectsAfterSettingApplied.getAllVisibleProjectsInTable())
                 .as("Once the setting is on, Excel-only folders become projects and the project nested below one of them is no longer reached")
                 .containsExactlyInAnyOrderElementsOf(DISCOVERED_WITH_EXCEL_FILES);
     }

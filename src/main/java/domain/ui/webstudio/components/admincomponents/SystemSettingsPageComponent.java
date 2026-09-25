@@ -19,11 +19,9 @@ public class SystemSettingsPageComponent extends BaseComponent {
     private WebElement applyButton;
     private WebElement errorMessage;
 
-    // Date/Time Format fields
     private WebElement dateFormatField;
     private WebElement timeFormatField;
 
-    // Database Configuration fields
     private WebElement databaseUrlField;
     private WebElement databaseUserField;
     private WebElement databasePasswordField;
@@ -50,11 +48,9 @@ public class SystemSettingsPageComponent extends BaseComponent {
         applyButton = createScopedElement("xpath=.//button[./span[text()='Apply Changes'] or ./span[text()='Apply']]", "applyButton");
         errorMessage = createScopedElement("xpath=.//div[contains(@class, 'ant-form-item-explain-error')]", "errorMessage");
 
-        // Date/Time Format fields
         dateFormatField = createScopedElement("xpath=.//input[@id='datePattern']", "dateFormatField");
         timeFormatField = createScopedElement("xpath=.//input[@id='timeFormat']", "timeFormatField");
 
-        // Database Configuration fields
         databaseUrlField = createScopedElement("xpath=.//input[@id='db_url']", "databaseUrlField");
         databaseUserField = createScopedElement("xpath=.//input[@id='db_user']", "databaseUserField");
         databasePasswordField = createScopedElement("xpath=.//input[@id='db_password']", "databasePasswordField");
@@ -87,7 +83,6 @@ public class SystemSettingsPageComponent extends BaseComponent {
         new LoginPage().login(UserService.getUser(user));
     }
 
-    // Date/Time Format methods
     public void setDateFormat(String format) {
         dateFormatField.fill(format);
     }
@@ -104,7 +99,6 @@ public class SystemSettingsPageComponent extends BaseComponent {
         return timeFormatField.getAttribute("value");
     }
 
-    // Database Configuration methods
     public String getDatabaseUrl() {
         return databaseUrlField.getAttribute("value");
     }
