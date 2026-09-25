@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>OpenL LFS Tests [latest]</title>
+<style>
+:root{--bg:#f3f5f9;--surface:#ffffff;--surface-2:#f8fafc;--line:#e3e8ef;--line-strong:#d0d7e2;--text:#0f172a;--muted:#64748b;--accent:#2563eb;--accent-soft:#e8f0fe;--shadow:0 1px 2px rgba(15,23,42,.06),0 1px 3px rgba(15,23,42,.04);--radius:14px;--mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.5;color:var(--text);background:var(--bg);-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
+.page{max-width:1440px;margin:0 auto;padding:32px 28px 64px}
+header.top{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:20px}
+h1{margin:0;font-size:26px;font-weight:700;letter-spacing:-.02em}
+.meta{display:flex;flex-wrap:wrap;gap:8px;align-items:center;color:var(--muted);font-size:13px}
+.meta .chip{background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px 10px;color:var(--text)}
+.cards{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;margin:0 0 20px}
+.card{position:relative;overflow:hidden;min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 14px 14px 18px;box-shadow:var(--shadow);color:var(--muted);font-size:clamp(10px,.85vw,12px);font-weight:600;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap;text-overflow:ellipsis}
+.card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--card-color,var(--line-strong))}
+.card b{display:block;margin-top:4px;font-size:clamp(20px,2vw,28px);line-height:1.1;font-weight:700;letter-spacing:-.02em;color:var(--card-color,var(--text))}
+.controls{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:0 0 14px;padding:12px 14px;background:rgba(255,255,255,.88);backdrop-filter:blur(8px);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.controls label{display:inline-flex;align-items:center;gap:8px;color:var(--muted);font-size:13px}
+.controls select,.controls input{height:36px;padding:0 12px;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface);color:var(--text);font:inherit;font-size:13px}
+.controls input{flex:1 1 260px;min-width:200px}
+.controls select:focus,.controls input:focus{outline:2px solid var(--accent-soft);border-color:var(--accent)}
+.controls button{height:36px;padding:0 14px;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface);color:var(--text);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.controls button:hover{border-color:var(--accent);color:var(--accent)}
+.table-wrap{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow-x:auto}
+.table-wrap table.tests{min-width:760px}
+table.tests{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0}
+table.tests col.c-status{width:19%} table.tests col.c-group{width:10%} table.tests col.c-duration{width:88px} table.tests col.c-artifacts{width:13%} table.tests col.c-details{width:112px}
+table.tests>thead th{padding:12px 14px;text-align:left;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:var(--surface-2);border-bottom:1px solid var(--line)}
+table.tests>tbody>tr>td{padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:top;overflow-wrap:anywhere;min-width:0}
+tr.row:hover td{background:var(--surface-2)}
+.badge{display:inline-flex;flex-wrap:wrap;align-items:center;gap:4px 7px;font-weight:600;padding:3px 10px 3px 8px;border-radius:999px;font-size:12px;line-height:1.4}
+.badge::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor;flex:none}
+.badge a{color:inherit;text-decoration:underline;text-decoration-color:rgba(0,0,0,.25)}
+strong{font-weight:600}
+small,.hint,figcaption{color:var(--muted);font-size:12px}
+small.err{display:inline-block;margin-top:2px;color:#b42318;font-family:var(--mono);font-size:11px;overflow-wrap:anywhere}
+.artifacts small{display:inline-block;margin:0 6px 4px 0;padding:1px 8px;border:1px solid var(--line);border-radius:999px;background:var(--surface-2);color:var(--muted);font-size:11px}
+button.toggle{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px 0 12px;border:1px solid var(--line-strong);border-radius:999px;background:var(--surface);color:var(--text);font:inherit;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
+button.toggle::after{content:"";width:6px;height:6px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg) translateY(-1px);transition:transform .15s ease}
+button.toggle:hover{border-color:var(--accent);color:var(--accent)}
+button.toggle.open{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)} button.toggle.open::after{transform:rotate(-135deg) translateY(-1px)}
+table.tests>tbody>tr.details-row>td{padding:16px 18px 20px;background:var(--surface-2)}
+.tabs{display:inline-flex;flex-wrap:wrap;gap:2px;margin-bottom:12px;padding:4px;background:#e9edf3;border-radius:12px}
+.tab{padding:6px 14px;border:0;border-radius:9px;background:transparent;color:#475569;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.tab:hover{color:var(--text)} .tab.active{background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
+.run{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px 18px;margin:0 0 20px;box-shadow:var(--shadow)}
+.run table.kv th{width:210px}
+table.kv{border-collapse:collapse;width:100%} table.kv th{width:180px;text-align:left;padding:6px 16px 6px 0;color:var(--muted);font-weight:500;vertical-align:top;font-size:13px} table.kv td{padding:6px 0;border-bottom:1px solid var(--line)} table.kv tr:last-child td{border-bottom:0}
+pre{margin:0;white-space:pre-wrap;word-break:break-word;background:var(--surface-2);border:1px solid var(--line);padding:12px 14px;border-radius:10px;max-height:520px;overflow:auto;font-family:var(--mono);font-size:12px;line-height:1.5}
+pre.error{background:#fff1f0;border-color:#fecdca;color:#912018} pre.log{background:#0b1220;border-color:#1e293b;color:#dbe4f0} pre.small{max-height:200px}
+.error-type{margin:0 0 8px;font-weight:600;color:#b42318;font-family:var(--mono);font-size:12px}
+details summary{cursor:pointer;margin:12px 0 8px;font-weight:600;color:var(--muted)}
+.hint{margin:0 0 10px}
+.attachments{display:flex;flex-wrap:wrap;gap:16px} figure{margin:0;max-width:420px} figure img,figure video{display:block;max-width:420px;border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow)} figcaption{margin-top:6px}
+.button{display:inline-flex;align-items:center;height:36px;padding:0 16px;background:var(--accent);color:#fff;border-radius:10px;font-weight:600;text-decoration:none;box-shadow:var(--shadow)} .button:hover{text-decoration:none;filter:brightness(1.05)}
+code{padding:1px 6px;border-radius:6px;background:#eef2f6;font-family:var(--mono);font-size:12px}
+@media (max-width:900px){.page{padding:20px 14px 48px} h1{font-size:22px} .controls{position:static} .cards{gap:8px} .card{padding:10px 10px 10px 14px}}
+</style></head><body>
+<div class="page">
+<header class="top"><h1>OpenL LFS Tests [latest]</h1>
+<div class="meta"><span class="chip">Build latest</span><span class="chip">1 tests</span><span class="chip">31 s of test time</span><a href="https://github.com/openl-tablets/openl-tests/actions/runs/35861482435">workflow run</a> · <a href="debug/index.json">debug/index.json</a> · <a href="debug/README.md">how to debug with an AI assistant</a></div></header>
+<section class='run'><table class='kv'><tr><th>Run</th><td>2026-09-23 12:37:40 UTC → 2026-09-23 12:38:12 UTC · 31 s wall time · selective run</td></tr><tr><th>Image <code>ghcr.io/openl-tablets/webstudio:latest</code></th><td>OpenL Studio 6.5.0-SNAPSHOT, build 64996dd34fff, built 2026-09-22</td></tr><tr><th>Tests</th><td>main @ <a href='https://github.com/openl-tablets/openl-tests/commit/0acc573bac53b72fa4a203c886aca7a4d8dcf8a7' target='_blank'>0acc573bac53</a></td></tr><tr><th>Stack</th><td>Playwright 1.52.0 · Java 21</td></tr></table></section>
+<div class="cards"><div class="card" style="--card-color:#15803d">Passed<b>0</b></div><div class="card" style="--card-color:#dc2626">Failed<b>0</b></div><div class="card" style="--card-color:#ca8a04">Skipped<b>0</b></div><div class="card" style="--card-color:#ea580c">Known issues<b>1</b></div><div class="card" style="--card-color:#2563eb">Fixed?<b>0</b></div><div class="card">Shards<b>1</b></div></div>
+<div class="controls"><label>Status <select id="status"><option value="">all</option><option value="failed">failed</option><option value="skipped">skipped</option><option value="known">known issue</option><option value="fixed">fixed?</option><option value="passed">passed</option></select></label>
+<label>Group <select id="suite"><option value="">all</option><option value='git'>git</option></select></label><input id="search" placeholder="filter by class, test name or error" size="40"><button id="expand-failed">expand all failed</button></div>
+<div class="table-wrap"><table class="tests"><colgroup><col class="c-status"><col class="c-group"><col class="c-test"><col class="c-duration"><col class="c-artifacts"><col class="c-details"></colgroup><thead><tr><th>Status</th><th>Group / shard</th><th>Test</th><th>Duration</th><th>Artifacts</th><th></th></tr></thead><tbody><tr class='row known' data-status='known' data-suite='git' data-error='[Studio should save the project with its module uploaded to GitHub LFS; Studio log says:
+LFS transfer to https://github-cloud.s3.amazonaws.com/alambic/media/1218351757/22/a2/22a2a5939fa3fa73f9513c8f6db67c7047c7ba617effe530862f9b77dac7de97 failed with rc=501] 
+Expecting empty but was: [&quot;Failed to save projectFailed to update project status.&quot;]'><td><span class='badge' style='color:#bc4c00;background:#fff1e5'>KNOWN ISSUE · <a href='https://jira.eisgroup.com/browse/EPBDS-16711' target='_blank'>EPBDS-16711</a></span></td><td>git<br><small>lfs</small></td><td><strong>TestGitLfsGitHubStorage</strong><br>testGitLfsGitHubStorage<br><small>EPBDS-11591</small><br><small class='err'>[Studio should save the project with its module uploaded to GitHub LFS; Studio log says:</small></td><td>31 s</td><td class='artifacts'><small>steps</small><small>trace</small><small>app log</small><small>screenshot</small></td><td><button class='toggle' data-target='d0'>details</button></td></tr><tr class='details-row known' id='d0' hidden><td colspan='6'><div class='tabs'><button class='tab active' data-tab='t0-0'>Overview</button><button class='tab' data-tab='t0-1'>Failure</button><button class='tab' data-tab='t0-2'>Steps (370)</button><button class='tab' data-tab='t0-3'>Application log</button><button class='tab' data-tab='t0-4'>Trace</button><button class='tab' data-tab='t0-5'>Media</button></div><div class='panel' id='t0-0'><table class='kv'><tr><th>Group / shard</th><td>git / lfs</td></tr><tr><th>Class</th><td><code>tests.ui.webstudio.git.TestGitLfsGitHubStorage</code> · <a href='https://github.com/openl-tablets/openl-tests/blob/0acc573bac53b72fa4a203c886aca7a4d8dcf8a7/src/test/java/tests/ui/webstudio/git/TestGitLfsGitHubStorage.java' target='_blank'>source</a></td></tr><tr><th>Method</th><td><code>testGitLfsGitHubStorage</code></td></tr><tr><th>Test case</th><td>EPBDS-11591</td></tr><tr><th>Known issue</th><td><a href='https://jira.eisgroup.com/browse/EPBDS-16711' target='_blank'>EPBDS-16711</a> — the test still fails as expected</td></tr><tr><th>Description</th><td>Git LFS on GitHub - Studio opens a module whose LFS object is on GitHub and saves an edit of it back to GitHub LFS</td></tr><tr><th>Started / finished</th><td>2026-09-23T12:37:40.960Z → 2026-09-23T12:38:12.411Z (31 s)</td></tr><tr><th>Application build</th><td>latest</td></tr><tr><th>Tests revision</th><td>main @ 0acc573bac53</td></tr><tr><th>Execution info</th><td><pre class='small'>Execution Mode: PLAYWRIGHT_DOCKER
+
+Execution Mode: PLAYWRIGHT_DOCKER
+Playwright Docker Architecture:
+  Network: c6eac99442019a5f2e7f1fb64d2991ab04329495cbb8e0d11b56f28731061878
+  Playwright Container: ec9c9426dad324f6390777c6ed6d93963f15290b87bc7e64dbf31dc2a6352b0c
+  Browser: chromium
+  Current Page: http://appcontainer-471264:8080/projects/ZGVzaWduOkVtcHR5IFByb2plY3Q6NTNkMjg2YjAwZTg2Y2FiYWI5MDRiNTkxMWJkOTg3YWQ3ZjhkN2IxZDJlMDBlOGZmZTQyNzk2ZTI3NTkzMDY0Nw==/modules/Main?table=97b66543b0dc5deda71500fc8a8d7d9f
+  App Container: 25608731b1ab0bf6114b8b5a46d1cdd4fb1888d41dac96ba481fd861a51001bb
+  Container Network URL: http:///angry_pike:8080
+Configuration:
+Host Resource Path: src/test/resources</pre></td></tr><tr><th>AI debug bundle</th><td><a href='debug/index.json' target='_blank'>debug/index.json</a> lists the bundle file of this test — everything below in one JSON file, see <a href='debug/README.md' target='_blank'>debug/README.md</a></td></tr></table></div><div class='panel' id='t0-1' hidden><p class='error-type'>java.lang.AssertionError</p><pre class='error'>[Studio should save the project with its module uploaded to GitHub LFS; Studio log says:
+LFS transfer to https://github-cloud.s3.amazonaws.com/alambic/media/1218351757/22/a2/22a2a5939fa3fa73f9513c8f6db67c7047c7ba617effe530862f9b77dac7de97 failed with rc=501] 
+Expecting empty but was: [&quot;Failed to save projectFailed to update project status.&quot;]</pre><details open><summary>Stack trace</summary><pre>java.lang.AssertionError: [Studio should save the project with its module uploaded to GitHub LFS; Studio log says:
+LFS transfer to https://github-cloud.s3.amazonaws.com/alambic/media/1218351757/22/a2/22a2a5939fa3fa73f9513c8f6db67c7047c7ba617effe530862f9b77dac7de97 failed with rc=501] 
+Expecting empty but was: [&quot;Failed to save projectFailed to update project status.&quot;]
+	at tests.ui.webstudio.git.TestGitLfsGitHubStorage.testGitLfsGitHubStorage(TestGitLfsGitHubStorage.java:146)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.testng.internal.invokers.MethodInvocationHelper.invokeMethod(MethodInvocationHelper.java:141)
+	at org.testng.internal.invokers.TestInvoker.invokeMethod(TestInvoker.java:687)
+	at org.testng.internal.invokers.TestInvoker.invokeTestMethod(TestInvoker.java:230)
+	at org.testng.internal.invokers.MethodRunner.runInSequence(MethodRunner.java:63)
+	at org.testng.internal.invokers.TestInvoker$MethodInvocationAgent.invoke(TestInvoker.java:995)
+	at org.testng.internal.invokers.TestInvoker.invokeTestMethods(TestInvoker.java:203)
+	at org.testng.internal.invokers.TestMethodWorker.invokeTestMethods(TestMethodWorker.java:154)
+	at org.testng.internal.invokers.TestMethodWorker.run(TestMethodWorker.java:134)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.testng.TestRunner.privateRun(TestRunner.java:741)
+	at org.testng.TestRunner.run(TestRunner.java:616)
+	at org.testng.SuiteRunner.runTest(SuiteRunner.java:421)
+	at org.testng.SuiteRunner.runSequentially(SuiteRunner.java:413)
+	at org.testng.SuiteRunner.privateRun(SuiteRunner.java:373)
+	at org.testng.SuiteRunner.run(SuiteRunner.java:312)
+	at org.testng.SuiteRunnerWorker.runSuite(SuiteRunnerWorker.java:52)
+	at org.testng.SuiteRunnerWorker.run(SuiteRunnerWorker.java:95)
+	at org.testng.TestNG.runSuitesSequentially(TestNG.java:1274)
+	at org.testng.TestNG.runSuitesLocally(TestNG.java:1208)
+	at org.testng.TestNG.runSuites(TestNG.java:1112)
+	at org.testng.TestNG.run(TestNG.java:1079)
+	at org.apache.maven.surefire.testng.TestNGExecutor.run(TestNGExecutor.java:308)
+	at org.apache.maven.surefire.testng.TestNGXmlTestSuite.execute(TestNGXmlTestSuite.java:71)
+	at org.apache.maven.surefire.testng.TestNGProvider.invoke(TestNGProvider.java:113)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+</pre></details></div><div class='panel' id='t0-2' hidden><p class='hint'>Framework log of this test: container start, every page action, waits, REST calls and assertions. Showing the last 250 of 370 lines · <a href='attachments/lfs/tests.ui.webstudio.git.TestGitLfsGitHubStorage/testGitLfsGitHubStorage/test-steps.log' target='_blank'>full log</a></p><pre class='log'>2026-09-23 12:37:52.390 [main] [INFO] WebElement - Waiting for projectCrumb to be visible (timeout: 1000ms)
+2026-09-23 12:37:53.395 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 500ms): Going to &#x27;Projects&#x27;
+2026-09-23 12:37:53.395 [main] [INFO] WebElement - Waiting for projectsList to be visible (timeout: 1500ms)
+2026-09-23 12:37:53.401 [main] [INFO] WaitUtil - Condition met after 6ms: Going to &#x27;Projects&#x27;
+2026-09-23 12:37:53.401 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-09-23 12:37:53.407 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-23 12:37:53.409 [main] [INFO] WaitUtil - Condition met after 2ms: Waiting for the loading overlay to disappear
+2026-09-23 12:37:53.409 [main] [INFO] CorePage - domain.ui.webstudio.pages.mainpages.RepositoryPage was opened.
+2026-09-23 12:37:53.409 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 250ms): Waiting for the list of projects to be drawn
+2026-09-23 12:37:53.411 [main] [INFO] WaitUtil - Condition met after 1ms: Waiting for the list of projects to be drawn
+2026-09-23 12:37:53.412 [main] [INFO] WebElement - Waiting for projectNameInRow to be visible (timeout: 90000ms)
+2026-09-23 12:37:53.417 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-23 12:37:53.419 [main] [INFO] WaitUtil - Condition met after 2ms: Waiting for the loading overlay to disappear
+2026-09-23 12:37:53.419 [main] [INFO] WebElement - Waiting for projectNameInRow to be visible (timeout: 250ms)
+2026-09-23 12:37:53.425 [main] [INFO] WebElement - Clicking projectNameInRow 
+2026-09-23 12:37:53.490 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 250ms): Waiting for the card of project &#x27;Empty Project&#x27; to open
+2026-09-23 12:37:53.491 [main] [INFO] WebElement - Waiting for projectDetail to be visible (timeout: 1000ms)
+2026-09-23 12:37:54.126 [main] [INFO] WebElement - Waiting for projectCardName to be visible (timeout: 1000ms)
+2026-09-23 12:37:54.142 [main] [INFO] WebElement - Waiting for projectCardName to be visible (timeout: 250ms)
+2026-09-23 12:37:54.197 [main] [INFO] WebElement - Getting text from projectCardName: &#x27;Empty Project&#x27;
+2026-09-23 12:37:54.198 [main] [INFO] WaitUtil - Condition met after 708ms: Waiting for the card of project &#x27;Empty Project&#x27; to open
+2026-09-23 12:37:54.198 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-09-23 12:37:54.389 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-23 12:37:54.395 [main] [INFO] WaitUtil - Condition met after 4ms: Waiting for the loading overlay to disappear
+2026-09-23 12:37:54.424 [main] [INFO] WebElement - Waiting for moduleOpenLinks_0 to be visible (timeout: 1000ms)
+2026-09-23 12:37:54.437 [main] [INFO] WebElement - Waiting for moduleOpenLink to be visible (timeout: 20000ms)
+2026-09-23 12:37:54.451 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-23 12:37:54.457 [main] [INFO] WaitUtil - Condition met after 6ms: Waiting for the loading overlay to disappear
+2026-09-23 12:37:54.457 [main] [INFO] WebElement - Waiting for moduleOpenLink to be visible (timeout: 250ms)
+2026-09-23 12:37:54.468 [main] [INFO] WebElement - Clicking moduleOpenLink 
+2026-09-23 12:37:54.546 [main] [INFO] WebElement - Waiting for moduleWorkspace to be visible (timeout: 20000ms)
+2026-09-23 12:37:54.818 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 250ms): Waiting for the module to finish compiling
+2026-09-23 12:37:54.818 [main] [INFO] WebElement - Waiting for moduleCompiling to be visible (timeout: 250ms)
+2026-09-23 12:37:54.835 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the module to finish compiling
+2026-09-23 12:37:55.086 [main] [INFO] WebElement - Waiting for moduleCompiling to be visible (timeout: 250ms)
+2026-09-23 12:37:55.105 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the module to finish compiling
+2026-09-23 12:37:55.356 [main] [INFO] WebElement - Waiting for moduleCompiling to be visible (timeout: 250ms)
+2026-09-23 12:37:55.371 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the module to finish compiling
+2026-09-23 12:37:55.622 [main] [INFO] WebElement - Waiting for moduleCompiling to be visible (timeout: 250ms)
+2026-09-23 12:37:55.637 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the module to finish compiling
+2026-09-23 12:37:55.889 [main] [INFO] WebElement - Waiting for moduleCompiling to be visible (timeout: 250ms)
+2026-09-23 12:37:56.366 [main] [INFO] WaitUtil - Condition met after 1548ms: Waiting for the module to finish compiling
+2026-09-23 12:37:56.367 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 250ms): Waiting for the module tables tree to be drawn
+2026-09-23 12:37:56.367 [main] [INFO] WebElement - Waiting for moduleTablesTree to be visible (timeout: 250ms)
+2026-09-23 12:37:56.408 [main] [INFO] WaitUtil - Condition met after 41ms: Waiting for the module tables tree to be drawn
+2026-09-23 12:37:56.409 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-09-23 12:37:56.446 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-23 12:37:56.514 [main] [INFO] WaitUtil - Condition met after 68ms: Waiting for the loading overlay to disappear
+2026-09-23 12:37:56.515 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-09-23 12:37:56.561 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-23 12:37:56.585 [main] [INFO] WaitUtil - Condition met after 23ms: Waiting for the loading overlay to disappear
+2026-09-23 12:37:56.589 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 200ms): Applying the &#x27;Type&#x27; view to the tables tree
+2026-09-23 12:37:56.590 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-09-23 12:37:56.617 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-23 12:37:56.621 [main] [INFO] WaitUtil - Condition met after 3ms: Waiting for the loading overlay to disappear
+2026-09-23 12:37:56.621 [main] [INFO] WebElement - Waiting for viewSelectValue to be visible (timeout: 250ms)
+2026-09-23 12:37:56.767 [main] [INFO] WebElement - Getting text from viewSelectValue: &#x27;Excel Sheet&#x27;
+2026-09-23 12:37:56.768 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-23 12:37:56.777 [main] [INFO] WaitUtil - Condition met after 9ms: Waiting for the loading overlay to disappear
+2026-09-23 12:37:56.777 [main] [INFO] WebElement - Waiting for viewSelect to be visible (timeout: 250ms)
+2026-09-23 12:37:56.892 [main] [INFO] WebElement - Clicking viewSelect 
+2026-09-23 12:37:56.941 [main] [INFO] WebElement - Waiting for viewOption to be visible (timeout: 1000ms)
+2026-09-23 12:37:56.959 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-23 12:37:56.964 [main] [INFO] WaitUtil - Condition met after 5ms: Waiting for the loading overlay to disappear
+2026-09-23 12:37:56.965 [main] [INFO] WebElement - Waiting for viewOption to be visible (timeout: 250ms)
+2026-09-23 12:37:57.008 [main] [INFO] WebElement - Clicking viewOption 
+2026-09-23 12:37:57.302 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-09-23 12:37:57.317 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-23 12:37:57.320 [main] [INFO] WaitUtil - Condition met after 3ms: Waiting for the loading overlay to disappear
+2026-09-23 12:37:57.321 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-09-23 12:37:57.343 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-23 12:37:57.351 [main] [INFO] WaitUtil - Condition met after 7ms: Waiting for the loading overlay to disappear
+2026-09-23 12:37:57.351 [main] [INFO] WebElement - Waiting for viewSelectValue to be visible (timeout: 250ms)
+2026-09-23 12:37:57.386 [main] [INFO] WebElement - Getting text from viewSelectValue: &#x27;Type&#x27;
+2026-09-23 12:37:57.387 [main] [INFO] WaitUtil - Condition met after 797ms: Applying the &#x27;Type&#x27; view to the tables tree
+2026-09-23 12:37:57.387 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-09-23 12:37:57.401 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-23 12:37:57.411 [main] [INFO] WaitUtil - Condition met after 10ms: Waiting for the loading overlay to disappear
+2026-09-23 12:37:57.416 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 200ms): Expanding folder &#x27;Decision&#x27; in the tables tree
+2026-09-23 12:37:57.416 [main] [INFO] WaitUtil - Waiting for condition (timeout: 90000ms, polling: 200ms): Waiting for the module tables tree to be drawn
+2026-09-23 12:37:57.417 [main] [INFO] WebElement - Waiting for tablesTree to be visible (timeout: 200ms)
+2026-09-23 12:37:57.425 [main] [INFO] WaitUtil - Condition met after 8ms: Waiting for the module tables tree to be drawn
+2026-09-23 12:37:57.635 [main] [INFO] WaitUtil - Condition met after 219ms: Expanding folder &#x27;Decision&#x27; in the tables tree
+2026-09-23 12:37:57.635 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-09-23 12:37:57.644 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-23 12:37:57.648 [main] [INFO] WaitUtil - Condition met after 4ms: Waiting for the loading overlay to disappear
+2026-09-23 12:37:57.649 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-09-23 12:37:57.656 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-23 12:37:57.658 [main] [INFO] WaitUtil - Condition met after 2ms: Waiting for the loading overlay to disappear
+2026-09-23 12:37:57.660 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 200ms): Expanding folder &#x27;Decision&#x27; in the tables tree
+2026-09-23 12:37:57.660 [main] [INFO] WaitUtil - Waiting for condition (timeout: 90000ms, polling: 200ms): Waiting for the module tables tree to be drawn
+2026-09-23 12:37:57.660 [main] [INFO] WebElement - Waiting for tablesTree to be visible (timeout: 200ms)
+2026-09-23 12:37:57.666 [main] [INFO] WaitUtil - Condition met after 6ms: Waiting for the module tables tree to be drawn
+2026-09-23 12:37:57.854 [main] [INFO] WaitUtil - Condition met after 194ms: Expanding folder &#x27;Decision&#x27; in the tables tree
+2026-09-23 12:37:57.855 [main] [INFO] WaitUtil - Waiting for result (timeout: 20000ms, polling: 200ms): Searching for &#x27;Hello&#x27; in folder &#x27;Decision&#x27;
+2026-09-23 12:37:57.855 [main] [INFO] WaitUtil - Waiting for condition (timeout: 90000ms, polling: 200ms): Waiting for the module tables tree to be drawn
+2026-09-23 12:37:57.855 [main] [INFO] WebElement - Waiting for tablesTree to be visible (timeout: 200ms)
+2026-09-23 12:37:57.864 [main] [INFO] WaitUtil - Condition met after 9ms: Waiting for the module tables tree to be drawn
+2026-09-23 12:37:58.053 [main] [INFO] WaitUtil - Result found after 198ms: Searching for &#x27;Hello&#x27; in folder &#x27;Decision&#x27;
+2026-09-23 12:37:58.055 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 200ms): Selecting &#x27;Hello&#x27; in the tables tree
+2026-09-23 12:37:58.055 [main] [INFO] WaitUtil - Waiting for condition (timeout: 90000ms, polling: 200ms): Waiting for the module tables tree to be drawn
+2026-09-23 12:37:58.055 [main] [INFO] WebElement - Waiting for tablesTree to be visible (timeout: 200ms)
+2026-09-23 12:37:58.062 [main] [INFO] WaitUtil - Condition met after 7ms: Waiting for the module tables tree to be drawn
+2026-09-23 12:37:58.257 [main] [INFO] WebElement - Waiting for treeNode[_r_2j_-97b66543b0dc5deda71500fc8a8d7d9f] &gt; xpath=./span[contains(@class,&#x27;ant-tree-node-content-wrapper&#x27;)] to be visible (timeout: 1000ms)
+2026-09-23 12:37:58.274 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-23 12:37:58.276 [main] [INFO] WaitUtil - Condition met after 2ms: Waiting for the loading overlay to disappear
+2026-09-23 12:37:58.276 [main] [INFO] WebElement - Waiting for treeNode[_r_2j_-97b66543b0dc5deda71500fc8a8d7d9f] &gt; xpath=./span[contains(@class,&#x27;ant-tree-node-content-wrapper&#x27;)] to be visible (timeout: 3000ms)
+2026-09-23 12:37:58.282 [main] [INFO] WebElement - Clicking with increased timeout treeNode[_r_2j_-97b66543b0dc5deda71500fc8a8d7d9f] &gt; xpath=./span[contains(@class,&#x27;ant-tree-node-content-wrapper&#x27;)] 
+2026-09-23 12:37:58.382 [main] [INFO] WaitUtil - Condition met after 327ms: Selecting &#x27;Hello&#x27; in the tables tree
+2026-09-23 12:37:58.441 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-09-23 12:37:58.502 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-23 12:37:58.514 [main] [INFO] WaitUtil - Condition met after 12ms: Waiting for the loading overlay to disappear
+2026-09-23 12:37:58.515 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-09-23 12:37:58.538 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-23 12:37:58.541 [main] [INFO] WaitUtil - Condition met after 3ms: Waiting for the loading overlay to disappear
+2026-09-23 12:37:58.542 [main] [INFO] WaitUtil - Waiting for condition (timeout: 5000ms, polling: 250ms): Waiting for center table to become visible
+2026-09-23 12:37:58.542 [main] [INFO] WebElement - Waiting for centerTable to be visible (timeout: 250ms)
+2026-09-23 12:37:58.560 [main] [INFO] WaitUtil - Condition met after 18ms: Waiting for center table to become visible
+2026-09-23 12:37:58.560 [main] [INFO] WaitUtil - Sleeping for 500ms: Waiting for center table to fully load
+2026-09-23 12:37:59.063 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 100ms): Waiting for cell [6,4] to be drawn
+2026-09-23 12:37:59.071 [main] [INFO] WaitUtil - Waiting for list not to be empty (timeout: 250ms, polling: 50ms): Waiting for table row cells to load
+2026-09-23 12:37:59.075 [main] [INFO] WaitUtil - List became non-empty after 3ms: Waiting for table row cells to load
+2026-09-23 12:37:59.080 [main] [INFO] WaitUtil - Condition met after 17ms: Waiting for cell [6,4] to be drawn
+2026-09-23 12:37:59.081 [main] [INFO] WebElement - Waiting for cells_3 to be visible (timeout: 250ms)
+2026-09-23 12:37:59.097 [main] [INFO] WebElement - Getting inner text from cells_3: &#x27;Good Morning&#x27;
+2026-09-23 12:37:59.100 [main] [INFO] WaitUtil - Waiting for condition (timeout: 90000ms, polling: 250ms): Waiting for the project compilation to complete
+2026-09-23 12:37:59.100 [main] [INFO] WebElement - Waiting for moduleCompilingScreen to be visible (timeout: 250ms)
+2026-09-23 12:37:59.355 [main] [INFO] WebElement - Waiting for compileStateIndicator to be visible (timeout: 250ms)
+2026-09-23 12:37:59.610 [main] [INFO] WaitUtil - Condition met after 510ms: Waiting for the project compilation to complete
+2026-09-23 12:37:59.611 [main] [INFO] WaitUtil - Waiting for condition (timeout: 90000ms, polling: 500ms): Waiting for the problems panel to settle
+2026-09-23 12:37:59.611 [main] [INFO] WebElement - Waiting for moduleCompilingScreen to be visible (timeout: 250ms)
+2026-09-23 12:37:59.867 [main] [INFO] WebElement - Waiting for compileStateIndicator to be visible (timeout: 250ms)
+2026-09-23 12:38:00.122 [main] [INFO] WebElement - Waiting for problemsPanel to be visible (timeout: 1000ms)
+2026-09-23 12:38:01.128 [main] [INFO] WebElement - Waiting for problemsPanel to be visible (timeout: 1000ms)
+2026-09-23 12:38:02.133 [main] [INFO] WebElement - Waiting for compileStateIndicator to be visible (timeout: 250ms)
+2026-09-23 12:38:02.390 [main] [INFO] WaitUtil - Sleeping for 500ms: Polling for condition (attempt): Waiting for the problems panel to settle
+2026-09-23 12:38:02.891 [main] [INFO] WebElement - Waiting for moduleCompilingScreen to be visible (timeout: 250ms)
+2026-09-23 12:38:03.147 [main] [INFO] WebElement - Waiting for compileStateIndicator to be visible (timeout: 250ms)
+2026-09-23 12:38:03.402 [main] [INFO] WebElement - Waiting for problemsPanel to be visible (timeout: 1000ms)
+2026-09-23 12:38:04.408 [main] [INFO] WebElement - Waiting for problemsPanel to be visible (timeout: 1000ms)
+2026-09-23 12:38:05.413 [main] [INFO] WebElement - Waiting for compileStateIndicator to be visible (timeout: 250ms)
+2026-09-23 12:38:05.668 [main] [INFO] WaitUtil - Condition met after 6057ms: Waiting for the problems panel to settle
+2026-09-23 12:38:05.669 [main] [INFO] WebElement - Waiting for problemsPanel to be visible (timeout: 1000ms)
+2026-09-23 12:38:06.677 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-09-23 12:38:06.684 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-23 12:38:06.686 [main] [INFO] WaitUtil - Condition met after 2ms: Waiting for the loading overlay to disappear
+2026-09-23 12:38:06.686 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-23 12:38:06.687 [main] [INFO] WaitUtil - Condition met after 1ms: Waiting for the loading overlay to disappear
+2026-09-23 12:38:06.687 [main] [INFO] WebElement - Waiting for editBtn to be visible (timeout: 250ms)
+2026-09-23 12:38:06.693 [main] [INFO] WebElement - Clicking editBtn 
+2026-09-23 12:38:06.835 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-09-23 12:38:06.869 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-23 12:38:06.874 [main] [INFO] WaitUtil - Condition met after 5ms: Waiting for the loading overlay to disappear
+2026-09-23 12:38:06.874 [main] [INFO] WaitUtil - Waiting for condition (timeout: 5000ms, polling: 250ms): Waiting for center table to become visible
+2026-09-23 12:38:06.874 [main] [INFO] WebElement - Waiting for centerTable to be visible (timeout: 250ms)
+2026-09-23 12:38:06.909 [main] [INFO] WaitUtil - Condition met after 35ms: Waiting for center table to become visible
+2026-09-23 12:38:06.909 [main] [INFO] WaitUtil - Sleeping for 500ms: Waiting for center table to fully load
+2026-09-23 12:38:07.410 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-09-23 12:38:07.424 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-23 12:38:07.433 [main] [INFO] WaitUtil - Condition met after 9ms: Waiting for the loading overlay to disappear
+2026-09-23 12:38:07.434 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-09-23 12:38:07.452 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-23 12:38:07.455 [main] [INFO] WaitUtil - Condition met after 2ms: Waiting for the loading overlay to disappear
+2026-09-23 12:38:07.455 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 100ms): Waiting for cell [6,4] to be drawn
+2026-09-23 12:38:07.463 [main] [INFO] WaitUtil - Waiting for list not to be empty (timeout: 250ms, polling: 50ms): Waiting for table row cells to load
+2026-09-23 12:38:07.466 [main] [INFO] WaitUtil - List became non-empty after 3ms: Waiting for table row cells to load
+2026-09-23 12:38:07.478 [main] [INFO] WaitUtil - Condition met after 23ms: Waiting for cell [6,4] to be drawn
+2026-09-23 12:38:07.479 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-23 12:38:07.481 [main] [INFO] WaitUtil - Condition met after 2ms: Waiting for the loading overlay to disappear
+2026-09-23 12:38:07.481 [main] [INFO] WebElement - Waiting for cells_3 to be visible (timeout: 250ms)
+2026-09-23 12:38:07.493 [main] [INFO] WebElement - Double clicking cells_3 
+2026-09-23 12:38:07.624 [main] [INFO] WebElement - Waiting for cellEditor to be visible (timeout: 2000ms)
+2026-09-23 12:38:07.650 [main] [INFO] WaitUtil - Waiting for condition (timeout: 5000ms, polling: 300ms): Waiting for the cell editor the cell asks for to be drawn
+2026-09-23 12:38:07.691 [main] [INFO] WebElement - Getting attribute &#x27;class&#x27; from cellEditor: &#x27;ant-input ant-input-sm css-oc1rc0 ant-input-outlined acss-1ldzd49 css-var-_r_l_ ant-input-css-var&#x27;
+2026-09-23 12:38:07.692 [main] [INFO] WaitUtil - Sleeping for 300ms: Polling for condition (attempt): Waiting for the cell editor the cell asks for to be drawn
+2026-09-23 12:38:07.999 [main] [INFO] WebElement - Getting attribute &#x27;class&#x27; from cellEditor: &#x27;ant-input ant-input-sm css-oc1rc0 ant-input-outlined acss-1ldzd49 css-var-_r_l_ ant-input-css-var&#x27;
+2026-09-23 12:38:08.000 [main] [INFO] WaitUtil - Condition met after 349ms: Waiting for the cell editor the cell asks for to be drawn
+2026-09-23 12:38:08.002 [main] [INFO] WaitUtil - Waiting for condition (timeout: 10000ms, polling: 250ms): Writing &#x27;Good Morning 80ded94d&#x27; into the editor of cell [6,4]
+2026-09-23 12:38:08.008 [main] [INFO] WebElement - Getting attribute &#x27;class&#x27; from cellEditor: &#x27;ant-input ant-input-sm css-oc1rc0 ant-input-outlined acss-1ldzd49 css-var-_r_l_ ant-input-css-var&#x27;
+2026-09-23 12:38:08.008 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-23 12:38:08.009 [main] [INFO] WaitUtil - Condition met after 1ms: Waiting for the loading overlay to disappear
+2026-09-23 12:38:08.009 [main] [INFO] WebElement - Waiting for cellEditor to be visible (timeout: 250ms)
+2026-09-23 12:38:08.016 [main] [INFO] WebElement - Pressing Control+A on cellEditor
+2026-09-23 12:38:08.030 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-23 12:38:08.032 [main] [INFO] WaitUtil - Condition met after 2ms: Waiting for the loading overlay to disappear
+2026-09-23 12:38:08.032 [main] [INFO] WebElement - Waiting for cellEditor to be visible (timeout: 250ms)
+2026-09-23 12:38:08.041 [main] [INFO] WebElement - Pressing Delete on cellEditor
+2026-09-23 12:38:08.079 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-23 12:38:08.081 [main] [INFO] WaitUtil - Condition met after 2ms: Waiting for the loading overlay to disappear
+2026-09-23 12:38:08.081 [main] [INFO] WebElement - Waiting for cellEditor to be visible (timeout: 250ms)
+2026-09-23 12:38:08.090 [main] [INFO] WebElement - Filling cellEditor with text: &#x27;Good Morning 80ded94d&#x27;
+2026-09-23 12:38:08.118 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-23 12:38:08.120 [main] [INFO] WaitUtil - Condition met after 1ms: Waiting for the loading overlay to disappear
+2026-09-23 12:38:08.120 [main] [INFO] WebElement - Waiting for cellEditor to be visible (timeout: 250ms)
+2026-09-23 12:38:08.130 [main] [INFO] WebElement - Pressing Enter on cellEditor
+2026-09-23 12:38:08.168 [main] [INFO] WaitUtil - Condition met after 166ms: Writing &#x27;Good Morning 80ded94d&#x27; into the editor of cell [6,4]
+2026-09-23 12:38:08.168 [main] [INFO] WaitUtil - Sleeping for 250ms: Waiting for cell edit to be applied
+2026-09-23 12:38:08.421 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-23 12:38:08.425 [main] [INFO] WaitUtil - Condition met after 3ms: Waiting for the loading overlay to disappear
+2026-09-23 12:38:08.426 [main] [INFO] WebElement - Waiting for saveChangesBtn to be visible (timeout: 250ms)
+2026-09-23 12:38:08.433 [main] [INFO] WebElement - Clicking saveChangesBtn 
+2026-09-23 12:38:08.992 [main] [INFO] WaitUtil - Sleeping for 250ms: Waiting for table panel action to complete and UI to update
+2026-09-23 12:38:09.243 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-09-23 12:38:09.431 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-23 12:38:09.441 [main] [INFO] WaitUtil - Condition met after 9ms: Waiting for the loading overlay to disappear
+2026-09-23 12:38:09.445 [main] [INFO] WaitUtil - Waiting for condition (timeout: 10000ms, polling: 200ms): Waiting for the table to be written
+2026-09-23 12:38:09.532 [main] [INFO] WaitUtil - Condition met after 87ms: Waiting for the table to be written
+2026-09-23 12:38:09.533 [main] [INFO] WaitUtil - Waiting for condition (timeout: 10000ms, polling: 250ms): Waiting for the table changes to be kept
+2026-09-23 12:38:09.535 [main] [INFO] WebElement - Waiting for saveChangesBtn to be visible (timeout: 1000ms)
+2026-09-23 12:38:10.541 [main] [INFO] WaitUtil - Condition met after 1008ms: Waiting for the table changes to be kept
+2026-09-23 12:38:10.542 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-09-23 12:38:10.548 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-23 12:38:10.550 [main] [INFO] WaitUtil - Condition met after 2ms: Waiting for the loading overlay to disappear
+2026-09-23 12:38:10.550 [main] [INFO] WebElement - Waiting for saveBtn to be visible (timeout: 10000ms)
+2026-09-23 12:38:10.556 [main] [INFO] WebElement - Waiting for saveBtn to be visible (timeout: 20000ms)
+2026-09-23 12:38:10.561 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-23 12:38:10.563 [main] [INFO] WaitUtil - Condition met after 2ms: Waiting for the loading overlay to disappear
+2026-09-23 12:38:10.563 [main] [INFO] WebElement - Waiting for saveBtn to be visible (timeout: 250ms)
+2026-09-23 12:38:10.568 [main] [INFO] WebElement - Clicking saveBtn 
+2026-09-23 12:38:10.668 [main] [INFO] WebElement - Waiting for saveProjectComment to be visible
+2026-09-23 12:38:10.684 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-23 12:38:10.701 [main] [INFO] WaitUtil - Condition met after 17ms: Waiting for the loading overlay to disappear
+2026-09-23 12:38:10.702 [main] [INFO] WebElement - Waiting for saveProjectSubmit to be visible (timeout: 250ms)
+2026-09-23 12:38:10.766 [main] [INFO] WebElement - Clicking saveProjectSubmit 
+2026-09-23 12:38:11.056 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 1000ms): Waiting for the saved module to reach git or for Studio to report the save failed
+2026-09-23 12:38:11.151 [main] [INFO] WebElement - Waiting for Studio Messages_0 to be visible (timeout: 250ms)
+2026-09-23 12:38:11.239 [main] [INFO] WebElement - Getting text from Studio Messages_0: &#x27;Table saved&#x27;
+2026-09-23 12:38:11.239 [main] [INFO] CoreComponent - Popup messages on screen: [Table saved]
+2026-09-23 12:38:11.240 [main] [INFO] WaitUtil - Sleeping for 1000ms: Polling for condition (attempt): Waiting for the saved module to reach git or for Studio to report the save failed
+2026-09-23 12:38:12.286 [main] [INFO] WebElement - Waiting for Studio Messages_0 to be visible (timeout: 250ms)
+2026-09-23 12:38:12.311 [main] [INFO] WebElement - Getting text from Studio Messages_0: &#x27;Table saved&#x27;
+2026-09-23 12:38:12.312 [main] [INFO] WebElement - Waiting for Studio Messages_1 to be visible (timeout: 250ms)
+2026-09-23 12:38:12.331 [main] [INFO] WebElement - Getting text from Studio Messages_1: &#x27;Failed to save projectFailed to update project status.&#x27;
+2026-09-23 12:38:12.331 [main] [INFO] CoreComponent - Popup messages on screen: [Table saved, Failed to save projectFailed to update project status.]
+2026-09-23 12:38:12.331 [main] [INFO] WaitUtil - Condition met after 1275ms: Waiting for the saved module to reach git or for Studio to report the save failed
+2026-09-23 12:38:12.334 [main] [INFO] WebElement - Waiting for Studio Messages_0 to be visible (timeout: 250ms)
+2026-09-23 12:38:12.361 [main] [INFO] WebElement - Getting text from Studio Messages_0: &#x27;Table saved&#x27;
+2026-09-23 12:38:12.362 [main] [INFO] WebElement - Waiting for Studio Messages_1 to be visible (timeout: 250ms)
+2026-09-23 12:38:12.391 [main] [INFO] WebElement - Getting text from Studio Messages_1: &#x27;Failed to save projectFailed to update project status.&#x27;
+2026-09-23 12:38:12.391 [main] [INFO] CoreComponent - Popup messages on screen: [Table saved, Failed to save projectFailed to update project status.]
+2026-09-23 12:38:12.665 [main] [INFO] PlaywrightTracing - Playwright trace saved for test testGitLfsGitHubStorage: 237867 bytes
+2026-09-23 12:38:12.670 [main] [INFO] DebugArtifactUtil - Playwright trace recorded for test: testGitLfsGitHubStorage (size: 237867 bytes)
+2026-09-23 12:38:12.815 [main] [INFO] DebugArtifactUtil - Screenshot recorded: testGitLfsGitHubStorage_20260923_123812.png
+2026-09-23 12:38:12.816 [main] [INFO] DebugArtifactUtil - Execution info recorded: execution-info-17473795448224990158.txt
+2026-09-23 12:38:12.817 [main] [INFO] DebugArtifactUtil - Retrieving video bytes for test: testGitLfsGitHubStorage
+2026-09-23 12:38:13.020 [main] [INFO] DebugArtifactUtil - Successfully retrieved 2335839 bytes of video data for test: testGitLfsGitHubStorage
+2026-09-23 12:38:13.023 [main] [INFO] DebugArtifactUtil - Video recorded for test: testGitLfsGitHubStorage (size: 2335839 bytes)
+2026-09-23 12:38:13.037 [main] [INFO] LogsUtil - Logs saved to host: /home/runner/work/openl-tests/openl-tests/target/logs/app-log-332366.txt
+2026-09-23 12:38:13.037 [main] [INFO] DockerDriverPool - Closing Playwright Docker for thread: main
+2026-09-23 12:38:15.124 [main] [INFO] WaitUtil - Sleeping for 2000ms: Waiting for Docker daemon to complete resource cleanup</pre></div><div class='panel' id='t0-3' hidden><p class='hint'>Application container log (OpenL Studio / Rule Services). Showing 7 lines with WARN, ERROR or exceptions out of 119 · <a href='attachments/lfs/tests.ui.webstudio.git.TestGitLfsGitHubStorage/testGitLfsGitHubStorage/1790167093037-app-log-332366.txt' target='_blank'>full log</a></p><pre class='log'>{&quot;@timestamp&quot;:&quot;2026-09-23T12:37:04.752Z&quot;,&quot;ecs.version&quot;:&quot;1.2.0&quot;,&quot;log.level&quot;:&quot;WARN&quot;,&quot;message&quot;:&quot;Does not exist: /opt/openl/app/environments&quot;,&quot;process.thread.name&quot;:&quot;main&quot;,&quot;log.logger&quot;:&quot;org.eclipse.jetty.deploy.DeploymentScanner&quot;,&quot;service.version&quot;:&quot;0&quot;,&quot;service.environment&quot;:&quot;production&quot;,&quot;service.name&quot;:&quot;OpenL&quot;,&quot;host.name&quot;:&quot;25608731b1ab&quot;}
+{&quot;@timestamp&quot;:&quot;2026-09-23T12:37:10.899Z&quot;,&quot;ecs.version&quot;:&quot;1.2.0&quot;,&quot;log.level&quot;:&quot;WARN&quot;,&quot;message&quot;:&quot;Bean &#x27;commitInfoInterceptor&#x27; of type [org.openl.studio.security.CommitInfoInterceptor] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [commitInfoPostProcessor]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.&quot;,&quot;process.thread.name&quot;:&quot;main&quot;,&quot;log.logger&quot;:&quot;org.springframework.context.support.PostProcessorRegistrationDelegate$BeanPostProcessorChecker&quot;,&quot;service.version&quot;:&quot;0&quot;,&quot;service.environment&quot;:&quot;production&quot;,&quot;service.name&quot;:&quot;OpenL&quot;,&quot;host.name&quot;:&quot;25608731b1ab&quot;}
+{&quot;@timestamp&quot;:&quot;2026-09-23T12:37:19.204Z&quot;,&quot;ecs.version&quot;:&quot;1.2.0&quot;,&quot;log.level&quot;:&quot;WARN&quot;,&quot;message&quot;:&quot;Unable to proxy interface-implementing method [public final java.lang.String org.openl.config.ReadOnlyPropertiesHolder.getProperty(java.lang.String)] because it is marked as final, consider using interface-based JDK proxies instead.&quot;,&quot;process.thread.name&quot;:&quot;main&quot;,&quot;log.logger&quot;:&quot;org.springframework.aop.framework.CglibAopProxy&quot;,&quot;service.version&quot;:&quot;0&quot;,&quot;service.environment&quot;:&quot;production&quot;,&quot;service.name&quot;:&quot;OpenL&quot;,&quot;host.name&quot;:&quot;25608731b1ab&quot;}
+{&quot;@timestamp&quot;:&quot;2026-09-23T12:37:19.204Z&quot;,&quot;ecs.version&quot;:&quot;1.2.0&quot;,&quot;log.level&quot;:&quot;WARN&quot;,&quot;message&quot;:&quot;Unable to proxy interface-implementing method [public final void org.openl.config.ReadOnlyPropertiesHolder.setProperty(java.lang.String,java.lang.Object)] because it is marked as final, consider using interface-based JDK proxies instead.&quot;,&quot;process.thread.name&quot;:&quot;main&quot;,&quot;log.logger&quot;:&quot;org.springframework.aop.framework.CglibAopProxy&quot;,&quot;service.version&quot;:&quot;0&quot;,&quot;service.environment&quot;:&quot;production&quot;,&quot;service.name&quot;:&quot;OpenL&quot;,&quot;host.name&quot;:&quot;25608731b1ab&quot;}
+{&quot;@timestamp&quot;:&quot;2026-09-23T12:37:19.848Z&quot;,&quot;ecs.version&quot;:&quot;1.2.0&quot;,&quot;log.level&quot;:&quot;WARN&quot;,&quot;message&quot;:&quot;Global AuthenticationManager configured with an AuthenticationProvider bean. UserDetailsService beans will not be used by Spring Security for automatically configuring username/password login. Consider removing the AuthenticationProvider bean. Alternatively, consider using the UserDetailsService in a manually instantiated DaoAuthenticationProvider. If the current configuration is intentional, to turn off this warning, increase the logging level of &#x27;org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer&#x27; to ERROR&quot;,&quot;process.thread.name&quot;:&quot;main&quot;,&quot;log.logger&quot;:&quot;org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer&quot;,&quot;service.version&quot;:&quot;0&quot;,&quot;service.environment&quot;:&quot;production&quot;,&quot;service.name&quot;:&quot;OpenL&quot;,&quot;host.name&quot;:&quot;25608731b1ab&quot;}
+{&quot;@timestamp&quot;:&quot;2026-09-23T12:37:41.598Z&quot;,&quot;ecs.version&quot;:&quot;1.2.0&quot;,&quot;log.level&quot;:&quot;WARN&quot;,&quot;message&quot;:&quot;Incorrect mapping for DefaultServlet at /*. Use ResourceServlet&quot;,&quot;process.thread.name&quot;:&quot;qtp1777443462-31&quot;,&quot;log.logger&quot;:&quot;org.eclipse.jetty.ee10.servlet.DefaultServlet&quot;,&quot;service.version&quot;:&quot;0&quot;,&quot;service.environment&quot;:&quot;production&quot;,&quot;service.name&quot;:&quot;OpenL&quot;,&quot;host.name&quot;:&quot;25608731b1ab&quot;}
+{&quot;@timestamp&quot;:&quot;2026-09-23T12:38:11.598Z&quot;,&quot;ecs.version&quot;:&quot;1.2.0&quot;,&quot;log.level&quot;:&quot;ERROR&quot;,&quot;message&quot;:&quot;Failed to update the status of project &#x27;Empty Project&#x27;.&quot;,&quot;process.thread.name&quot;:&quot;qtp1777443462-32&quot;,&quot;log.logger&quot;:&quot;org.openl.studio.projects.rest.controller.ProjectsController&quot;,&quot;error.type&quot;:&quot;org.openl.rules.common.ProjectException&quot;,&quot;error.message&quot;:&quot;When trying to open a connection to https://github-cloud.s3.amazonaws.com/alambic/media/1218351757/22/a2/22a2a5939fa3fa73f9513c8f6db67c7047c7ba617effe530862f9b77dac7de97?actor_id=41898282&amp;key_id=0&amp;repo_id=1360257072 the server responded with an error code. rc=501&quot;,&quot;error.stack_trace&quot;:&quot;org.openl.rules.common.ProjectException: When trying to open a connection to https://github-cloud.s3.amazonaws.com/alambic/media/1218351757/22/a2/22a2a5939fa3fa73f9513c8f6db67c7047c7ba617effe530862f9b77dac7de97?actor_id=41898282&amp;key_id=0&amp;repo_id=1360257072 the server responded with an error code. rc=501\n\tat org.openl.rules.project.abstraction.AProjectFolder.update(AProjectFolder.java:267)\n\tat org.openl.rules.project.abstraction.AProject.update(AProject.java:359)\n\tat org.openl.rules.project.abstraction.RulesProject.save(RulesProject.java:127)\n\tat org.openl.rules.project.abstraction.RulesProject.save(RulesProject.java:103)\n\tat org.openl.rules.project.abstraction.UserWorkspaceProject.save(UserWorkspaceProject.java:73)\n\tat org.openl.rules.ui.WebStudio.saveProject(WebStudio.java:256)\n\tat org.openl.studio.projects.service.WorkspaceProjectService.commit(WorkspaceProjectService.java:972)\n\tat org.openl.studio.projects.service.WorkspaceProjectService.save(WorkspaceProjectService.java:922)\n\tat org.openl.studio.projects.service.WorkspaceProjectService.updateProjectStatus(WorkspaceProjectService.java:870)\n\tat org.openl.studio.projects.rest.controller.ProjectsController.updateProjectStatus(ProjectsController.java:306)\n\tat java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source)\n\tat java.base/java.lang.reflect.Method.invoke(Unknown Source)\n\tat org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:360)\n\tat org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMethodInvocation.java:196)\n\tat org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:163)\n\tat org.springframework.validation.beanvalidation.MethodValidationInterceptor.invoke(MethodValidationInterceptor.java:172)\n\tat org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:184)\n\tat org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:728)\n\tat org.openl.studio.projects.rest.controller.ProjectsController$$SpringCGLIB$$1.updateProjectStatus(&lt;generated&gt;)\n\tat java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source)\n\tat java.base/java.lang.reflect.Method.invoke(Unknown Source)\n\tat org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:258)\n\tat org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:191)\n\tat org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:118)\n\tat org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:991)\n\tat org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:896)\n\tat org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:87)\n\tat org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1089)\n\tat org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:979)\n\tat org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014)\n\tat org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:888)\n\tat jakarta.servlet.http.HttpServlet.service(HttpServlet.java:614)\n\tat org.eclipse.jetty.ee10.servlet.ServletHolder$NotAsync.service(ServletHolder.java:1397)\n\tat org.eclipse.jetty.ee10.servlet.ServletHolder.handle(ServletHolder.java:754)\n\tat org.eclipse.jetty.ee10.servlet.ServletHandler$ChainEnd.doFilter(ServletHandler.java:1642)\n\tat org.openl.rules.webstudio.web.servlet.CorsFilter.doFilter(CorsFilter.java:42)\n\tat org.eclipse.jetty.ee10.servlet.FilterHolder.doFilter(FilterHolder.java:205)\n\tat org.eclipse.jetty.ee10.servlet.ServletHandler$Chain.doFilter(ServletHandler.java:1601)\n\tat org.openl.studio.projects.messaging.ChangeOriginFilter.doFilterInternal(ChangeOriginFilter.java:45)\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\n\tat org.eclipse.jetty.ee10.servlet.FilterHolder.doFilter(FilterHolder.java:205)\n\tat org.eclipse.jetty.ee10.servlet.ServletHandler$Chain.doFilter(ServletHandler.java:1601)\n\tat org.springframework.security.web.FilterChainProxy.lambda$doFilterInternal$3(FilterChainProxy.java:231)\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:370)\n\tat org.springframework.security.web.access.intercept.AuthorizationFilter.doFilter(AuthorizationFilter.java:101)\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:379)\n\tat org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:125)\n\tat org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:119)\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:379)\n\tat org.springframework.security.web.authentication.AnonymousAuthenticationFilter.doFilter(AnonymousAuthenticationFilter.java:100)\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:379)\n\tat org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter.doFilter(SecurityContextHolderAwareRequestFilter.java:179)\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:379)\n\tat org.springframework.security.web.authentication.www.BasicAuthenticationFilter.doFilterInternal(BasicAuthenticationFilter.java:181)\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:379)\n\tat org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:107)\n\tat org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:93)\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:379)\n\tat org.springframework.security.web.header.HeaderWriterFilter.doHeadersAfter(HeaderWriterFilter.java:90)\n\tat org.springframework.security.web.header.HeaderWriterFilter.doFilterInternal(HeaderWriterFilter.java:75)\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:379)\n\tat org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:82)\n\tat org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:69)\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:379)\n\tat org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter.doFilterInternal(WebAsyncManagerIntegrationFilter.java:62)\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:379)\n\tat org.springframework.security.web.session.DisableEncodeUrlFilter.doFilterInternal(DisableEncodeUrlFilter.java:42)\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:379)\n\tat org.springframework.security.web.FilterChainProxy.doFilterInternal(FilterChainProxy.java:233)\n\tat org.springframework.security.web.FilterChainProxy.doFilter(FilterChainProxy.java:191)\n\tat org.openl.studio.security.SecurityFilter.doFilter(SecurityFilter.java:41)\n\tat org.eclipse.jetty.ee10.servlet.FilterHolder.doFilter(FilterHolder.java:205)\n\tat org.eclipse.jetty.ee10.servlet.ServletHandler$Chain.doFilter(ServletHandler.java:1601)\n\tat de.qaware.xff.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:101)\n\tat org.eclipse.jetty.ee10.servlet.FilterHolder.doFilter(FilterHolder.java:205)\n\tat org.eclipse.jetty.ee10.servlet.ServletHandler$Chain.doFilter(ServletHandler.java:1601)\n\tat org.openl.rules.webstudio.web.servlet.CorsFilter.doFilter(CorsFilter.java:42)\n\tat org.eclipse.jetty.ee10.servlet.FilterHolder.doFilter(FilterHolder.java:208)\n\tat org.eclipse.jetty.ee10.servlet.ServletHandler$Chain.doFilter(ServletHandler.java:1601)\n\tat org.eclipse.jetty.ee10.websocket.servlet.WebSocketUpgradeFilter.doFilter(WebSocketUpgradeFilter.java:199)\n\tat org.eclipse.jetty.ee10.servlet.FilterHolder.doFilter(FilterHolder.java:205)\n\tat org.eclipse.jetty.ee10.servlet.ServletHandler$Chain.doFilter(ServletHandler.java:1601)\n\tat org.eclipse.jetty.ee10.servlet.ServletHandler$MappedServlet.handle(ServletHandler.java:1556)\n\tat org.eclipse.jetty.ee10.servlet.ServletChannel.dispatch(ServletChannel.java:871)\n\tat org.eclipse.jetty.ee10.servlet.ServletChannel.handle(ServletChannel.java:449)\n\tat org.eclipse.jetty.ee10.servlet.ServletHandler.handle(ServletHandler.java:469)\n\tat org.eclipse.jetty.security.SecurityHandler.handle(SecurityHandler.java:548)\n\tat org.eclipse.jetty.ee10.servlet.SessionHandler.handle(SessionHandler.java:719)\n\tat org.eclipse.jetty.server.handler.ContextHandler.handle(ContextHandler.java:1253)\n\tat org.eclipse.jetty.server.handler.ContextHandlerCollection.handle(ContextHandlerCollection.java:148)\n\tat org.eclipse.jetty.server.Server.handle(Server.java:197)\n\tat org.eclipse.jetty.server.internal.HttpChannelState$HandlerInvoker.run(HttpChannelState.java:804)\n\tat org.eclipse.jetty.server.internal.HttpConnection.onFillable(HttpConnection.java:420)\n\tat org.eclipse.jetty.server.internal.HttpConnection$FillableCallback.succeeded(HttpConnection.java:1790)\n\tat org.eclipse.jetty.io.FillInterest.fillable(FillInterest.java:105)\n\tat org.eclipse.jetty.io.SelectableChannelEndPoint$1.run(SelectableChannelEndPoint.java:54)\n\tat org.eclipse.jetty.util.thread.strategy.AdaptiveExecutionStrategy.runTask(AdaptiveExecutionStrategy.java:492)\n\tat org.eclipse.jetty.util.thread.strategy.AdaptiveExecutionStrategy.epcRunTask(AdaptiveExecutionStrategy.java:428)\n\tat org.eclipse.jetty.util.thread.strategy.AdaptiveExecutionStrategy.consumeTask(AdaptiveExecutionStrategy.java:401)\n\tat org.eclipse.jetty.util.thread.strategy.AdaptiveExecutionStrategy.tryProduce(AdaptiveExecutionStrategy.java:255)\n\tat org.eclipse.jetty.util.thread.strategy.AdaptiveExecutionStrategy.run(AdaptiveExecutionStrategy.java:204)\n\tat org.eclipse.jetty.util.thread.ReservedThreadExecutor$ReservedThread.run(ReservedThreadExecutor.java:317)\n\tat org.eclipse.jetty.util.thread.QueuedThreadPool.runJob(QueuedThreadPool.java:1009)\n\tat org.eclipse.jetty.util.thread.QueuedThreadPool$Runner.doRunJob(QueuedThreadPool.java:1240)\n\tat org.eclipse.jetty.util.thread.QueuedThreadPool$Runner.run(QueuedThreadPool.java:1194)\n\tat java.base/java.lang.Thread.run(Unknown Source)\nCaused by: java.io.IOException: When trying to open a connection to https://github-cloud.s3.amazonaws.com/alambic/media/1218351757/22/a2/22a2a5939fa3fa73f9513c8f6db67c7047c7ba617effe530862f9b77dac7de97?actor_id=41898282&amp;key_id=0&amp;repo_id=1360257072 the server responded with an error code. rc=501\n\tat org.openl.rules.repository.git.GitRepository.saveMultipleFiles(GitRepository.java:2213)\n\tat org.openl.rules.repository.git.GitRepository.save(GitRepository.java:2006)\n\tat org.openl.rules.repository.PathCheckedRepository.save(PathCheckedRepository.java:146)\n\tat org.openl.rules.workspace.dtr.impl.MappedRepository.save(MappedRepository.java:313)\n\tat org.openl.security.acl.repository.SecureRepository.save(SecureRepository.java:208)\n\tat org.openl.rules.project.abstraction.AProjectFolder.update(AProjectFolder.java:265)\n\t... 109 more\nCaused by: org.eclipse.jgit.api.errors.TransportException: When trying to open a connection to https://github-cloud.s3.amazonaws.com/alambic/media/1218351757/22/a2/22a2a5939fa3fa73f9513c8f6db67c7047c7ba617effe530862f9b77dac7de97?actor_id=41898282&amp;key_id=0&amp;repo_id=1360257072 the server responded with an error code. rc=501\n\tat org.eclipse.jgit.api.PushCommand.call(PushCommand.java:168)\n\tat org.openl.rules.repository.git.GitRepository.push(GitRepository.java:1468)\n\tat org.openl.rules.repository.git.GitRepository.saveMultipleFiles(GitRepository.java:2197)\n\t... 114 more\nCaused by: org.eclipse.jgit.errors.TransportException: When trying to open a connection to https://github-cloud.s3.amazonaws.com/alambic/media/1218351757/22/a2/22a2a5939fa3fa73f9513c8f6db67c7047c7ba617effe530862f9b77dac7de97?actor_id=41898282&amp;key_id=0&amp;repo_id=1360257072 the server responded with an error code. rc=501\n\tat org.eclipse.jgit.transport.PushProcess.execute(PushProcess.java:176)\n\tat org.eclipse.jgit.transport.Transport.push(Transport.java:1537)\n\tat org.eclipse.jgit.api.PushCommand.call(PushCommand.java:158)\n\t... 116 more\nCaused by: java.io.IOException: When trying to open a connection to https://github-cloud.s3.amazonaws.com/alambic/media/1218351757/22/a2/22a2a5939fa3fa73f9513c8f6db67c7047c7ba617effe530862f9b77dac7de97?actor_id=41898282&amp;key_id=0&amp;repo_id=1360257072 the server responded with an error code. rc=501\n\tat org.eclipse.jgit.lfs.LfsPrePushHook.uploadFile(LfsPrePushHook.java:260)\n\tat org.eclipse.jgit.lfs.LfsPrePushHook.uploadContents(LfsPrePushHook.java:232)\n\tat org.eclipse.jgit.lfs.LfsPrePushHook.call(LfsPrePushHook.java:105)\n\tat org.eclipse.jgit.transport.PushProcess.execute(PushProcess.java:174)\n\t... 118 more\n&quot;,&quot;service.version&quot;:&quot;0&quot;,&quot;service.environment&quot;:&quot;production&quot;,&quot;service.name&quot;:&quot;OpenL&quot;,&quot;host.name&quot;:&quot;25608731b1ab&quot;}</pre></div><div class='panel' id='t0-4' hidden><p><a class='button' href='attachments/lfs/tests.ui.webstudio.git.TestGitLfsGitHubStorage/testGitLfsGitHubStorage/1790167092665-trace.zip' download>Download trace.zip (232 KB)</a></p><p class='hint'>Playwright trace with DOM snapshots before and after every action, network and console. Open it with <code>npx playwright show-trace trace.zip (or drop the file onto https://trace.playwright.dev)</code>.</p></div><div class='panel' id='t0-5' hidden><div class='attachments'><figure><a href='attachments/lfs/tests.ui.webstudio.git.TestGitLfsGitHubStorage/testGitLfsGitHubStorage/1790167092813-testGitLfsGitHubStorage_20260923_123812.png' target='_blank'><img src='attachments/lfs/tests.ui.webstudio.git.TestGitLfsGitHubStorage/testGitLfsGitHubStorage/1790167092813-testGitLfsGitHubStorage_20260923_123812.png' alt='Test Failure Screenshot' loading='lazy'></a><figcaption>Test Failure Screenshot</figcaption></figure></div></div></td></tr></tbody></table></div>
+</div>
+<script>
+const rows=[...document.querySelectorAll('tr.row')];
+function apply(){const s=document.getElementById('status').value,u=document.getElementById('suite').value,q=document.getElementById('search').value.toLowerCase();
+rows.forEach(r=>{const ok=(!s||r.dataset.status===s)&&(!u||r.dataset.suite===u)&&(!q||(r.textContent+' '+(r.dataset.error||'')).toLowerCase().includes(q));r.hidden=!ok;const d=r.nextElementSibling;if(d&&d.classList.contains('details-row')&&!ok){d.hidden=true;r.querySelector('button.toggle')?.classList.remove('open');}});}
+['status','suite'].forEach(id=>document.getElementById(id).addEventListener('change',apply));document.getElementById('search').addEventListener('input',apply);
+document.querySelectorAll('button.toggle').forEach(b=>b.addEventListener('click',()=>{const d=document.getElementById(b.dataset.target);d.hidden=!d.hidden;b.classList.toggle('open',!d.hidden);}));
+document.getElementById('expand-failed').addEventListener('click',()=>{document.querySelectorAll('tr.details-row.failed').forEach(d=>{d.hidden=false;const b=d.previousElementSibling.querySelector('button.toggle');if(b)b.classList.add('open');});});
+document.querySelectorAll('button.tab').forEach(b=>b.addEventListener('click',()=>{const panel=document.getElementById(b.dataset.tab);const box=b.closest('td');box.querySelectorAll('.panel').forEach(p=>p.hidden=true);box.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));panel.hidden=false;b.classList.add('active');}));
+</script></body></html>
