@@ -25,7 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class TestProjectDiscoveryByExcelFiles extends BaseTest {
 
     private static final String GIT_CONTAINER_ALIAS = "git-excel-discovery";
-    private static final String FIXTURE_RESOURCE = "/excel_discovery_repo";
+    private static final String FIXTURE_RESOURCE = "/test_data/TestProjectDiscoveryByExcelFiles";
     private static final String REPO_NAME = "design";
     private static final String BRANCH = "master";
 
