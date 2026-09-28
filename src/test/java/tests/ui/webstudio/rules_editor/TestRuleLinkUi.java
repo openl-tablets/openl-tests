@@ -10,6 +10,7 @@ import domain.serviceclasses.constants.User;
 import domain.ui.webstudio.components.common.TabSwitcherComponent;
 import domain.ui.webstudio.components.common.TableComponent;
 import domain.ui.webstudio.components.editortabcomponents.ModuleProjectClosedComponent;
+import domain.ui.webstudio.components.editortabcomponents.ModuleTableMissingComponent;
 import domain.ui.webstudio.pages.mainpages.EditorPage;
 import domain.ui.webstudio.pages.mainpages.RepositoryPage;
 import helpers.service.WorkflowService;
@@ -27,13 +28,14 @@ public class TestRuleLinkUi extends BaseTest {
     private static final String RAISED_CELL = "D7";
     private static final String RAISED_CELL_TEXT = "To";
     private static final String UNKNOWN_TABLE_ID = "00000000000000000000000000000000";
+    private static final String NO_SUCH_TABLE_MESSAGE = "This module has no such table";
     private static final int COMPILE_TIMEOUT_MS = 90000;
     private static final int SETTLE_MS = 5000;
     private static final int POLL_MS = 500;
 
     @Test
     @TestCaseId("IPBQA-33051")
-    @Description("EPBDS-10235: a rule link opens the table it names, marks errorCell, falls back to a table the module holds, and opens a closed project in place")
+    @Description("EPBDS-10235: a rule link opens the table it names, marks errorCell, says the module has no such table when it names an unknown one (EPBDS-16703), and opens a closed project in place")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void testRuleLinkOpensTheTableItNamesEvenIntoAClosedProject() {
         String projectName = WorkflowService.loginCreateProjectFromTemplate(User.ADMIN, "Sample Project");
@@ -60,9 +62,9 @@ public class TestRuleLinkUi extends BaseTest {
         assertThat(table.getRaisedCellTexts()).as("cells marked by errorCell=%s", RAISED_CELL).containsExactly(RAISED_CELL_TEXT);
 
         page.navigate(ProjectLinkUtil.ruleLink(projectId, MODULE, UNKNOWN_TABLE_ID));
-        waitForTableDrawn(table);
-        assertThat(waitForTableIdInAddressOtherThan(UNKNOWN_TABLE_ID)).as("address rewritten to the table shown").isEqualTo(tableId);
-        assertThat(selectedTableName(editorPage)).as("fallback table").isEqualTo(TABLE);
+        assertThat(new ModuleTableMissingComponent().waitForMessage(COMPILE_TIMEOUT_MS))
+                .as("notice for a table the module does not hold").isEqualTo(NO_SUCH_TABLE_MESSAGE);
+        assertThat(ProjectLinkUtil.tableIdOf(page.url())).as("table in the address after an unknown table").hasValue(UNKNOWN_TABLE_ID);
 
         RepositoryPage repositoryPage = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.REPOSITORY);
         repositoryPage.openProjectsList();
