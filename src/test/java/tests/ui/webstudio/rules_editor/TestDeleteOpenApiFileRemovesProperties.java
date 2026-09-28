@@ -38,9 +38,6 @@ public class TestDeleteOpenApiFileRemovesProperties extends BaseTest {
 
         repositoryPage.createProjectFromOpenApi(YML_FILE, projectName);
 
-        // A project made from a specification declares none in its descriptor (EPBDS-16415): the file lying
-        // in it under the name its format reads as — a YML file reads as YAML — is what is read against, and
-        // the card says it stands there by default rather than by declaration.
         editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName);
         assertThat(editorPage.isOpenApiDeclaredByDefault())
@@ -56,8 +53,6 @@ public class TestDeleteOpenApiFileRemovesProperties extends BaseTest {
 
         editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName);
-        // The card is read again from the start: the OpenAPI section keeps the files it read when it was
-        // drawn and does not read them again when one is deleted. See KNOWN-ISSUES.md #21.
         editorPage.reloadPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName);
 
@@ -71,9 +66,6 @@ public class TestDeleteOpenApiFileRemovesProperties extends BaseTest {
         editorPage.getEditorToolbarPanelComponent().navigateToProjectRoot(projectName);
         editorPage.getEditorToolbarPanelComponent().clickExport();
         File exportedZip = editorPage.getExportProjectDialogComponent().clickExportAndDownload();
-        // A project made from a specification declares no module of its own either (EPBDS-16415): the
-        // workbooks are found where they lie, so what the deletion must leave standing is the workbooks
-        // themselves.
         assertThat(ZipUtil.listFiles(exportedZip))
                 .as("The workbooks of the two modules should still stand after deleting openapi.yml")
                 .contains("rules/Algorithms.xlsx", "rules/Models.xlsx");

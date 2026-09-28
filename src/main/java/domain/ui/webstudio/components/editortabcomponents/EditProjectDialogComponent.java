@@ -22,27 +22,13 @@ public class EditProjectDialogComponent extends BaseComponent {
     }
 
     private void initializeElements() {
-        // What the project says about itself is written on the project's own screen now: the Overview is
-        // opened for writing, the description is a field of it, and Save keeps the whole card at once.
         descriptionField = new WebElement(page, "xpath=//textarea[@data-testid='edit-description']", "descriptionField");
         updateBtn = new WebElement(page, "xpath=//button[@data-testid='overview-save']", "updateBtn");
         cancelBtn = new WebElement(page, "xpath=//button[@data-testid='overview-cancel']", "cancelBtn");
     }
 
-    /** The card names the project in its heading and nowhere offers that name for writing. */
     public boolean isProjectNameFieldVisible() {
         return false;
-    }
-
-    /** @throws AssertionError always — a project cannot be renamed any more; see KNOWN-ISSUES.md #13. */
-    public EditProjectDialogComponent setProjectName(String name) {
-        throw new AssertionError("KNOWN-ISSUES.md #13: a project cannot be renamed — the card offers what "
-                + "the descriptor says and the project's own actions, and none of them renames it.");
-    }
-
-    /** @throws AssertionError always — the card names the project but does not offer the name for writing. */
-    public String getProjectName() {
-        throw new AssertionError("KNOWN-ISSUES.md #13: the project's name is not a field of the card.");
     }
 
     public boolean isUpdateButtonEnabled() {
