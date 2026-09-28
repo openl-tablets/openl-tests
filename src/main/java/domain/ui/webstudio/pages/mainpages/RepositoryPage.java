@@ -278,6 +278,13 @@ public class RepositoryPage extends BasePage {
         return projectsListTable.getAllVisibleProjectNames();
     }
 
+    public RepositoryPage waitUntilProjectListed(String projectName) {
+        WaitUtil.waitForCondition(() -> openProjectsList().getAllVisibleProjectsInTable().contains(projectName),
+                PROJECT_LISTED_TIMEOUT_MS, ROW_PROBE_MS,
+                "Waiting for '" + projectName + "' to be listed among the projects");
+        return this;
+    }
+
     public void filterByName(String name) {
         filterByNameInput.click();
         filterByNameInput.fill(name);

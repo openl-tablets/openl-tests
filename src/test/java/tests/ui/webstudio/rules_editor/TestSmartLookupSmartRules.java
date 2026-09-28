@@ -1,6 +1,7 @@
 package tests.ui.webstudio.rules_editor;
 
 import configuration.annotations.Description;
+import configuration.annotations.KnownIssue;
 import configuration.annotations.TestCaseId;
 import configuration.annotations.AppContainerConfig;
 import configuration.appcontainer.AppContainerStartParameters;
@@ -24,6 +25,7 @@ public class TestSmartLookupSmartRules extends BaseTest {
 
     @Test
     @TestCaseId("IPBQA-29358")
+    @KnownIssue(value = "EPBDS-16770", failsWith = "Compilation did not finish within 90000 ms, state: ServerCompileStatus[compileState=compiling")
     @Description("SmartLookup and SmartRules tables: open, edit, save, copy, remove and create test table")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void testSmartLookupSmartRules() {

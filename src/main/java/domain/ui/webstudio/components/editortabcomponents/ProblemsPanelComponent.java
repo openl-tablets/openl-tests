@@ -139,13 +139,17 @@ public class ProblemsPanelComponent extends BaseComponent {
         return String.format("Errors: %d, Warnings: %d", getErrorsCount(), getWarningsCount());
     }
 
-    public void checkNoProblems() {
+    public void assertCompilationCompletes() {
         boolean compiled = waitForCompilationToComplete(COMPILATION_TIMEOUT_MS, COMPILATION_POLL_MS);
         waitUntilThePanelHasSettled();
         if (!compiled) {
             throw new AssertionError("Compilation did not finish within " + COMPILATION_TIMEOUT_MS + " ms, state: "
                     + fetchServerCompileStatusViaPage());
         }
+    }
+
+    public void checkNoProblems() {
+        assertCompilationCompletes();
         boolean noProblems = WaitUtil.waitForCondition(
                 () -> {
                     try {

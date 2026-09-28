@@ -13,16 +13,15 @@ public class SystemSettingsPageComponent extends BaseComponent {
     private WebElement verifyOnEditCheckbox;
     private WebElement testThreadCountField;
     private WebElement projectHistoryCountField;
+    private WebElement detectProjectsByExcelFilesCheckbox;
     private WebElement clearAllHistoryBtn;
     private WebElement cancelModalBtn;
     private WebElement applyButton;
     private WebElement errorMessage;
 
-    // Date/Time Format fields
     private WebElement dateFormatField;
     private WebElement timeFormatField;
 
-    // Database Configuration fields
     private WebElement databaseUrlField;
     private WebElement databaseUserField;
     private WebElement databasePasswordField;
@@ -43,16 +42,15 @@ public class SystemSettingsPageComponent extends BaseComponent {
         verifyOnEditCheckbox = createScopedElement("xpath=.//*[@id='autoCompile']", "verifyOnEditCheckbox");
         testThreadCountField = createScopedElement("xpath=.//*[@id='testRunThreadCount']", "testThreadCountField");
         projectHistoryCountField = createScopedElement("xpath=.//*[@id='projectHistoryCount']", "projectHistoryCountField");
+        detectProjectsByExcelFilesCheckbox = createScopedElement("xpath=.//*[@id='detectProjectsByExcelFiles']", "detectProjectsByExcelFilesCheckbox");
         clearAllHistoryBtn = createScopedElement("xpath=.//button[./span[text()='Clear All History']]", "clearAllHistoryBtn");
         cancelModalBtn = new WebElement(page, "xpath=//div[contains(@class,'ant-modal-container')]//button[./span[contains(text(),'Cancel')]]", "cancelModalBtn");
         applyButton = createScopedElement("xpath=.//button[./span[text()='Apply Changes'] or ./span[text()='Apply']]", "applyButton");
         errorMessage = createScopedElement("xpath=.//div[contains(@class, 'ant-form-item-explain-error')]", "errorMessage");
 
-        // Date/Time Format fields
         dateFormatField = createScopedElement("xpath=.//input[@id='datePattern']", "dateFormatField");
         timeFormatField = createScopedElement("xpath=.//input[@id='timeFormat']", "timeFormatField");
 
-        // Database Configuration fields
         databaseUrlField = createScopedElement("xpath=.//input[@id='db_url']", "databaseUrlField");
         databaseUserField = createScopedElement("xpath=.//input[@id='db_user']", "databaseUserField");
         databasePasswordField = createScopedElement("xpath=.//input[@id='db_password']", "databasePasswordField");
@@ -85,7 +83,6 @@ public class SystemSettingsPageComponent extends BaseComponent {
         new LoginPage().login(UserService.getUser(user));
     }
 
-    // Date/Time Format methods
     public void setDateFormat(String format) {
         dateFormatField.fill(format);
     }
@@ -102,7 +99,6 @@ public class SystemSettingsPageComponent extends BaseComponent {
         return timeFormatField.getAttribute("value");
     }
 
-    // Database Configuration methods
     public String getDatabaseUrl() {
         return databaseUrlField.getAttribute("value");
     }
@@ -149,5 +145,15 @@ public class SystemSettingsPageComponent extends BaseComponent {
     public void cancelClearAllHistory() {
         clearAllHistoryBtn.click();
         cancelModalBtn.waitForVisible().click();
+    }
+
+    public void setDetectProjectsByExcelFiles(boolean enable) {
+        if (enable != detectProjectsByExcelFilesCheckbox.isChecked()) {
+            detectProjectsByExcelFilesCheckbox.click();
+        }
+    }
+
+    public boolean isDetectProjectsByExcelFilesEnabled() {
+        return detectProjectsByExcelFilesCheckbox.isChecked();
     }
 }
