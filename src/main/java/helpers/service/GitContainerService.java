@@ -59,10 +59,14 @@ public class GitContainerService {
     }
 
     public GitContainerService(String alias, String repoName, String branch, String fixtureResource) {
+        this(alias, repoName, branch, resolveFixtureDir(fixtureResource));
+    }
+
+    public GitContainerService(String alias, String repoName, String branch, Path fixtureDir) {
         this.alias = alias;
         this.repoName = repoName;
         this.branch = branch;
-        this.fixtureDir = resolveFixtureDir(fixtureResource);
+        this.fixtureDir = fixtureDir;
     }
 
     public GitContainerService withLfsTracking(String pattern) {

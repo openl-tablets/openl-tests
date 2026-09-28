@@ -14,9 +14,11 @@ import helpers.service.GitContainerService;
 import helpers.service.GitRemote;
 import helpers.service.LoginService;
 import helpers.service.UserService;
+import helpers.utils.TestDataUtil;
 import org.testng.annotations.Test;
 import tests.BaseTest;
 
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
@@ -25,7 +27,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class TestProjectDiscoveryByExcelFiles extends BaseTest {
 
     private static final String GIT_CONTAINER_ALIAS = "git-excel-discovery";
-    private static final String FIXTURE_RESOURCE = "/test_data/TestProjectDiscoveryByExcelFiles";
     private static final String REPO_NAME = "design";
     private static final String BRANCH = "master";
 
@@ -46,7 +47,9 @@ public class TestProjectDiscoveryByExcelFiles extends BaseTest {
 
     @Override
     protected void startAuxiliaryContainers() {
-        gitContainer = new GitContainerService(GIT_CONTAINER_ALIAS, REPO_NAME, BRANCH, FIXTURE_RESOURCE);
+        gitContainer = new GitContainerService(
+                GIT_CONTAINER_ALIAS, REPO_NAME, BRANCH,
+                Path.of(TestDataUtil.getDirectoryPathFromResources("TestProjectDiscoveryByExcelFiles")));
         gitContainer.start();
         gitRemote = gitContainer.asRemote();
     }
