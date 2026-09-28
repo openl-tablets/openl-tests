@@ -29,7 +29,7 @@ public final class ProjectLinkUtil {
     }
 
     public static String downloadLink(String projectId) {
-        return DriverPool.getAppUrl() + "/web" + PROJECTS_PATH + escape(projectId) + "/files/?download=true";
+        return DriverPool.getAppUrl() + "/rest" + PROJECTS_PATH + escape(projectId) + "/files/?download=true";
     }
 
     public static String downloadLink(String projectId, String revision) {
