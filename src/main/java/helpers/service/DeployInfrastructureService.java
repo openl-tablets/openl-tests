@@ -25,6 +25,7 @@ import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.model.PutBucketVersioningRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.awssdk.services.s3.model.VersioningConfiguration;
@@ -287,9 +288,13 @@ public class DeployInfrastructureService {
                     ListObjectsV2Request.builder().bucket(bucketName).build()).contents();
             for (var object : objects) {
                 String objectName = object.key();
-                HeadObjectResponse response = s3Client.headObject(
-                        HeadObjectRequest.builder().bucket(bucketName).key(objectName).build());
-                result.put(objectName, ObjectSnapshot.from(response));
+                try {
+                    HeadObjectResponse response = s3Client.headObject(
+                            HeadObjectRequest.builder().bucket(bucketName).key(objectName).build());
+                    result.put(objectName, ObjectSnapshot.from(response));
+                } catch (NoSuchKeyException deleted) {
+                    LOGGER.info("S3 object '{}' is listed but its latest version is deleted", objectName);
+                }
             }
             return result;
         } catch (Exception e) {
@@ -482,7 +487,15 @@ public class DeployInfrastructureService {
         return "http://" + s3MockContainer.getHost() + ":" + s3MockContainer.getMappedPort(S3MOCK_HTTP_PORT);
     }
 
-    private String getS3MockInNetworkEndpoint() {
+    public String getS3AccessKey() {
+        return S3_ACCESS_KEY;
+    }
+
+    public String getS3SecretKey() {
+        return S3_SECRET_KEY;
+    }
+
+    public String getS3MockInNetworkEndpoint() {
         ensureS3MockContainerStarted();
         return "http://" + S3MOCK_ALIAS + ":" + S3MOCK_HTTP_PORT;
     }
@@ -507,13 +520,14 @@ public class DeployInfrastructureService {
         }
     }
 
-    public record ObjectSnapshot(String versionId, Instant lastModified, long size, String etag) {
+    public record ObjectSnapshot(String versionId, Instant lastModified, long size, String etag, String serverSideEncryption) {
         private static ObjectSnapshot from(HeadObjectResponse response) {
             return new ObjectSnapshot(
                     response.versionId(),
                     response.lastModified(),
                     response.contentLength(),
-                    response.eTag());
+                    response.eTag(),
+                    response.serverSideEncryptionAsString());
         }
     }
 

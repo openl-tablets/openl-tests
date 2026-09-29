@@ -20,6 +20,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import lombok.Getter;
 
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -102,6 +104,11 @@ public class ProjectDetailPage extends BasePage {
         syncUpdatesDialogComponent = new SyncUpdatesDialogComponent();
         detailRoot = new WebElement(page, "xpath=//*[@data-testid='project-detail']", "detailRoot");
         errorNotification = new WebElement(page, "xpath=(//div[contains(@class,'ant-notification-notice')])[last()]", "errorNotification");
+    }
+
+    public ProjectHistoryTabComponent getHistoryTab() {
+        openHistoryTab();
+        return history;
     }
 
     public ProjectOverviewTabComponent getOverviewTab() {
@@ -295,9 +302,12 @@ public class ProjectDetailPage extends BasePage {
         return extractOverviewField("Status", "Repository");
     }
 
-    private String extractOverviewField(String label, String nextLabel) {
+    private String extractOverviewField(String label, String... nextLabels) {
         openOverviewTab();
-        return overview.extractField(label, nextLabel);
+        return Arrays.stream(nextLabels)
+                .map(nextLabel -> overview.extractField(label, nextLabel))
+                .min(Comparator.comparingInt(String::length))
+                .orElse("");
     }
 
     public List<String> getOverviewModuleNames() {
@@ -401,7 +411,7 @@ public class ProjectDetailPage extends BasePage {
     }
 
     public String getOverviewRepository() {
-        return extractOverviewField("Repository", "Path");
+        return extractOverviewField("Repository", "Path", "Revision ID");
     }
 
     public List<String> getRevisionDescriptions() {

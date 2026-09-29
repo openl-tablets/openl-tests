@@ -5,6 +5,9 @@ import configuration.annotations.TestCaseId;
 import configuration.annotations.AppContainerConfig;
 import configuration.appcontainer.AppContainerStartParameters;
 import configuration.driver.DriverPool;
+import domain.api.GetWsServicesMethod;
+import domain.api.GetWsServicesMethod.WsService;
+import domain.api.ServiceOpenApiMethod;
 import domain.serviceclasses.constants.User;
 import domain.ui.webstudio.components.common.CreateNewProjectComponent;
 import domain.ui.webstudio.components.common.TabSwitcherComponent;
@@ -17,6 +20,8 @@ import helpers.service.LoginService;
 import helpers.service.UserService;
 import helpers.utils.StringUtil;
 import helpers.utils.WaitUtil;
+import io.restassured.response.Response;
+import org.assertj.core.api.SoftAssertions;
 import org.testng.ITestResult;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
@@ -33,6 +38,19 @@ import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableT
 public class TestNewDeployPopup extends BaseTest {
 
     private static final int WS_PORT = 8080;
+    private static final List<String> SERVICE_TEMPLATES = List.of(
+            "Sample Project",
+            "Example 1 - Bank Rating",
+            "Example 2 - Corporate Rating",
+            "Example 3 - Auto Policy Calculation",
+            "Tutorial 1 - Introduction to Decision Tables",
+            "Tutorial 2 - Introduction to Data Tables",
+            "Tutorial 3 - More Advanced Decision and Data Tables",
+            "Tutorial 4 - Introduction to Column Match Tables",
+            "Tutorial 5 - Introduction to TBasic Tables",
+            "Tutorial 6 - Introduction to Spreadsheet Tables",
+            "Tutorial 7 - Introduction to Table Properties",
+            "Tutorial 8 - Introduction to Smart Rules and Smart Lookup Tables");
     private static final Map<String, String> additionalContainerFiles = new HashMap<>();
 
     @Override
@@ -211,6 +229,63 @@ public class TestNewDeployPopup extends BaseTest {
                     .contains(project);
         }
         LOGGER.info("Step 8: WebService verification completed — all services found in WS admin UI");
+    }
+
+    @Test
+    @TestCaseId("EPBDS-13928")
+    @Description("Every built-in template with rules, deployed from Studio, is served by Rule Services "
+            + "and answers its OpenAPI in JSON and in YAML")
+    @AppContainerConfig(startParams = AppContainerStartParameters.DEPLOY_STUDIO_PARAMS)
+    public void testDeployedTemplatesServeTheirOpenApi() {
+        EditorPage editorPage = new LoginService(DriverPool.getPage())
+                .login(UserService.getUser(User.ADMIN));
+        RepositoryPage repositoryPage = editorPage.getTabSwitcherComponent()
+                .selectTab(TabSwitcherComponent.TabName.REPOSITORY);
+        for (String template : SERVICE_TEMPLATES) {
+            repositoryPage.createProject(CreateNewProjectComponent.TabName.TEMPLATE, template, template);
+            DeployModalComponent deployModal = repositoryPage.clickDeploy(template);
+            deployModal.deployWithAllFields(null, template, "Deploy " + template);
+            assertThat(deployModal.isSuccessNotificationVisible())
+                    .as("Deploying '%s' should succeed", template)
+                    .isTrue();
+            repositoryPage.closeAllMessages();
+        }
+
+        GetWsServicesMethod wsServices = new GetWsServicesMethod(deployInfra.getWsContainer(), WS_PORT);
+        Map<String, WsService> served = new HashMap<>();
+        WaitUtil.waitForCondition(() -> {
+            try {
+                wsServices.getServices().forEach(service -> served.put(service.deploymentName(), service));
+            } catch (RuntimeException notReady) {
+                LOGGER.warn("Rule Services did not list its services yet, will retry: {}", notReady.getMessage());
+            }
+            return served.keySet().containsAll(SERVICE_TEMPLATES);
+        }, 90000, 3000, "Waiting for Rule Services to serve every deployed template");
+        assertThat(served.keySet())
+                .as("Rule Services should serve a deployment of every template")
+                .containsAll(SERVICE_TEMPLATES);
+
+        SoftAssertions softly = new SoftAssertions();
+        for (String template : SERVICE_TEMPLATES) {
+            WsService service = served.get(template);
+            softly.assertThat(service.status())
+                    .as("The service of '%s' should be deployed", template)
+                    .isEqualTo("DEPLOYED");
+            Response json = new ServiceOpenApiMethod(deployInfra.getWsContainer(), WS_PORT, service.restfulUrl(), "json").get();
+            softly.assertThat(json.statusCode()).as("openapi.json of '%s' should be answered", template).isEqualTo(200);
+            softly.assertThat(json.asString()).as("openapi.json of '%s' should not be an error", template)
+                    .doesNotContain("NullPointerException");
+            softly.assertThat(json.statusCode() == 200 ? json.jsonPath().getMap("paths") : Map.of())
+                    .as("openapi.json of '%s' should describe the service paths", template)
+                    .isNotEmpty();
+            Response yaml = new ServiceOpenApiMethod(deployInfra.getWsContainer(), WS_PORT, service.restfulUrl(), "yaml").get();
+            softly.assertThat(yaml.statusCode()).as("openapi.yaml of '%s' should be answered", template).isEqualTo(200);
+            softly.assertThat(yaml.asString())
+                    .as("openapi.yaml of '%s' should describe the service paths", template)
+                    .startsWith("openapi:")
+                    .containsPattern("(?m)^paths:\\R\\s+/");
+        }
+        softly.assertAll();
     }
 
     private void editProjectCell(EditorPage editorPage, String projectName, String value) {

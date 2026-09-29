@@ -21,6 +21,7 @@ public enum AppContainerStartParameters {
     SINGLE_USER_STUDIO_PARAMS,
     DEPLOY_STUDIO_PARAMS,
     STUDIO_GIT,
+    STUDIO_REF_REPOSITORIES_PARAMS,
     SERVICE_PARAMS,
     SERVICE_FILE_PARAMS,
     STUDIO_CENTRAL_GROUP_1_PARAMS,
@@ -144,6 +145,28 @@ public enum AppContainerStartParameters {
                 config.put("security.administrators", "studioadmin");
                 config.put("security.ad.domain", "openl.local");
                 config.put("security.ad.server-url", "ldap://samba:389");
+                break;
+            case STUDIO_REF_REPOSITORIES_PARAMS:
+                config.putAll(DEFAULT_STUDIO_PARAMS.getParameterMap());
+                config.put("design-repository-configs", "design,openl-rating,openl-policy-life");
+                config.put("DESIGN_REPO-GIT__REF_", "repo-git");
+                config.put("DESIGN_REPO-GIT_BRANCH", "development");
+                config.put("DESIGN_REPO-GIT_PROTECTED-BRANCHES", "master, release-*");
+                config.put("DESIGN_REPO-GIT_BASE_PATH__REF_", "repo-default.design.base.path");
+                config.put("DESIGN_REPO-GIT_NEW-BRANCH__REF_", "repo-default.design.new-branch");
+                config.put("DESIGN_REPO-GIT_COMMENT-TEMPLATE__REF_", "repo-default.design.comment-template");
+                config.put("REPO-DEFAULT_DESIGN_NEW-BRANCH_PATTERN", "EPBDS-{username}");
+                config.put("REPO-DEFAULT_DESIGN_COMMENT-TEMPLATE_USE-CUSTOM-COMMENTS", "true");
+                config.put("REPO-DEFAULT_DESIGN_COMMENT-TEMPLATE_USER-MESSAGE_DEFAULT_SAVE", "EPBDS- {project-name} saved");
+                config.put("REPOSITORY_OPENL-RATING__REF_", "design.repo-git");
+                config.put("REPOSITORY_OPENL-RATING_NAME", "openl-rating");
+                config.put("REPOSITORY_OPENL-RATING_URI", "/opt/openl/local/repositories/openl-rating");
+                config.put("REPOSITORY_OPENL-POLICY-LIFE__REF_", "design.repo-git");
+                config.put("REPOSITORY_OPENL-POLICY-LIFE_NAME", "openl-policy-life");
+                config.put("REPOSITORY_OPENL-POLICY-LIFE_URI", "/opt/openl/local/repositories/openl-policy-life");
+                config.put("REPOSITORY_OPENL-POLICY-LIFE_BRANCH", "main");
+                config.put("REPOSITORY_OPENL-POLICY-LIFE_PROTECTED-BRANCHES", "test-override");
+                config.put("REPOSITORY_OPENL-POLICY-LIFE_COMMENT-TEMPLATE_USER-MESSAGE_DEFAULT_SAVE", "Overridden-");
                 break;
             case STUDIO_MAIL_MOCK_PARAMS:
                 config.putAll(DEFAULT_STUDIO_PARAMS.getParameterMap());

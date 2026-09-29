@@ -10,6 +10,7 @@ import java.util.List;
 
 public class TableComponent extends BaseComponent {
 
+    private static final String CELL_USAGE = "[starts-with(@data-testid,'cell-usage-')]";
     private static final String RAISED_CELL_TEXTS = "cells => cells.filter(cell => getComputedStyle(cell).outlineStyle === 'solid' && getComputedStyle(cell).outlineColor === 'rgb(222, 32, 36)').map(cell => cell.innerText.trim())";
 
     private WebElement allCells;
@@ -193,11 +194,7 @@ public class TableComponent extends BaseComponent {
     }
 
     public String getCellHintText(int rowIndex, int columnIndex, String variableName) {
-        WebElement cell = getCell(rowIndex, columnIndex);
-        WebElement named = new WebElement(cell,
-                String.format("xpath=(.//*[starts-with(@data-testid,'cell-usage-')][contains(normalize-space(.),'%s')])[1]",
-                        variableName),
-                "cellUsage");
+        WebElement named = cellUsage(rowIndex, columnIndex, "*", String.format("contains(normalize-space(.),'%s')", variableName));
         named.hover();
         WebElement hint = new WebElement(page,
                 "xpath=//div[@role='tooltip'][contains(@class,'ant-tooltip-container')]"
@@ -207,6 +204,22 @@ public class TableComponent extends BaseComponent {
         WaitUtil.requireCondition(() -> hintSaid(hint).contains(variableName), DEFAULT_TIMEOUT_MS, 200,
                 "Waiting for the hint of '" + variableName + "' to be told");
         return hintSaid(hint).trim();
+    }
+
+    public WebElement getCellLink(int rowIndex, int columnIndex, String linkText) {
+        return cellUsage(rowIndex, columnIndex, "button", String.format("normalize-space(.)='%s'", linkText));
+    }
+
+    public List<String> getCellLinkTexts(int rowIndex, int columnIndex) {
+        return getCell(rowIndex, columnIndex).getLocator()
+                .locator("xpath=.//button" + CELL_USAGE)
+                .allInnerTexts().stream().map(String::trim).toList();
+    }
+
+    private WebElement cellUsage(int rowIndex, int columnIndex, String tag, String textCondition) {
+        return new WebElement(getCell(rowIndex, columnIndex),
+                String.format("xpath=(.//%s" + CELL_USAGE + "[%s])[1]", tag, textCondition),
+                "cellUsage");
     }
 
     private String hintSaid(WebElement hint) {

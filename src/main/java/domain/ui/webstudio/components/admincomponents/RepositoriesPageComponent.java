@@ -1,5 +1,6 @@
 package domain.ui.webstudio.components.admincomponents;
 
+import com.microsoft.playwright.Locator;
 import configuration.core.ui.WebElement;
 import configuration.driver.DriverPool;
 import domain.serviceclasses.constants.User;
@@ -10,15 +11,21 @@ import helpers.utils.StringUtil;
 import helpers.utils.WaitUtil;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class RepositoriesPageComponent extends BaseComponent {
+
+    private static final int UNSAVED_CHANGES_PROBE_MS = 2000;
+    private static final String DROPDOWN_OPTION = "//div[contains(concat(' ', normalize-space(@class), ' '), ' ant-select-item-option ')]";
+    private static final String ACTIVE_OPTION = "//div[contains(@class,'ant-select-item-option-active')]";
+    private static final String UNSAVED_CHANGES_PROMPT = "xpath=//div[contains(@class,'ant-modal-container')]"
+            + "[.//div[contains(@class,'ant-modal-title') and normalize-space()='You have unsaved changes']]";
 
     private WebElement designRepositoriesTab;
     private WebElement deploymentRepositoriesTab;
     private WebElement addRepositoryBtn;
     private WebElement addDeploymentRepositoryBtn;
-    private List<WebElement> designRepositoryList;
 
     private WebElement remoteRepositoryNameField;
     private WebElement remoteRepositoryTypeSelector;
@@ -36,6 +43,10 @@ public class RepositoriesPageComponent extends BaseComponent {
     private WebElement repositoryTabTemplate;
     private WebElement deleteRepositoryBtnTemplate;
     private List<WebElement> repositoryTypeOptions;
+    private WebElement settingField;
+    private WebElement settingSelector;
+    private WebElement unsavedChangesPrompt;
+    private WebElement unsavedChangesLeaveBtn;
 
     public RepositoriesPageComponent() {
         super(DriverPool.getPage());
@@ -52,7 +63,6 @@ public class RepositoriesPageComponent extends BaseComponent {
         deploymentRepositoriesTab = createScopedElement("xpath=.//div[contains(@class,'ant-tabs-tab') and contains(text(),'Deployment Repositories')]", "deploymentRepositoriesTab");
         addRepositoryBtn = createScopedElement("xpath=.//button[./span[contains(text(),'Add Design Repository')]]", "addRepositoryBtn");
         addDeploymentRepositoryBtn = createScopedElement("xpath=.//button[./span[contains(text(),'Add Deployment Repository')]]", "addDeploymentRepositoryBtn");
-        designRepositoryList = createScopedElementList("xpath=.//div[contains(@class,'ant-tabs-card')]//div[contains(@class,'ant-tabs-nav-list')]/div[@data-node-key]", "designRepositoryList");
 
         remoteRepositoryNameField = createScopedElement("xpath=.//div[contains(@class,'ant-tabs-card')]//input[@id='name']", "remoteRepositoryNameField");
         remoteRepositoryTypeSelector = createScopedElement("xpath=.//div[contains(@class,'ant-tabs-card')]//div[contains(@class,'ant-select') and .//input[@id='type']]//div[contains(@class,'ant-select-content')]", "remoteRepositoryTypeSelector");
@@ -70,6 +80,10 @@ public class RepositoriesPageComponent extends BaseComponent {
         repositoryTabTemplate = new WebElement(page, "xpath=//div[contains(@class,'ant-tabs-card')]//div[contains(@class,'ant-tabs-nav-list')]//div[contains(@class,'ant-tabs-tab') and .//*[text()='%s']]", "repositoryTab");
         deleteRepositoryBtnTemplate = new WebElement(page, "xpath=//div[contains(@class,'ant-tabs-card')]//div[contains(@class,'ant-tabs-nav-list')]//div[contains(@class,'ant-tabs-tab') and .//*[text()='%s']]//button[contains(@class,'ant-tabs-tab-remove')]", "deleteRepositoryBtn");
         repositoryTypeOptions = createElementList("xpath=//div[contains(@class,'ant-select-dropdown') and not(contains(@class,'ant-select-dropdown-hidden'))]//div[contains(@class,'ant-select-item') and contains(@class,'ant-select-item-option') and not(contains(@class,'ant-select-item-option-content'))]", "repoTypeOptions");
+        settingField = createScopedElement("xpath=.//div[contains(@class,'ant-tabs-card')]//input[@id='settings_%s']", "settingField");
+        settingSelector = createScopedElement("xpath=.//div[contains(@class,'ant-tabs-card')]//div[contains(@class,'ant-select') and .//input[@id='settings_%s']]//div[contains(@class,'ant-select-content')]", "settingSelector");
+        unsavedChangesPrompt = new WebElement(page, UNSAVED_CHANGES_PROMPT, "unsavedChangesPrompt");
+        unsavedChangesLeaveBtn = new WebElement(page, UNSAVED_CHANGES_PROMPT + "//button[normalize-space()='OK']", "unsavedChangesLeaveBtn");
     }
 
     public void deleteRepository(String repositoryName, User user) {
@@ -105,11 +119,30 @@ public class RepositoriesPageComponent extends BaseComponent {
     }
 
     public RepositoriesPageComponent selectDesignRepositoryByName(String name) {
-        designRepositoryList.stream()
-                .filter(tab -> tab.getText().trim().equals(name))
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("Design repository tab '" + name + "' not found"))
-                .click();
+        clickDesignRepositoryTab(name);
+        return waitForRepositoryShown(name);
+    }
+
+    public RepositoriesPageComponent selectDesignRepositoryLeavingChanges(String name) {
+        clickDesignRepositoryTab(name);
+        if (isUnsavedChangesPromptShown()) {
+            unsavedChangesLeaveBtn.click();
+        }
+        return waitForRepositoryShown(name);
+    }
+
+    public RepositoriesPageComponent clickDesignRepositoryTab(String name) {
+        repositoryTabTemplate.format(name).waitForVisible(DEFAULT_TIMEOUT_MS).click();
+        return this;
+    }
+
+    public boolean isUnsavedChangesPromptShown() {
+        return unsavedChangesPrompt.isVisible(UNSAVED_CHANGES_PROBE_MS);
+    }
+
+    private RepositoriesPageComponent waitForRepositoryShown(String name) {
+        WaitUtil.requireCondition(() -> name.equals(remoteRepositoryNameField.getCurrentInputValue()), DEFAULT_TIMEOUT_MS, 200,
+                "Waiting for the settings of the repository '" + name + "' to be shown");
         return this;
     }
 
@@ -146,6 +179,66 @@ public class RepositoriesPageComponent extends BaseComponent {
         remoteRepositoryTypeSelector.click();
         typeOption.format(type).click();
         return this;
+    }
+
+    public String getSettingValue(String setting) {
+        return settingField.format(setting).getCurrentInputValue();
+    }
+
+    public boolean isSettingChecked(String setting) {
+        return settingField.format(setting).isChecked();
+    }
+
+    public RepositoriesPageComponent setS3Connection(String serviceEndpoint, String bucketName, String regionName,
+                                                     String accessKey, String secretKey) {
+        settingField.format("serviceEndpoint").waitForVisible(3000).fillSequentially(serviceEndpoint);
+        settingField.format("bucketName").fillSequentially(bucketName);
+        selectRegion(regionName);
+        settingField.format("accessKey").fillSequentially(accessKey);
+        settingField.format("secretKey").fillSequentially(secretKey);
+        return this;
+    }
+
+    public List<String> getRegionOptions() {
+        String list = openList(settingField.format("regionName"));
+        WaitUtil.waitForCondition(() -> page.locator(list + DROPDOWN_OPTION).count() > 0,
+                DEFAULT_TIMEOUT_MS, 200, "Waiting for the Region name list to offer the regions");
+        List<String> regions = page.locator(list + DROPDOWN_OPTION).all().stream()
+                .map(option -> option.getAttribute("title")).toList();
+        page.keyboard().press("Escape");
+        return regions;
+    }
+
+    public RepositoriesPageComponent setSseAlgorithm(String algorithm) {
+        pickInSelect(settingField.format("sseAlgorithm"), algorithm);
+        return this;
+    }
+
+    public String getSseAlgorithm() {
+        return settingSelector.format("sseAlgorithm").getText().trim();
+    }
+
+    private void selectRegion(String regionName) {
+        Locator active = page.locator(openList(settingField.format("regionName")) + ACTIVE_OPTION);
+        WaitUtil.requireCondition(() -> {
+            String marked = active.getAttribute("title");
+            if (regionName.equals(marked)) {
+                return true;
+            }
+            page.keyboard().press("ArrowDown");
+            WaitUtil.waitForCondition(() -> !Objects.equals(marked, active.getAttribute("title")), 2000, 20,
+                    "Waiting for the next region to be marked");
+            return false;
+        }, 60000, 10, "Moving through the Region name list to '" + regionName + "'");
+        page.keyboard().press("Enter");
+    }
+
+    private String openList(WebElement selectInput) {
+        selectInput.click();
+        WaitUtil.requireCondition(() -> "true".equals(selectInput.getAttribute("aria-expanded")), DEFAULT_TIMEOUT_MS, 100,
+                "Waiting for the list to open");
+        return "xpath=//div[contains(concat(' ', normalize-space(@class), ' '), ' ant-select-dropdown ')]"
+                + "[.//*[@id='" + selectInput.getAttribute("aria-controls") + "']]";
     }
 
     public RepositoriesPageComponent setDesignRepositoryJdbcUrl(String url) {
