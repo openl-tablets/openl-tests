@@ -280,10 +280,21 @@ report with one test entry per project/group via `@Factory` + `ITest`.
 |---|---|---|---|
 | Test / suite | `TestZippedProjects` / `studio_zip_projects_regression.xml` | `TestStudioCentralGroup*` / `studio_central_projects_regression.xml` | `TestPreconfigProjects` / `studio_preconfig_projects_regression.xml` |
 | Content | Static ZIP snapshots of customer projects (`client_projects/customers_projects_test_automation_6.x`) | Live Genesis client projects (openl-rating/claim/policy/policy-life/financials) | Live EIS product preconfigurations (benefits/commercial/personal policy, claims) |
-| Source | Local folder tree; `*deployment`-suffixed folders group interdependent zips into one container | EIS GitLab git repos mounted by Studio itself as design repositories (`STUDIO_CENTRAL_GROUP_*_PARAMS`, creds in `.env`) | Local **Mercurial** clones under `Projects/eis/preconfigs` (vno-hg.exigengroup.com; creds in `~/.hgrc`), synced by `hg pull -u` before discovery |
+| Source | Local folder tree; `*deployment`-suffixed folders group interdependent zips into one container | EIS GitLab git repos mounted by Studio itself as design repositories (`STUDIO_CENTRAL_GROUP_*_PARAMS`, creds in `.env`: `GITLAB_USER`, `GITLAB_PASSWORD`, `GITLAB_BRANCH`) | Local **Mercurial** clones under `Projects/eis/preconfigs` (vno-hg.exigengroup.com; creds in `~/.hgrc`), synced by `hg pull -u` before discovery |
 | Unit of test | ZIP group (deployment folder) or single zip | Studio instance per repo group, projects interdependent (bulk-open first) | Single OpenL project (`<module>/src/main/openl`), all independent |
 | Validation | Upload + compile + run Test tables | Compile + run Test tables (Studio clones repos itself — the test polls until the lazy clone finishes) | Upload + compile + **deploy** (`POST /rest/deployments`) + service served by **ruleservice** (`GET ws:/admin/services`) |
 | Extra infra | — | — | `DeployInfrastructureService` per project: PostgreSQL production repo + ruleservice (WS) container |
+
+### ReportPortal (zip and central regressions)
+
+`studio_zip_projects_regression.xml` and `studio_central_projects_regression.xml` register `ReportPortalTestNGListener`; log lines of the tests reach the launch through the `ReportPortalAppender` of `log4j2-test.xml`. No other suite and no GitHub Actions shard reports to ReportPortal. `src/test/resources/reportportal.properties` holds the server, the project and the zip launch with `rp.enable=false`, so nothing is reported unless a run passes `-Drp.enable=true` (the server is reachable only through the EIS VPN); the API key is never committed: put it into `rp.api.key` of the local copy and hide that change from git with `git update-index --skip-worktree src/test/resources/reportportal.properties`, or export `RP_API_KEY`. `-D` overrides the file, and `RP_*` environment variables override it too, so a central run names its own launch:
+
+```bash
+mvn clean test -Dsuite=studio_zip_projects_regression -Dzip.projects.root=<client_projects>/customers_projects_test_automation_6.x -Ddocker_image_name=<image> -Drp.enable=true "-Drp.attributes=tests_branch:main;build:<image tag>;run:local"
+mvn clean test -Dsuite=studio_central_projects_regression -Ddocker_image_name=<image> -Drp.enable=true -Drp.launch=central_projects_regression "-Drp.attributes=tests_branch:main;build:<image tag>;run:local"
+```
+
+`rp.attributes` replaces the attributes of the file as a whole. `RP_DESCRIPTION` replaces the launch description; without it a central run carries the zip description.
 
 ### Preconfig regression infrastructure
 
