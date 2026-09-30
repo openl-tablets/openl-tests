@@ -1,7 +1,6 @@
 package tests.ui.webstudio.rules_editor;
 
 import configuration.annotations.Description;
-import configuration.annotations.KnownIssue;
 import configuration.annotations.TestCaseId;
 import configuration.annotations.AppContainerConfig;
 import configuration.appcontainer.AppContainerStartParameters;
@@ -31,7 +30,6 @@ public class TestCreateProjectFromOpenApiJsonFile extends BaseTest {
 
     @Test
     @TestCaseId("IPBQA-30678")
-    @KnownIssue(value = "EPBDS-16769", failsWith = "waiting for locator(\"//*[@data-testid='table-cell-input']\")")
     @Description("Create project from OpenAPI JSON file and verify repository tree structure and Editor module properties;"
             + " copying a module keeps the modules the descriptor already declares (EPBDS-16227) and an uploaded"
             + " workbook does not rewrite an explicit rules.xml.")
@@ -94,6 +92,7 @@ public class TestCreateProjectFromOpenApiJsonFile extends BaseTest {
         editorPage.getEditorLeftRulesTreeComponent().expandFolderInTree("Datatype");
         editorPage.getEditorLeftRulesTreeComponent().selectItemInFolder("Datatype", "JAXRSErrorResponse");
         TableComponent datatypeTable = editorPage.getCenterTable();
+        editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
         datatypeTable.editCell(3, 1, "String[]");
         editorPage.getEditorTableActionsPanelComponent().clickSaveChanges();
         editorPage.waitUntilSpinnerLoaded();
