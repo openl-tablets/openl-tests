@@ -35,17 +35,14 @@ import static org.assertj.core.api.Assertions.fail;
 public abstract class AbstractStudioCentralProjectsApi implements ITest {
     protected static final Logger LOGGER = LogManager.getLogger(AbstractStudioCentralProjectsApi.class);
     private static final Duration CONTAINER_STARTUP_TIMEOUT = Duration.ofMinutes(60);
-    // Design repos are cloned lazily on first boot and can take a very long time; poll the project list until populated.
     private static final Duration CLONE_PROJECTS_TIMEOUT = Duration.ofMinutes(90);
     private static final long CLONE_POLL_INTERVAL_MS = 20_000;
     private static final int TEST_SUMMARY_POLL_INTERVAL_MS = 2_000;
     private static final int TEST_SUMMARY_POLL_TIMEOUT_MS = 10 * 60 * 1_000;
     private static final int COMPILE_POLL_INTERVAL_MS = 1_500;
-    // Safety net only: tests/run already awaits compilation server-side before it returns.
     private static final int COMPILE_POLL_TIMEOUT_MS = 60 * 1_000;
 
     private final Map<String, Map<String, Object>> projectsByName = new LinkedHashMap<>();
-    // Per-invocation test name so the report shows the project instead of the bare method name.
     private final ThreadLocal<String> currentTestName = new ThreadLocal<>();
 
     protected abstract AppContainerStartParameters params();
@@ -66,10 +63,6 @@ public abstract class AbstractStudioCentralProjectsApi implements ITest {
         openAllProjects();
     }
 
-    /**
-     * The container reports "ready" (HTTP up) before the lazy first-boot git clone of the design repos finishes,
-     * so reading the project list once returns nothing. Poll it until the clone has produced projects.
-     */
     private List<Map<String, Object>> waitForClonedProjects() {
         long deadline = System.currentTimeMillis() + CLONE_PROJECTS_TIMEOUT.toMillis();
         LOGGER.info("Waiting for the lazy git clone to produce projects for group [{}] (up to {} min)...",
@@ -99,11 +92,6 @@ public abstract class AbstractStudioCentralProjectsApi implements ITest {
         }
     }
 
-    /**
-     * Bulk-open every discovered project so cross-project dependencies resolve before
-     * any per-project compilation/test check runs. A project that depends on another
-     * CLOSED project would otherwise fail to compile.
-     */
     private void openAllProjects() {
         ProjectsMethod projects = new ProjectsMethod();
         int opened = 0;
@@ -170,7 +158,7 @@ public abstract class AbstractStudioCentralProjectsApi implements ITest {
         AppContainerStartParameters startParams = params();
         String containerName = StringUtil.generateUniqueName("studio_central_" + startParams.name().toLowerCase());
         Map<String, String> envVars = startParams.getParameterMap();
-        envVars.forEach((k, v) -> LOGGER.info("[{}] -> [{}]", k, v));
+        envVars.forEach((k, v) -> LOGGER.info("[{}] -> [{}]", k, StringUtil.maskSecretValue(k, v)));
         String dockerImage = ProjectConfiguration.getProperty(PropertyNameSpace.DOCKER_IMAGE_NAME);
 
         LOGGER.info("Starting WebStudio container for group [{}]. First boot clones design repos and may take up to {} minutes.",
@@ -215,14 +203,10 @@ public abstract class AbstractStudioCentralProjectsApi implements ITest {
         String projectName = String.valueOf(project.get("name"));
         LOGGER.info("Validating project [{}] (id={})", projectName, projectId);
 
-        // Re-anchor "current project" in session even if already OPENED.
         Response open = new ProjectsMethod().openProject(projectId);
         assertThat(open.getStatusCode() < 300).as("%s", String.format("Failed to set project %s as current: HTTP %d — %s",
                         projectName, open.getStatusCode(), open.getBody().asString())).isTrue();
 
-        // tests/run opens a module, awaits compilation server-side, then runs all tests — so it is
-        // also the compile trigger (a plain open leaves compileState 'idle'). 404 means the project
-        // has no module to open/compile.
         Response runResponse = new ProjectTestsMethod().runAllTests(projectId);
         int runStatus = runResponse.getStatusCode();
         if (runStatus == 404 || runStatus == 204) {
@@ -232,8 +216,6 @@ public abstract class AbstractStudioCentralProjectsApi implements ITest {
         assertThat(runStatus == 200 || runStatus == 202).as("%s", String.format("Failed to compile/run tests for project %s: HTTP %d — %s",
                         projectName, runStatus, runResponse.getBody().asString())).isTrue();
 
-        // Compilation is finished by the time tests/run returns; /status now reports the real state
-        // (replaces the removed /modules + /compile/progress endpoints).
         Response statusResp = awaitCompilation(projectId);
         assertThat(statusResp.getStatusCode()).as("%s", String.format("Project status failed for project %s: HTTP %d — %s",
                         projectName, statusResp.getStatusCode(), statusResp.getBody().asString())).isEqualTo(200);
@@ -266,7 +248,6 @@ public abstract class AbstractStudioCentralProjectsApi implements ITest {
         }
     }
 
-    // Poll /status until the project reaches a terminal compile state (ok/warnings/errors).
     private Response awaitCompilation(String projectId) {
         ProjectStatusMethod statusApi = new ProjectStatusMethod();
         long deadline = System.currentTimeMillis() + COMPILE_POLL_TIMEOUT_MS;

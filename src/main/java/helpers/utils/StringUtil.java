@@ -91,12 +91,6 @@ public class StringUtil {
         }
     }
     
-    /**
-     * Collapses any run of whitespace (spaces, tabs, newlines) into a single space and trims.
-     * If the result exceeds {@code maxLength}, it is truncated and an ellipsis is appended.
-     * Intended for log lines that would otherwise span many lines (e.g. raw textContent of
-     * a multi-line UI block).
-     */
     public static String oneLine(String value, int maxLength) {
         if (value == null) return "null";
         String collapsed = value.replaceAll("\\s+", " ").trim();
@@ -115,5 +109,10 @@ public class StringUtil {
             return "unnamed";
         }
         return fileName.replaceAll("[^a-zA-Z0-9._-]", "_");
+    }
+
+    public static String maskSecretValue(String key, String value) {
+        String name = key.toLowerCase();
+        return name.contains("password") || name.contains("token") || name.contains("secret") ? "***" : value;
     }
 }
