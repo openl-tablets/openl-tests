@@ -5,6 +5,7 @@ import configuration.appcontainer.AppContainerStartParameters;
 import configuration.projectconfig.ProjectConfiguration;
 import configuration.projectconfig.PropertyNameSpace;
 import domain.api.AuthorizedApiMethod;
+import domain.api.ProjectBranchesMethod;
 import domain.api.ProjectStatusMethod;
 import domain.api.ProjectTestsMethod;
 import domain.api.ProjectsMethod;
@@ -23,9 +24,15 @@ import org.testng.annotations.Test;
 
 import java.lang.reflect.Method;
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
@@ -41,6 +48,10 @@ public abstract class AbstractStudioCentralProjectsApi implements ITest {
     private static final int TEST_SUMMARY_POLL_TIMEOUT_MS = 10 * 60 * 1_000;
     private static final int COMPILE_POLL_INTERVAL_MS = 1_500;
     private static final int COMPILE_POLL_TIMEOUT_MS = 60 * 1_000;
+    private static final String MAINLINE_BRANCHES_PROPERTY = "studio.central.branches";
+    private static final String DEFAULT_MAINLINE_BRANCHES = "master,main,development";
+    private static final Set<String> MAINLINE_BRANCHES = mainlineBranches();
+    private static final int BRANCHES_SHOWN_PER_PROJECT = 3;
 
     private final Map<String, Map<String, Object>> projectsByName = new LinkedHashMap<>();
     private final ThreadLocal<String> currentTestName = new ThreadLocal<>();
@@ -55,12 +66,76 @@ public abstract class AbstractStudioCentralProjectsApi implements ITest {
         AuthorizedApiMethod.startSession();
 
         List<Map<String, Object>> projects = waitForClonedProjects();
-        for (Map<String, Object> project : projects) {
-            projectsByName.put(String.valueOf(project.get("name")), project);
+        selectMainlineProjects(projects);
+        if (projectsByName.isEmpty()) {
+            throw new IllegalStateException(String.format("None of the %d projects of group [%s] is on the branches %s",
+                    projects.size(), groupLabel(), MAINLINE_BRANCHES));
         }
-        LOGGER.info("Found {} projects in group [{}]", projectsByName.size(), groupLabel());
 
         openAllProjects();
+    }
+
+    private void selectMainlineProjects(List<Map<String, Object>> projects) {
+        int ignored = 0;
+        int unreadable = 0;
+        for (Map<String, Object> project : projects) {
+            String name = String.valueOf(project.get("name"));
+            Optional<List<String>> branches = projectBranches(project, name);
+            if (branches.isEmpty()) {
+                unreadable++;
+            } else if (branches.get().stream().noneMatch(AbstractStudioCentralProjectsApi::isMainlineBranch)) {
+                ignored++;
+                LOGGER.info("Ignored project [{}] of repository [{}]: it is on none of the branches {}, only on {}",
+                        name, project.get("repository"), MAINLINE_BRANCHES, describeBranches(branches.get()));
+                continue;
+            } else if (!isMainlineBranch(String.valueOf(project.get("branch")))) {
+                LOGGER.warn("Project [{}] is on {}, but Studio shows it on the branch [{}], which is the one validated",
+                        name, describeBranches(branches.get()), project.get("branch"));
+            }
+            projectsByName.put(name, project);
+        }
+        LOGGER.info("Found {} projects in group [{}]: {} validated ({} of them with unreadable branches), {} ignored as on none of the branches {}",
+                projects.size(), groupLabel(), projectsByName.size(), unreadable, ignored, MAINLINE_BRANCHES);
+    }
+
+    private Optional<List<String>> projectBranches(Map<String, Object> project, String name) {
+        Response resp = new ProjectBranchesMethod().listBranches(String.valueOf(project.get("id")));
+        if (resp.getStatusCode() != 200) {
+            LOGGER.warn("Could not read the branches of project [{}]: HTTP {} — {}. The project stays in the run.",
+                    name, resp.getStatusCode(), resp.getBody().asString());
+            return Optional.empty();
+        }
+        try {
+            List<String> branches = resp.jsonPath().getList("name", String.class);
+            if (branches != null && !branches.isEmpty()) {
+                return Optional.of(branches);
+            }
+            LOGGER.warn("Project [{}] reports no branches. The project stays in the run.", name);
+        } catch (RuntimeException e) {
+            LOGGER.warn("Could not parse the branches of project [{}]: {}. The project stays in the run.", name, e.toString());
+        }
+        return Optional.empty();
+    }
+
+    private static Set<String> mainlineBranches() {
+        String configured = ProjectConfiguration.getProperty(MAINLINE_BRANCHES_PROPERTY);
+        String value = configured == null || configured.isBlank() ? DEFAULT_MAINLINE_BRANCHES : configured;
+        Set<String> branches = Arrays.stream(value.split(","))
+                .map(String::trim)
+                .filter(branch -> !branch.isEmpty())
+                .map(branch -> branch.toLowerCase(Locale.ROOT))
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        return Collections.unmodifiableSet(branches);
+    }
+
+    private static boolean isMainlineBranch(String branch) {
+        return MAINLINE_BRANCHES.contains(branch.toLowerCase(Locale.ROOT));
+    }
+
+    private static String describeBranches(List<String> branches) {
+        int shown = Math.min(branches.size(), BRANCHES_SHOWN_PER_PROJECT);
+        String listed = String.join(", ", branches.subList(0, shown));
+        return branches.size() > shown ? listed + " and " + (branches.size() - shown) + " more" : listed;
     }
 
     private List<Map<String, Object>> waitForClonedProjects() {
@@ -73,12 +148,20 @@ public abstract class AbstractStudioCentralProjectsApi implements ITest {
             Response resp = new ProjectsMethod().getAllProjects(500);
             if (resp.getStatusCode() == 200) {
                 List<Map<String, Object>> projects = extractProjects(resp);
-                if (!projects.isEmpty()) {
+                Map<String, Object> indexHealth = indexHealth(resp);
+                List<String> indexing = repositoriesInIndexState(indexHealth, "indexing");
+                if (!projects.isEmpty() && indexing.isEmpty()) {
+                    warnAboutDegradedIndex(indexHealth);
                     LOGGER.info("Clone produced {} project(s) for group [{}] after {} attempt(s)",
                             projects.size(), groupLabel(), attempt);
                     return projects;
                 }
-                LOGGER.info("...clone not finished for group [{}] — 0 projects yet (attempt {})", groupLabel(), attempt);
+                if (projects.isEmpty()) {
+                    LOGGER.info("...clone not finished for group [{}] — 0 projects yet (attempt {})", groupLabel(), attempt);
+                } else {
+                    LOGGER.info("...project index of {} not built across all branches yet for group [{}] — {} projects listed so far (attempt {})",
+                            indexing, groupLabel(), projects.size(), attempt);
+                }
             } else {
                 LOGGER.info("...project listing not ready for group [{}]: HTTP {} (attempt {})",
                         groupLabel(), resp.getStatusCode(), attempt);
@@ -186,6 +269,31 @@ public abstract class AbstractStudioCentralProjectsApi implements ITest {
             done.set(true);
             heartbeat.interrupt();
         }
+    }
+
+    private static Map<String, Object> indexHealth(Response response) {
+        try {
+            Map<String, Object> health = response.jsonPath().getMap("projectIndexHealth");
+            return health == null ? Map.of() : health;
+        } catch (RuntimeException e) {
+            return Map.of();
+        }
+    }
+
+    private static List<String> repositoriesInIndexState(Map<String, Object> indexHealth, String state) {
+        return indexHealth.entrySet().stream()
+                .filter(entry -> entry.getValue() instanceof Map<?, ?> health && state.equals(health.get("state")))
+                .map(Map.Entry::getKey)
+                .toList();
+    }
+
+    private void warnAboutDegradedIndex(Map<String, Object> indexHealth) {
+        indexHealth.forEach((repository, value) -> {
+            if (value instanceof Map<?, ?> health && "degraded".equals(health.get("state"))) {
+                LOGGER.warn("Project index of repository [{}] is degraded: branches {} could not be indexed ({}). A project whose mainline branch is among them is ignored wrongly.",
+                        repository, health.get("failedBranches"), health.get("lastError"));
+            }
+        });
     }
 
     @SuppressWarnings("unchecked")
