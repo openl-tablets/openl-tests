@@ -287,16 +287,17 @@ report with one test entry per project/group via `@Factory` + `ITest`.
 
 The central-studio regression validates only the projects that are on at least one of the branches `master`, `main`, `development` (`studio.central.branches`, a comma-separated list, case-insensitive, read like any other property: `-D`, `.env`, `config.properties`; an empty value means the default). Studio indexes every branch of a design repository and lists the projects that live only on old branches too, and the old branches of the Genesis repositories hold projects that no longer compile. `setUp` waits until `projectIndexHealth` of `GET /rest/projects` reports no repository as `indexing`, asks `GET /rest/projects/{id}/branches` for each listed project, leaves out and logs the ones on none of those branches, keeps a project whose branches cannot be read, and fails when no project is left. The branch configured for the repositories (`GITLAB_BRANCH`) has to be in the list, otherwise its projects are left out.
 
-### ReportPortal (zip and central regressions)
+### ReportPortal (client project regressions)
 
-`studio_zip_projects_regression.xml` and `studio_central_projects_regression.xml` register `ReportPortalTestNGListener`; log lines of the tests reach the launch through the `ReportPortalAppender` of `log4j2-test.xml`. No other suite and no GitHub Actions shard reports to ReportPortal. `src/test/resources/reportportal.properties` holds the server, the project and the zip launch with `rp.enable=false`, so nothing is reported unless a run passes `-Drp.enable=true` (the server is reachable only through the EIS VPN); the API key is never committed: put it into `rp.api.key` of the local copy and hide that change from git with `git update-index --skip-worktree src/test/resources/reportportal.properties`, or export `RP_API_KEY`. `-D` overrides the file, and `RP_*` environment variables override it too, so a central run names its own launch:
+`studio_zip_projects_regression.xml`, `studio_central_projects_regression.xml` and `studio_preconfig_projects_regression.xml` register `ReportPortalTestNGListener`; log lines of the tests reach the launch through the `ReportPortalAppender` of `log4j2-test.xml`. No other suite and no GitHub Actions shard reports to ReportPortal. `src/test/resources/reportportal.properties` holds the server, the project and the zip launch with `rp.enable=false`, so nothing is reported unless a run passes `-Drp.enable=true` (the server is reachable only through the EIS VPN); the API key is never committed: put it into `rp.api.key` of the local copy and hide that change from git with `git update-index --skip-worktree src/test/resources/reportportal.properties`, or export `RP_API_KEY`. `-D` overrides the file, and `RP_*` environment variables override it too, so the central and preconfig runs name their own launches:
 
 ```bash
 mvn clean test -Dsuite=studio_zip_projects_regression -Dzip.projects.root=<client_projects>/customers_projects_test_automation_6.x -Ddocker_image_name=<image> -Drp.enable=true "-Drp.attributes=tests_branch:main;build:<image tag>;run:local"
 mvn clean test -Dsuite=studio_central_projects_regression -Ddocker_image_name=<image> -Drp.enable=true -Drp.launch=central_projects_regression "-Drp.attributes=tests_branch:main;build:<image tag>;run:local"
+mvn clean test -Dsuite=studio_preconfig_projects_regression -Dpreconfig.repos.root=<preconfigs> -Ddocker_image_name=<image> -Dws_docker_image_name=<ws image> -Drp.enable=true -Drp.launch=preconfig_projects_regression "-Drp.attributes=tests_branch:main;build:<image tag>;run:local"
 ```
 
-`rp.attributes` replaces the attributes of the file as a whole. `RP_DESCRIPTION` replaces the launch description; without it a central run carries the zip description.
+`rp.attributes` replaces the attributes of the file as a whole. `RP_DESCRIPTION` replaces the launch description; without it a central or preconfig run carries the zip description.
 
 ### Preconfig regression infrastructure
 
