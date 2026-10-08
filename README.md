@@ -2,6 +2,8 @@
 
 Automated UI and API tests for OpenL Studio and OpenL Rule Services, built with **Playwright**, **TestNG** and **TestContainers**. Every test runs against its own fresh application container; the tests run locally or in Docker-based execution mode with unified driver management, and the regression runs on GitHub Actions with a merged HTML report.
 
+**Test reports:** [openl-tablets.github.io/openl-tests](https://openl-tablets.github.io/openl-tests/), the merged HTML report of every GitHub Actions run.
+
 ## Architecture Overview
 
 ```
