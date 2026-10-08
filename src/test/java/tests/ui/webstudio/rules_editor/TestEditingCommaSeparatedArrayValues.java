@@ -153,6 +153,7 @@ public class TestEditingCommaSeparatedArrayValues extends BaseTest {
         editorPage.getEditorLeftRulesTreeComponent()
                 .expandFolderInTree(folderName)
                 .selectItemInFolder(folderName, tableName);
+        editorPage.getEditorMainContentProblemsPanelComponent().closePanel();
         table.doubleClickCell(2, 3);
         multiselect.verifyChosenValues(expectedChosenValues);
     }

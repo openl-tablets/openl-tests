@@ -11,7 +11,13 @@ import java.util.List;
 public class TableComponent extends BaseComponent {
 
     private static final String CELL_USAGE = "[starts-with(@data-testid,'cell-usage-')]";
-    private static final String RAISED_CELL_TEXTS = "cells => cells.filter(cell => getComputedStyle(cell).outlineStyle === 'solid' && getComputedStyle(cell).outlineColor === 'rgb(222, 32, 36)').map(cell => cell.innerText.trim())";
+    private static final String RAISED_CELL_TEXTS = """
+            cells => cells.filter(cell => {
+                const style = getComputedStyle(cell);
+                const [red, green, blue] = (style.outlineColor.match(/\\d+/g) || []).map(Number);
+                return style.outlineStyle === 'solid' && red > 2 * green && red > 2 * blue;
+            }).map(cell => cell.innerText.trim())
+            """;
 
     private WebElement allCells;
     private WebElement cellEditor;

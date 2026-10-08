@@ -8,10 +8,6 @@ import helpers.utils.WaitUtil;
 
 import java.util.List;
 
-/**
- * What the module screen reports about the table on it: the errors and warnings raised against that table,
- * listed under it. Errors are listed before warnings, and each list is left out when it would be empty.
- */
 public class EditorMainContentProblemsPanelComponent extends BaseComponent {
 
     private static final String PANEL = "xpath=//section[@data-testid='table-problems']";
@@ -19,6 +15,7 @@ public class EditorMainContentProblemsPanelComponent extends BaseComponent {
     private static final int PROBE_MS = 1000;
 
     private WebElement problemsPanel;
+    private WebElement body;
     private WebElement toggle;
     private WebElement errorsCounter;
     private WebElement warningsCounter;
@@ -38,6 +35,7 @@ public class EditorMainContentProblemsPanelComponent extends BaseComponent {
 
     private void initializeElements() {
         problemsPanel = new WebElement(page, PANEL, "tableProblemsPanel");
+        body = new WebElement(page, BODY, "tableProblemsBody");
         toggle = new WebElement(page, PANEL + "//button[@data-testid='table-problems-toggle']", "tableProblemsToggle");
         errorsCounter = new WebElement(page, PANEL + "//span[@data-testid='table-problems-errors']", "tableProblemsErrors");
         warningsCounter = new WebElement(page, PANEL + "//span[@data-testid='table-problems-warnings']", "tableProblemsWarnings");
@@ -46,34 +44,28 @@ public class EditorMainContentProblemsPanelComponent extends BaseComponent {
         warningsAlone = createElementList(BODY + "/ul[1]/li", "tableWarningMessages");
     }
 
-    /** Opens the panel, which a reader may have folded away. */
     private void openPanel() {
         if (problemsPanel.isVisible(PROBE_MS) && !warningsCounter.isVisible(PROBE_MS / 4)
                 && !errorsCounter.isVisible(PROBE_MS / 4)) {
             return;
         }
-        if (problemsPanel.isVisible(PROBE_MS) && !new WebElement(page, BODY, "tableProblemsBody").isVisible(PROBE_MS / 2)) {
+        if (problemsPanel.isVisible(PROBE_MS) && !body.isVisible(PROBE_MS / 2)) {
             toggle.click();
         }
     }
 
-    /**
-     * Opens the panel. The panel used to keep its errors and its warnings behind a tab each and now lists
-     * both at once, so reaching either is the same thing: opening the panel.
-     */
     public EditorMainContentProblemsPanelComponent clickErrorsTab() {
         openPanel();
         return this;
     }
 
-    /** @see #clickErrorsTab() */
     public EditorMainContentProblemsPanelComponent clickWarningsTab() {
         openPanel();
         return this;
     }
 
     public EditorMainContentProblemsPanelComponent closePanel() {
-        if (problemsPanel.isVisible(PROBE_MS)) {
+        if (body.isVisible(PROBE_MS)) {
             toggle.click();
         }
         return this;
@@ -83,12 +75,10 @@ public class EditorMainContentProblemsPanelComponent extends BaseComponent {
         return problemsPanel.isVisible(PROBE_MS);
     }
 
-    /** Whether the panel reports errors — what the Errors tab used to stand for. */
     public boolean isErrorsTabActive() {
         return errorsCounter.isVisible(PROBE_MS);
     }
 
-    /** Whether the panel reports warnings — what the Warnings tab used to stand for. */
     public boolean isWarningsTabActive() {
         return warningsCounter.isVisible(PROBE_MS);
     }
@@ -102,7 +92,6 @@ public class EditorMainContentProblemsPanelComponent extends BaseComponent {
         return this;
     }
 
-    /** Opens what stands behind a message: the stack trace it was raised with. */
     public EditorMainContentProblemsPanelComponent expandProblemDescription(int elementPosition) {
         openPanel();
         WaitUtil.requireCondition(() -> {
@@ -151,15 +140,10 @@ public class EditorMainContentProblemsPanelComponent extends BaseComponent {
                 PROBE_MS, 100, "Checking whether the description of problem " + elementPosition + " is open");
     }
 
-    /** The trace is drawn below the message, in a box of its own, only while it is open. */
     private boolean isStacktraceShown(Locator message) {
         return message.locator("xpath=.//div[starts-with(@data-testid,'table-message-')]").count() > 0;
     }
 
-    /**
-     * Whether the table reports errors. Warnings are listed where the errors would be when there are none,
-     * so what is asked first is whether any errors are reported at all.
-     */
     public boolean isErrorMessageListPresent() {
         openPanel();
         return errorsCounter.isVisible(PROBE_MS)
@@ -185,7 +169,6 @@ public class EditorMainContentProblemsPanelComponent extends BaseComponent {
         return warnings.stream().map(e -> CompileMessageReader.textOf(e.getLocator())).toList();
     }
 
-    /** Warnings are listed after the errors, so which list holds them depends on whether there are errors. */
     private List<WebElement> warningMessages() {
         return errorsCounter.isVisible(PROBE_MS / 4) ? warningsAfterErrors : warningsAlone;
     }
