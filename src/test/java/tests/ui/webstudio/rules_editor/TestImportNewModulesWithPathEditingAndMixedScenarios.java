@@ -1,7 +1,6 @@
 package tests.ui.webstudio.rules_editor;
 
 import configuration.annotations.Description;
-import configuration.annotations.KnownIssue;
 import configuration.annotations.TestCaseId;
 import configuration.annotations.AppContainerConfig;
 import configuration.appcontainer.AppContainerStartParameters;
@@ -216,22 +215,70 @@ public class TestImportNewModulesWithPathEditingAndMixedScenarios extends BaseTe
 
     @Test
     @TestCaseId("IPBQA-31035")
-    @Description("A generation refused over a workbook path the default rules pattern already reads leaves no workbook of either module in the project.")
+    @Description("A services module generated into a workbook under rules/ named apart from it, Alg into rules/Alg12.xlsx, "
+            + "is accepted as 6.4.0 accepted it (EPBDS-16743): the project reads Alg from that workbook and no module Alg12 "
+            + "stands beside it.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
-    @KnownIssue(value = "EPBDS-16743", failsWith = "The refused generation must not leave the workbook it was refused over")
+    public void testWorkbookNamedApartFromItsModuleIsGenerated() {
+        String projectName = "TestWorkbookNamedApart_" + System.currentTimeMillis();
+        EditorPage editorPage = new LoginService(DriverPool.getPage()).login(UserService.getUser(User.ADMIN));
+        OpenApiModuleSettingsDialogComponent settingsDialog = openTablesGeneration(editorPage, projectName);
+        settingsDialog.setWorkbook(SERVICES, "rules/Alg12.xlsx");
+        settingsDialog.clickImportAndOverride();
+
+        RepositoryPage repositoryPage = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.REPOSITORY);
+        ProjectDetailPage projectDetail = repositoryPage.openProjectDetail(projectName);
+        assertThat(projectDetail.getOverviewModuleNames())
+                .as("Alg should be declared with the workbook it was generated into")
+                .contains("Alg");
+        assertThat(projectDetail.getOverviewMatchedModuleNames())
+                .as("The default rules pattern should read Mod-123 and leave rules/Alg12.xlsx to Alg")
+                .contains("Mod-123")
+                .doesNotContain("Alg12");
+        assertThat(projectDetail.openFilesTab().isFilePresent("Alg12.xlsx"))
+                .as("The workbook rules/Alg12.xlsx of Alg should be written")
+                .isTrue();
+    }
+
+    @Test
+    @TestCaseId("IPBQA-31035")
+    @Description("A generation refused over a workbook another module already reads leaves no workbook of either module in the project.")
+    @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void testRefusedGenerationWritesNoWorkbook() {
         String projectName = "TestRefusedGeneration_" + System.currentTimeMillis();
-        String refusal = "The path 'rules/Alg12.xlsx' is already read by another module.";
+        String refusal = "The project already holds a file at 'rules1/Algorithms_test1.xlsx'. "
+                + "Name the module after the workbook it should read, or move that file away.";
+        EditorPage editorPage = new LoginService(DriverPool.getPage()).login(UserService.getUser(User.ADMIN));
+        OpenApiModuleSettingsDialogComponent settingsDialog = openTablesGeneration(editorPage, projectName);
+        assertThat(settingsDialog.getModulePlan(DATA_TYPES))
+                .as("Mod-123 does not exist yet, so it is proposed a workbook of its own")
+                .isEqualTo(new ModulePlan(SECONDARY, CREATED, "Mod-123", "rules/Mod-123.xlsx"));
+        settingsDialog.setWorkbook(SERVICES, "rules1/Algorithms_test1.xlsx");
+        settingsDialog.clickGenerate();
 
-        LoginService loginService = new LoginService(DriverPool.getPage());
-        EditorPage editorPage = loginService.login(UserService.getUser(User.ADMIN));
+        assertThat(settingsDialog.getErrorMessagesUntilShown(refusal))
+                .as("rules1/Algorithms_test1.xlsx is the workbook of Algorithms_test, so the generation is refused")
+                .contains(refusal);
+
+        settingsDialog.clickCancel();
+        RepositoryPage repositoryPage = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.REPOSITORY);
+        ProjectDetailPage projectDetail = repositoryPage.openProjectDetail(projectName);
+        assertThat(projectDetail.openFilesTab().isFilePresent("Algorithms_test1.xlsx"))
+                .as("The Files tab lists the workbooks inside the folders of the project")
+                .isTrue();
+        assertThat(projectDetail.isFilePresent("Mod-123.xlsx"))
+                .as("The refused generation must not leave the workbook of the other module")
+                .isFalse();
+    }
+
+    private OpenApiModuleSettingsDialogComponent openTablesGeneration(EditorPage editorPage, String projectName) {
         RepositoryPage repositoryPage = editorPage.getTabSwitcherComponent()
                 .selectTab(TabSwitcherComponent.TabName.REPOSITORY);
         createProjectFromSpecification(repositoryPage, projectName);
 
-        editorPage = new EditorPage();
-        editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName);
-        ImportOpenApiDialogComponent importDialog = editorPage.openImportOpenApiDialog();
+        EditorPage projectPage = new EditorPage();
+        projectPage.getEditorLeftProjectModuleSelectorComponent().selectProject(projectName);
+        ImportOpenApiDialogComponent importDialog = projectPage.openImportOpenApiDialog();
         importDialog.waitForFilePathField();
         importDialog.setOpenApiFilePath(NORMALIZED_SPEC);
         importDialog.selectTablesGenerationMode();
@@ -239,31 +286,9 @@ public class TestImportNewModulesWithPathEditingAndMixedScenarios extends BaseTe
         importDialog.setDataModuleName("Mod-123");
         importDialog.clickImportTablesGeneration();
 
-        OpenApiModuleSettingsDialogComponent settingsDialog = editorPage.getOpenApiModuleSettingsDialogComponent();
+        OpenApiModuleSettingsDialogComponent settingsDialog = projectPage.getOpenApiModuleSettingsDialogComponent();
         settingsDialog.waitForVisible();
-        assertThat(settingsDialog.getModulePlan(DATA_TYPES))
-                .as("Mod-123 does not exist yet, so it is proposed a workbook of its own")
-                .isEqualTo(new ModulePlan(SECONDARY, CREATED, "Mod-123", "rules/Mod-123.xlsx"));
-        settingsDialog.setWorkbook(SERVICES, "rules/Alg12.xlsx");
-        settingsDialog.clickGenerate();
-
-        assertThat(settingsDialog.getErrorMessagesUntilShown(refusal))
-                .as("The default rules pattern already reads rules/Alg12.xlsx as a module of its own, so the generation is refused")
-                .contains(refusal);
-
-        settingsDialog.clickCancel();
-        repositoryPage = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.REPOSITORY);
-        ProjectDetailPage projectDetail = repositoryPage.openProjectDetail(projectName);
-
-        assertThat(projectDetail.openFilesTab().isFilePresent("Algorithms_test1.xlsx"))
-                .as("The Files tab lists the workbooks inside the folders of the project")
-                .isTrue();
-        assertThat(projectDetail.isFilePresent("Alg12.xlsx"))
-                .as("The refused generation must not leave the workbook it was refused over")
-                .isFalse();
-        assertThat(projectDetail.isFilePresent("Mod-123.xlsx"))
-                .as("The refused generation must not leave the workbook of the other module")
-                .isFalse();
+        return settingsDialog;
     }
 
     private void createProjectFromSpecification(RepositoryPage repositoryPage, String projectName) {

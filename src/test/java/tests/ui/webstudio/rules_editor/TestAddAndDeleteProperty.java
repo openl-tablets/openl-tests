@@ -8,6 +8,7 @@ import configuration.appcontainer.AppContainerStartParameters;
 import configuration.driver.DriverPool;
 import domain.serviceclasses.constants.User;
 import domain.ui.webstudio.components.common.CreateNewProjectComponent;
+import domain.ui.webstudio.components.common.TableComponent;
 import domain.ui.webstudio.components.common.TabSwitcherComponent;
 import domain.ui.webstudio.components.editortabcomponents.RightTableDetailsComponent;
 import domain.ui.webstudio.components.editortabcomponents.leftmenu.EditorLeftRulesTreeComponent;
@@ -19,9 +20,10 @@ import helpers.utils.WaitUtil;
 import org.testng.annotations.Test;
 import tests.BaseTest;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.DECISION;
@@ -30,12 +32,21 @@ public class TestAddAndDeleteProperty extends BaseTest {
 
     private static final String PROJECT_NAME = "TestAddDeleteEditProperties";
     private static final String EXCEL_FILE = "TestAddDeleteEditProperties.xlsx";
+    private static final DateTimeFormatter ENTERED_DATE = DateTimeFormatter.ofPattern("MM/dd/yyyy");
+    private static final String EDITED_TABLE = "MyRules2";
+    private static final String KEEPS_TABLE_OPEN = "After a property is saved the Rules Editor should keep " + EDITED_TABLE + " open";
+    private static final int SAVE_SETTLE_MS = 10000;
+    private static final int LEAVE_WINDOW_MS = 2000;
+    private static final String PICKED_BY_NAME = "of the values picked by their names";
 
     @Test
     @TestCaseId("IPBQA-25857")
-    @Description("Rules Editor - Add and delete properties in table details.")
+    @Description("Rules Editor - Add and delete properties in table details. Fails on EPBDS-16871: the save that moves "
+            + "MyRules2 below MyRules1 may open MyRules1 instead of the saved table; and on EPBDS-16872: a list property "
+            + "added after the first one is stored with the names of its values instead of their codes.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
-    @KnownIssue(value = "EPBDS-16741", failsWith = "'Effective Date' was not among what the list offered")
+    @KnownIssue(value = "EPBDS-16871", failsWith = KEEPS_TABLE_OPEN)
+    @KnownIssue(value = "EPBDS-16872", failsWith = PICKED_BY_NAME)
     public void testAddAndDeleteProperty() {
         EditorPage editorPage = loginAndCreateProject();
 
@@ -44,7 +55,7 @@ public class TestAddAndDeleteProperty extends BaseTest {
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
                 .expandFolderInTree(DECISION)
-                .selectItemInFolder(DECISION, "MyRules2");
+                .selectItemInFolder(DECISION, EDITED_TABLE);
 
         addAndCheckProperty(editorPage, "Category", "category", "MyCategory");
 
@@ -59,13 +70,14 @@ public class TestAddAndDeleteProperty extends BaseTest {
         addAndCheckProperty(editorPage, "ID", "id", "test2");
         addAndCheckProperty(editorPage, "Build Phase", "buildPhase", "Property2");
 
-        addAndCheckCheckboxProperty(editorPage, "Canada Region", "caRegions", "QC");
-        addAndCheckCheckboxProperty(editorPage, "Canada Province", "caProvinces", "NT", "YT");
-        addAndCheckCheckboxProperty(editorPage, "Countries", "country", "BY");
-        addAndCheckCheckboxProperty(editorPage, "Currency", "currency", "YER");
-        addAndCheckCheckboxProperty(editorPage, "Language", "lang", "SPA");
-        addAndCheckCheckboxProperty(editorPage, "US Region", "usregion", "NE");
-        addAndCheckCheckboxProperty(editorPage, "US States", "state", "WA", "WV");
+        addAndCheckCheckboxProperty(editorPage, "Canada Region", "caRegions", new Choice("Québec", "QC"));
+        addAndCheckCheckboxProperty(editorPage, "Canada Province", "caProvinces",
+                new Choice("Territoires du Nord-Ouest", "NT"), new Choice("Yukon", "YT"));
+        addAndCheckCheckboxProperty(editorPage, "Countries", "country", new Choice("Belarus", "BY"));
+        addAndCheckCheckboxProperty(editorPage, "Currency", "currency", new Choice("Yemen, Rials", "YER"));
+        addAndCheckCheckboxProperty(editorPage, "Language", "lang", new Choice("Spanish", "SPA"));
+        addAndCheckCheckboxProperty(editorPage, "US Region", "usregion", new Choice("Northeast", "NE"));
+        addAndCheckCheckboxProperty(editorPage, "US States", "state", new Choice("Washington", "WA"), new Choice("West Virginia", "WV"));
 
         addAndCheckBooleanProperty(editorPage, "Cacheable", "cacheable", false);
 
@@ -122,25 +134,25 @@ public class TestAddAndDeleteProperty extends BaseTest {
         if (propertyName.contains("Date")) {
             tableDetails.editDateProperty(propertyName, newValue);
             tableDetails.clickSaveBtn();
-            newValue = formatDate(newValue);
+            newValue = LocalDate.parse(newValue, ENTERED_DATE).toString();
         } else {
             tableDetails.editTextProperty(propertyName, newValue);
             tableDetails.clickSaveBtn();
         }
 
-        assertThat(editorPage.getCenterTable().getPropertyValue(propertyTableName))
+        assertThat(awaitSavedPropertyValue(editorPage, propertyTableName, newValue))
                 .as("Property '%s' should have value '%s'", propertyTableName, newValue)
                 .isEqualTo(newValue);
     }
 
-    private void editAndCheckCheckboxProperty(EditorPage editorPage, String propertyName, String propertyTableName, String... values) {
+    private void editAndCheckCheckboxProperty(EditorPage editorPage, String propertyName, String propertyTableName, Choice... choices) {
         RightTableDetailsComponent tableDetails = editorPage.getRightTableDetailsComponent();
-        tableDetails.editCheckboxProperty(propertyName, values);
+        tableDetails.editCheckboxProperty(propertyName, Arrays.stream(choices).map(Choice::label).toArray(String[]::new));
         tableDetails.clickSaveBtn();
 
-        String expectedValue = String.join(",", values);
-        assertThat(editorPage.getCenterTable().getPropertyValue(propertyTableName))
-                .as("Property '%s' should have value '%s'", propertyTableName, expectedValue)
+        String expectedValue = Arrays.stream(choices).map(Choice::code).collect(Collectors.joining(","));
+        assertThat(awaitSavedPropertyValue(editorPage, propertyTableName, expectedValue))
+                .as("Property '%s' should hold the codes '%s' " + PICKED_BY_NAME, propertyTableName, expectedValue)
                 .isEqualTo(expectedValue);
     }
 
@@ -149,7 +161,7 @@ public class TestAddAndDeleteProperty extends BaseTest {
         tableDetails.editBooleanProperty(propertyName, value);
         tableDetails.clickSaveBtn();
 
-        assertThat(editorPage.getCenterTable().getPropertyValue(propertyTableName))
+        assertThat(awaitSavedPropertyValue(editorPage, propertyTableName, String.valueOf(value)))
                 .as("Property '%s' should have value '%s'", propertyTableName, value)
                 .isEqualTo(String.valueOf(value));
     }
@@ -159,9 +171,34 @@ public class TestAddAndDeleteProperty extends BaseTest {
         tableDetails.editDropdownProperty(propertyName, value);
         tableDetails.clickSaveBtn();
 
-        assertThat(editorPage.getCenterTable().getPropertyValue(propertyTableName))
+        assertThat(awaitSavedPropertyValue(editorPage, propertyTableName, value))
                 .as("Property '%s' should have value '%s'", propertyTableName, value)
                 .isEqualToIgnoringCase(value);
+    }
+
+    private String awaitSavedPropertyValue(EditorPage editorPage, String propertyTableName, String expectedValue) {
+        TableComponent table = editorPage.getCenterTable();
+        WaitUtil.waitForCondition(() -> expectedValue.equalsIgnoreCase(shownPropertyValue(table, propertyTableName)),
+                SAVE_SETTLE_MS, 250, "Waiting for property '" + propertyTableName + "' to show the saved value");
+        assertTableStaysOpen(editorPage.getEditorLeftRulesTreeComponent());
+        return shownPropertyValue(table, propertyTableName);
+    }
+
+    private String shownPropertyValue(TableComponent table, String propertyTableName) {
+        return table.isPropertyPresent(propertyTableName) ? table.getPropertyValue(propertyTableName) : "";
+    }
+
+    private void assertTableStaysOpen(EditorLeftRulesTreeComponent rulesTree) {
+        WaitUtil.waitForCondition(() -> {
+            String selected = rulesTree.getSelectedItemText();
+            return !selected.isEmpty() && !EDITED_TABLE.equals(selected);
+        }, LEAVE_WINDOW_MS, 250,
+                "Watching whether the Rules Editor leaves " + EDITED_TABLE + " after the save");
+        WaitUtil.waitForCondition(() -> !rulesTree.getSelectedItemText().isEmpty(), SAVE_SETTLE_MS, 250,
+                "Waiting for a table to be selected in the tree");
+        assertThat(rulesTree.getSelectedItemText())
+                .as(KEEPS_TABLE_OPEN)
+                .isEqualTo(EDITED_TABLE);
     }
 
     private void addAndCheckProperty(EditorPage editorPage, String propertyName, String propertyTableName, String value) {
@@ -170,11 +207,12 @@ public class TestAddAndDeleteProperty extends BaseTest {
         editAndCheckProperty(editorPage, propertyName, propertyTableName, value);
     }
 
-    private void addAndCheckCheckboxProperty(EditorPage editorPage, String propertyName, String propertyTableName, String... values) {
+    private void addAndCheckCheckboxProperty(EditorPage editorPage, String propertyName, String propertyTableName, Choice... choices) {
         RightTableDetailsComponent tableDetails = editorPage.getRightTableDetailsComponent();
         tableDetails.addProperty(propertyName);
-        editAndCheckCheckboxProperty(editorPage, propertyName, propertyTableName, values);
+        editAndCheckCheckboxProperty(editorPage, propertyName, propertyTableName, choices);
     }
+
 
     private void addAndCheckBooleanProperty(EditorPage editorPage, String propertyName, String propertyTableName, boolean value) {
         RightTableDetailsComponent tableDetails = editorPage.getRightTableDetailsComponent();
@@ -199,14 +237,6 @@ public class TestAddAndDeleteProperty extends BaseTest {
                 .isFalse();
     }
 
-    private String formatDate(String dateValue) {
-        SimpleDateFormat inputFormat = new SimpleDateFormat("MM/dd/yy");
-        SimpleDateFormat outputFormat = new SimpleDateFormat("M/d/yy");
-        try {
-            Date date = inputFormat.parse(dateValue);
-            return outputFormat.format(date);
-        } catch (ParseException e) {
-            return dateValue;
-        }
+    private record Choice(String label, String code) {
     }
 }

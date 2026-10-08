@@ -9,7 +9,6 @@ import domain.serviceclasses.constants.User;
 import domain.ui.webstudio.components.common.CreateNewProjectComponent;
 import domain.ui.webstudio.components.common.TabSwitcherComponent;
 import domain.ui.webstudio.components.editortabcomponents.ImportOpenApiDialogComponent;
-import domain.ui.webstudio.components.editortabcomponents.OpenApiModuleSettingsDialogComponent;
 import domain.ui.webstudio.pages.mainpages.EditorPage;
 import domain.ui.webstudio.pages.mainpages.RepositoryPage;
 import helpers.service.LoginService;
@@ -18,18 +17,18 @@ import helpers.utils.TestDataUtil;
 import org.testng.annotations.Test;
 import tests.BaseTest;
 
-import static domain.ui.webstudio.components.editortabcomponents.OpenApiModuleSettingsDialogComponent.PlanModule.DATA_TYPES;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestImportOpenApiModuleNamesValidation extends BaseTest {
 
     private static final String OPENAPI_FILE = "openapi2.json";
     private static final String TEMPLATE_NAME = "Example 1 - Bank Rating";
-    private static final String SAME_MODULE_REFUSAL = "The rules and the data types need a module each; one module cannot hold both.";
+    private static final String NAMES_SAME = "Module names cannot be the same.";
 
     @Test
     @TestCaseId("IPBQA-31035")
-    @Description("Import OpenAPI Tables Generation mode: verify same-module-names validation error")
+    @Description("Import OpenAPI Tables Generation mode: one name for the rules and the data types module, letter case aside, "
+            + "is refused under both fields where it is entered and cannot be saved; two names can")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void testImportOpenApiModuleNamesValidation() {
         String projectName = "TestOpenApiValidation_" + System.currentTimeMillis();
@@ -52,16 +51,20 @@ public class TestImportOpenApiModuleNamesValidation extends BaseTest {
         importDialog.selectTablesGenerationMode();
         importDialog.setRulesModuleName("SameModule");
         importDialog.setDataModuleName("SameModule");
-        importDialog.clickImportTablesGeneration();
+        assertThat(importDialog.getModuleNameErrors())
+                .as("Both module fields should refuse one name for the rules and the data types")
+                .containsExactly(NAMES_SAME, NAMES_SAME);
+        assertThat(importDialog.isSaveEnabled()).as("Settings naming one module twice should not be saved").isFalse();
 
-        OpenApiModuleSettingsDialogComponent settingsDialog = editorPage.getOpenApiModuleSettingsDialogComponent();
-        settingsDialog.waitForVisible();
-        settingsDialog.setWorkbook(DATA_TYPES, "rules/SameModuleTypes.xlsx");
-        settingsDialog.clickGenerate();
+        importDialog.setDataModuleName("samemodule");
+        assertThat(importDialog.getModuleNameErrors())
+                .as("Names differing only in letter case should be refused as one name")
+                .containsExactly(NAMES_SAME, NAMES_SAME);
+        assertThat(importDialog.isSaveEnabled()).as("Settings naming one module twice should not be saved").isFalse();
 
-        assertThat(settingsDialog.getErrorMessagesUntilShown(SAME_MODULE_REFUSAL))
-                .as("The generation should be refused when the rules and the data types name one module")
-                .contains(SAME_MODULE_REFUSAL);
+        importDialog.setDataModuleName("SameModuleTypes");
+        assertThat(importDialog.getModuleNameErrors()).as("Two module names should not be refused").isEmpty();
+        assertThat(importDialog.isSaveEnabled()).as("Settings naming two modules should be saved").isTrue();
     }
 
     private void uploadFileToProject(RepositoryPage repositoryPage, String projectName, String fileName) {

@@ -6,6 +6,7 @@ import domain.ui.webstudio.components.BaseComponent;
 import helpers.utils.WaitUtil;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 public class ImportOpenApiDialogComponent extends BaseComponent {
 
@@ -20,6 +21,8 @@ public class ImportOpenApiDialogComponent extends BaseComponent {
     private WebElement generationRadio;
     private WebElement rulesModuleInput;
     private WebElement dataModuleInput;
+    private WebElement rulesModuleError;
+    private WebElement dataModuleError;
     private WebElement importReconciliationBtn;
     private WebElement importTablesGenerationBtn;
     private WebElement createOrUpdateSchemaBtn;
@@ -48,6 +51,8 @@ public class ImportOpenApiDialogComponent extends BaseComponent {
         generationRadio = new WebElement(page, MODE + "//label[contains(normalize-space(.),'Tables generation')]", "generationMode");
         rulesModuleInput = new WebElement(page, OVERVIEW + "//input[@data-testid='edit-openapi-algorithm']", "rulesModuleInput");
         dataModuleInput = new WebElement(page, OVERVIEW + "//input[@data-testid='edit-openapi-model']", "dataModuleInput");
+        rulesModuleError = new WebElement(page, OVERVIEW + "//*[@data-testid='edit-openapi-algorithm-error']", "rulesModuleError");
+        dataModuleError = new WebElement(page, OVERVIEW + "//*[@data-testid='edit-openapi-model-error']", "dataModuleError");
         importReconciliationBtn = new WebElement(page, OVERVIEW + "//button[@data-testid='overview-save']", "saveOverviewBtn");
         importTablesGenerationBtn = new WebElement(page, "xpath=//button[@data-testid='openapi-generate']", "generateTablesBtn");
         createOrUpdateSchemaBtn = new WebElement(page, "xpath=//button[@data-testid='openapi-write']", "writeSchemaBtn");
@@ -58,43 +63,28 @@ public class ImportOpenApiDialogComponent extends BaseComponent {
                 + "//div[contains(@class,'ant-form-item-explain-error')]"
                 + " | //div[contains(@class,'ant-notification-notice-description')])[1]", "errorMsg");
         anyErrorMsg = new WebElement(page, "xpath=//div[contains(@class,'ant-form-item-explain-error')] | //div[contains(@class,'ant-notification-notice-description')]", "anyErrorMsg");
-        // What the settings refuse is said beside the field it belongs to; what the server refuses arrives
-        // as a notice of its own, so both are read.
         errorMsgs = createElementList("xpath=//div[contains(@class,'ant-form-item-explain-error')]"
                 + " | //div[contains(@class,'ant-notification-notice-description')]"
                 + " | //div[contains(@class,'ant-notification-notice-message')]", "errorMsgs");
     }
 
-    /**
-     * Waits for the field the specification is named in. The settings point the project at a file it already
-     * holds, so there is no choice of source to make: naming the path is the whole of it.
-     */
     public void waitForFilePathField() {
         openApiFilePathInput.waitForVisible(DEFAULT_TIMEOUT_MS);
     }
 
-
-    /** Writes a specification out of the rules the project already holds. */
     public void selectGenerateFromRules() {
         generateFromRulesRadio.click();
     }
 
-    /** Points the project at one of the specifications it already holds. */
     public void setOpenApiFilePath(String path) {
         pickInSelect(openApiFilePathInput, path);
     }
 
-    /**
-     * The specifications the settings offer to point the project at, which are the ones it already holds.
-     * A project holding none offers none, and there is then no way to name a file through this screen.
-     */
     public List<String> getOfferedSpecifications() {
         openForWriting();
         openApiFilePathInput.waitForVisible(DEFAULT_TIMEOUT_MS);
         openApiFilePathInput.click();
         String openList = "//div[contains(@class,'ant-select-dropdown')][not(contains(@class,'ant-select-dropdown-hidden'))]";
-        // The list is waited for before it is read, so an empty reading says the list offers nothing rather
-        // than that it had not opened yet.
         new WebElement(page, "xpath=" + openList, "specificationsList").waitForVisible(DEFAULT_TIMEOUT_MS);
         WebElement offered = new WebElement(page,
                 "xpath=" + openList + "//div[contains(@class,'ant-select-item-option-content')]",
@@ -106,17 +96,12 @@ public class ImportOpenApiDialogComponent extends BaseComponent {
         return names;
     }
 
-    /** The mode the settings currently stand at, as the switch shows it. */
     public String getSelectedMode() {
         WebElement selected = new WebElement(page, MODE + "//label[contains(@class,'ant-segmented-item-selected')]", "selectedMode");
         selected.waitForVisible(DEFAULT_TIMEOUT_MS);
         return selected.getText().trim();
     }
 
-    /**
-     * Opens the settings for writing, which the panel leaves as soon as an import is refused or kept. A
-     * reader who wants to name them again presses Edit again, and so does this.
-     */
     private void openForWriting() {
         if (editBtn.isVisible(CANCEL_PROBE_MS)) {
             editBtn.click();
@@ -155,14 +140,12 @@ public class ImportOpenApiDialogComponent extends BaseComponent {
         return dataModuleInput.getCurrentInputValue();
     }
 
-    /** Keeps what was named on the screen: the file, the mode and the modules it writes into. */
     public void clickImportReconciliation() {
         selectReconciliationMode();
         importReconciliationBtn.click();
         waitUntilSpinnerLoaded();
     }
 
-    /** Keeps the settings and then writes the tables the specification describes. */
     public void clickImportTablesGeneration() {
         selectTablesGenerationMode();
         importReconciliationBtn.click();
@@ -177,10 +160,6 @@ public class ImportOpenApiDialogComponent extends BaseComponent {
         waitUntilSpinnerLoaded();
     }
 
-    /**
-     * Leaves the settings without keeping them. Refusing what an import offered leaves them read again by
-     * itself, and there is then nothing left to leave.
-     */
     public void clickCancel() {
         if (cancelBtn.isVisible(CANCEL_PROBE_MS)) {
             cancelBtn.click();
@@ -202,6 +181,17 @@ public class ImportOpenApiDialogComponent extends BaseComponent {
 
     public String getAnyErrorMessage() {
         return anyErrorMsg.getTextAfterDelay(3000);
+    }
+
+    public List<String> getModuleNameErrors() {
+        return Stream.of(rulesModuleError, dataModuleError)
+                .filter(WebElement::isVisible)
+                .map(error -> error.getText().trim())
+                .toList();
+    }
+
+    public boolean isSaveEnabled() {
+        return importReconciliationBtn.isEnabled();
     }
 
     public boolean isReconciliationModeSelected() {
