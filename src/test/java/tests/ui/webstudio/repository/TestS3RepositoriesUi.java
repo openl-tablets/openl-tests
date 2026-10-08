@@ -2,7 +2,6 @@ package tests.ui.webstudio.repository;
 
 import configuration.annotations.AppContainerConfig;
 import configuration.annotations.Description;
-import configuration.annotations.KnownIssue;
 import configuration.annotations.TestCaseId;
 import configuration.appcontainer.AppContainerStartParameters;
 import configuration.driver.DriverPool;
@@ -30,7 +29,6 @@ public class TestS3RepositoriesUi extends BaseTest {
     private static final String S3_DESIGN_REPOSITORY = "Design1";
     private static final String TEMPLATE = "Example 1 - Bank Rating";
     private static final String REGION_LIST = "The Region name list of an AWS S3 repository should offer the AWS regions";
-    private static final String ENCRYPTED = "A project stored in an S3 repository with SSE algorithm AES256 should be written with server-side encryption AES256";
 
     private final DeployInfrastructureService s3 = DeployInfrastructureService.builder().withS3Mock().build();
 
@@ -102,10 +100,8 @@ public class TestS3RepositoriesUi extends BaseTest {
     @Test
     @TestCaseId("IPBQA-32111")
     @Description("An S3-compatible storage reached by its service endpoint works as the first deployment repository: "
-            + "it is configured in Admin and a project deployed from Studio lands in the bucket. Fails on EPBDS-16776: "
-            + "the Region name list of the first deployment repository is empty.")
+            + "it is configured in Admin and a project deployed from Studio lands in the bucket")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
-    @KnownIssue(value = "EPBDS-16776", failsWith = REGION_LIST)
     public void testS3DeploymentRepositoryReceivesDeployments() {
         String bucket = s3.createBucket();
         EditorPage editorPage = login();
@@ -130,10 +126,8 @@ public class TestS3RepositoriesUi extends BaseTest {
     @Test
     @TestCaseId("IPBQA-32504")
     @Description("The SSE algorithm of an S3 design repository is kept in Admin and requests server-side encryption "
-            + "for a project written into the bucket. Fails on EPBDS-16775: the object is written without encryption, "
-            + "the algorithm is only stored as its metadata.")
+            + "for a project written into the bucket")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
-    @KnownIssue(value = "EPBDS-16775", failsWith = ENCRYPTED)
     public void testS3SseAlgorithmEncryptsStoredProjects() {
         String bucket = s3.createBucket();
         EditorPage editorPage = login();
@@ -148,7 +142,9 @@ public class TestS3RepositoriesUi extends BaseTest {
         repositoryPage.createProjectFromTemplateWithSelectRepo(project, TEMPLATE, S3_DESIGN_REPOSITORY);
         var stored = s3.snapshotObjects();
         assertThat(stored).as("The project should be written into the bucket").containsKey(key(project));
-        assertThat(stored.get(key(project)).serverSideEncryption()).as(ENCRYPTED).isEqualTo("AES256");
+        assertThat(stored.get(key(project)).serverSideEncryption())
+                .as("A project stored in an S3 repository with SSE algorithm AES256 should be written with server-side encryption AES256")
+                .isEqualTo("AES256");
     }
 
     private EditorPage login() {

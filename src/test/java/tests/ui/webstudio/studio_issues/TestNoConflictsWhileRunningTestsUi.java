@@ -4,7 +4,6 @@ import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Response;
 import configuration.annotations.AppContainerConfig;
 import configuration.annotations.Description;
-import configuration.annotations.KnownIssue;
 import configuration.annotations.TestCaseId;
 import configuration.appcontainer.AppContainerStartParameters;
 import configuration.driver.DriverPool;
@@ -28,7 +27,6 @@ public class TestNoConflictsWhileRunningTestsUi extends BaseTest {
 
     @Test
     @TestCaseId("EPBDS-16636")
-    @KnownIssue(value = "EPBDS-16770", failsWith = "Compilation did not finish within 90000 ms, state: ServerCompileStatus[compileState=compiling")
     @Description("Running the tests of a module asks the server for the results without being refused and "
             + "without a 409 reaching the browser log, which is the fix of EPBDS-16636 this test guards.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)

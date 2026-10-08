@@ -1,6 +1,7 @@
 package tests.ui.webservice;
 
 import configuration.annotations.Description;
+import configuration.annotations.KnownIssue;
 import configuration.annotations.TestCaseId;
 import configuration.annotations.AppContainerConfig;
 import configuration.appcontainer.AppContainerPool;
@@ -41,6 +42,7 @@ public class TestRuleServiceS3DeployClasspathJarProperty extends BaseTest {
     private static final Path DATASOURCE_JAR_V2 = TEST_DATA_DIR.resolve("Example3-datasource2.jar");
     private static final String VERSION_1 = "1";
     private static final String VERSION_2 = "2";
+    private static final String DEPLOYED_FROM_CLASSPATH = "Rule Services should list the deployment of the classpath jar";
 
     private static final Map<String, String> additionalContainerConfig = new HashMap<>();
 
@@ -79,7 +81,9 @@ public class TestRuleServiceS3DeployClasspathJarProperty extends BaseTest {
 
     @Test
     @TestCaseId("IPBQA-32605")
-    @Description("Verify S3 repository deployment behavior for ruleservice.datasource.deploy.classpath.jars modes NEVER, IF_ABSENT, ALWAYS")
+    @Description("Verify S3 repository deployment behavior for ruleservice.datasource.deploy.classpath.jars modes NEVER, IF_ABSENT, ALWAYS. "
+            + "Fails on EPBDS-16870: the classpath jars are deployed only after a request to /admin/healthcheck/readiness.")
+    @KnownIssue(value = "EPBDS-16870", failsWith = DEPLOYED_FROM_CLASSPATH)
     @AppContainerConfig(
             startParams = AppContainerStartParameters.EMPTY,
             dockerImageProperty = PropertyNameSpace.WS_DOCKER_IMAGE_NAME
@@ -182,6 +186,7 @@ public class TestRuleServiceS3DeployClasspathJarProperty extends BaseTest {
                 60000,
                 2000,
                 "Waiting for Rule Services deployment '" + expectedDisplayName + "' to show version " + expectedVersion))
+                .as(DEPLOYED_FROM_CLASSPATH + " '%s' in version %s", expectedDisplayName, expectedVersion)
                 .isTrue();
 
         String href = new ServicePage(DriverPool.getPage()).getProjectTitleLink(expectedDisplayName).getAttribute("href");
