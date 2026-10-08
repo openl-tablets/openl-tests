@@ -27,8 +27,10 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -240,7 +242,7 @@ public final class TestExportUtil {
             payload.put("stackTrace", stackTrace(throwable));
         }
 
-        knownIssueOf(result).ifPresent(declared -> {
+        knownIssueOf(result, throwable).ifPresent(declared -> {
             Map<String, Object> knownIssue = new LinkedHashMap<>();
             knownIssue.put("ticket", declared.value());
             knownIssue.put("url", ISSUE_TRACKER_BROWSE_URL + declared.value());
@@ -253,13 +255,16 @@ public final class TestExportUtil {
         writeJson(context.testDirectory().resolve("result.json"), payload);
     }
 
-    public static Optional<KnownIssue> knownIssueOf(ITestResult result) {
+    private static Optional<KnownIssue> knownIssueOf(ITestResult result, Throwable throwable) {
         Method method = result.getMethod().getConstructorOrMethod().getMethod();
-        KnownIssue onMethod = method.getAnnotation(KnownIssue.class);
-        if (onMethod != null) {
-            return Optional.of(onMethod);
-        }
-        return Optional.ofNullable(testClassOf(result, method).getAnnotation(KnownIssue.class));
+        KnownIssue[] onMethod = method.getAnnotationsByType(KnownIssue.class);
+        List<KnownIssue> declared = Arrays.asList(onMethod.length > 0
+                ? onMethod
+                : testClassOf(result, method).getAnnotationsByType(KnownIssue.class));
+        return declared.stream()
+                .filter(issue -> failsWithDeclaredCause(throwable, issue))
+                .findFirst()
+                .or(() -> declared.stream().findFirst());
     }
 
     private static boolean failsWithDeclaredCause(Throwable throwable, KnownIssue declared) {
