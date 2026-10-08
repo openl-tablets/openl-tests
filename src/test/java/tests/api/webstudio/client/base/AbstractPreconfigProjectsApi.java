@@ -146,11 +146,13 @@ public abstract class AbstractPreconfigProjectsApi implements ITest {
                         project.projectName(), run.getStatusCode(), run.getBody().asString())).isTrue();
 
         Response statusResp = awaitCompilation(projectId);
-        assertThat(statusResp).as("%s", String.format("No /status response for [%s]", project.projectName())).isNotNull();
+        assertThat(statusResp).as("%s", String.format("No project status response for [%s]", project.projectName())).isNotNull();
         assertThat(statusResp.getStatusCode()).as("%s", String.format("Project status failed for [%s]: HTTP %d — %s",
                         project.projectName(), statusResp.getStatusCode(), statusResp.getBody().asString())).isEqualTo(200);
-        JsonPath status = statusResp.jsonPath();
+        JsonPath status = statusResp.jsonPath().setRootPath("compileStatus");
         String compileState = status.getString("compileState");
+        assertThat(compileState).as("%s", String.format("No compileStatus in GET /rest/projects/{id}?include=status for [%s]: %s",
+                project.projectName(), statusResp.getBody().asString())).isNotNull();
         int compileErrors = intOrZero(status.get("compilation.messages.errors"));
         if ("errors".equalsIgnoreCase(compileState) || compileErrors > 0) {
             fail(buildCompileErrorReport(status));
@@ -262,7 +264,7 @@ public abstract class AbstractPreconfigProjectsApi implements ITest {
         while (System.currentTimeMillis() < deadline) {
             last = statusApi.getStatus(projectId, false);
             if (last.getStatusCode() == 200) {
-                String state = last.jsonPath().getString("compileState");
+                String state = last.jsonPath().getString("compileStatus.compileState");
                 if (state != null && !state.equalsIgnoreCase("idle")
                         && !state.equalsIgnoreCase("compiling") && !state.equalsIgnoreCase("inProgress")) {
                     return last;

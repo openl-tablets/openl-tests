@@ -327,8 +327,10 @@ public abstract class AbstractStudioCentralProjectsApi implements ITest {
         Response statusResp = awaitCompilation(projectId);
         assertThat(statusResp.getStatusCode()).as("%s", String.format("Project status failed for project %s: HTTP %d — %s",
                         projectName, statusResp.getStatusCode(), statusResp.getBody().asString())).isEqualTo(200);
-        JsonPath status = statusResp.jsonPath();
+        JsonPath status = statusResp.jsonPath().setRootPath("compileStatus");
         String compileState = status.getString("compileState");
+        assertThat(compileState).as("%s", String.format("No compileStatus in GET /rest/projects/{id}?include=status for [%s]: %s",
+                projectName, statusResp.getBody().asString())).isNotNull();
         int compileErrors = intOrZero(status.get("compilation.messages.errors"));
         if ("errors".equalsIgnoreCase(compileState) || compileErrors > 0) {
             String detail = buildCompileErrorReport(projectName, status);
@@ -363,7 +365,7 @@ public abstract class AbstractStudioCentralProjectsApi implements ITest {
         while (System.currentTimeMillis() < deadline) {
             last = statusApi.getStatus(projectId, false);
             if (last.getStatusCode() == 200) {
-                String state = last.jsonPath().getString("compileState");
+                String state = last.jsonPath().getString("compileStatus.compileState");
                 if (state != null && !state.equalsIgnoreCase("idle") && !state.equalsIgnoreCase("compiling")) {
                     return last;
                 }

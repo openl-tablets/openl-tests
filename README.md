@@ -273,7 +273,7 @@ The Docker WS image deploys the application to `webapps/ROOT` (root context `/`)
 Three sibling regressions live in `tests/api/webstudio/client` and validate real customer/product
 OpenL content against a fresh WebStudio container per case. All three are API-driven (no UI),
 share the same compile-validation flow (`open → POST /rest/projects/{id}/tests/run` as the compile
-trigger → `GET /rest/projects/{id}/status`, JSESSIONID kept across calls) and appear in the
+trigger → `GET /rest/projects/{id}?include=status`, JSESSIONID kept across calls) and appear in the
 report with one test entry per project/group via `@Factory` + `ITest`.
 
 | | Zip regression | Central-studio regression | Preconfig regression |
