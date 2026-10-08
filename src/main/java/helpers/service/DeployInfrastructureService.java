@@ -415,7 +415,7 @@ public class DeployInfrastructureService {
                 .withEnv("PRODUCTION-REPOSITORY_LOGIN", "openl")
                 .withEnv("PRODUCTION-REPOSITORY_PASSWORD", "openl")
                 .withEnv("RULESERVICE_DEPLOYER_ENABLED", "true")
-                .withEnv("ruleservice.datasource.deploy.classpath.jars", "true")
+                .withEnv("ruleservice.datasource.deploy.classpath.jars", "IF_ABSENT")
                 .withEnv("ruleservice.deployer.delay", "2")
                 .withCopyFileToContainer(
                         MountableFile.forHostPath(Path.of(getPostgresJarPath())),
