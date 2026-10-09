@@ -1,5 +1,6 @@
 package configuration.driver;
 
+import com.microsoft.playwright.Browser;
 import com.microsoft.playwright.BrowserContext;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.ScreenshotType;
@@ -8,21 +9,64 @@ import configuration.appcontainer.AppContainerData;
 import configuration.appcontainer.AppContainerPool;
 import configuration.projectconfig.ProjectConfiguration;
 import configuration.projectconfig.PropertyNameSpace;
+import helpers.utils.DebugArtifactUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.Network;
 
-/**
- * Unified entry point to Playwright regardless of execution mode. Dispatches every call to
- * {@link LocalDriverPool} or {@link DockerDriverPool} based on {@link ExecutionMode#current()},
- * so components and tests never care where the browser actually runs.
- */
 public final class DriverPool {
 
     private static final Logger LOGGER = LogManager.getLogger(DriverPool.class);
     private static final int DEFAULT_TIMEOUT_MS = Integer.parseInt(ProjectConfiguration.getProperty(PropertyNameSpace.PLAYWRIGHT_DEFAULT_TIMEOUT));
 
+    private static final ThreadLocal<BrowserSession> ACTIVE_SESSION = new ThreadLocal<>();
+
     private DriverPool() {
+    }
+
+    public record BrowserSession(BrowserContext context, Page page) {
+
+        public void close() {
+            try {
+                context.close();
+            } catch (RuntimeException alreadyClosed) {
+                LOGGER.warn("Another browser session could not be closed: {}", alreadyClosed.getMessage());
+            }
+        }
+    }
+
+    public static Browser.NewContextOptions defaultContextOptions() {
+        return new Browser.NewContextOptions()
+                .setViewportSize(1280, 720)
+                .setLocale("en-US")
+                .setTimezoneId("America/New_York")
+                .setAcceptDownloads(true)
+                .setIgnoreHTTPSErrors(true);
+    }
+
+    public static BrowserSession openAnotherSession() {
+        BrowserContext context = getBrowserContext().browser().newContext(defaultContextOptions());
+        Page page = context.newPage();
+        page.setDefaultTimeout(DEFAULT_TIMEOUT_MS);
+        LOGGER.info("Opened another browser session with cookies of its own");
+        return new BrowserSession(context, page);
+    }
+
+    public static void actIn(BrowserSession session, Runnable steps) {
+        BrowserSession previous = ACTIVE_SESSION.get();
+        ACTIVE_SESSION.set(session);
+        try {
+            steps.run();
+        } catch (RuntimeException | AssertionError failure) {
+            DebugArtifactUtil.attachScreenshotOnFailure("another-session", "Another browser session at the failure");
+            throw failure;
+        } finally {
+            if (previous == null) {
+                ACTIVE_SESSION.remove();
+            } else {
+                ACTIVE_SESSION.set(previous);
+            }
+        }
     }
 
     public static void initializePlaywright(Network network) {
@@ -34,6 +78,10 @@ public final class DriverPool {
     }
 
     public static Page getPage() {
+        BrowserSession session = ACTIVE_SESSION.get();
+        if (session != null) {
+            return session.page();
+        }
         return switch (ExecutionMode.current()) {
             case PLAYWRIGHT_LOCAL -> LocalDriverPool.getPage();
             case PLAYWRIGHT_DOCKER -> DockerDriverPool.getPage();
@@ -41,6 +89,10 @@ public final class DriverPool {
     }
 
     public static BrowserContext getBrowserContext() {
+        BrowserSession session = ACTIVE_SESSION.get();
+        if (session != null) {
+            return session.context();
+        }
         return switch (ExecutionMode.current()) {
             case PLAYWRIGHT_LOCAL -> LocalDriverPool.getBrowserContext();
             case PLAYWRIGHT_DOCKER -> DockerDriverPool.getBrowserContext();
@@ -54,7 +106,6 @@ public final class DriverPool {
         }
     }
 
-    // Create a new page in the current browser context for multiple tabs/pages
     public static Page createNewPage() {
         Page newPage = getBrowserContext().newPage();
         newPage.setDefaultTimeout(DEFAULT_TIMEOUT_MS);
@@ -62,14 +113,12 @@ public final class DriverPool {
         return newPage;
     }
 
-    // Take screenshot with current page for debugging and test reporting
     public static byte[] takeScreenshot() {
         return getPage().screenshot(new Page.ScreenshotOptions()
                 .setFullPage(true)
                 .setType(ScreenshotType.PNG));
     }
 
-    // Navigate to application container URL with automatic mode detection
     public static void navigateToApp() {
         switch (ExecutionMode.current()) {
             case PLAYWRIGHT_LOCAL -> {
@@ -83,7 +132,6 @@ public final class DriverPool {
         }
     }
 
-    // Get application URL with automatic mode detection for login services
     public static String getAppUrl() {
         ExecutionMode mode = ExecutionMode.current();
         AppContainerData appData = AppContainerPool.get();
@@ -93,7 +141,6 @@ public final class DriverPool {
 
         switch (mode) {
             case PLAYWRIGHT_LOCAL -> {
-                // For local mode, use mapped port URL (Playwright runs on host)
                 var container = appData.getAppContainer();
                 int defaultAppPort = Integer.parseInt(ProjectConfiguration.getProperty(PropertyNameSpace.DEFAULT_APP_PORT));
                 Integer mappedPort = container.getMappedPort(defaultAppPort);
@@ -104,8 +151,7 @@ public final class DriverPool {
                 return hostUrl;
             }
             case PLAYWRIGHT_DOCKER -> {
-                // For Docker mode, use container network URL (Playwright runs in container)
-                String containerNetworkUrl = appData.getAppHostUrl(); // Already contains container network URL
+                String containerNetworkUrl = appData.getAppHostUrl();
                 LOGGER.info("App URL (DOCKER): {}", containerNetworkUrl);
                 return containerNetworkUrl;
             }
@@ -132,7 +178,6 @@ public final class DriverPool {
         return info.toString();
     }
 
-    // Runs a single cleanup step, logging instead of propagating so the remaining steps still run.
     static void closeQuietly(String what, Runnable closeAction) {
         try {
             closeAction.run();

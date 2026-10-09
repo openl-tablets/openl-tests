@@ -1,5 +1,6 @@
 package domain.ui.webstudio.components.editortabcomponents;
 
+import com.microsoft.playwright.Locator;
 import configuration.core.ui.WebElement;
 import configuration.driver.DriverPool;
 import domain.ui.webstudio.components.BaseComponent;
@@ -8,19 +9,12 @@ import helpers.utils.WaitUtil;
 
 import java.util.List;
 
-/**
- * The results of running a module's tests. A test table is named by a link that carries the outcome of the
- * whole table, and the cases below it are marked one by one.
- */
 public class TestResultValidationComponent extends BaseComponent {
 
-    // The window a run reports in, whichever run it was: a rule reports what it returned, a test table how
-    // its cases went, and both are the same window with the same way out of it.
     private static final String RESULTS = "xpath=//div[contains(@class,'ant-modal-container')]"
             + "[.//button[@data-testid='execution-close']]";
     private static final String TABLE_LINK = RESULTS + "//a[starts-with(@data-testid,'test-table-')]";
     private static final String CASE_STATUS = RESULTS + "//table[starts-with(@data-testid,'test-results-')]//span[@title='%s']";
-    // A rule's run shows the one row it produced; a test table shows a table of cases for each of its tables.
     private static final String RESULT_TABLE = "(" + RESULTS.substring("xpath=".length())
             + "//table[@data-testid='run-result-table' or starts-with(@data-testid,'test-results-')])[1]";
     private static final int PROBE_MS = 500;
@@ -62,10 +56,6 @@ public class TestResultValidationComponent extends BaseComponent {
         failuresOnlyCheckbox = new WebElement(page, RESULTS + "//input[@data-testid='tests-failures-only']", "failuresOnlyCheckbox");
     }
 
-    /**
-     * Waits for the run to report. The window opens while the run is still on its way, so what is waited for
-     * is what it has to show: the test tables it ran, or the row a rule's run produced.
-     */
     private void waitForResults() {
         resultsWindow.waitForVisible(RESULTS_TIMEOUT_MS);
         WaitUtil.requireCondition(() -> !tableLinks.isEmpty() || resultTable.isVisible(), RESULTS_TIMEOUT_MS, 250,
@@ -116,13 +106,11 @@ public class TestResultValidationComponent extends BaseComponent {
                 getTotalTestCount(), getPassedTestCount(), getFailedTestCount());
     }
 
-    /** The column headings of the first table of results: what each case was run with, and what it returned. */
     public String getResultTableHeader() {
         waitForResults();
         return resultTableHeader.getText().trim();
     }
 
-    /** What the window says about the run as a whole: how many tests were run, and how long they took. */
     public String getRunSummary() {
         waitForResults();
         return resultsTitle.getText().trim();
@@ -184,16 +172,44 @@ public class TestResultValidationComponent extends BaseComponent {
                 contextMsg, failedTableLinks.size(), getAllFailedTests(), failedCases.size(), getRunSummary()));
     }
 
-    /**
-     * Closes the window the run reported in. It covers the screen while it stands open, so the module cannot
-     * be worked on again until it is out of the way.
-     */
     public void closeResults() {
         WebElement closeBtn = new WebElement(page, RESULTS + "//button[@data-testid='execution-close']", "closeResultsBtn");
         if (closeBtn.isVisible(PROBE_MS)) {
             closeBtn.click();
             resultsWindow.waitForHidden(DEFAULT_TIMEOUT_MS);
         }
+    }
+
+    public List<String> getRunColumnHeadings() {
+        waitForResults();
+        return runResultTable().locator("xpath=./thead/tr[1]/th").allInnerTexts().stream().map(String::trim).toList();
+    }
+
+    public String getUnfoldedRunCellText(String heading) {
+        List<String> headings = getRunColumnHeadings();
+        int column = 0;
+        for (int index = 0; index < headings.size() && column == 0; index++) {
+            if (headings.get(index).equalsIgnoreCase(heading)) {
+                column = index + 1;
+            }
+        }
+        if (column == 0) {
+            throw new AssertionError("The run results have no column " + heading + ": " + headings);
+        }
+        Locator cell = runResultTable().locator("xpath=./tbody/tr[1]/td[" + column + "]");
+        WaitUtil.requireCondition(() -> {
+            Locator folded = cell.locator("xpath=.//span[contains(@class,'ant-tree-switcher_close')]");
+            if (folded.count() == 0) {
+                return true;
+            }
+            folded.first().click();
+            return false;
+        }, DEFAULT_TIMEOUT_MS, 300, "Waiting for the " + heading + " cell of the run results to unfold");
+        return cell.innerText().trim();
+    }
+
+    private Locator runResultTable() {
+        return page.locator(RESULTS + "//table[@data-testid='run-result-table']");
     }
 
     public List<String> getAllFailedTests() {

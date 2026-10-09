@@ -172,6 +172,16 @@ public class TableComponent extends BaseComponent {
         editCell(rowIndex, columnIndex, text, true);
     }
 
+    public int getRowIndexHolding(String... values) {
+        List<String> wanted = List.of(values);
+        for (int row = 1; row <= getRowsCount(); row++) {
+            if (getRow(row).getValue().containsAll(wanted)) {
+                return row;
+            }
+        }
+        throw new AssertionError("No row of the table holds " + wanted);
+    }
+
     public List<PlaywrightTableRowComponent> getRows() {
         WaitUtil.waitForCondition(() -> !rows.isEmpty(), 3000, 250, "Waiting for table rows to be loaded");
         return rows.subList(rowOffset(), rows.size());

@@ -163,6 +163,77 @@ public abstract class TableInputLauncherComponent extends BaseComponent {
         }
     }
 
+    protected void unfoldRow(String name) {
+        String path = pathOf(name);
+        Locator closed = rowOf(path).locator("xpath=./span[contains(@class,'ant-tree-switcher_close')]");
+        if (closed.count() > 0) {
+            closed.first().click();
+        }
+        WaitUtil.requireCondition(
+                () -> rowOf(path).locator("xpath=./span[contains(@class,'ant-tree-switcher_open')]").count() > 0,
+                DEFAULT_TIMEOUT_MS, 200, "Waiting for the row of " + path + " to unfold");
+    }
+
+    protected boolean offersRow(String name) {
+        waitForFields();
+        return drawnPaths().stream().anyMatch(path -> path.equals(name) || lastSegmentOf(path).equals(name));
+    }
+
+    protected void clearField(String name) {
+        String path = pathOf(name);
+        buttonOf("clear-" + path).waitForVisible(DEFAULT_TIMEOUT_MS).click();
+        WaitUtil.requireCondition(() -> "null".equals(fieldValue(path)), DEFAULT_TIMEOUT_MS, 200,
+                "Waiting for " + path + " to be cleared");
+    }
+
+    protected String fieldValueOf(String name) {
+        return fieldValue(pathOf(name));
+    }
+
+    protected boolean fieldTakesTextOrList(String name) {
+        String path = pathOf(name);
+        openFieldForWriting(path);
+        WebElement plainValue = new WebElement(page,
+                "xpath=//input[@data-testid='input-" + path + "'][@type='text']"
+                        + " | //div[@data-testid='input-" + path + "'][contains(@class,'ant-select')]",
+                "fieldPlainValue[" + path + "]");
+        boolean plain = plainValue.isVisible(PROBE_MS);
+        page.keyboard().press("Escape");
+        return plain;
+    }
+
+    protected void switchInputTo(String mode) {
+        WebElement modeBtn = new WebElement(page,
+                "xpath=//label[contains(@class,'ant-radio-button-wrapper')][normalize-space()='" + mode + "']",
+                "inputMode[" + mode + "]");
+        modeBtn.waitForVisible(DEFAULT_TIMEOUT_MS).click();
+        WaitUtil.requireCondition(() -> String.valueOf(modeBtn.getAttribute("class")).contains("checked"),
+                DEFAULT_TIMEOUT_MS, 200, "Waiting for the " + mode + " input to be shown");
+    }
+
+    protected String jsonInput() {
+        WebElement editor = jsonEditor();
+        editor.waitForVisible(DEFAULT_TIMEOUT_MS);
+        return editor.getInnerText();
+    }
+
+    protected void replaceJsonInput(String json) {
+        WebElement editor = jsonEditor();
+        editor.waitForVisible(DEFAULT_TIMEOUT_MS).click();
+        page.keyboard().press("ControlOrMeta+a");
+        page.keyboard().press("Delete");
+        page.keyboard().insertText(json);
+        String compact = json.replaceAll("\\s", "");
+        String start = compact.substring(0, Math.min(compact.length(), 40));
+        WaitUtil.requireCondition(() -> editor.getInnerText().replaceAll("\\s", "").startsWith(start),
+                DEFAULT_TIMEOUT_MS, 200, "Waiting for the JSON input to hold what was pasted");
+    }
+
+    private WebElement jsonEditor() {
+        return new WebElement(page, "xpath=//*[@data-testid='input-json']//div[contains(@class,'cm-content')]",
+                "jsonInput");
+    }
+
     protected List<String> drawnPaths() {
         return createElementList("xpath=//*[starts-with(@data-testid,'value-') or starts-with(@data-testid,'input-')]",
                 "drawnRows").stream()

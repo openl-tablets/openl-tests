@@ -70,6 +70,73 @@ public class RunMenuComponent extends TableInputLauncherComponent implements IRu
         return this;
     }
 
+    @Override
+    public IRunMenu unfoldParameter(String name) {
+        unfoldRow(name);
+        return this;
+    }
+
+    @Override
+    public boolean offersParameter(String name) {
+        return offersRow(name);
+    }
+
+    @Override
+    public List<String> getFieldChoices(String name) {
+        return fieldOptions(name);
+    }
+
+    @Override
+    public IRunMenu chooseFieldValue(String name, String value) {
+        chooseInField(name, value);
+        return this;
+    }
+
+    @Override
+    public IRunMenu writeFieldValue(String name, String value) {
+        writeField(name, value);
+        return this;
+    }
+
+    @Override
+    public boolean isFieldEditedAsTextOrList(String name) {
+        return fieldTakesTextOrList(name);
+    }
+
+    @Override
+    public IRunMenu clearFieldValue(String name) {
+        clearField(name);
+        return this;
+    }
+
+    @Override
+    public String getFieldValue(String name) {
+        return fieldValueOf(name);
+    }
+
+    @Override
+    public IRunMenu showJsonInput() {
+        switchInputTo("JSON");
+        return this;
+    }
+
+    @Override
+    public IRunMenu showFormInput() {
+        switchInputTo("Form");
+        return this;
+    }
+
+    @Override
+    public String getJsonInput() {
+        return jsonInput();
+    }
+
+    @Override
+    public IRunMenu pasteJsonInput(String json) {
+        replaceJsonInput(json);
+        return this;
+    }
+
     private String fieldAt(String index, boolean chosenFromList) {
         waitForFields();
         int position = Integer.parseInt(index.trim());

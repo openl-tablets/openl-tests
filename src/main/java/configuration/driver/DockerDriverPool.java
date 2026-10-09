@@ -232,12 +232,7 @@ public class DockerDriverPool {
     }
 
     private static BrowserContext createContainerizedBrowserContext(Browser browser, Network network) {
-        Browser.NewContextOptions contextOptions = new Browser.NewContextOptions()
-                .setViewportSize(1280, 720)
-                .setLocale("en-US")
-                .setTimezoneId("America/New_York")
-                .setAcceptDownloads(true)
-                .setIgnoreHTTPSErrors(true);
+        Browser.NewContextOptions contextOptions = DriverPool.defaultContextOptions();
 
         boolean videoRecordingEnabled = Boolean.parseBoolean(ProjectConfiguration.getProperty(PropertyNameSpace.ENABLE_VIDEO_RECORDING));
 

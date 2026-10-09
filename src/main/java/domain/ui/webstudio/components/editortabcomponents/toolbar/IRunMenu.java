@@ -13,4 +13,16 @@ public interface IRunMenu {
     boolean offersTheFirstElementAsAList();
     IRunMenu setInputTextField(String index, String value);
     IRunMenu setInputSelectField(String index, String value);
+    IRunMenu unfoldParameter(String name);
+    boolean offersParameter(String name);
+    List<String> getFieldChoices(String name);
+    IRunMenu chooseFieldValue(String name, String value);
+    IRunMenu writeFieldValue(String name, String value);
+    boolean isFieldEditedAsTextOrList(String name);
+    IRunMenu clearFieldValue(String name);
+    String getFieldValue(String name);
+    IRunMenu showJsonInput();
+    IRunMenu showFormInput();
+    String getJsonInput();
+    IRunMenu pasteJsonInput(String json);
 }

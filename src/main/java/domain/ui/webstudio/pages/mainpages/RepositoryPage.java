@@ -98,12 +98,7 @@ public class RepositoryPage extends BasePage {
             fillCommitInfo();
             waitUntilSpinnerLoaded();
             openProjectsList();
-            // A project that was not made is not listed, and everything after would then be looking for a
-            // row that is not there; the making is what failed, and that is what is said. A name is kept
-            // without the spaces around it, so that is the name the row carries.
             String listed = projectName.trim();
-            // The repository reads the project it has just been given before the list can hold it, which
-            // takes as long as the repository takes, so this is waited out far longer than a screen is.
             if (!WaitUtil.waitForCondition(() -> projectsListTable.getRow(listed).isVisible(ROW_PROBE_MS),
                     PROJECT_LISTED_TIMEOUT_MS, 500,
                     "Waiting for '" + listed + "' to be listed among the projects")) {
@@ -113,7 +108,7 @@ public class RepositoryPage extends BasePage {
         }
     }
 
-    private void openIfClosed(String projectName) {
+    public void openIfClosed(String projectName) {
         if (isProjectActionAvailable(projectName, "Open")) {
             openProject(projectName);
             waitUntilSpinnerLoaded();

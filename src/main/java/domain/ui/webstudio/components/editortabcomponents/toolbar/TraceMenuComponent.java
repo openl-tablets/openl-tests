@@ -11,16 +11,12 @@ public class TraceMenuComponent extends TableInputLauncherComponent implements I
     private final WebElement traceBtn;
     private final WebElement traceIntoFileBtn;
     private final WebElement advancedCheckbox;
-    private final WebElement jsonModeBtn;
-    private final WebElement jsonEditor;
 
     public TraceMenuComponent(Page page) {
         super(page, "trace-start");
         traceBtn = buttonOf("trace-start");
         traceIntoFileBtn = buttonOf("trace-download");
         advancedCheckbox = new WebElement(page, "xpath=//input[@data-testid='trace-advanced']", "advancedCheckbox");
-        jsonModeBtn = new WebElement(page, "xpath=//label[contains(@class,'ant-radio-button-wrapper')][normalize-space()='JSON']", "jsonModeBtn");
-        jsonEditor = new WebElement(page, "xpath=//div[@data-testid='input-json']//div[contains(@class,'cm-content')]", "jsonEditor");
     }
 
     @Override
@@ -54,13 +50,8 @@ public class TraceMenuComponent extends TableInputLauncherComponent implements I
 
     @Override
     public ITraceMenu selectJSONTrace(String json) {
-        jsonModeBtn.waitForVisible(DEFAULT_TIMEOUT_MS);
-        jsonModeBtn.click();
-        jsonEditor.waitForVisible(DEFAULT_TIMEOUT_MS);
-        jsonEditor.click();
-        page.keyboard().press("ControlOrMeta+a");
-        page.keyboard().press("Delete");
-        page.keyboard().insertText(json);
+        switchInputTo("JSON");
+        replaceJsonInput(json);
         return this;
     }
 

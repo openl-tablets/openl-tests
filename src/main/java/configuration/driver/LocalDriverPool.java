@@ -115,12 +115,7 @@ public class LocalDriverPool {
     }
 
     private static BrowserContext createBrowserContext(Browser browser) {
-        Browser.NewContextOptions contextOptions = new Browser.NewContextOptions()
-                .setViewportSize(1280, 720)
-                .setLocale("en-US")
-                .setTimezoneId("America/New_York")
-                .setAcceptDownloads(true)
-                .setIgnoreHTTPSErrors(true);
+        Browser.NewContextOptions contextOptions = DriverPool.defaultContextOptions();
 
         BrowserContext browserContext = browser.newContext(contextOptions);
         PlaywrightTracing.start(browserContext);

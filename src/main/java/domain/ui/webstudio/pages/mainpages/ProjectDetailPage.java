@@ -118,14 +118,38 @@ public class ProjectDetailPage extends BasePage {
 
     public ProjectDetailPage writeDeployConfigServiceName(String serviceName) {
         openPublishTab();
-        new WebElement(page, "xpath=//*[@data-testid='deploy-config-edit']", "deployConfigEdit")
-                .waitForVisible(DEFAULT_TIMEOUT_MS).click();
+        deployConfigEditBtn().waitForVisible(DEFAULT_TIMEOUT_MS).click();
         new WebElement(page, "xpath=//input[@data-testid='deploy-service-name']", "deployServiceName")
                 .waitForVisible(DEFAULT_TIMEOUT_MS).fill(serviceName);
-        new WebElement(page, "xpath=//*[@data-testid='deploy-config-save']", "deployConfigSave")
-                .waitForVisible(DEFAULT_TIMEOUT_MS).click();
+        deployConfigSaveBtn().waitForVisible(DEFAULT_TIMEOUT_MS).click();
         waitUntilSpinnerLoaded();
         return this;
+    }
+
+    public ProjectDetailPage setProvideRuntimeContext(boolean provided) {
+        openPublishTab();
+        deployConfigEditBtn().waitForVisible(DEFAULT_TIMEOUT_MS).click();
+        WebElement runtimeContext = new WebElement(page, "xpath=//button[@data-testid='deploy-runtime-context']",
+                "provideRuntimeContextSwitch");
+        runtimeContext.waitForVisible(DEFAULT_TIMEOUT_MS);
+        if (Boolean.parseBoolean(runtimeContext.getAttribute("aria-checked")) != provided) {
+            runtimeContext.click();
+        }
+        deployConfigSaveBtn().waitForVisible(DEFAULT_TIMEOUT_MS).click();
+        waitUntilSpinnerLoaded();
+        deployConfigEditBtn().waitForVisible(DEFAULT_TIMEOUT_MS);
+        WaitUtil.requireCondition(() -> Boolean.parseBoolean(runtimeContext.getAttribute("aria-checked")) == provided,
+                DEFAULT_TIMEOUT_MS, 250, "Waiting for the saved deploy configuration to say whether it provides "
+                        + "the runtime context");
+        return this;
+    }
+
+    private WebElement deployConfigEditBtn() {
+        return new WebElement(page, "xpath=//*[@data-testid='deploy-config-edit']", "deployConfigEdit");
+    }
+
+    private WebElement deployConfigSaveBtn() {
+        return new WebElement(page, "xpath=//*[@data-testid='deploy-config-save']", "deployConfigSave");
     }
 
     public boolean isDeployConfigMigrateOffered() {
