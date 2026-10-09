@@ -2,6 +2,7 @@ package tests.ui.webstudio.rules_editor;
 
 import configuration.annotations.AppContainerConfig;
 import configuration.annotations.Description;
+import configuration.annotations.KnownIssue;
 import configuration.annotations.TestCaseId;
 import configuration.appcontainer.AppContainerStartParameters;
 import domain.serviceclasses.constants.User;
@@ -9,11 +10,14 @@ import domain.ui.webstudio.components.common.TabSwitcherComponent;
 import domain.ui.webstudio.components.editortabcomponents.TestResultValidationComponent;
 import domain.ui.webstudio.components.editortabcomponents.leftmenu.EditorLeftRulesTreeComponent;
 import domain.ui.webstudio.components.editortabcomponents.toolbar.IRunMenu;
+import domain.ui.webstudio.components.editortabcomponents.toolbar.ITraceMenu;
 import domain.ui.webstudio.pages.mainpages.EditorPage;
 import domain.ui.webstudio.pages.mainpages.RepositoryPage;
 import helpers.service.WorkflowService;
 import org.testng.annotations.Test;
 import tests.BaseTest;
+
+import java.util.List;
 
 import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.DECISION;
 import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.METHOD;
@@ -29,6 +33,7 @@ public class TestRunFormInputUi extends BaseTest {
     private static final String RUN_FORM_WORKBOOK = "RunFormInput.xlsx";
     private static final String RUN_FORM_MODULE = "RunFormInput";
     private static final String SHOW = "Show";
+    private static final String TRACE_KEEPS_RUN_INPUT = "The Trace form must keep the input entered in the Run form";
 
     @Test
     @TestCaseId("EPBDS-16880")
@@ -127,6 +132,27 @@ public class TestRunFormInputUi extends BaseTest {
         assertThat(editorPage.getTestResultValidationComponent().getUnfoldedRunCellText("Result"))
                 .as("The run must use the pasted values")
                 .contains("grade=B|age=41|vip=false|rate=0.25");
+    }
+
+    @Test
+    @TestCaseId("EPBDS-16880")
+    @Description("EPBDS-16742: the Trace form opens with the input entered in the Run form, as the one input form "
+            + "Run and Trace shared in 6.4.0 did. Fails on EPBDS-16742: Trace opens with the defaults of Policy.")
+    @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
+    @KnownIssue(value = "EPBDS-16742", failsWith = TRACE_KEEPS_RUN_INPUT)
+    public void traceFormKeepsTheInputEnteredInRun() {
+        EditorPage editorPage = openWorkbookTable(METHOD, SHOW);
+        IRunMenu run = editorPage.getEditorToolbarPanelComponent().clickRun();
+        run.unfoldParameter("p").writeFieldValue("grade", "B").writeFieldValue("age", "41");
+        assertThat(run.getFieldValue("grade"))
+                .as("The Run form takes the grade written into it")
+                .isEqualTo("\"B\"");
+
+        ITraceMenu trace = editorPage.getEditorToolbarPanelComponent().clickTrace();
+        trace.unfoldParameter("p");
+        assertThat(List.of(trace.getFieldValue("grade"), trace.getFieldValue("age")))
+                .as(TRACE_KEEPS_RUN_INPUT)
+                .containsExactly("\"B\"", "41");
     }
 
     @Test

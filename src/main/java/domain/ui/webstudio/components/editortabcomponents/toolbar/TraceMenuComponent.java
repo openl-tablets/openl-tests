@@ -56,6 +56,17 @@ public class TraceMenuComponent extends TableInputLauncherComponent implements I
     }
 
     @Override
+    public ITraceMenu unfoldParameter(String name) {
+        unfoldRow(name);
+        return this;
+    }
+
+    @Override
+    public String getFieldValue(String name) {
+        return fieldValueOf(name);
+    }
+
+    @Override
     public ITraceMenu clickTraceIntoFile() {
         traceIntoFileBtn.waitForVisible(DEFAULT_TIMEOUT_MS);
         traceIntoFileBtn.click();

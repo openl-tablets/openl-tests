@@ -16,4 +16,6 @@ public interface ITraceMenu {
     List<String> getAliasDropdownValues();
     List<String> getElementsOf(String parameterName);
     boolean offersTheFirstElementAsAList();
+    ITraceMenu unfoldParameter(String name);
+    String getFieldValue(String name);
 }
