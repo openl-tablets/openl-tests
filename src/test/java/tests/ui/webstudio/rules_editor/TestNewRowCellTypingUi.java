@@ -2,7 +2,6 @@ package tests.ui.webstudio.rules_editor;
 
 import configuration.annotations.AppContainerConfig;
 import configuration.annotations.Description;
-import configuration.annotations.KnownIssue;
 import configuration.annotations.TestCaseId;
 import configuration.appcontainer.AppContainerStartParameters;
 import configuration.core.ui.WebElement;
@@ -92,9 +91,8 @@ public class TestNewRowCellTypingUi extends BaseTest {
     @Test
     @TestCaseId("EPBDS-16881")
     @Description("EPBDS-16765: a value added to an Integer Vocabulary gets an Integer cell: letters are refused, "
-            + "the digits are kept and saved. Fails on EPBDS-16765: the new cell takes any text.")
+            + "the digits are kept and saved.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
-    @KnownIssue(value = "EPBDS-16765", failsWith = VOCABULARY_NOT_TYPED)
     public void newVocabularyRowRefusesLetters() {
         typeIntoNewRow(VOCABULARY, "Level", 4, VOCABULARY_NOT_TYPED);
     }

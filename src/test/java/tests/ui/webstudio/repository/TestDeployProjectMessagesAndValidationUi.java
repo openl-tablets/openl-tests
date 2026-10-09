@@ -63,7 +63,6 @@ public class TestDeployProjectMessagesAndValidationUi extends BaseTest {
     @Description("A successful deploy must report that the project was deployed and must not name the removed "
             + "\"Deploy Configuration\" feature.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEPLOY_STUDIO_PARAMS)
-    @KnownIssue(value = "EPBDS-16273", failsWith = "must not name the removed \"Deploy Configuration\" feature")
     public void testDeploySuccessMessageNamesTheProject() {
         RepositoryPage repositoryPage = openRepositoryWithProject("DeployMsg");
         String projectName = lastCreatedProject;

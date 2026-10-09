@@ -46,7 +46,7 @@ public class TestDisplayChangedRowsTableStructure extends BaseTest {
         CompareLocalChangesDialogComponent compareDialog = changesDialog.clickCompare();
         compareDialog.waitForDialogToAppear();
 
-        compareDialog.openTreeNode("Rating Algorithm");
+        compareDialog.openTreeNode("Limit");
         compareDialog.clickTreeNode("Rules Double newTable (Bank bank, RatingGroup bankRatingGroup)");
 
         compareDialog.setShowEqualRows(false);

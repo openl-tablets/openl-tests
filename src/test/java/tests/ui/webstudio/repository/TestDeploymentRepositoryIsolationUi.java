@@ -63,16 +63,16 @@ public class TestDeploymentRepositoryIsolationUi extends BaseTest {
         DeployModalComponent firstDeploy = repositoryPage.clickDeploy(PROJECT);
         firstDeploy.deployWithAllFields(DeployFixtureService.PRIMARY_REPOSITORY_NAME, SHARED_NAME, "Into the first");
         assertThat(firstDeploy.getSuccessNotificationText().toLowerCase())
-                .as("Deploying into the first repository must report success")
-                .contains("successfully");
+                .as("Deploying into the first repository must report that the project was deployed")
+                .contains("\"" + PROJECT.toLowerCase() + "\" has been deployed");
         repositoryPage.closeAllMessages();
 
         repositoryPage.openProjectsList();
         DeployModalComponent secondDeploy = repositoryPage.clickDeploy(PROJECT);
         secondDeploy.deployWithAllFields(DeployFixtureService.SECOND_REPOSITORY_NAME, SHARED_NAME, "Into the second");
         assertThat(secondDeploy.getSuccessNotificationText().toLowerCase())
-                .as("Deploying into the second repository must report success, not fail silently")
-                .contains("successfully");
+                .as("Deploying into the second repository must report that the project was deployed, not fail silently")
+                .contains("\"" + PROJECT.toLowerCase() + "\" has been deployed");
         repositoryPage.closeAllMessages();
 
         DeploymentsHomePage deployments = new DeploymentsHomePage().open();
