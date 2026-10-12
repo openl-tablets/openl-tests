@@ -20,7 +20,9 @@ import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableT
 
 public class TestSmartLookupSmartRules extends BaseTest {
 
-    private static final long COPY_SHOWN_MS = 10000;
+    private static final long TABLE_SHOWN_MS = 10000;
+    private static final String COPY_LABEL = "MySmarRule [country=FR]";
+    private static final List<String> BUSINESS_DIMENSION = List.of("properties", "country", "FR");
     private static final String EXCEL_FILE = "TestSmartLookupSmartRules.xlsx";
     private static final String MODULE_NAME = "TestSmartLookupSmartRules";
 
@@ -70,16 +72,21 @@ public class TestSmartLookupSmartRules extends BaseTest {
 
         editorPage.getEditorToolbarPanelComponent().copyTableAsBusinessDimension("Countries", "France");
         editorPage.waitUntilSpinnerLoaded();
-        List<String> businessDimension = List.of("properties", "country", "FR");
-        WaitUtil.waitForCondition(() -> table.getRow(2).getValue().containsAll(businessDimension), COPY_SHOWN_MS,
-                250, "Waiting for the copy of MySmarRule to show its business dimension");
-        assertThat(table.getRow(2).getValue()).containsAll(businessDimension);
+        checkShowsBusinessDimension(table, "The copy of MySmarRule must show its business dimension");
 
         editorPage.getEditorLeftRulesTreeComponent().selectItemInFolder(DECISION, "MySmarRule");
         editorPage.getEditorToolbarPanelComponent().removeCurrentTable();
-        editorPage.getEditorLeftRulesTreeComponent()
-                .expandFolderInTree(DECISION)
-                .checkRulesTableAbsent(DECISION, "MySmarRule [county=FR]");
+        EditorLeftRulesTreeComponent rulesTree = editorPage.getEditorLeftRulesTreeComponent().expandFolderInTree(DECISION);
+        WaitUtil.waitForCondition(() -> {
+            try {
+                return rulesTree.isItemNotExistsInFolder(DECISION, COPY_LABEL);
+            } catch (RuntimeException treeIsBeingRebuilt) {
+                return false;
+            }
+        }, TABLE_SHOWN_MS, 250, "Waiting for the tables tree to drop the version label of the copy");
+        rulesTree.checkRulesTableAbsent(DECISION, COPY_LABEL);
+        rulesTree.selectItemInFolder(DECISION, "MySmarRule");
+        checkShowsBusinessDimension(table, "The MySmarRule left after the original is removed must be its copy for France");
 
         editorPage.getEditorLeftRulesTreeComponent().selectItemInFolder(DECISION, "MySmartLookup");
         editorPage.getProblemsPanelComponent().checkNoProblems();
@@ -109,6 +116,12 @@ public class TestSmartLookupSmartRules extends BaseTest {
         assertThat(editorPage.getEditorLeftRulesTreeComponent().getSelectedItemText()).isEqualTo("MySmartLookupTest");
         assertThat(table.getRow(2).getValue().stream().filter(cell -> !cell.isBlank()).toList())
                 .isEqualTo(List.of("gender", "dateOfBirth", "status", "_res_"));
+    }
+
+    private void checkShowsBusinessDimension(TableComponent table, String expectation) {
+        WaitUtil.waitForCondition(() -> table.getRow(2).getValue().containsAll(BUSINESS_DIMENSION), TABLE_SHOWN_MS,
+                250, expectation);
+        assertThat(table.getRow(2).getValue()).as(expectation).containsAll(BUSINESS_DIMENSION);
     }
 
     private void saveTableAndCheckNoProblems(EditorPage editorPage) {

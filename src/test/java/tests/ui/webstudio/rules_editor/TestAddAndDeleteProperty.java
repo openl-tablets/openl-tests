@@ -1,7 +1,6 @@
 package tests.ui.webstudio.rules_editor;
 
 import configuration.annotations.Description;
-import configuration.annotations.KnownIssue;
 import configuration.annotations.TestCaseId;
 import configuration.annotations.AppContainerConfig;
 import configuration.appcontainer.AppContainerStartParameters;
@@ -41,10 +40,8 @@ public class TestAddAndDeleteProperty extends BaseTest {
 
     @Test
     @TestCaseId("IPBQA-25857")
-    @Description("Rules Editor - Add and delete properties in table details. Fails on EPBDS-16871: the save that moves "
-            + "MyRules2 below MyRules1 may open MyRules1 instead of the saved table.")
+    @Description("Rules Editor - Add and delete properties in table details")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
-    @KnownIssue(value = "EPBDS-16871", failsWith = KEEPS_TABLE_OPEN)
     public void testAddAndDeleteProperty() {
         EditorPage editorPage = loginAndCreateProject();
 
