@@ -1,7 +1,6 @@
 package tests.ui.webservice;
 
 import configuration.annotations.Description;
-import configuration.annotations.KnownIssue;
 import configuration.annotations.TestCaseId;
 import configuration.annotations.AppContainerConfig;
 import configuration.appcontainer.AppContainerPool;
@@ -81,9 +80,7 @@ public class TestRuleServiceS3DeployClasspathJarProperty extends BaseTest {
 
     @Test
     @TestCaseId("IPBQA-32605")
-    @Description("Verify S3 repository deployment behavior for ruleservice.datasource.deploy.classpath.jars modes NEVER, IF_ABSENT, ALWAYS. "
-            + "Fails on EPBDS-16870: the classpath jars are deployed only after a request to /admin/healthcheck/readiness.")
-    @KnownIssue(value = "EPBDS-16870", failsWith = DEPLOYED_FROM_CLASSPATH)
+    @Description("Verify S3 repository deployment behavior for ruleservice.datasource.deploy.classpath.jars modes NEVER, IF_ABSENT, ALWAYS.")
     @AppContainerConfig(
             startParams = AppContainerStartParameters.EMPTY,
             dockerImageProperty = PropertyNameSpace.WS_DOCKER_IMAGE_NAME

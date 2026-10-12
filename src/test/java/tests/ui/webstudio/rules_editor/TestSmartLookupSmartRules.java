@@ -9,6 +9,7 @@ import domain.ui.webstudio.components.common.TableComponent;
 import domain.ui.webstudio.components.editortabcomponents.leftmenu.EditorLeftRulesTreeComponent;
 import domain.ui.webstudio.pages.mainpages.EditorPage;
 import helpers.service.WorkflowService;
+import helpers.utils.WaitUtil;
 import org.testng.annotations.Test;
 import tests.BaseTest;
 
@@ -19,6 +20,7 @@ import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableT
 
 public class TestSmartLookupSmartRules extends BaseTest {
 
+    private static final long COPY_SHOWN_MS = 10000;
     private static final String EXCEL_FILE = "TestSmartLookupSmartRules.xlsx";
     private static final String MODULE_NAME = "TestSmartLookupSmartRules";
 
@@ -68,7 +70,10 @@ public class TestSmartLookupSmartRules extends BaseTest {
 
         editorPage.getEditorToolbarPanelComponent().copyTableAsBusinessDimension("Countries", "France");
         editorPage.waitUntilSpinnerLoaded();
-        assertThat(table.getRow(2).getValue()).containsAll(List.of("properties", "country", "FR"));
+        List<String> businessDimension = List.of("properties", "country", "FR");
+        WaitUtil.waitForCondition(() -> table.getRow(2).getValue().containsAll(businessDimension), COPY_SHOWN_MS,
+                250, "Waiting for the copy of MySmarRule to show its business dimension");
+        assertThat(table.getRow(2).getValue()).containsAll(businessDimension);
 
         editorPage.getEditorLeftRulesTreeComponent().selectItemInFolder(DECISION, "MySmarRule");
         editorPage.getEditorToolbarPanelComponent().removeCurrentTable();

@@ -1,6 +1,5 @@
 package tests.ui.webstudio.studio_smoke;
 
-import configuration.annotations.KnownIssue;
 import configuration.annotations.Description;
 import configuration.annotations.TestCaseId;
 import configuration.annotations.AppContainerConfig;
@@ -28,7 +27,6 @@ public class TestAdminNotifications extends BaseTest {
     @TestCaseId("IPBQA-30617")
     @Description("Test notifications: send to all users, display, delete, validate message length and empty messages.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
-    @KnownIssue(value = "EPBDS-15703", failsWith = "A notification of whitespace only must be refused, not shown")
     public void testNotifications() {
         LoginService loginService = new LoginService(DriverPool.getPage());
         EditorPage editorPage = loginService.login(UserService.getUser(User.ADMIN));

@@ -42,11 +42,9 @@ public class TestAddAndDeleteProperty extends BaseTest {
     @Test
     @TestCaseId("IPBQA-25857")
     @Description("Rules Editor - Add and delete properties in table details. Fails on EPBDS-16871: the save that moves "
-            + "MyRules2 below MyRules1 may open MyRules1 instead of the saved table; and on EPBDS-16872: a list property "
-            + "added after the first one is stored with the names of its values instead of their codes.")
+            + "MyRules2 below MyRules1 may open MyRules1 instead of the saved table.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     @KnownIssue(value = "EPBDS-16871", failsWith = KEEPS_TABLE_OPEN)
-    @KnownIssue(value = "EPBDS-16872", failsWith = PICKED_BY_NAME)
     public void testAddAndDeleteProperty() {
         EditorPage editorPage = loginAndCreateProject();
 
@@ -212,7 +210,6 @@ public class TestAddAndDeleteProperty extends BaseTest {
         tableDetails.addProperty(propertyName);
         editAndCheckCheckboxProperty(editorPage, propertyName, propertyTableName, choices);
     }
-
 
     private void addAndCheckBooleanProperty(EditorPage editorPage, String propertyName, String propertyTableName, boolean value) {
         RightTableDetailsComponent tableDetails = editorPage.getRightTableDetailsComponent();

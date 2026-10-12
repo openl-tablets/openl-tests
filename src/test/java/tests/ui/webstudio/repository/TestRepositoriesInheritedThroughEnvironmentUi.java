@@ -2,7 +2,6 @@ package tests.ui.webstudio.repository;
 
 import configuration.annotations.AppContainerConfig;
 import configuration.annotations.Description;
-import configuration.annotations.KnownIssue;
 import configuration.annotations.TestCaseId;
 import configuration.appcontainer.AppContainerStartParameters;
 import configuration.driver.DriverPool;
@@ -66,10 +65,8 @@ public class TestRepositoriesInheritedThroughEnvironmentUi extends BaseTest {
     @Test
     @TestCaseId("EPBDS-16779")
     @Description("Looking at a design repository configured by environment variables and moving to another one "
-            + "does not ask to discard changes that were never made. Fails on EPBDS-16779: the unsaved changes "
-            + "dialog is shown.")
+            + "does not ask to discard changes that were never made.")
     @AppContainerConfig(startParams = AppContainerStartParameters.STUDIO_REF_REPOSITORIES_PARAMS)
-    @KnownIssue(value = "EPBDS-16779", failsWith = NOTHING_UNSAVED)
     public void testLookingAtEnvironmentRepositoryLeavesNothingUnsaved() {
         RepositoriesPageComponent repositories = login().openUserMenu().navigateToAdministration().navigateToRepositoriesPage()
                 .selectDesignRepositoryByName(RATING);
