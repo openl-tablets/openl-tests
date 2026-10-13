@@ -2,7 +2,6 @@ package tests.ui.webstudio.rules_editor;
 
 import configuration.annotations.AppContainerConfig;
 import configuration.annotations.Description;
-import configuration.annotations.KnownIssue;
 import configuration.annotations.TestCaseId;
 import configuration.appcontainer.AppContainerStartParameters;
 import domain.serviceclasses.constants.User;
@@ -21,14 +20,11 @@ public class TestTestResultsShowDoublesRoundedUi extends BaseTest {
     private static final String WORKBOOK = "DoubleResult.xlsx";
     private static final String MODULE = "DoubleResult";
     private static final String TEST_TABLE = "mySprTest";
-    private static final String UNROUNDED = "20.759999999999998";
 
     @Test
     @TestCaseId("EPBDS-16890")
-    @Description("EPBDS-16890: the results of a test table show a double as 6.4.0 did: 1.73*12 reads 20.76. "
-            + "Fails on EPBDS-16890: the value is shown unrounded, as " + UNROUNDED + ".")
+    @Description("EPBDS-16890: the results of a test table show a double as 6.4.0 did: 1.73*12 reads 20.76.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
-    @KnownIssue(value = "EPBDS-16890", failsWith = UNROUNDED)
     public void testResultsShowADoubleRounded() {
         String projectName = WorkflowService.loginCreateProjectFromExcelFile(User.ADMIN, WORKBOOK);
         EditorPage editorPage = new EditorPage();

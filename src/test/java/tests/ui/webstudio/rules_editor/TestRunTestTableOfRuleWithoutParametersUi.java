@@ -2,7 +2,6 @@ package tests.ui.webstudio.rules_editor;
 
 import configuration.annotations.AppContainerConfig;
 import configuration.annotations.Description;
-import configuration.annotations.KnownIssue;
 import configuration.annotations.TestCaseId;
 import configuration.appcontainer.AppContainerStartParameters;
 import domain.serviceclasses.constants.User;
@@ -22,15 +21,12 @@ public class TestRunTestTableOfRuleWithoutParametersUi extends BaseTest {
     private static final String WORKBOOK = "RuleWithoutParameters.xlsx";
     private static final String MODULE = "RuleWithoutParameters";
     private static final String TEST_TABLE = "mySprTest";
-    private static final String ERROR_PAGE = "Oops! Something went wrong";
 
     @Test
     @TestCaseId("EPBDS-16889")
     @Description("EPBDS-16889: Run on a test table of a rule that takes no parameters opens the launcher with the "
-            + "case of the table and runs it; 6.4.0 ran the same table. Fails on EPBDS-16889: the page is replaced "
-            + "by \"" + ERROR_PAGE + "\".")
+            + "case of the table and runs it; 6.4.0 ran the same table.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
-    @KnownIssue(value = "EPBDS-16889", failsWith = ERROR_PAGE)
     public void runOfTestTableOfRuleWithoutParametersListsAndRunsItsCase() {
         String projectName = WorkflowService.loginCreateProjectFromExcelFile(User.ADMIN, WORKBOOK);
         EditorPage editorPage = new EditorPage();

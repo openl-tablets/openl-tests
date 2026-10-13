@@ -7,7 +7,6 @@ import configuration.annotations.AppContainerConfig;
 import configuration.appcontainer.AppContainerStartParameters;
 import domain.serviceclasses.constants.User;
 import domain.ui.webstudio.components.admincomponents.SystemSettingsPageComponent;
-import domain.ui.webstudio.components.common.TabSwitcherComponent;
 import domain.ui.webstudio.components.editortabcomponents.leftmenu.EditorLeftRulesTreeComponent;
 import domain.ui.webstudio.pages.mainpages.EditorPage;
 import helpers.service.WorkflowService;
@@ -15,24 +14,25 @@ import helpers.utils.WaitUtil;
 import org.testng.annotations.Test;
 import tests.BaseTest;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.DECISION;
 
 public class TestAdminSystemSettings extends BaseTest {
 
-    private static final String validationDescription = "Number of threads must be positive integer";
-    private static final String[][] INVALID_THREAD_COUNT_DATA = {
-        {"aaa", validationDescription},
-        {"#%", validationDescription},
-        {"1.1", validationDescription},
-        {"-5", validationDescription}
-    };
+    private static final String THREAD_COUNT_REFUSED = "Number of threads must be positive integer";
+    private static final List<String> INVALID_THREAD_COUNTS = List.of("aaa", "#%", "1.1", "-5");
 
     @Test
     @TestCaseId("IPBQA-30651")
-    @Description("System Settings - Test Dispatching Validation, Verify on Edit, and Thread Number validation.")
+    @Description("System Settings - Test Dispatching Validation, Verify on Edit, and Thread Number validation. "
+            + "Fails on EPBDS-16902: a refused Apply names the internal class ApiHttpError in its notification "
+            + "instead of Error.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
-    @KnownIssue(value = "EPBDS-15704", failsWith = "A thread count of 'aaa' must be refused")
+    @KnownIssue(value = "EPBDS-16902", failsWith = "ApiHttpError: Invalid date pattern")
+    @KnownIssue(value = "EPBDS-16902", failsWith = "ApiHttpError: Invalid time pattern")
+    @KnownIssue(value = "EPBDS-16902", failsWith = "ApiHttpError: Cannot be empty.")
     public void testSystemSettings() {
         String projectNameForVerification = WorkflowService.loginCreateProjectFromTemplate(User.ADMIN, "Sample Project");
         EditorPage editorPage = new EditorPage();
@@ -117,9 +117,9 @@ public class TestAdminSystemSettings extends BaseTest {
         systemSettings = editorPage.openUserMenu()
                 .navigateToAdministration()
                 .navigateToSystemSettingsPage();
-
-        for (String[] testData : INVALID_THREAD_COUNT_DATA) {
-            validateThreadCountError(systemSettings, testData[0], testData[1]);
+        String originalThreadCount = systemSettings.getTestThreadCount();
+        for (String invalidThreadCount : INVALID_THREAD_COUNTS) {
+            validateThreadCountError(systemSettings, invalidThreadCount, originalThreadCount);
         }
 
         systemSettings = editorPage.openUserMenu()
@@ -148,32 +148,41 @@ public class TestAdminSystemSettings extends BaseTest {
                 .navigateToSystemSettingsPage();
         systemSettings.setDateFormat("abc");
         systemSettings.clickApplyButton();
-        assertThat(systemSettings.getAllMessages()).contains("Error: Invalid date pattern");
+        assertThat(systemSettings.getAllMessages())
+                .as("A date format of 'abc' must be refused")
+                .contains("Error: Invalid date pattern");
 
         systemSettings.setDateFormat(originalDateFormat);
         systemSettings.setTimeFormat("xyz");
         systemSettings.clickApplyButton();
-        assertThat(systemSettings.getAllMessages()).contains("Error: Invalid time pattern");
+        assertThat(systemSettings.getAllMessages())
+                .as("A time format of 'xyz' must be refused")
+                .contains("Error: Invalid time pattern");
 
         systemSettings.setTimeFormat(originalTimeFormat);
         systemSettings.setDateFormat("");
         systemSettings.clickApplyButton();
-        assertThat(systemSettings.getAllMessages()).contains("Error: Cannot be empty.");
+        assertThat(systemSettings.getAllMessages())
+                .as("An empty date format must be refused")
+                .contains("Error: Cannot be empty.");
 
         systemSettings.closeAllMessages();
         systemSettings.setDateFormat(originalDateFormat);
         systemSettings.setTimeFormat("");
         systemSettings.clickApplyButton();
-        assertThat(systemSettings.getAllMessages()).contains("Error: Cannot be empty.");
+        assertThat(systemSettings.getAllMessages())
+                .as("An empty time format must be refused")
+                .contains("Error: Cannot be empty.");
     }
 
-    private void validateThreadCountError(SystemSettingsPageComponent systemSettings,
-                                         String invalidValue,
-                                         String expectedErrorMessage) {
+    private void validateThreadCountError(SystemSettingsPageComponent systemSettings, String invalidValue,
+                                          String validValue) {
         systemSettings.setTestThreadCount(invalidValue);
         systemSettings.clickApplyButton();
-        assertThat(systemSettings.getAllMessages())
-                .as("A thread count of '%s' must be refused", invalidValue)
-                .contains(expectedErrorMessage);
+        assertThat(systemSettings.getTestThreadCountError())
+                .as("A thread count of '%s' must be refused under the field", invalidValue)
+                .isEqualTo(THREAD_COUNT_REFUSED);
+        systemSettings.setTestThreadCount(validValue);
+        systemSettings.waitForTestThreadCountErrorHidden();
     }
 }

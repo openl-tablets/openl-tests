@@ -9,15 +9,17 @@ import helpers.service.UserService;
 
 public class SystemSettingsPageComponent extends BaseComponent {
 
+    private static final int FIELD_ERROR_SHOWN_MS = 5000;
+
     private WebElement dispatchingValidationCheckbox;
     private WebElement verifyOnEditCheckbox;
     private WebElement testThreadCountField;
+    private WebElement testThreadCountError;
     private WebElement projectHistoryCountField;
     private WebElement detectProjectsByExcelFilesCheckbox;
     private WebElement clearAllHistoryBtn;
     private WebElement cancelModalBtn;
     private WebElement applyButton;
-    private WebElement errorMessage;
 
     private WebElement dateFormatField;
     private WebElement timeFormatField;
@@ -41,12 +43,14 @@ public class SystemSettingsPageComponent extends BaseComponent {
         dispatchingValidationCheckbox = createScopedElement("xpath=.//*[@id='dispatchingValidationEnabled']", "dispatchingValidationCheckbox");
         verifyOnEditCheckbox = createScopedElement("xpath=.//*[@id='autoCompile']", "verifyOnEditCheckbox");
         testThreadCountField = createScopedElement("xpath=.//*[@id='testRunThreadCount']", "testThreadCountField");
+        testThreadCountError = createScopedElement("xpath=.//*[@id='testRunThreadCount']/ancestor::div[contains("
+                + "concat(' ', normalize-space(@class), ' '), ' ant-form-item ')][1]"
+                + "//div[contains(@class,'ant-form-item-explain-error')]", "testThreadCountError");
         projectHistoryCountField = createScopedElement("xpath=.//*[@id='projectHistoryCount']", "projectHistoryCountField");
         detectProjectsByExcelFilesCheckbox = createScopedElement("xpath=.//*[@id='detectProjectsByExcelFiles']", "detectProjectsByExcelFilesCheckbox");
         clearAllHistoryBtn = createScopedElement("xpath=.//button[./span[text()='Clear All History']]", "clearAllHistoryBtn");
         cancelModalBtn = new WebElement(page, "xpath=//div[contains(@class,'ant-modal-container')]//button[./span[contains(text(),'Cancel')]]", "cancelModalBtn");
         applyButton = createScopedElement("xpath=.//button[./span[text()='Apply Changes'] or ./span[text()='Apply']]", "applyButton");
-        errorMessage = createScopedElement("xpath=.//div[contains(@class, 'ant-form-item-explain-error')]", "errorMessage");
 
         dateFormatField = createScopedElement("xpath=.//input[@id='datePattern']", "dateFormatField");
         timeFormatField = createScopedElement("xpath=.//input[@id='timeFormat']", "timeFormatField");
@@ -71,6 +75,18 @@ public class SystemSettingsPageComponent extends BaseComponent {
 
     public void setTestThreadCount(String value) {
         testThreadCountField.fill(value);
+    }
+
+    public String getTestThreadCount() {
+        return testThreadCountField.getAttribute("value");
+    }
+
+    public String getTestThreadCountError() {
+        return testThreadCountError.isVisible(FIELD_ERROR_SHOWN_MS) ? testThreadCountError.getText().trim() : "";
+    }
+
+    public void waitForTestThreadCountErrorHidden() {
+        testThreadCountError.waitForHidden(FIELD_ERROR_SHOWN_MS);
     }
 
     public void clickApplyButton() {
