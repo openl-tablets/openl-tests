@@ -1,6 +1,5 @@
 package tests.ui.webstudio.repository;
 
-import configuration.annotations.KnownIssue;
 import configuration.annotations.Description;
 import configuration.annotations.TestCaseId;
 import configuration.annotations.AppContainerConfig;
@@ -83,23 +82,19 @@ public class TestDeployProjectMessagesAndValidationUi extends BaseTest {
     @TestCaseId("EPBDS-16271")
     @Description("The Deployment Name field must reject forbidden characters, as the REST deploy API does.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEPLOY_STUDIO_PARAMS)
-    @KnownIssue(value = "EPBDS-16271", failsWith = "The refusal should name the problem with the deployment name")
     public void testDeploymentNameRejectsForbiddenCharacters() {
         RepositoryPage repositoryPage = openRepositoryWithProject("DeployName");
         String projectName = lastCreatedProject;
 
         DeployModalComponent deployModal = repositoryPage.clickDeploy(projectName);
-        deployModal.waitForModal();
-        deployModal.fillDeploymentName(INVALID_DEPLOYMENT_NAME);
-        deployModal.fillComment("Deploy with a forbidden deployment name");
-        deployModal.clickDeploy();
+        deployModal.deployWithAllFields(null, INVALID_DEPLOYMENT_NAME, "Deploy with a forbidden deployment name");
 
-        assertThat(deployModal.isErrorMessageDisplayed() || !deployModal.isSuccessNotificationVisible())
+        assertThat(deployModal.isDeploymentNameErrorShown() || !deployModal.isSuccessNotificationVisible())
                 .as("A deployment name carrying forbidden characters (%s) must be refused", INVALID_DEPLOYMENT_NAME)
                 .isTrue();
-        assertThat(deployModal.getErrorMessage())
+        assertThat(deployModal.getDeploymentNameError())
                 .as("The refusal should name the problem with the deployment name")
-                .isNotEmpty();
+                .contains("is not a valid project name");
     }
 
     private String lastCreatedProject;

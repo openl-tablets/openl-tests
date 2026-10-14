@@ -18,7 +18,7 @@ public class DeployModalComponent extends BaseComponent {
     private WebElement deployButton;
     private WebElement cancelButton;
     private WebElement successNotification;
-    private WebElement errorMessage;
+    private WebElement deploymentNameError;
     private WebElement firstDropdownOption;
     private WebElement dropdownOption;
 
@@ -43,7 +43,9 @@ public class DeployModalComponent extends BaseComponent {
         firstDropdownOption = new WebElement(page, "xpath=//div[contains(@class,'ant-select-item') and contains(@class,'ant-select-item-option') and @title]", "firstDropdownOption");
         dropdownOption = new WebElement(page, "xpath=//div[contains(@class,'ant-select-item') and contains(@class,'ant-select-item-option') and @title='%s']", "dropdownOption");
         successNotification = new WebElement(page, "xpath=//div[contains(@class,'ant-notification')]//div[contains(@class,'ant-notification-notice-success')]", "successNotification");
-        errorMessage = new WebElement(page, "xpath=" + MODAL_BASE + "//div[contains(@class,'ant-form-item-explain-error')]", "errorMessage");
+        deploymentNameError = new WebElement(page, "xpath=" + MODAL_BASE + "//input[@id='deploy_form_deploymentName']"
+                + "/ancestor::div[contains(concat(' ', normalize-space(@class), ' '), ' ant-form-item ')][1]"
+                + "//div[contains(@class,'ant-form-item-explain-error')]", "deploymentNameError");
     }
 
     public boolean isModalVisible() {
@@ -122,15 +124,12 @@ public class DeployModalComponent extends BaseComponent {
         return successNotification.getText().trim();
     }
 
-    public boolean isErrorMessageDisplayed() {
-        return errorMessage.isVisible(1000);
+    public boolean isDeploymentNameErrorShown() {
+        return deploymentNameError.isVisible(DEFAULT_TIMEOUT_MS);
     }
 
-    public String getErrorMessage() {
-        if (isErrorMessageDisplayed()) {
-            return errorMessage.getText();
-        }
-        return "";
+    public String getDeploymentNameError() {
+        return isDeploymentNameErrorShown() ? deploymentNameError.getText().trim() : "";
     }
 
     public boolean isDeployButtonEnabled() {
