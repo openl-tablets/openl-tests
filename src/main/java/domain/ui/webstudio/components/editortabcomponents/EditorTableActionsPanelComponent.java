@@ -1,11 +1,15 @@
 package domain.ui.webstudio.components.editortabcomponents;
 
 import com.microsoft.playwright.Page;
+import com.microsoft.playwright.options.BoundingBox;
 import com.microsoft.playwright.options.LoadState;
+import com.microsoft.playwright.options.ViewportSize;
 import domain.ui.webstudio.components.BaseComponent;
 import configuration.core.ui.WebElement;
 import configuration.driver.DriverPool;
 import helpers.utils.WaitUtil;
+
+import java.util.stream.Stream;
 
 public class EditorTableActionsPanelComponent extends BaseComponent {
 
@@ -112,6 +116,19 @@ public class EditorTableActionsPanelComponent extends BaseComponent {
     public void discardChanges() {
         closeEditorBtn.click();
         discardDialog.child("xpath=.//button[@data-testid='table-edit-discard']").click();
+    }
+
+    public boolean isInView() {
+        BoundingBox box = getRootLocator().getLocator().first().boundingBox();
+        ViewportSize viewport = page.viewportSize();
+        return box != null && box.x >= 0 && box.y >= 0
+                && box.x + box.width <= viewport.width && box.y + box.height <= viewport.height;
+    }
+
+    public boolean areEditActionsShown() {
+        return Stream.of(saveChangesBtn, undoChangesBtn, redoChangesBtn, insertRowAfterBtn, removeRowBtn,
+                        insertColumnBeforeBtn, removeColumnBtn)
+                .allMatch(WebElement::isVisible);
     }
 
     public void undoClickChanges() {

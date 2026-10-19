@@ -10,6 +10,7 @@ import configuration.driver.DriverPool;
 import helpers.utils.WaitUtil;
 
 import java.util.List;
+import java.util.Objects;
 
 public class TableComponent extends BaseComponent {
 
@@ -54,6 +55,15 @@ public class TableComponent extends BaseComponent {
 
     public void clickCell(int rowIndex, int columnIndex) {
         getCell(rowIndex, columnIndex).click();
+    }
+
+    public void scrollToCell(int rowIndex, int columnIndex) {
+        getCell(rowIndex, columnIndex).getLocator().scrollIntoViewIfNeeded();
+    }
+
+    public double getCellTop(int rowIndex, int columnIndex) {
+        return Objects.requireNonNull(getCell(rowIndex, columnIndex).getLocator().first().boundingBox(),
+                "Cell [" + rowIndex + "," + columnIndex + "] is not drawn").y;
     }
 
     public WebElement getCell(int rowIndex, int columnIndex) {
