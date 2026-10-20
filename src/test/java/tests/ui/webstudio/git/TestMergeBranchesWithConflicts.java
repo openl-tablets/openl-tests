@@ -48,6 +48,7 @@ public class TestMergeBranchesWithConflicts extends BaseTest {
         repositoryPage.getResolveConflictsDialogComponent().resolveConflictUseYours();
         repositoryPage.fillCommitInfo();
         repositoryPage.waitUntilSpinnerLoaded();
+        repositoryPage.closeMergeSummary();
 
         assertThat(readSpreadsheetCell(editorPage, BRANCH_1))
                 .as("Branch1 should hold Branch2's version after 'Use yours'").contains(BRANCH_2_VALUE);
@@ -72,6 +73,7 @@ public class TestMergeBranchesWithConflicts extends BaseTest {
         repositoryPage.getResolveConflictsDialogComponent().resolveConflictUseTheirs();
         repositoryPage.fillCommitInfo();
         repositoryPage.waitUntilSpinnerLoaded();
+        repositoryPage.closeMergeSummary();
 
         assertThat(readSpreadsheetCell(editorPage, BRANCH_2))
                 .as("Branch2 should hold Branch1's version after 'Use theirs'").contains(BRANCH_1_VALUE);

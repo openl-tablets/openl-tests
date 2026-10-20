@@ -22,6 +22,7 @@ public class RepositoryPage extends BasePage {
     private ProjectsTableComponent projectsListTable;
     private ProjectsFilterRailComponent filterRail;
     private WebElement discardCloseConfirmBtn;
+    private WebElement mergeSummaryCloseBtn;
     private WebElement copyProjectNameField;
     private WebElement copyProjectSubmitBtn;
     private WebElement filterByNameInput;
@@ -48,6 +49,7 @@ public class RepositoryPage extends BasePage {
         projectsListTable = new ProjectsTableComponent(page);
         filterRail = new ProjectsFilterRailComponent(page);
         discardCloseConfirmBtn = new WebElement(page, "xpath=//*[@data-testid='discard-close-confirm']", "discardCloseConfirmBtn");
+        mergeSummaryCloseBtn = new WebElement(page, "xpath=//*[@data-testid='merge-summary-close']", "mergeSummaryCloseBtn");
         copyProjectNameField = new WebElement(page, "xpath=//*[@data-testid='copy-project-name']", "copyProjectNameField");
         copyProjectSubmitBtn = new WebElement(page, "xpath=//*[@data-testid='copy-project-submit']", "copyProjectSubmitBtn");
 
@@ -128,6 +130,11 @@ public class RepositoryPage extends BasePage {
         waitUntilSpinnerLoaded();
         if (configureCommitInfoComponentShade.isVisible(3000))
             configureCommitInfoComponent.fillCommitInfoWithRandomData();
+    }
+
+    public void closeMergeSummary() {
+        mergeSummaryCloseBtn.click();
+        waitUntilSpinnerLoaded();
     }
 
     public void refresh() {
