@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>OpenL LFS Tests [latest]</title>
+<style>
+:root{--bg:#f3f5f9;--surface:#ffffff;--surface-2:#f8fafc;--line:#e3e8ef;--line-strong:#d0d7e2;--text:#0f172a;--muted:#64748b;--accent:#2563eb;--accent-soft:#e8f0fe;--shadow:0 1px 2px rgba(15,23,42,.06),0 1px 3px rgba(15,23,42,.04);--radius:14px;--mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.5;color:var(--text);background:var(--bg);-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
+.page{max-width:1440px;margin:0 auto;padding:32px 28px 64px}
+header.top{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:20px}
+h1{margin:0;font-size:26px;font-weight:700;letter-spacing:-.02em}
+.meta{display:flex;flex-wrap:wrap;gap:8px;align-items:center;color:var(--muted);font-size:13px}
+.meta .chip{background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px 10px;color:var(--text)}
+.cards{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;margin:0 0 20px}
+.card{position:relative;overflow:hidden;min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 14px 14px 18px;box-shadow:var(--shadow);color:var(--muted);font-size:clamp(10px,.85vw,12px);font-weight:600;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap;text-overflow:ellipsis}
+.card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--card-color,var(--line-strong))}
+.card b{display:block;margin-top:4px;font-size:clamp(20px,2vw,28px);line-height:1.1;font-weight:700;letter-spacing:-.02em;color:var(--card-color,var(--text))}
+.controls{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:0 0 14px;padding:12px 14px;background:rgba(255,255,255,.88);backdrop-filter:blur(8px);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.controls label{display:inline-flex;align-items:center;gap:8px;color:var(--muted);font-size:13px}
+.controls select,.controls input{height:36px;padding:0 12px;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface);color:var(--text);font:inherit;font-size:13px}
+.controls input{flex:1 1 260px;min-width:200px}
+.controls select:focus,.controls input:focus{outline:2px solid var(--accent-soft);border-color:var(--accent)}
+.controls button{height:36px;padding:0 14px;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface);color:var(--text);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.controls button:hover{border-color:var(--accent);color:var(--accent)}
+.table-wrap{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow-x:auto}
+.table-wrap table.tests{min-width:760px}
+table.tests{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0}
+table.tests col.c-status{width:19%} table.tests col.c-group{width:10%} table.tests col.c-duration{width:88px} table.tests col.c-artifacts{width:13%} table.tests col.c-details{width:112px}
+table.tests>thead th{padding:12px 14px;text-align:left;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:var(--surface-2);border-bottom:1px solid var(--line)}
+table.tests>tbody>tr>td{padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:top;overflow-wrap:anywhere;min-width:0}
+tr.row:hover td{background:var(--surface-2)}
+.badge{display:inline-flex;flex-wrap:wrap;align-items:center;gap:4px 7px;font-weight:600;padding:3px 10px 3px 8px;border-radius:999px;font-size:12px;line-height:1.4}
+.badge::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor;flex:none}
+.badge a{color:inherit;text-decoration:underline;text-decoration-color:rgba(0,0,0,.25)}
+strong{font-weight:600}
+small,.hint,figcaption{color:var(--muted);font-size:12px}
+small.err{display:inline-block;margin-top:2px;color:#b42318;font-family:var(--mono);font-size:11px;overflow-wrap:anywhere}
+.artifacts small{display:inline-block;margin:0 6px 4px 0;padding:1px 8px;border:1px solid var(--line);border-radius:999px;background:var(--surface-2);color:var(--muted);font-size:11px}
+button.toggle{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px 0 12px;border:1px solid var(--line-strong);border-radius:999px;background:var(--surface);color:var(--text);font:inherit;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
+button.toggle::after{content:"";width:6px;height:6px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg) translateY(-1px);transition:transform .15s ease}
+button.toggle:hover{border-color:var(--accent);color:var(--accent)}
+button.toggle.open{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)} button.toggle.open::after{transform:rotate(-135deg) translateY(-1px)}
+table.tests>tbody>tr.details-row>td{padding:16px 18px 20px;background:var(--surface-2)}
+.tabs{display:inline-flex;flex-wrap:wrap;gap:2px;margin-bottom:12px;padding:4px;background:#e9edf3;border-radius:12px}
+.tab{padding:6px 14px;border:0;border-radius:9px;background:transparent;color:#475569;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.tab:hover{color:var(--text)} .tab.active{background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
+.run{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px 18px;margin:0 0 20px;box-shadow:var(--shadow)}
+.run table.kv th{width:210px}
+table.kv{border-collapse:collapse;width:100%} table.kv th{width:180px;text-align:left;padding:6px 16px 6px 0;color:var(--muted);font-weight:500;vertical-align:top;font-size:13px} table.kv td{padding:6px 0;border-bottom:1px solid var(--line)} table.kv tr:last-child td{border-bottom:0}
+pre{margin:0;white-space:pre-wrap;word-break:break-word;background:var(--surface-2);border:1px solid var(--line);padding:12px 14px;border-radius:10px;max-height:520px;overflow:auto;font-family:var(--mono);font-size:12px;line-height:1.5}
+pre.error{background:#fff1f0;border-color:#fecdca;color:#912018} pre.log{background:#0b1220;border-color:#1e293b;color:#dbe4f0} pre.small{max-height:200px}
+.error-type{margin:0 0 8px;font-weight:600;color:#b42318;font-family:var(--mono);font-size:12px}
+details summary{cursor:pointer;margin:12px 0 8px;font-weight:600;color:var(--muted)}
+.hint{margin:0 0 10px}
+.attachments{display:flex;flex-wrap:wrap;gap:16px} figure{margin:0;max-width:420px} figure img,figure video{display:block;max-width:420px;border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow)} figcaption{margin-top:6px}
+.button{display:inline-flex;align-items:center;height:36px;padding:0 16px;background:var(--accent);color:#fff;border-radius:10px;font-weight:600;text-decoration:none;box-shadow:var(--shadow)} .button:hover{text-decoration:none;filter:brightness(1.05)}
+code{padding:1px 6px;border-radius:6px;background:#eef2f6;font-family:var(--mono);font-size:12px}
+@media (max-width:900px){.page{padding:20px 14px 48px} h1{font-size:22px} .controls{position:static} .cards{gap:8px} .card{padding:10px 10px 10px 14px}}
+</style></head><body>
+<div class="page">
+<header class="top"><h1>OpenL LFS Tests [latest]</h1>
+<div class="meta"><span class="chip">Build latest</span><span class="chip">4 tests</span><span class="chip">2 min 12 s of test time</span><a href="https://github.com/openl-tablets/openl-tests/actions/runs/35987052140">workflow run</a> · <a href="debug/index.json">debug/index.json</a> · <a href="debug/README.md">how to debug with an AI assistant</a></div></header>
+<section class='run'><table class='kv'><tr><th>Workflow</th><td><a href='https://github.com/openl-tablets/openl-tests/actions/runs/35987052140'>OpenL LFS Tests</a></td></tr><tr><th>Run</th><td>2026-09-24 10:26:29 UTC → 2026-09-24 10:30:40 UTC · 4 min 10 s wall time · selective run</td></tr><tr><th>Image <code>ghcr.io/openl-tablets/webstudio:latest</code></th><td>OpenL Studio 6.5.0-SNAPSHOT, build 4513cebb5e74, built 2026-09-23</td></tr><tr><th>Tests</th><td>main @ <a href='https://github.com/openl-tablets/openl-tests/commit/32cdf6bd445a0934665e2c82bc648daed5bbf6f6' target='_blank'>32cdf6bd445a</a></td></tr><tr><th>Stack</th><td>Playwright 1.52.0 · Java 21</td></tr></table></section>
+<div class="cards"><div class="card" style="--card-color:#15803d">Passed<b>3</b></div><div class="card" style="--card-color:#dc2626">Failed<b>0</b></div><div class="card" style="--card-color:#ca8a04">Skipped<b>0</b></div><div class="card" style="--card-color:#ea580c">Known issues<b>0</b></div><div class="card" style="--card-color:#2563eb">Fixed?<b>1</b></div><div class="card">Shards<b>1</b></div></div>
+<div class="controls"><label>Status <select id="status"><option value="">all</option><option value="failed">failed</option><option value="skipped">skipped</option><option value="known">known issue</option><option value="fixed">fixed?</option><option value="passed">passed</option></select></label>
+<label>Group <select id="suite"><option value="">all</option><option value='git'>git</option></select></label><input id="search" placeholder="filter by class, test name or error" size="40"><button id="expand-failed">expand all failed</button></div>
+<div class="table-wrap"><table class="tests"><colgroup><col class="c-status"><col class="c-group"><col class="c-test"><col class="c-duration"><col class="c-artifacts"><col class="c-details"></colgroup><thead><tr><th>Status</th><th>Group / shard</th><th>Test</th><th>Duration</th><th>Artifacts</th><th></th></tr></thead><tbody><tr class='row fixed' data-status='fixed' data-suite='git' data-error=''><td><span class='badge' style='color:#0969da;background:#ddf4ff'>FIXED? · <a href='https://jira.eisgroup.com/browse/EPBDS-16711' target='_blank'>EPBDS-16711</a></span></td><td>git<br><small>lfs</small></td><td><strong>TestGitLfsGitHubStorage</strong><br>testGitLfsGitHubStorage<br><small>EPBDS-11591</small></td><td>33 s</td><td class='artifacts'><small>steps</small></td><td><button class='toggle' data-target='d0'>details</button></td></tr><tr class='details-row fixed' id='d0' hidden><td colspan='6'><div class='tabs'><button class='tab active' data-tab='t0-0'>Overview</button><button class='tab' data-tab='t0-1'>Steps (354)</button></div><div class='panel' id='t0-0'><table class='kv'><tr><th>Group / shard</th><td>git / lfs</td></tr><tr><th>Class</th><td><code>tests.ui.webstudio.git.TestGitLfsGitHubStorage</code> · <a href='https://github.com/openl-tablets/openl-tests/blob/32cdf6bd445a0934665e2c82bc648daed5bbf6f6/src/test/java/tests/ui/webstudio/git/TestGitLfsGitHubStorage.java' target='_blank'>source</a></td></tr><tr><th>Method</th><td><code>testGitLfsGitHubStorage</code></td></tr><tr><th>Test case</th><td>EPBDS-11591</td></tr><tr><th>Known issue</th><td><a href='https://jira.eisgroup.com/browse/EPBDS-16711' target='_blank'>EPBDS-16711</a> — the test PASSED: verify the fix and remove @KnownIssue</td></tr><tr><th>Description</th><td>Git LFS on GitHub - Studio opens a module whose LFS object is on GitHub and saves an edit of it back to GitHub LFS</td></tr><tr><th>Started / finished</th><td>2026-09-24T10:27:41.692Z → 2026-09-24T10:28:14.536Z (33 s)</td></tr><tr><th>Application build</th><td>latest</td></tr><tr><th>Tests revision</th><td>main @ 32cdf6bd445a</td></tr></table></div><div class='panel' id='t0-1' hidden><p class='hint'>Framework log of this test: container start, every page action, waits, REST calls and assertions. Showing the last 50 of 354 lines · <a href='attachments/lfs/tests.ui.webstudio.git.TestGitLfsGitHubStorage/testGitLfsGitHubStorage/test-steps.log' target='_blank'>full log</a></p><pre class='log'>2026-09-24 10:28:09.427 [main] [INFO] WebElement - Waiting for cellEditor to be visible (timeout: 250ms)
+2026-09-24 10:28:09.439 [main] [INFO] WebElement - Pressing Delete on cellEditor
+2026-09-24 10:28:09.484 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-24 10:28:09.490 [main] [INFO] WaitUtil - Condition met after 6ms: Waiting for the loading overlay to disappear
+2026-09-24 10:28:09.490 [main] [INFO] WebElement - Waiting for cellEditor to be visible (timeout: 250ms)
+2026-09-24 10:28:09.504 [main] [INFO] WebElement - Filling cellEditor with text: &#x27;Good Morning 6066228f&#x27;
+2026-09-24 10:28:09.539 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-24 10:28:09.543 [main] [INFO] WaitUtil - Condition met after 4ms: Waiting for the loading overlay to disappear
+2026-09-24 10:28:09.543 [main] [INFO] WebElement - Waiting for cellEditor to be visible (timeout: 250ms)
+2026-09-24 10:28:09.558 [main] [INFO] WebElement - Pressing Enter on cellEditor
+2026-09-24 10:28:09.610 [main] [INFO] WaitUtil - Condition met after 251ms: Writing &#x27;Good Morning 6066228f&#x27; into the editor of cell [6,4]
+2026-09-24 10:28:09.610 [main] [INFO] WaitUtil - Sleeping for 250ms: Waiting for cell edit to be applied
+2026-09-24 10:28:09.863 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-24 10:28:09.867 [main] [INFO] WaitUtil - Condition met after 3ms: Waiting for the loading overlay to disappear
+2026-09-24 10:28:09.867 [main] [INFO] WebElement - Waiting for saveChangesBtn to be visible (timeout: 250ms)
+2026-09-24 10:28:09.874 [main] [INFO] WebElement - Clicking saveChangesBtn 
+2026-09-24 10:28:10.371 [main] [INFO] WaitUtil - Sleeping for 250ms: Waiting for table panel action to complete and UI to update
+2026-09-24 10:28:10.621 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-09-24 10:28:10.805 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-24 10:28:10.830 [main] [INFO] WaitUtil - Condition met after 25ms: Waiting for the loading overlay to disappear
+2026-09-24 10:28:10.833 [main] [INFO] WaitUtil - Waiting for condition (timeout: 10000ms, polling: 200ms): Waiting for the table to be written
+2026-09-24 10:28:10.853 [main] [INFO] WaitUtil - Condition met after 18ms: Waiting for the table to be written
+2026-09-24 10:28:10.854 [main] [INFO] WaitUtil - Waiting for condition (timeout: 10000ms, polling: 250ms): Waiting for the table changes to be kept
+2026-09-24 10:28:10.937 [main] [INFO] WebElement - Waiting for saveChangesBtn to be visible (timeout: 1000ms)
+2026-09-24 10:28:11.951 [main] [INFO] WaitUtil - Condition met after 1097ms: Waiting for the table changes to be kept
+2026-09-24 10:28:11.951 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-09-24 10:28:11.958 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-24 10:28:11.960 [main] [INFO] WaitUtil - Condition met after 1ms: Waiting for the loading overlay to disappear
+2026-09-24 10:28:11.961 [main] [INFO] WebElement - Waiting for saveBtn to be visible (timeout: 10000ms)
+2026-09-24 10:28:11.967 [main] [INFO] WebElement - Waiting for saveBtn to be visible (timeout: 20000ms)
+2026-09-24 10:28:11.973 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-24 10:28:11.975 [main] [INFO] WaitUtil - Condition met after 2ms: Waiting for the loading overlay to disappear
+2026-09-24 10:28:11.975 [main] [INFO] WebElement - Waiting for saveBtn to be visible (timeout: 250ms)
+2026-09-24 10:28:11.981 [main] [INFO] WebElement - Clicking saveBtn 
+2026-09-24 10:28:12.071 [main] [INFO] WebElement - Waiting for saveProjectComment to be visible
+2026-09-24 10:28:12.085 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-24 10:28:12.090 [main] [INFO] WaitUtil - Condition met after 5ms: Waiting for the loading overlay to disappear
+2026-09-24 10:28:12.090 [main] [INFO] WebElement - Waiting for saveProjectSubmit to be visible (timeout: 250ms)
+2026-09-24 10:28:12.128 [main] [INFO] WebElement - Clicking saveProjectSubmit 
+2026-09-24 10:28:12.574 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 1000ms): Waiting for the saved module to reach git or for Studio to report the save failed
+2026-09-24 10:28:12.694 [main] [INFO] WebElement - Waiting for Studio Messages_0 to be visible (timeout: 250ms)
+2026-09-24 10:28:12.767 [main] [INFO] WebElement - Getting text from Studio Messages_0: &#x27;Table saved&#x27;
+2026-09-24 10:28:12.767 [main] [INFO] CoreComponent - Popup messages on screen: [Table saved]
+2026-09-24 10:28:12.769 [main] [INFO] WaitUtil - Sleeping for 1000ms: Polling for condition (attempt): Waiting for the saved module to reach git or for Studio to report the save failed
+2026-09-24 10:28:13.839 [main] [INFO] WaitUtil - Condition met after 1265ms: Waiting for the saved module to reach git or for Studio to report the save failed
+2026-09-24 10:28:13.847 [main] [INFO] WebElement - Waiting for Studio Messages_0 to be visible (timeout: 250ms)
+2026-09-24 10:28:13.900 [main] [INFO] WebElement - Getting text from Studio Messages_0: &#x27;Table saved&#x27;
+2026-09-24 10:28:13.900 [main] [INFO] CoreComponent - Popup messages on screen: [Table saved]
+2026-09-24 10:28:14.576 [main] [INFO] DockerDriverPool - Closing Playwright Docker for thread: main
+2026-09-24 10:28:15.012 [main] [INFO] WaitUtil - Sleeping for 2000ms: Waiting for Docker daemon to complete resource cleanup</pre></div></td></tr><tr class='row passed' data-status='passed' data-suite='git' data-error=''><td><span class='badge' style='color:#1a7f37;background:#dafbe1'>PASSED</span></td><td>git<br><small>lfs</small></td><td><strong>TestGitLfsBitbucketStorage</strong><br>testGitLfsBitbucketStorage<br><small>EPBDS-11591</small></td><td>32 s</td><td class='artifacts'><small>steps</small></td><td><button class='toggle' data-target='d1'>details</button></td></tr><tr class='details-row passed' id='d1' hidden><td colspan='6'><div class='tabs'><button class='tab active' data-tab='t1-0'>Overview</button><button class='tab' data-tab='t1-1'>Steps (353)</button></div><div class='panel' id='t1-0'><table class='kv'><tr><th>Group / shard</th><td>git / lfs</td></tr><tr><th>Class</th><td><code>tests.ui.webstudio.git.TestGitLfsBitbucketStorage</code> · <a href='https://github.com/openl-tablets/openl-tests/blob/32cdf6bd445a0934665e2c82bc648daed5bbf6f6/src/test/java/tests/ui/webstudio/git/TestGitLfsBitbucketStorage.java' target='_blank'>source</a></td></tr><tr><th>Method</th><td><code>testGitLfsBitbucketStorage</code></td></tr><tr><th>Test case</th><td>EPBDS-11591</td></tr><tr><th>Known issue</th><td>—</td></tr><tr><th>Description</th><td>Git LFS on Bitbucket - Studio opens a module whose LFS object is on Bitbucket and saves an edit of it back to Bitbucket LFS</td></tr><tr><th>Started / finished</th><td>2026-09-24T10:30:07.936Z → 2026-09-24T10:30:40.318Z (32 s)</td></tr><tr><th>Application build</th><td>latest</td></tr><tr><th>Tests revision</th><td>main @ 32cdf6bd445a</td></tr></table></div><div class='panel' id='t1-1' hidden><p class='hint'>Framework log of this test: container start, every page action, waits, REST calls and assertions. Showing the last 50 of 353 lines · <a href='attachments/lfs/tests.ui.webstudio.git.TestGitLfsBitbucketStorage/testGitLfsBitbucketStorage/test-steps.log' target='_blank'>full log</a></p><pre class='log'>2026-09-24 10:30:35.045 [main] [INFO] WebElement - Waiting for cellEditor to be visible (timeout: 250ms)
+2026-09-24 10:30:35.058 [main] [INFO] WebElement - Pressing Delete on cellEditor
+2026-09-24 10:30:35.094 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-24 10:30:35.097 [main] [INFO] WaitUtil - Condition met after 3ms: Waiting for the loading overlay to disappear
+2026-09-24 10:30:35.097 [main] [INFO] WebElement - Waiting for cellEditor to be visible (timeout: 250ms)
+2026-09-24 10:30:35.109 [main] [INFO] WebElement - Filling cellEditor with text: &#x27;Good Morning 9c1c46e7&#x27;
+2026-09-24 10:30:35.153 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-24 10:30:35.155 [main] [INFO] WaitUtil - Condition met after 2ms: Waiting for the loading overlay to disappear
+2026-09-24 10:30:35.155 [main] [INFO] WebElement - Waiting for cellEditor to be visible (timeout: 250ms)
+2026-09-24 10:30:35.165 [main] [INFO] WebElement - Pressing Enter on cellEditor
+2026-09-24 10:30:35.198 [main] [INFO] WaitUtil - Condition met after 208ms: Writing &#x27;Good Morning 9c1c46e7&#x27; into the editor of cell [6,4]
+2026-09-24 10:30:35.198 [main] [INFO] WaitUtil - Sleeping for 250ms: Waiting for cell edit to be applied
+2026-09-24 10:30:35.451 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-24 10:30:35.455 [main] [INFO] WaitUtil - Condition met after 4ms: Waiting for the loading overlay to disappear
+2026-09-24 10:30:35.455 [main] [INFO] WebElement - Waiting for saveChangesBtn to be visible (timeout: 250ms)
+2026-09-24 10:30:35.462 [main] [INFO] WebElement - Clicking saveChangesBtn 
+2026-09-24 10:30:35.942 [main] [INFO] WaitUtil - Sleeping for 250ms: Waiting for table panel action to complete and UI to update
+2026-09-24 10:30:36.192 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-09-24 10:30:36.431 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-24 10:30:36.450 [main] [INFO] WaitUtil - Condition met after 19ms: Waiting for the loading overlay to disappear
+2026-09-24 10:30:36.453 [main] [INFO] WaitUtil - Waiting for condition (timeout: 10000ms, polling: 200ms): Waiting for the table to be written
+2026-09-24 10:30:36.494 [main] [INFO] WaitUtil - Condition met after 41ms: Waiting for the table to be written
+2026-09-24 10:30:36.495 [main] [INFO] WaitUtil - Waiting for condition (timeout: 10000ms, polling: 250ms): Waiting for the table changes to be kept
+2026-09-24 10:30:36.499 [main] [INFO] WebElement - Waiting for saveChangesBtn to be visible (timeout: 1000ms)
+2026-09-24 10:30:37.591 [main] [INFO] WaitUtil - Condition met after 1096ms: Waiting for the table changes to be kept
+2026-09-24 10:30:37.591 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-09-24 10:30:37.598 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-24 10:30:37.600 [main] [INFO] WaitUtil - Condition met after 1ms: Waiting for the loading overlay to disappear
+2026-09-24 10:30:37.601 [main] [INFO] WebElement - Waiting for saveBtn to be visible (timeout: 10000ms)
+2026-09-24 10:30:37.608 [main] [INFO] WebElement - Waiting for saveBtn to be visible (timeout: 20000ms)
+2026-09-24 10:30:37.617 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-24 10:30:37.619 [main] [INFO] WaitUtil - Condition met after 2ms: Waiting for the loading overlay to disappear
+2026-09-24 10:30:37.619 [main] [INFO] WebElement - Waiting for saveBtn to be visible (timeout: 250ms)
+2026-09-24 10:30:37.626 [main] [INFO] WebElement - Clicking saveBtn 
+2026-09-24 10:30:37.718 [main] [INFO] WebElement - Waiting for saveProjectComment to be visible
+2026-09-24 10:30:37.734 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-24 10:30:37.741 [main] [INFO] WaitUtil - Condition met after 7ms: Waiting for the loading overlay to disappear
+2026-09-24 10:30:37.741 [main] [INFO] WebElement - Waiting for saveProjectSubmit to be visible (timeout: 250ms)
+2026-09-24 10:30:37.762 [main] [INFO] WebElement - Clicking saveProjectSubmit 
+2026-09-24 10:30:38.208 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 1000ms): Waiting for the saved module to reach git or for Studio to report the save failed
+2026-09-24 10:30:38.293 [main] [INFO] WebElement - Waiting for Studio Messages_0 to be visible (timeout: 250ms)
+2026-09-24 10:30:38.350 [main] [INFO] WebElement - Getting text from Studio Messages_0: &#x27;Table saved&#x27;
+2026-09-24 10:30:38.351 [main] [INFO] CoreComponent - Popup messages on screen: [Table saved]
+2026-09-24 10:30:38.352 [main] [INFO] WaitUtil - Sleeping for 1000ms: Polling for condition (attempt): Waiting for the saved module to reach git or for Studio to report the save failed
+2026-09-24 10:30:39.416 [main] [INFO] WaitUtil - Condition met after 1207ms: Waiting for the saved module to reach git or for Studio to report the save failed
+2026-09-24 10:30:39.430 [main] [INFO] WebElement - Waiting for Studio Messages_0 to be visible (timeout: 250ms)
+2026-09-24 10:30:39.886 [main] [INFO] WebElement - Getting text from Studio Messages_0: &#x27;Table saved&#x27;
+2026-09-24 10:30:39.886 [main] [INFO] CoreComponent - Popup messages on screen: [Table saved]
+2026-09-24 10:30:40.336 [main] [INFO] DockerDriverPool - Closing Playwright Docker for thread: main
+2026-09-24 10:30:40.764 [main] [INFO] WaitUtil - Sleeping for 2000ms: Waiting for Docker daemon to complete resource cleanup</pre></div></td></tr><tr class='row passed' data-status='passed' data-suite='git' data-error=''><td><span class='badge' style='color:#1a7f37;background:#dafbe1'>PASSED</span></td><td>git<br><small>lfs</small></td><td><strong>TestGitLfsDesignRepository</strong><br>testGitLfsDesignRepository<br><small>EPBDS-11591</small></td><td>33 s</td><td class='artifacts'><small>steps</small></td><td><button class='toggle' data-target='d2'>details</button></td></tr><tr class='details-row passed' id='d2' hidden><td colspan='6'><div class='tabs'><button class='tab active' data-tab='t2-0'>Overview</button><button class='tab' data-tab='t2-1'>Steps (352)</button></div><div class='panel' id='t2-0'><table class='kv'><tr><th>Group / shard</th><td>git / lfs</td></tr><tr><th>Class</th><td><code>tests.ui.webstudio.git.TestGitLfsDesignRepository</code> · <a href='https://github.com/openl-tablets/openl-tests/blob/32cdf6bd445a0934665e2c82bc648daed5bbf6f6/src/test/java/tests/ui/webstudio/git/TestGitLfsDesignRepository.java' target='_blank'>source</a></td></tr><tr><th>Method</th><td><code>testGitLfsDesignRepository</code></td></tr><tr><th>Test case</th><td>EPBDS-11591</td></tr><tr><th>Known issue</th><td>—</td></tr><tr><th>Description</th><td>Git LFS - Studio opens a module stored in LFS and saves an edit of it back to LFS</td></tr><tr><th>Started / finished</th><td>2026-09-24T10:26:29.573Z → 2026-09-24T10:27:02.703Z (33 s)</td></tr><tr><th>Application build</th><td>latest</td></tr><tr><th>Tests revision</th><td>main @ 32cdf6bd445a</td></tr></table></div><div class='panel' id='t2-1' hidden><p class='hint'>Framework log of this test: container start, every page action, waits, REST calls and assertions. Showing the last 50 of 352 lines · <a href='attachments/lfs/tests.ui.webstudio.git.TestGitLfsDesignRepository/testGitLfsDesignRepository/test-steps.log' target='_blank'>full log</a></p><pre class='log'>2026-09-24 10:26:57.700 [main] [INFO] WebElement - Pressing Control+A on cellEditor
+2026-09-24 10:26:57.737 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-24 10:26:57.743 [main] [INFO] WaitUtil - Condition met after 6ms: Waiting for the loading overlay to disappear
+2026-09-24 10:26:57.744 [main] [INFO] WebElement - Waiting for cellEditor to be visible (timeout: 250ms)
+2026-09-24 10:26:57.763 [main] [INFO] WebElement - Pressing Delete on cellEditor
+2026-09-24 10:26:57.810 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-24 10:26:57.815 [main] [INFO] WaitUtil - Condition met after 5ms: Waiting for the loading overlay to disappear
+2026-09-24 10:26:57.815 [main] [INFO] WebElement - Waiting for cellEditor to be visible (timeout: 250ms)
+2026-09-24 10:26:57.831 [main] [INFO] WebElement - Filling cellEditor with text: &#x27;Good Morning from LFS&#x27;
+2026-09-24 10:26:57.900 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-24 10:26:57.903 [main] [INFO] WaitUtil - Condition met after 3ms: Waiting for the loading overlay to disappear
+2026-09-24 10:26:57.903 [main] [INFO] WebElement - Waiting for cellEditor to be visible (timeout: 250ms)
+2026-09-24 10:26:57.916 [main] [INFO] WebElement - Pressing Enter on cellEditor
+2026-09-24 10:26:57.958 [main] [INFO] WaitUtil - Condition met after 286ms: Writing &#x27;Good Morning from LFS&#x27; into the editor of cell [6,4]
+2026-09-24 10:26:57.958 [main] [INFO] WaitUtil - Sleeping for 250ms: Waiting for cell edit to be applied
+2026-09-24 10:26:58.211 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-24 10:26:58.215 [main] [INFO] WaitUtil - Condition met after 4ms: Waiting for the loading overlay to disappear
+2026-09-24 10:26:58.215 [main] [INFO] WebElement - Waiting for saveChangesBtn to be visible (timeout: 250ms)
+2026-09-24 10:26:58.224 [main] [INFO] WebElement - Clicking saveChangesBtn 
+2026-09-24 10:26:58.717 [main] [INFO] WaitUtil - Sleeping for 250ms: Waiting for table panel action to complete and UI to update
+2026-09-24 10:26:58.967 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-09-24 10:26:59.258 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-24 10:26:59.265 [main] [INFO] WaitUtil - Condition met after 7ms: Waiting for the loading overlay to disappear
+2026-09-24 10:26:59.269 [main] [INFO] WaitUtil - Waiting for condition (timeout: 10000ms, polling: 200ms): Waiting for the table to be written
+2026-09-24 10:26:59.292 [main] [INFO] WaitUtil - Condition met after 23ms: Waiting for the table to be written
+2026-09-24 10:26:59.292 [main] [INFO] WaitUtil - Waiting for condition (timeout: 10000ms, polling: 250ms): Waiting for the table changes to be kept
+2026-09-24 10:26:59.319 [main] [INFO] WebElement - Waiting for saveChangesBtn to be visible (timeout: 1000ms)
+2026-09-24 10:27:00.334 [main] [INFO] WaitUtil - Condition met after 1042ms: Waiting for the table changes to be kept
+2026-09-24 10:27:00.335 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-09-24 10:27:00.342 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-24 10:27:00.344 [main] [INFO] WaitUtil - Condition met after 2ms: Waiting for the loading overlay to disappear
+2026-09-24 10:27:00.344 [main] [INFO] WebElement - Waiting for saveBtn to be visible (timeout: 10000ms)
+2026-09-24 10:27:00.351 [main] [INFO] WebElement - Waiting for saveBtn to be visible (timeout: 20000ms)
+2026-09-24 10:27:00.359 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-24 10:27:00.361 [main] [INFO] WaitUtil - Condition met after 2ms: Waiting for the loading overlay to disappear
+2026-09-24 10:27:00.361 [main] [INFO] WebElement - Waiting for saveBtn to be visible (timeout: 250ms)
+2026-09-24 10:27:00.367 [main] [INFO] WebElement - Clicking saveBtn 
+2026-09-24 10:27:00.468 [main] [INFO] WebElement - Waiting for saveProjectComment to be visible
+2026-09-24 10:27:00.498 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-24 10:27:00.509 [main] [INFO] WaitUtil - Condition met after 11ms: Waiting for the loading overlay to disappear
+2026-09-24 10:27:00.509 [main] [INFO] WebElement - Waiting for saveProjectSubmit to be visible (timeout: 250ms)
+2026-09-24 10:27:00.563 [main] [INFO] WebElement - Clicking saveProjectSubmit 
+2026-09-24 10:27:00.895 [main] [INFO] WebElement - Waiting for saveProjectSubmit to be hidden
+2026-09-24 10:27:02.316 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-09-24 10:27:02.324 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-24 10:27:02.326 [main] [INFO] WaitUtil - Condition met after 2ms: Waiting for the loading overlay to disappear
+2026-09-24 10:27:02.326 [main] [INFO] WaitUtil - Waiting for condition (timeout: 30000ms, polling: 1000ms): Waiting for the saved module to reach the git remote
+2026-09-24 10:27:02.369 [main] [INFO] WaitUtil - Condition met after 43ms: Waiting for the saved module to reach the git remote
+2026-09-24 10:27:03.051 [main] [INFO] DockerDriverPool - Closing Playwright Docker for thread: main
+2026-09-24 10:27:04.118 [main] [INFO] WaitUtil - Sleeping for 2000ms: Waiting for Docker daemon to complete resource cleanup</pre></div></td></tr><tr class='row passed' data-status='passed' data-suite='git' data-error=''><td><span class='badge' style='color:#1a7f37;background:#dafbe1'>PASSED</span></td><td>git<br><small>lfs</small></td><td><strong>TestGitLfsGitLabStorage</strong><br>testGitLfsGitLabStorage<br><small>EPBDS-11591</small></td><td>34 s</td><td class='artifacts'><small>steps</small></td><td><button class='toggle' data-target='d3'>details</button></td></tr><tr class='details-row passed' id='d3' hidden><td colspan='6'><div class='tabs'><button class='tab active' data-tab='t3-0'>Overview</button><button class='tab' data-tab='t3-1'>Steps (362)</button></div><div class='panel' id='t3-0'><table class='kv'><tr><th>Group / shard</th><td>git / lfs</td></tr><tr><th>Class</th><td><code>tests.ui.webstudio.git.TestGitLfsGitLabStorage</code> · <a href='https://github.com/openl-tablets/openl-tests/blob/32cdf6bd445a0934665e2c82bc648daed5bbf6f6/src/test/java/tests/ui/webstudio/git/TestGitLfsGitLabStorage.java' target='_blank'>source</a></td></tr><tr><th>Method</th><td><code>testGitLfsGitLabStorage</code></td></tr><tr><th>Test case</th><td>EPBDS-11591</td></tr><tr><th>Known issue</th><td>—</td></tr><tr><th>Description</th><td>Git LFS on GitLab - Studio opens a module whose LFS object is on GitLab and saves an edit of it back to GitLab LFS</td></tr><tr><th>Started / finished</th><td>2026-09-24T10:28:53.818Z → 2026-09-24T10:29:27.731Z (34 s)</td></tr><tr><th>Application build</th><td>latest</td></tr><tr><th>Tests revision</th><td>main @ 32cdf6bd445a</td></tr></table></div><div class='panel' id='t3-1' hidden><p class='hint'>Framework log of this test: container start, every page action, waits, REST calls and assertions. Showing the last 50 of 362 lines · <a href='attachments/lfs/tests.ui.webstudio.git.TestGitLfsGitLabStorage/testGitLfsGitLabStorage/test-steps.log' target='_blank'>full log</a></p><pre class='log'>2026-09-24 10:29:21.912 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-24 10:29:21.916 [main] [INFO] WaitUtil - Condition met after 3ms: Waiting for the loading overlay to disappear
+2026-09-24 10:29:21.916 [main] [INFO] WebElement - Waiting for cellEditor to be visible (timeout: 250ms)
+2026-09-24 10:29:21.932 [main] [INFO] WebElement - Pressing Enter on cellEditor
+2026-09-24 10:29:21.977 [main] [INFO] WaitUtil - Condition met after 265ms: Writing &#x27;Good Morning f77c2ef6&#x27; into the editor of cell [6,4]
+2026-09-24 10:29:21.977 [main] [INFO] WaitUtil - Sleeping for 250ms: Waiting for cell edit to be applied
+2026-09-24 10:29:22.231 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-24 10:29:22.234 [main] [INFO] WaitUtil - Condition met after 3ms: Waiting for the loading overlay to disappear
+2026-09-24 10:29:22.235 [main] [INFO] WebElement - Waiting for saveChangesBtn to be visible (timeout: 250ms)
+2026-09-24 10:29:22.247 [main] [INFO] WebElement - Clicking saveChangesBtn 
+2026-09-24 10:29:22.777 [main] [INFO] WaitUtil - Sleeping for 250ms: Waiting for table panel action to complete and UI to update
+2026-09-24 10:29:23.027 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-09-24 10:29:23.180 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-24 10:29:23.201 [main] [INFO] WaitUtil - Condition met after 21ms: Waiting for the loading overlay to disappear
+2026-09-24 10:29:23.203 [main] [INFO] WaitUtil - Waiting for condition (timeout: 10000ms, polling: 200ms): Waiting for the table to be written
+2026-09-24 10:29:23.213 [main] [INFO] WaitUtil - Condition met after 9ms: Waiting for the table to be written
+2026-09-24 10:29:23.213 [main] [INFO] WaitUtil - Waiting for condition (timeout: 10000ms, polling: 250ms): Waiting for the table changes to be kept
+2026-09-24 10:29:23.288 [main] [INFO] WebElement - Waiting for saveChangesBtn to be visible (timeout: 1000ms)
+2026-09-24 10:29:24.300 [main] [INFO] WaitUtil - Condition met after 1086ms: Waiting for the table changes to be kept
+2026-09-24 10:29:24.300 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-09-24 10:29:24.307 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-24 10:29:24.309 [main] [INFO] WaitUtil - Condition met after 2ms: Waiting for the loading overlay to disappear
+2026-09-24 10:29:24.309 [main] [INFO] WebElement - Waiting for saveBtn to be visible (timeout: 10000ms)
+2026-09-24 10:29:24.316 [main] [INFO] WebElement - Waiting for saveBtn to be visible (timeout: 20000ms)
+2026-09-24 10:29:24.322 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-24 10:29:24.324 [main] [INFO] WaitUtil - Condition met after 2ms: Waiting for the loading overlay to disappear
+2026-09-24 10:29:24.324 [main] [INFO] WebElement - Waiting for saveBtn to be visible (timeout: 250ms)
+2026-09-24 10:29:24.334 [main] [INFO] WebElement - Clicking saveBtn 
+2026-09-24 10:29:24.446 [main] [INFO] WebElement - Waiting for saveProjectComment to be visible
+2026-09-24 10:29:24.467 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-09-24 10:29:24.475 [main] [INFO] WaitUtil - Condition met after 7ms: Waiting for the loading overlay to disappear
+2026-09-24 10:29:24.475 [main] [INFO] WebElement - Waiting for saveProjectSubmit to be visible (timeout: 250ms)
+2026-09-24 10:29:24.522 [main] [INFO] WebElement - Clicking saveProjectSubmit 
+2026-09-24 10:29:24.847 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 1000ms): Waiting for the saved module to reach git or for Studio to report the save failed
+2026-09-24 10:29:24.939 [main] [INFO] WebElement - Waiting for Studio Messages_0 to be visible (timeout: 250ms)
+2026-09-24 10:29:25.042 [main] [INFO] WebElement - Getting text from Studio Messages_0: &#x27;Table saved&#x27;
+2026-09-24 10:29:25.042 [main] [INFO] CoreComponent - Popup messages on screen: [Table saved]
+2026-09-24 10:29:25.043 [main] [INFO] WaitUtil - Sleeping for 1000ms: Polling for condition (attempt): Waiting for the saved module to reach git or for Studio to report the save failed
+2026-09-24 10:29:26.113 [main] [INFO] WebElement - Waiting for Studio Messages_0 to be visible (timeout: 250ms)
+2026-09-24 10:29:26.160 [main] [INFO] WebElement - Getting text from Studio Messages_0: &#x27;Table saved&#x27;
+2026-09-24 10:29:26.160 [main] [INFO] CoreComponent - Popup messages on screen: [Table saved]
+2026-09-24 10:29:26.160 [main] [INFO] WaitUtil - Sleeping for 1000ms: Polling for condition (attempt): Waiting for the saved module to reach git or for Studio to report the save failed
+2026-09-24 10:29:27.200 [main] [INFO] WaitUtil - Condition met after 2353ms: Waiting for the saved module to reach git or for Studio to report the save failed
+2026-09-24 10:29:27.203 [main] [INFO] WebElement - Waiting for Studio Messages_0 to be visible (timeout: 250ms)
+2026-09-24 10:29:27.220 [main] [INFO] WebElement - Getting text from Studio Messages_0: &#x27;Table saved&#x27;
+2026-09-24 10:29:27.220 [main] [INFO] WebElement - Waiting for Studio Messages_1 to be visible (timeout: 250ms)
+2026-09-24 10:29:27.233 [main] [INFO] WebElement - Getting text from Studio Messages_1: &#x27;Project saved&#x27;
+2026-09-24 10:29:27.233 [main] [INFO] CoreComponent - Popup messages on screen: [Table saved, Project saved]
+2026-09-24 10:29:27.741 [main] [INFO] DockerDriverPool - Closing Playwright Docker for thread: main
+2026-09-24 10:29:28.109 [main] [INFO] WaitUtil - Sleeping for 2000ms: Waiting for Docker daemon to complete resource cleanup</pre></div></td></tr></tbody></table></div>
+</div>
+<script>
+const rows=[...document.querySelectorAll('tr.row')];
+function apply(){const s=document.getElementById('status').value,u=document.getElementById('suite').value,q=document.getElementById('search').value.toLowerCase();
+rows.forEach(r=>{const ok=(!s||r.dataset.status===s)&&(!u||r.dataset.suite===u)&&(!q||(r.textContent+' '+(r.dataset.error||'')).toLowerCase().includes(q));r.hidden=!ok;const d=r.nextElementSibling;if(d&&d.classList.contains('details-row')&&!ok){d.hidden=true;r.querySelector('button.toggle')?.classList.remove('open');}});}
+['status','suite'].forEach(id=>document.getElementById(id).addEventListener('change',apply));document.getElementById('search').addEventListener('input',apply);
+document.querySelectorAll('button.toggle').forEach(b=>b.addEventListener('click',()=>{const d=document.getElementById(b.dataset.target);d.hidden=!d.hidden;b.classList.toggle('open',!d.hidden);}));
+document.getElementById('expand-failed').addEventListener('click',()=>{document.querySelectorAll('tr.details-row.failed').forEach(d=>{d.hidden=false;const b=d.previousElementSibling.querySelector('button.toggle');if(b)b.classList.add('open');});});
+document.querySelectorAll('button.tab').forEach(b=>b.addEventListener('click',()=>{const panel=document.getElementById(b.dataset.tab);const box=b.closest('td');box.querySelectorAll('.panel').forEach(p=>p.hidden=true);box.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));panel.hidden=false;b.classList.add('active');}));
+</script></body></html>
