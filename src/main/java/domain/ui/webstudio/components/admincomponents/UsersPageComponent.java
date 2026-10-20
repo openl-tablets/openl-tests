@@ -21,6 +21,7 @@ public class UsersPageComponent extends BaseComponent {
     // ==== Table Section ====
     private TableComponent usersTable;
     private WebElement addUserBtn;
+    private WebElement searchField;
 
     // ==== Drawer (Edit Form) Section ====
     private WebElement drawer;
@@ -65,6 +66,7 @@ public class UsersPageComponent extends BaseComponent {
         // Initialize table
         usersTable = createScopedComponent(TableComponent.class, "xpath=.//table", "usersTable");
         addUserBtn = createScopedElement("xpath=.//button[./span[text()='Add User']]", "addUserBtn");
+        searchField = createScopedElement("xpath=.//input[@data-testid='users-search-input']", "searchField");
 
         // Drawer elements (not scoped to rootLocator as drawer is outside content div)
         drawer = new WebElement(page, "xpath=//div[contains(@class,'ant-drawer-open')]", "drawer");
@@ -177,6 +179,48 @@ public class UsersPageComponent extends BaseComponent {
             return usersAfter == usersBefore - 1;
             }, 5000, 100, "Waiting for user deletion to complete");
 
+    }
+
+    public UsersPageComponent searchUsers(String text) {
+        searchField.fill(text);
+        getUserRow(text);
+        return this;
+    }
+
+    public String getSearchText() {
+        return searchField.getCurrentInputValue();
+    }
+
+    private WebElement rowElement(String username, String xpath) {
+        return usersTable.getCell(getUserRow(username), COL_USERNAME).child("xpath=ancestor::tr[1]" + xpath);
+    }
+
+    private WebElement showLessGroupsBtn(String username) {
+        return rowElement(username, "//button[./span[text()='Show less']]");
+    }
+
+    public List<String> getUserGroups(String username) {
+        return rowElement(username, "//span[contains(@class,'ant-tag')]").getLocator().allInnerTexts().stream()
+                .map(String::trim)
+                .toList();
+    }
+
+    public boolean isShowLessGroupsVisible(String username) {
+        return showLessGroupsBtn(username).isVisible();
+    }
+
+    public UsersPageComponent expandUserGroups(String username, String badge) {
+        WebElement showLessBtn = showLessGroupsBtn(username);
+        rowElement(username, "//span[contains(@class,'ant-tag') and normalize-space()='" + badge + "']").click();
+        showLessBtn.waitForVisible(DEFAULT_TIMEOUT_MS);
+        return this;
+    }
+
+    public UsersPageComponent collapseUserGroups(String username) {
+        WebElement showLessBtn = showLessGroupsBtn(username);
+        showLessBtn.click();
+        showLessBtn.waitForHidden(DEFAULT_TIMEOUT_MS);
+        return this;
     }
 
     // ========================================
