@@ -162,8 +162,7 @@ public class TestEditingCommaSeparatedArrayValues extends BaseTest {
         TableComponent table = editorPage.getCenterTable();
         editorPage.getMultiselectArrayEditorComponent().clickActionButton("Done");
         int anchorRow = row == 1 ? 2 : 1;
-        int anchorCol = column == 1 ? 2 : 1;
-        table.clickCell(anchorRow, anchorCol);
+        table.clickCell(anchorRow, 1);
         verifyEditTableCellContent(table, row, column, expectedValue);
 
         EditorTableActionsPanelComponent actions = editorPage.getEditorTableActionsPanelComponent();
