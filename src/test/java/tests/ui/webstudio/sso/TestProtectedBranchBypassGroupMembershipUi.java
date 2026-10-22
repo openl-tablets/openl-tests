@@ -21,21 +21,9 @@ import org.testng.annotations.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static tests.ui.webstudio.git.ProtectedBranchBypassFixture.DEV_BRANCH;
+import static tests.ui.webstudio.git.ProtectedBranchBypassFixture.MERGE_SUMMARY_TEXT;
 import static tests.ui.webstudio.git.ProtectedBranchBypassFixture.PROTECTED_TARGET;
 
-/**
- * PLAYWRIGHT_DOCKER test — run with {@code -Dexecution.mode=PLAYWRIGHT_DOCKER}.
- * <p>
- * EPBDS-15960 Z.6 — Manager role granted via GROUP membership (not a direct user grant).
- * An ephemeral Keycloak (OIDC) IdP issues a {@code groups} claim; the Studio group
- * {@code bypass-managers} is granted MANAGER on the project, and the user {@code groupmgr}
- * — whose only project role comes from that group — must be bypass-eligible and able to
- * merge into a protected branch through the UI.
- * <p>
- * The browser, Studio and Keycloak share one Docker network so the OIDC issuer
- * {@code http://keycloak:8080/realms/openlstudio} is identical for all three (parallel-safe,
- * no host port in the SSO path). Hence the browser must run inside the network — PLAYWRIGHT_DOCKER.
- */
 public class TestProtectedBranchBypassGroupMembershipUi extends AbstractSsoUiTest {
 
     private static final String PROJECT_NAME = "BypassGroupUiProject";
@@ -50,15 +38,12 @@ public class TestProtectedBranchBypassGroupMembershipUi extends AbstractSsoUiTes
             + "merge into a protected branch through the UI bypass-confirm flow.")
     @AppContainerConfig(startParams = AppContainerStartParameters.STUDIO_OIDC_BYPASS_PARAMS)
     public void testGroupDerivedManagerCanBypassMerge() {
-        // ===== REST setup as admin (bearer token) =====
         AuthorizedApiMethod.setBearerToken(keycloak.getAccessToken("admin", "admin"));
         String projectId;
         try {
             projectId = ProtectedBranchBypassFixture.uploadProject(PROJECT_NAME);
             ProtectedBranchBypassFixture.provisionBranches(projectId);
             ProtectedBranchBypassFixture.commitDivergentChangeOnDev(projectId);
-            // Manager role is derived purely from group membership: register the Studio group
-            // and grant it MANAGER on the project (non-principal SID), no direct user grant.
             assertThat(new GroupsMethod().createGroup(BYPASS_GROUP).getStatusCode())
                     .as("create Studio group %s", BYPASS_GROUP).isLessThan(300);
             assertThat(new AclProjectsMethod().grantRole(projectId, BYPASS_GROUP, false, "MANAGER").getStatusCode())
@@ -67,7 +52,6 @@ public class TestProtectedBranchBypassGroupMembershipUi extends AbstractSsoUiTes
             AuthorizedApiMethod.clearBearerToken();
         }
 
-        // groupmgr's per-user workspace must be on the dev branch before the UI merge.
         AuthorizedApiMethod.setBearerToken(keycloak.getAccessToken(GROUP_USER, GROUP_USER_PASSWORD));
         try {
             assertThat(new ProjectBranchesMethod().switchBranch(projectId, DEV_BRANCH).getStatusCode())
@@ -76,12 +60,9 @@ public class TestProtectedBranchBypassGroupMembershipUi extends AbstractSsoUiTes
             AuthorizedApiMethod.clearBearerToken();
         }
 
-        // ===== UI flow as groupmgr via Keycloak SSO =====
         DriverPool.getPage().navigate(DriverPool.getAppUrl());
         EditorPage editorPage = new KeycloakLoginPage().login(GROUP_USER, GROUP_USER_PASSWORD);
 
-        // React nav: open the project from the /projects list, then open the Sync dialog from the editor
-        // toolbar (the Sync dialog + bypass confirm are already React components).
         RepositoryPage repositoryPage = editorPage.getTabSwitcherComponent()
                 .selectTab(TabSwitcherComponent.TabName.REPOSITORY);
         repositoryPage.openProject(PROJECT_NAME);
@@ -104,8 +85,11 @@ public class TestProtectedBranchBypassGroupMembershipUi extends AbstractSsoUiTes
                 .waitForDialogToAppear();
         confirmDialog.clickConfirmBypassAndMerge();
 
-        assertThat(confirmDialog.isMergeSuccessNoticeVisible())
+        assertThat(confirmDialog.isMergeSummaryVisible())
                 .as("Z.6 — confirming bypass merges successfully for a group-derived Manager")
                 .isTrue();
+        assertThat(confirmDialog.getMergeSummaryText())
+                .as("Z.6 — the Merge Summary names the merged branches")
+                .isEqualTo(MERGE_SUMMARY_TEXT);
     }
 }

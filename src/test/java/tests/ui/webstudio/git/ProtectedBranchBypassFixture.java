@@ -26,7 +26,7 @@ public final class ProtectedBranchBypassFixture {
     public static final String DEV_BRANCH = "EPBDS-15818_dev";
     public static final String PROJECT_ZIP = "RulesEditor.TestSearchOnProjectLevel.Example1BankRating.zip";
     public static final String DIVERGENT_FILE = "rules.xml";
-    public static final String MERGE_SUMMARY = "Merge Summary";
+    public static final String MERGE_SUMMARY_TEXT = "Merged \"" + DEV_BRANCH + "\" into \"" + PROTECTED_TARGET + "\".";
 
     private ProtectedBranchBypassFixture() {
     }

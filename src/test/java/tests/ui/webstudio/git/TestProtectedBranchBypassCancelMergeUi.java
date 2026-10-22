@@ -59,7 +59,7 @@ public class TestProtectedBranchBypassCancelMergeUi extends BaseTest {
         assertThat(confirmDialog.waitForDialogToDisappear())
                 .as("H.3 — confirmation modal disappears after Cancel")
                 .isTrue();
-        assertThat(confirmDialog.isMergeSuccessNoticeAbsent())
+        assertThat(confirmDialog.isMergeSummaryAbsent())
                 .as("H.3 — Cancel must not produce a Merge Summary")
                 .isTrue();
         assertThat(syncDialog.isVisible())
