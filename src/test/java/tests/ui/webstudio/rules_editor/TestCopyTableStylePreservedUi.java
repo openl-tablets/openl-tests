@@ -5,7 +5,9 @@ import configuration.annotations.TestCaseId;
 import configuration.annotations.AppContainerConfig;
 import configuration.appcontainer.AppContainerStartParameters;
 import domain.serviceclasses.constants.User;
+import domain.ui.webstudio.components.admincomponents.SystemSettingsPageComponent;
 import domain.ui.webstudio.components.common.TableComponent;
+import domain.ui.webstudio.components.common.ThemeMenuComponent;
 import domain.ui.webstudio.components.editortabcomponents.leftmenu.EditorLeftRulesTreeComponent;
 import domain.ui.webstudio.pages.mainpages.EditorPage;
 import helpers.service.WorkflowService;
@@ -30,6 +32,12 @@ public class TestCopyTableStylePreservedUi extends BaseTest {
     public void testCopyPreservesTableStyle() {
         String projectName = WorkflowService.loginCreateProjectFromTemplate(User.ADMIN, "Sample Project");
         EditorPage editorPage = new EditorPage();
+        SystemSettingsPageComponent systemSettings = editorPage.openUserMenu()
+                .navigateToAdministration()
+                .navigateToSystemSettingsPage();
+        systemSettings.setFormatTablesOnSave(false);
+        systemSettings.applySettingsAndRelogin(User.ADMIN);
+        new ThemeMenuComponent().setExcelFormatting(true);
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, MODULE);
         openTableInTree(editorPage, TABLE_NAME);
         String originalHeaderBackground = headerBackground(editorPage.getCenterTable());

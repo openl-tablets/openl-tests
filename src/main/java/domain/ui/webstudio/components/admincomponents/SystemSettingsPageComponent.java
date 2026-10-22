@@ -17,6 +17,7 @@ public class SystemSettingsPageComponent extends BaseComponent {
     private WebElement testThreadCountError;
     private WebElement projectHistoryCountField;
     private WebElement detectProjectsByExcelFilesCheckbox;
+    private WebElement formatTablesOnSaveCheckbox;
     private WebElement clearAllHistoryBtn;
     private WebElement cancelModalBtn;
     private WebElement applyButton;
@@ -48,6 +49,7 @@ public class SystemSettingsPageComponent extends BaseComponent {
                 + "//div[contains(@class,'ant-form-item-explain-error')]", "testThreadCountError");
         projectHistoryCountField = createScopedElement("xpath=.//*[@id='projectHistoryCount']", "projectHistoryCountField");
         detectProjectsByExcelFilesCheckbox = createScopedElement("xpath=.//*[@id='detectProjectsByExcelFiles']", "detectProjectsByExcelFilesCheckbox");
+        formatTablesOnSaveCheckbox = createScopedElement("xpath=.//*[@id='formatTablesOnSave']", "formatTablesOnSaveCheckbox");
         clearAllHistoryBtn = createScopedElement("xpath=.//button[./span[text()='Clear All History']]", "clearAllHistoryBtn");
         cancelModalBtn = new WebElement(page, "xpath=//div[contains(@class,'ant-modal-container')]//button[./span[contains(text(),'Cancel')]]", "cancelModalBtn");
         applyButton = createScopedElement("xpath=.//button[./span[text()='Apply Changes'] or ./span[text()='Apply']]", "applyButton");
@@ -171,5 +173,11 @@ public class SystemSettingsPageComponent extends BaseComponent {
 
     public boolean isDetectProjectsByExcelFilesEnabled() {
         return detectProjectsByExcelFilesCheckbox.isChecked();
+    }
+
+    public void setFormatTablesOnSave(boolean enable) {
+        if (enable != formatTablesOnSaveCheckbox.isChecked()) {
+            formatTablesOnSaveCheckbox.click();
+        }
     }
 }
