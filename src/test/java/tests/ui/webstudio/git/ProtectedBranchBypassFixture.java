@@ -19,12 +19,6 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Shared REST setup plumbing for EPBDS-15960 Section H tests: upload a project,
- * provision a protected release branch + a dev branch with a divergent commit,
- * create a Manager (or Contributor) user with the requested ACL role, release
- * the workspace lock the admin REST steps leave behind.
- */
 public final class ProtectedBranchBypassFixture {
 
     public static final String DESIGN_REPO = "design";
@@ -32,12 +26,11 @@ public final class ProtectedBranchBypassFixture {
     public static final String DEV_BRANCH = "EPBDS-15818_dev";
     public static final String PROJECT_ZIP = "RulesEditor.TestSearchOnProjectLevel.Example1BankRating.zip";
     public static final String DIVERGENT_FILE = "rules.xml";
-    public static final String MERGE_SUCCESS_TOAST = "Merge Successful";
+    public static final String MERGE_SUMMARY_TEXT = "Merged \"" + DEV_BRANCH + "\" into \"" + PROTECTED_TARGET + "\".";
 
     private ProtectedBranchBypassFixture() {
     }
 
-    /** End-to-end setup: identity, project, branches, divergent commit, user + ACL. */
     public static String provisionProjectAndUser(String projectName, String userLogin,
                                                  String userPassword, String role) {
         configureAdminCommitIdentity();
@@ -86,7 +79,6 @@ public final class ProtectedBranchBypassFixture {
         } catch (Exception e) {
             throw new RuntimeException("failed to commit divergent change on dev", e);
         }
-        // PUT leaves admin lock + OPENED state; reopen+close releases both.
         ProjectsMethod projects = new ProjectsMethod();
         assertThat(projects.openProject(projectId).getStatusCode())
                 .as("release exclusive lock after PUT").isLessThan(300);
