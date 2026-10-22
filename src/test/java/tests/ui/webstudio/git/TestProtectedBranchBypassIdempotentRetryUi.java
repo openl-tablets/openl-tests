@@ -17,7 +17,6 @@ import org.testng.annotations.Test;
 import tests.BaseTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tests.ui.webstudio.git.ProtectedBranchBypassFixture.MERGE_SUMMARY;
 import static tests.ui.webstudio.git.ProtectedBranchBypassFixture.PROTECTED_TARGET;
 
 public class TestProtectedBranchBypassIdempotentRetryUi extends BaseTest {
@@ -57,7 +56,7 @@ public class TestProtectedBranchBypassIdempotentRetryUi extends BaseTest {
                 .waitForDialogToAppear();
         confirmDialog.clickConfirmBypassAndMerge();
         assertThat(confirmDialog.waitForMergeOutcome())
-                .as("first bypass merge must finish with the '%s' and no error", MERGE_SUMMARY)
+                .as("first bypass merge must finish with the Merge Summary and no error")
                 .isEmpty();
         assertThat(confirmDialog.waitForDialogToDisappear())
                 .as("the bypass confirmation must close once the merge is done")
