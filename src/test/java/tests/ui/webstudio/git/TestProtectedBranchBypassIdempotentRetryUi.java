@@ -17,7 +17,6 @@ import org.testng.annotations.Test;
 import tests.BaseTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tests.ui.webstudio.git.ProtectedBranchBypassFixture.MERGE_SUCCESS_TOAST;
 import static tests.ui.webstudio.git.ProtectedBranchBypassFixture.PROTECTED_TARGET;
 
 public class TestProtectedBranchBypassIdempotentRetryUi extends BaseTest {
@@ -57,11 +56,12 @@ public class TestProtectedBranchBypassIdempotentRetryUi extends BaseTest {
                 .waitForDialogToAppear();
         confirmDialog.clickConfirmBypassAndMerge();
         assertThat(confirmDialog.waitForMergeOutcome())
-                .as("first bypass merge must finish with the '%s' toast and no error", MERGE_SUCCESS_TOAST)
+                .as("first bypass merge must finish with the Merge Summary and no error")
                 .isEmpty();
         assertThat(confirmDialog.waitForDialogToDisappear())
                 .as("the bypass confirmation must close once the merge is done")
                 .isTrue();
+        repositoryPage.closeMergeSummary();
 
         repositoryPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.REPOSITORY);
         if (repositoryPage.isProjectActionAvailable(PROJECT_NAME, "Open")) {

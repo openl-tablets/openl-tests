@@ -16,7 +16,7 @@ import org.testng.annotations.Test;
 import tests.BaseTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tests.ui.webstudio.git.ProtectedBranchBypassFixture.MERGE_SUCCESS_TOAST;
+import static tests.ui.webstudio.git.ProtectedBranchBypassFixture.MERGE_SUMMARY_TEXT;
 import static tests.ui.webstudio.git.ProtectedBranchBypassFixture.PROTECTED_TARGET;
 
 public class TestProtectedBranchBypassManagerMergeUi extends BaseTest {
@@ -28,7 +28,7 @@ public class TestProtectedBranchBypassManagerMergeUi extends BaseTest {
     @Test
     @TestCaseId("EPBDS-15960")
     @Description("Sections G/H: Manager merging into a protected branch with bypass=ON sees "
-            + "the in-dialog warning, the secondary confirmation modal, and a Merge Successful toast.")
+            + "the in-dialog warning, the secondary confirmation modal, and the Merge Summary of the merge.")
     @AppContainerConfig(startParams = AppContainerStartParameters.STUDIO_BYPASS_ENABLED_PARAMS)
     public void testManagerBypassMergeFlowUi() {
         ProtectedBranchBypassFixture.provisionProjectAndUser(
@@ -66,9 +66,12 @@ public class TestProtectedBranchBypassManagerMergeUi extends BaseTest {
                 .isEqualTo("Bypass branch protection?");
 
         confirmDialog.clickConfirmBypassAndMerge();
-        assertThat(confirmDialog.isMergeSuccessNoticeVisible())
-                .as("H.2 — '%s' toast after confirming bypass", MERGE_SUCCESS_TOAST)
+        assertThat(confirmDialog.isMergeSummaryVisible())
+                .as("H.2 — the Merge Summary appears after confirming bypass")
                 .isTrue();
+        assertThat(confirmDialog.getMergeSummaryText())
+                .as("H.2 — the Merge Summary names the merged branches")
+                .isEqualTo(MERGE_SUMMARY_TEXT);
     }
 
 }
