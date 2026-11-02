@@ -83,8 +83,7 @@ public class LocalDriverPool {
         boolean headless = Boolean.parseBoolean(System.getProperty("headless", "false"));
         BrowserType.LaunchOptions launchOptions = new BrowserType.LaunchOptions()
                 .setHeadless(headless)
-                .setSlowMo(0)
-                .setDevtools(false);
+                .setSlowMo(0);
 
         launchOptions.setArgs(java.util.List.of(
                 "--disable-blink-features=AutomationControlled",

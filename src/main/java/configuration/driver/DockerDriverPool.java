@@ -27,8 +27,8 @@ public class DockerDriverPool {
     private static final ThreadLocal<PlaywrightDockerContext> threadLocalContext = new ThreadLocal<>();
 
     private static final String PLAYWRIGHT_DOCKER_IMAGE = "mcr.microsoft.com/playwright";
-    private static final String PLAYWRIGHT_VERSION = "v1.52.0-noble";
-    private static final String PLAYWRIGHT_NPM_PACKAGE = "playwright@1.52.0";
+    private static final String PLAYWRIGHT_VERSION = "v1.64.0-noble";
+    private static final String PLAYWRIGHT_NPM_PACKAGE = "playwright@1.64.0";
     private static final Object NPM_CACHE_WARM_UP_LOCK = new Object();
 
     private static final String HOST_RESOURCE_PATH = ProjectConfiguration.getProperty(PropertyNameSpace.HOST_RESOURCE_PATH);
