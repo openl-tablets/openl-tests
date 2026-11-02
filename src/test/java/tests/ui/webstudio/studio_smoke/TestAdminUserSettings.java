@@ -4,19 +4,18 @@ import configuration.annotations.Description;
 import configuration.annotations.TestCaseId;
 import configuration.annotations.AppContainerConfig;
 import configuration.appcontainer.AppContainerStartParameters;
+import domain.ui.webstudio.components.common.SettingsMenuComponent;
+import domain.ui.webstudio.components.common.SettingsMenuComponent.Setting;
 import domain.ui.webstudio.components.common.TableComponent;
 import configuration.driver.DriverPool;
 import domain.serviceclasses.constants.User;
 import domain.serviceclasses.models.UserData;
-import domain.ui.webstudio.components.common.TabSwitcherComponent;
 import domain.ui.webstudio.components.admincomponents.MyProfilePageComponent;
-import domain.ui.webstudio.components.admincomponents.MySettingsPageComponent;
 import domain.ui.webstudio.components.admincomponents.UsersPageComponent;
 import domain.ui.webstudio.components.editortabcomponents.EditorToolbarPanelComponent;
 import domain.ui.webstudio.components.editortabcomponents.leftmenu.EditorLeftRulesTreeComponent;
 import domain.ui.webstudio.pages.mainpages.EditorPage;
 import domain.ui.webstudio.pages.mainpages.LoginPage;
-import domain.ui.webstudio.pages.mainpages.RepositoryPage;
 import helpers.service.LoginService;
 import helpers.service.UserService;
 import helpers.service.WorkflowService;
@@ -147,7 +146,7 @@ public class TestAdminUserSettings extends BaseTest {
         myProfileComponent.setDisplayName("Bbb Aaa").saveProfile();
         
         myProfileComponent = editorPage.openUserMenu()
-                .navigateToMySettings()
+                .navigateToMyProfile()
                 .navigateToMyProfilePage();
         assertThat(myProfileComponent.getDisplayName()).as("Display name should be updated").isEqualTo("Bbb Aaa");
 
@@ -161,16 +160,14 @@ public class TestAdminUserSettings extends BaseTest {
         int user1Row = usersComponent.getUserRow("user1");
         assertThat(usersComponent.getFullNameFromRow(user1Row)).as("Display name should be updated in users table").isEqualTo("Bbb Aaa");
 
-        MySettingsPageComponent mySettingsComponent = editorPage.openUserMenu()
-                .navigateToAdministration()
-                .navigateToMySettingsPage();
+        SettingsMenuComponent settingsMenu = new SettingsMenuComponent();
 
-        assertThat(mySettingsComponent.isShowHeaderEnabled()).as("Show Header should be true").isTrue();
-        assertThat(mySettingsComponent.isShowFormulasEnabled()).as("Show Formulas should be false").isFalse();
-        assertThat(mySettingsComponent.getTestsPerPage()).as("Tests per page should be 5").isEqualTo(5);
-        assertThat(mySettingsComponent.isFailuresOnlyEnabled()).as("Failures Only should be false").isFalse();
-        assertThat(mySettingsComponent.isCompoundResultEnabled()).as("Compound Result should be false").isFalse();
-        assertThat(mySettingsComponent.isShowNumbersWithoutFormattingEnabled()).as("Show numbers without formatting should be false").isFalse();
+        assertThat(settingsMenu.isOn(Setting.SHOW_HEADER)).as("Show Header should be true").isTrue();
+        assertThat(settingsMenu.isOn(Setting.SHOW_FORMULAS)).as("Show Formulas should be false").isFalse();
+        assertThat(settingsMenu.getTestsPerPage()).as("Tests per page should be 5").isEqualTo(5);
+        assertThat(settingsMenu.isOn(Setting.FAILURES_ONLY)).as("Failures Only should be false").isFalse();
+        assertThat(settingsMenu.isOn(Setting.COMPOUND_RESULT)).as("Compound Result should be false").isFalse();
+        assertThat(settingsMenu.isOn(Setting.SHOW_NUMBERS_WITHOUT_FORMATTING)).as("Show numbers without formatting should be false").isFalse();
 
         myProfileComponent = editorPage.openUserMenu()
                 .navigateToAdministration()
@@ -189,10 +186,7 @@ public class TestAdminUserSettings extends BaseTest {
         TableComponent tableComponent = editorPage.getCenterTable();
         assertThat(tableComponent.getCellText(3, 2)).as("Cell content should be '2500'").isEqualTo("2500");
 
-        mySettingsComponent = editorPage.openUserMenu()
-                .navigateToAdministration()
-                .navigateToMySettingsPage();
-        mySettingsComponent.setShowFormulas(true).setShowHeader(false).saveSettings();
+        settingsMenu.set(Setting.SHOW_FORMULAS, true).set(Setting.SHOW_HEADER, false);
 
         new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectNameTest1, "Test1");
@@ -204,33 +198,11 @@ public class TestAdminUserSettings extends BaseTest {
         assertThat(tableComponent.getCellText(2, 2)).as("Formula should be visible").isEqualTo("=50*45/D8");
 
         editorPage.openUserMenu().signOut();
-        editorPage = loginService.login(user1Data);
-
-        RepositoryPage repositoryPage = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.REPOSITORY);
-        if (repositoryPage.isProjectActionAvailable(projectNameTest1, "Open")) {
-            repositoryPage.openProject(projectNameTest1);
-        }
-        new EditorPage();
-        editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectNameTest1, "Test1");
-        editorPage.getEditorLeftRulesTreeComponent()
-                .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
-                .expandFolderInTree(DECISION)
-                .selectItemInFolder(DECISION, "CapitalAdequacyScore");
-
-        TableComponent tableComponentUser1 = editorPage.getCenterTable();
-        assertThat(tableComponentUser1.getRowsCount()).as("Table should have 8 rows for user1 (different settings)").isEqualTo(8);
-        assertThat(tableComponentUser1.getCellText(1, 1)).as("User1 should see different header format").isEqualTo("SimpleRules Double CapitalAdequacyScore (Double capitalAdequacy)");
-
-        editorPage.openUserMenu().signOut();
         String projectNameTemplate = WorkflowService.loginCreateProjectFromTemplate(ADMIN, "Example 1 - Bank Rating");
-        mySettingsComponent = editorPage.openUserMenu()
-                .navigateToAdministration()
-                .navigateToMySettingsPage();
 
-        mySettingsComponent.setTestsPerPage(20)
-                .setFailuresOnly(true)
-                .setCompoundResult(true)
-                .saveSettings();
+        settingsMenu.setTestsPerPage(20)
+                .set(Setting.FAILURES_ONLY, true)
+                .set(Setting.COMPOUND_RESULT, true);
 
         new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectNameTemplate, "Bank Rating");
@@ -242,16 +214,6 @@ public class TestAdminUserSettings extends BaseTest {
 
         editorPage.openUserMenu().signOut();
         editorPage = loginService.login(user1Data);
-        mySettingsComponent = editorPage.openUserMenu()
-                .navigateToMySettings()
-                .navigateToMySettingsPage();
-
-        assertThat(mySettingsComponent.isShowHeaderEnabled()).as("User1 Show Header should still be true").isTrue();
-        assertThat(mySettingsComponent.isShowFormulasEnabled()).as("User1 Show Formulas should still be false").isFalse();
-        assertThat(mySettingsComponent.getTestsPerPage()).as("User1 Tests per page should still be 5").isEqualTo(5);
-        assertThat(mySettingsComponent.isFailuresOnlyEnabled()).as("User1 Failures Only should still be false").isFalse();
-        assertThat(mySettingsComponent.isCompoundResultEnabled()).as("User1 Compound Result should still be false").isFalse();
-
         editorPage.openUserMenu().openHelp();
         String helpUrl = editorPage.getPage().url();
         assertThat(helpUrl.contains("help")).as("Help should open OpenL Tablets documentation").isTrue();
@@ -276,10 +238,7 @@ public class TestAdminUserSettings extends BaseTest {
                 .contains("TotalAssets4");
         traceWindow.close();
 
-        mySettingsComponent = editorPage.openUserMenu()
-                .navigateToAdministration()
-                .navigateToMySettingsPage();
-        mySettingsComponent.setShowNumbersWithoutFormatting(true).saveSettings();
+        settingsMenu.set(Setting.SHOW_NUMBERS_WITHOUT_FORMATTING, true);
 
         new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectNameTest1, "Test1");
@@ -294,9 +253,6 @@ public class TestAdminUserSettings extends BaseTest {
                 .contains("TotalAssets4");
         traceWindow.close();
 
-        mySettingsComponent = editorPage.openUserMenu()
-                .navigateToAdministration()
-                .navigateToMySettingsPage();
-        mySettingsComponent.setShowNumbersWithoutFormatting(false).saveSettings();
+        settingsMenu.set(Setting.SHOW_NUMBERS_WITHOUT_FORMATTING, false);
     }
 }

@@ -46,11 +46,9 @@ public class TestNewDeployPopup extends BaseTest {
             "Tutorial 1 - Introduction to Decision Tables",
             "Tutorial 2 - Introduction to Data Tables",
             "Tutorial 3 - More Advanced Decision and Data Tables",
-            "Tutorial 4 - Introduction to Column Match Tables",
-            "Tutorial 5 - Introduction to TBasic Tables",
-            "Tutorial 6 - Introduction to Spreadsheet Tables",
-            "Tutorial 7 - Introduction to Table Properties",
-            "Tutorial 8 - Introduction to Smart Rules and Smart Lookup Tables");
+            "Tutorial 4 - Introduction to Spreadsheet Tables",
+            "Tutorial 5 - Introduction to Table Properties",
+            "Tutorial 6 - Introduction to Smart Rules and Smart Lookup Tables");
     private static final Map<String, String> additionalContainerFiles = new HashMap<>();
 
     @Override

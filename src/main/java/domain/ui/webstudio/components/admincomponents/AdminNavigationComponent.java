@@ -31,10 +31,6 @@ public class AdminNavigationComponent extends BaseComponent {
         clickNavigationItem(NavigationItem.MY_PROFILE);
     }
 
-    public void clickMySettings() {
-        clickNavigationItem(NavigationItem.MY_SETTINGS);
-    }
-
     public void clickRepositories() {
         clickNavigationItem(NavigationItem.REPOSITORIES);
     }
@@ -70,7 +66,6 @@ public class AdminNavigationComponent extends BaseComponent {
     @Getter
     public enum NavigationItem {
         MY_PROFILE("My Profile"),
-        MY_SETTINGS("My Settings"),
         REPOSITORIES("Repositories"),
         SYSTEM("System"),
         SECURITY("Security"),

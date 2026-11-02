@@ -43,7 +43,7 @@ public class ProjectOverviewTabComponent extends BaseComponent {
         branchMenuItem = new WebElement(page, "xpath=//div[contains(@class,'ant-dropdown')][not(contains(@class,'ant-dropdown-hidden'))]//li[contains(@class,'ant-dropdown-menu-item')][@data-menu-id='rc-menu-uuid-%s' or .//*[normalize-space()='%s']]", "branchMenuItem");
         modifiedValue = createScopedElement("xpath=.//*[@data-testid='overview-right']//div[./span[normalize-space()='Modified']]/following-sibling::div[1]", "modifiedValue");
         modifiedDate = createScopedElement("xpath=.//*[@data-testid='overview-right']//div[./span[normalize-space()='Modified']]/following-sibling::div[1]/div[last()]", "modifiedDate");
-        tagValueForType = createScopedElement("xpath=.//*[@data-testid='project-tags']/span[normalize-space()='%s']/following-sibling::span[1]", "tagValueForType");
+        tagValueForType = createScopedElement("xpath=.//*[@data-testid='project-tags']/span[normalize-space()='%s']/following-sibling::span[1]/span[1]", "tagValueForType");
         overviewRight = createScopedElement("xpath=.//*[@data-testid='overview-right']", "overviewRight");
         moduleRows = createScopedElement(
                 "xpath=.//li[starts-with(@data-testid,'module-')]"

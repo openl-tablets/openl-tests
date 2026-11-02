@@ -8,7 +8,6 @@ import domain.ui.webstudio.pages.mainpages.AdminPage;
 public class UserSlidingRightMenuComponent extends BaseComponent {
 
     private WebElement myProfileMenuItem;
-    private WebElement mySettingsMenuItem;
     private WebElement administrationMenuItem;
     private WebElement helpMenuItem;
     private WebElement signOutMenuItem;
@@ -25,7 +24,6 @@ public class UserSlidingRightMenuComponent extends BaseComponent {
 
     private void initializeComponents() {
         myProfileMenuItem = createScopedElement("xpath=.//li[contains(@class,'ant-menu-item')]//span[text()='My Profile']", "My Profile Menu Item");
-        mySettingsMenuItem = createScopedElement("xpath=.//li[contains(@class,'ant-menu-item')]//span[text()='My Settings']", "My Settings Menu Item");
         administrationMenuItem = createScopedElement("xpath=.//li[contains(@class,'ant-menu-item')]//span[text()='Administration']", "Administration Menu Item");
         helpMenuItem = createScopedElement("xpath=.//li[contains(@class,'ant-menu-item')]//span[text()='Help']", "Help Menu Item");
         signOutMenuItem = createScopedElement("xpath=.//li[contains(@class,'ant-menu-item')]//span[text()='Sign Out']", "Sign Out Menu Item");
@@ -33,11 +31,6 @@ public class UserSlidingRightMenuComponent extends BaseComponent {
 
     public AdminPage navigateToMyProfile() {
         select(MenuElements.MY_PROFILE);
-        return new AdminPage();
-    }
-
-    public AdminPage navigateToMySettings() {
-        select(MenuElements.MY_SETTINGS);
         return new AdminPage();
     }
 
@@ -63,9 +56,6 @@ public class UserSlidingRightMenuComponent extends BaseComponent {
             case MY_PROFILE:
                 myProfileMenuItem.click();
                 break;
-            case MY_SETTINGS:
-                mySettingsMenuItem.click();
-                break;
             case ADMINISTRATION:
                 administrationMenuItem.click();
                 break;
@@ -80,7 +70,6 @@ public class UserSlidingRightMenuComponent extends BaseComponent {
 
     public enum MenuElements {
         MY_PROFILE("My Profile"),
-        MY_SETTINGS("My Settings"),
         ADMINISTRATION("Administration"),
         HELP("Help"),
         SIGN_OUT("Sign Out");

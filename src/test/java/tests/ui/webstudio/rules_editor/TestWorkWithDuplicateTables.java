@@ -1,6 +1,7 @@
 package tests.ui.webstudio.rules_editor;
 
 import configuration.annotations.Description;
+import configuration.annotations.KnownIssue;
 import configuration.annotations.TestCaseId;
 import configuration.annotations.AppContainerConfig;
 import configuration.appcontainer.AppContainerStartParameters;
@@ -28,8 +29,11 @@ public class TestWorkWithDuplicateTables extends BaseTest {
 
     @Test
     @TestCaseId("IPBQA-31790")
-    @Description("Work With Duplicate Tables - error messages, Run/Trace/Benchmark with WithinCurrentModuleOnly checkboxes")
+    @Description("Work With Duplicate Tables - error messages, Run/Trace/Benchmark with WithinCurrentModuleOnly checkboxes. "
+            + "Fails on EPBDS-17076: with the Problems section of the table expanded, the table is pushed under the "
+            + "bottom compile problems panel and Save is refused.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
+    @KnownIssue(value = "EPBDS-17076", failsWith = "The table still has changes to keep, so keeping them was refused")
     public void testWorkWithDuplicateTables() {
         LoginService loginService = new LoginService(DriverPool.getPage());
         EditorPage editorPage = loginService.login(UserService.getUser(User.ADMIN));

@@ -26,9 +26,9 @@ import org.testng.annotations.Test;
 import tests.BaseTest;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -287,10 +287,11 @@ public class TestRepositoryTableActions extends BaseTest {
     }
 
     private boolean containsValidDate(String value) {
-        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.ENGLISH);
-        String today     = LocalDate.now().format(fmt);
-        String yesterday = LocalDate.now().minusDays(1).format(fmt);
-        String tomorrow  = LocalDate.now().plusDays(1).format(fmt);
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("MM/dd/yyyy");
+        LocalDate now = LocalDate.now(ZoneId.of("America/New_York"));
+        String today     = now.format(fmt);
+        String yesterday = now.minusDays(1).format(fmt);
+        String tomorrow  = now.plusDays(1).format(fmt);
         return value.contains(today) || value.contains(yesterday) || value.contains(tomorrow);
     }
 }

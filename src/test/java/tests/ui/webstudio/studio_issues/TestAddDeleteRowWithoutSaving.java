@@ -23,10 +23,10 @@ public class TestAddDeleteRowWithoutSaving extends BaseTest {
     @Description("BUG: Added row is deleted incorrectly - the value of the next row is changed")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void testAddDeleteRowWithoutSaving() {
-        String projectName = WorkflowService.loginCreateProjectFromTemplate(User.ADMIN, "Tutorial 6 - Introduction to Spreadsheet Tables");
+        String projectName = WorkflowService.loginCreateProjectFromTemplate(User.ADMIN, "Tutorial 4 - Introduction to Spreadsheet Tables");
         EditorPage editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent()
-                .selectModule(projectName, "Tutorial6 - Intro to Spreadsheet Tables");
+                .selectModule(projectName, "Tutorial4 - Intro to Spreadsheet Tables");
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
                 .expandFolderInTree(DECISION)

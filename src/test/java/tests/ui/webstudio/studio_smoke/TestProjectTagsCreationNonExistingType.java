@@ -25,12 +25,10 @@ public class TestProjectTagsCreationNonExistingType extends BaseTest {
     private static final String PROJECT_NAME = "Project6";
     private static final String ZIP_FILE_NAME = "TagsTestProject6.zip";
 
-    // Tag type configuration
     private static final String TAG_TYPE_NAME = "Tag";
     private static final String TAG_TYPE_OPT = "TagOpt";
     private static final String TAG_TYPE_EXT = "TagExt";
     private static final String TAG_TYPE_OPT_EXT = "TagOptExt";
-    // Declared by the zip's tags.properties but deliberately absent from the Tags settings.
     private static final String TAG_TYPE_UNKNOWN = "TagNonExisging";
 
     @Test
@@ -47,48 +45,39 @@ public class TestProjectTagsCreationNonExistingType extends BaseTest {
         repositoryPage.createProject(CreateNewProjectComponent.TabName.ZIP_ARCHIVE, PROJECT_NAME, ZIP_FILE_NAME, false);
         repositoryPage.fillCommitInfo();
 
-        // Tags now live in the project's own tags.properties and are shown exactly as written there: the old
-        // reconciliation popups ("Missing tags" / "Tags") are gone and nothing is matched against the Tags
-        // settings, so even a type the settings do not declare is kept.
         ProjectDetailPage projectDetail = repositoryPage.openProjectsList().openProjectDetail(PROJECT_NAME);
         assertThat(projectDetail.getTagValueForType(TAG_TYPE_EXT)).as("An extensible type should take the zip's value").isEqualTo("TagExt3");
         assertThat(projectDetail.getTagValueForType(TAG_TYPE_UNKNOWN)).as("A type missing from the Tags settings should still be shown as the zip declares it").isEqualTo("Tag3");
     }
 
     private void setupRequiredTagTypes(EditorPage editorPage) {
-        // Navigate to Admin -> Tags
         AdminPage adminPage = editorPage.openUserMenu().navigateToAdministration();
         TagsPageComponent tagsPageComponent = adminPage.navigateToTagsPage();
 
-        // Create Tag (False, False) with values Tag1, Tag2
         tagsPageComponent.addNewTagType(TAG_TYPE_NAME)
                 .addTag(TAG_TYPE_NAME, "Tag1")
                 .addTag(TAG_TYPE_NAME, "Tag2")
-                .setExtensible(1, false)
-                .setNullable(1, false);
+                .setExtensible(TAG_TYPE_NAME, false)
+                .setRequired(TAG_TYPE_NAME, true);
 
-        // Create TagOpt (True, False) with values TagOpt1, TagOpt2
         tagsPageComponent.addNewTagType(TAG_TYPE_OPT)
                 .addTag(TAG_TYPE_OPT, "TagOpt1")
                 .addTag(TAG_TYPE_OPT, "TagOpt2")
-                .setExtensible(2, false)
-                .setNullable(2, true);
+                .setExtensible(TAG_TYPE_OPT, false)
+                .setRequired(TAG_TYPE_OPT, false);
 
-        // Create TagExt (False, True) with values TagExt1, TagExt2
         tagsPageComponent.addNewTagType(TAG_TYPE_EXT)
                 .addTag(TAG_TYPE_EXT, "TagExt1")
                 .addTag(TAG_TYPE_EXT, "TagExt2")
-                .setExtensible(3, true)
-                .setNullable(3, false);
+                .setExtensible(TAG_TYPE_EXT, true)
+                .setRequired(TAG_TYPE_EXT, true);
 
-        // Create TagOptExt (True, True) with values TagOptExt1, TagOptExt2
         tagsPageComponent.addNewTagType(TAG_TYPE_OPT_EXT)
                 .addTag(TAG_TYPE_OPT_EXT, "TagOptExt1")
                 .addTag(TAG_TYPE_OPT_EXT, "TagOptExt2")
-                .setExtensible(4, true)
-                .setNullable(4, true);
+                .setExtensible(TAG_TYPE_OPT_EXT, true)
+                .setRequired(TAG_TYPE_OPT_EXT, false);
 
-        // Save templates
         tagsPageComponent.saveTemplates();
     }
 

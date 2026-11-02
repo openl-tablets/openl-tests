@@ -7,7 +7,8 @@ import configuration.appcontainer.AppContainerStartParameters;
 import configuration.core.ui.WebElement;
 import configuration.driver.DriverPool;
 import domain.serviceclasses.constants.User;
-import domain.ui.webstudio.components.admincomponents.MySettingsPageComponent;
+import domain.ui.webstudio.components.common.SettingsMenuComponent;
+import domain.ui.webstudio.components.common.SettingsMenuComponent.Setting;
 import domain.ui.webstudio.components.common.TableComponent;
 import domain.ui.webstudio.components.editortabcomponents.EditorTableActionsPanelComponent;
 import domain.ui.webstudio.components.editortabcomponents.RightTableDetailsComponent;
@@ -78,10 +79,7 @@ public class TestRulesEditorMergedRowsAndColumnsUi extends BaseTest {
     public void cellEditWithHeaderHiddenIsSavedIntoTheEditedCell() {
         String projectName = WorkflowService.loginCreateProjectFromTemplate(User.ADMIN, TUTORIAL_1);
         EditorPage editorPage = new EditorPage();
-        MySettingsPageComponent mySettings = editorPage.openUserMenu()
-                .navigateToAdministration()
-                .navigateToMySettingsPage();
-        mySettings.setShowHeader(false).saveSettings();
+        new SettingsMenuComponent().set(Setting.SHOW_HEADER, false);
 
         editorPage = new EditorPage();
         selectTable(editorPage, projectName, TUTORIAL_1_MODULE, "DriverPremium1");

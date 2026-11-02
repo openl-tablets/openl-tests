@@ -19,8 +19,6 @@ import helpers.utils.WaitUtil;
 import org.testng.annotations.Test;
 import tests.BaseTest;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
@@ -31,7 +29,6 @@ public class TestAddAndDeleteProperty extends BaseTest {
 
     private static final String PROJECT_NAME = "TestAddDeleteEditProperties";
     private static final String EXCEL_FILE = "TestAddDeleteEditProperties.xlsx";
-    private static final DateTimeFormatter ENTERED_DATE = DateTimeFormatter.ofPattern("MM/dd/yyyy");
     private static final String EDITED_TABLE = "MyRules2";
     private static final String KEEPS_TABLE_OPEN = "After a property is saved the Rules Editor should keep " + EDITED_TABLE + " open";
     private static final int SAVE_SETTLE_MS = 10000;
@@ -129,7 +126,6 @@ public class TestAddAndDeleteProperty extends BaseTest {
         if (propertyName.contains("Date")) {
             tableDetails.editDateProperty(propertyName, newValue);
             tableDetails.clickSaveBtn();
-            newValue = LocalDate.parse(newValue, ENTERED_DATE).toString();
         } else {
             tableDetails.editTextProperty(propertyName, newValue);
             tableDetails.clickSaveBtn();

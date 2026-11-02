@@ -28,7 +28,6 @@ public class TestProjectTagsCreationFromWorkspace extends BaseTest {
     private static final String ZIP_FILE_NAME_5 = "TagsTestProject5.zip";
     private static final String ZIP_FILE_NAME_6 = "TagsTestProject5.zip";
 
-    // Tag type configuration
     private static final String TAG_TYPE_NAME = "Tag";
     private static final String TAG_TYPE_OPT = "TagOpt";
     private static final String TAG_TYPE_EXT = "TagExt";
@@ -47,47 +46,39 @@ public class TestProjectTagsCreationFromWorkspace extends BaseTest {
         RepositoryPage repositoryPage = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.REPOSITORY);
         repositoryPage.createProject(CreateNewProjectComponent.TabName.ZIP_ARCHIVE, PROJECT_NAME_5, ZIP_FILE_NAME_5, false);
         repositoryPage.fillCommitInfo();
-        // The zip declares Tag=Tag9, a value the non-extensible "Tag" type does not list. The old UI asked the
-        // user to pick a known value; 6.4.0 keeps what tags.properties says without asking.
         ProjectDetailPage projectDetail = repositoryPage.openProjectsList().openProjectDetail(PROJECT_NAME_5);
         assertThat(projectDetail.getTagValueForType(TAG_TYPE_NAME)).as("The tag value declared by the zip should be kept as it is").isEqualTo("Tag9");
         assertThat(projectDetail.getTagValueForType(TAG_TYPE_EXT)).as("The extensible type should take the zip's value too").isEqualTo("TagExt1");
     }
 
     private void setupRequiredTagTypes(EditorPage editorPage) {
-        // Navigate to Admin -> Tags
         AdminPage adminPage = editorPage.openUserMenu().navigateToAdministration();
         TagsPageComponent tagsPageComponent = adminPage.navigateToTagsPage();
 
-        // Create Tag (False, False) with values Tag1, Tag2
         tagsPageComponent.addNewTagType(TAG_TYPE_NAME)
                 .addTag(TAG_TYPE_NAME, "Tag1")
                 .addTag(TAG_TYPE_NAME, "Tag2")
-                .setExtensible(1, false)
-                .setNullable(1, false);
+                .setExtensible(TAG_TYPE_NAME, false)
+                .setRequired(TAG_TYPE_NAME, true);
 
-        // Create TagOpt (True, False) with values TagOpt1, TagOpt2
         tagsPageComponent.addNewTagType(TAG_TYPE_OPT)
                 .addTag(TAG_TYPE_OPT, "TagOpt1")
                 .addTag(TAG_TYPE_OPT, "TagOpt2")
-                .setExtensible(2, false)
-                .setNullable(2, true);
+                .setExtensible(TAG_TYPE_OPT, false)
+                .setRequired(TAG_TYPE_OPT, false);
 
-        // Create TagExt (False, True) with values TagExt1, TagExt2
         tagsPageComponent.addNewTagType(TAG_TYPE_EXT)
                 .addTag(TAG_TYPE_EXT, "TagExt1")
                 .addTag(TAG_TYPE_EXT, "TagExt2")
-                .setExtensible(3, true)
-                .setNullable(3, false);
+                .setExtensible(TAG_TYPE_EXT, true)
+                .setRequired(TAG_TYPE_EXT, true);
 
-        // Create TagOptExt (True, True) with values TagOptExt1, TagOptExt2
         tagsPageComponent.addNewTagType(TAG_TYPE_OPT_EXT)
                 .addTag(TAG_TYPE_OPT_EXT, "TagOptExt1")
                 .addTag(TAG_TYPE_OPT_EXT, "TagOptExt2")
-                .setExtensible(4, true)
-                .setNullable(4, true);
+                .setExtensible(TAG_TYPE_OPT_EXT, true)
+                .setRequired(TAG_TYPE_OPT_EXT, false);
 
-        // Save templates
         tagsPageComponent.saveTemplates();
     }
 

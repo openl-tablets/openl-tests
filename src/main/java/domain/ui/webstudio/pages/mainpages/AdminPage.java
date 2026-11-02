@@ -5,7 +5,6 @@ import domain.ui.webstudio.components.admincomponents.AdminNavigationComponent;
 import domain.ui.webstudio.components.common.TabSwitcherComponent;
 import domain.ui.webstudio.components.admincomponents.EmailPageComponent;
 import domain.ui.webstudio.components.admincomponents.MyProfilePageComponent;
-import domain.ui.webstudio.components.admincomponents.MySettingsPageComponent;
 import domain.ui.webstudio.components.admincomponents.NotificationPageComponent;
 import domain.ui.webstudio.components.admincomponents.PersonalAccessTokenPageComponent;
 import domain.ui.webstudio.components.admincomponents.RepositoriesPageComponent;
@@ -27,7 +26,6 @@ public class AdminPage extends BasePage {
     private UsersPageComponent usersPageComponent;
     private SecurityPageComponent securityPageComponent;
     private MyProfilePageComponent myProfilePageComponent;
-    private MySettingsPageComponent mySettingsPageComponent;
     private RepositoriesPageComponent repositoriesPageComponent;
     private NotificationPageComponent notificationPageComponent;
     private TagsPageComponent tagsPageComponent;
@@ -42,11 +40,9 @@ public class AdminPage extends BasePage {
     }
 
     private void initializeAdminComponents() {
-        // Define root locators for component scoping - EXACT SAME as legacy AdminPage
         adminNavigation = new WebElement(page, "xpath=//div[@id='main-menu']", "Admin Navigation Container");
         contentContainer = new WebElement(page, "xpath=//div[@id='content']", "Content Container");
-        
-        // Initialize components with proper root locators
+
         adminNavigationComponent = new AdminNavigationComponent(adminNavigation);
         tabSwitcherComponent = createScopedComponent(TabSwitcherComponent.class, "xpath=//ul[@role='menu' and contains(@class,'ant-menu-horizontal')]", "tabSwitcherComponent");
         emailPageComponent = new EmailPageComponent(contentContainer);
@@ -54,7 +50,6 @@ public class AdminPage extends BasePage {
         usersPageComponent = new UsersPageComponent(contentContainer);
         securityPageComponent = new SecurityPageComponent(contentContainer);
         myProfilePageComponent = new MyProfilePageComponent(contentContainer);
-        mySettingsPageComponent = new MySettingsPageComponent(contentContainer);
         repositoriesPageComponent = new RepositoriesPageComponent(contentContainer);
         notificationPageComponent = new NotificationPageComponent(contentContainer);
         tagsPageComponent = new TagsPageComponent(contentContainer);
@@ -89,11 +84,6 @@ public class AdminPage extends BasePage {
     public PersonalAccessTokenPageComponent navigateToPersonalAccessTokensPage() {
         adminNavigationComponent.clickPersonalAccessTokens();
         return personalAccessTokenPageComponent;
-    }
-
-    public MySettingsPageComponent navigateToMySettingsPage() {
-        adminNavigationComponent.clickMySettings();
-        return mySettingsPageComponent;
     }
 
     public RepositoriesPageComponent navigateToRepositoriesPage() {

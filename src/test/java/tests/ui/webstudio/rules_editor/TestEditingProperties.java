@@ -18,10 +18,6 @@ import helpers.utils.WaitUtil;
 import org.testng.annotations.Test;
 import tests.BaseTest;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.DECISION;
 
@@ -92,7 +88,6 @@ public class TestEditingProperties extends BaseTest {
         if (propertyName.contains("Date")) {
             tableDetails.editDateProperty(propertyName, newValue);
             tableDetails.clickSaveBtn();
-            newValue = formatDate(newValue);
         } else {
             tableDetails.editTextProperty(propertyName, newValue);
             tableDetails.clickSaveBtn();
@@ -144,16 +139,5 @@ public class TestEditingProperties extends BaseTest {
         assertThat(editorPage.getCenterTable().getPropertyValue(propertyTableName))
                 .as("Property '%s' should have value '%s'", propertyTableName, expectedValue)
                 .isEqualToIgnoringCase(expectedValue);
-    }
-
-    private String formatDate(String dateValue) {
-        SimpleDateFormat inputFormat = new SimpleDateFormat("MM/dd/yy");
-        SimpleDateFormat outputFormat = new SimpleDateFormat("yyyy-MM-dd");
-        try {
-            Date date = inputFormat.parse(dateValue);
-            return outputFormat.format(date);
-        } catch (ParseException e) {
-            return dateValue;
-        }
     }
 }

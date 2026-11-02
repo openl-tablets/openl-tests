@@ -1,6 +1,5 @@
 package tests.ui.webstudio.studio_smoke;
 
-import configuration.annotations.KnownIssue;
 import configuration.annotations.Description;
 import configuration.annotations.TestCaseId;
 import configuration.annotations.AppContainerConfig;
@@ -26,13 +25,8 @@ public class TestAdminSystemSettings extends BaseTest {
 
     @Test
     @TestCaseId("IPBQA-30651")
-    @Description("System Settings - Test Dispatching Validation, Verify on Edit, and Thread Number validation. "
-            + "Fails on EPBDS-16902: a refused Apply names the internal class ApiHttpError in its notification "
-            + "instead of Error.")
+    @Description("System Settings - Test Dispatching Validation, Verify on Edit, and Thread Number validation")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
-    @KnownIssue(value = "EPBDS-16902", failsWith = "ApiHttpError: Invalid date pattern")
-    @KnownIssue(value = "EPBDS-16902", failsWith = "ApiHttpError: Invalid time pattern")
-    @KnownIssue(value = "EPBDS-16902", failsWith = "ApiHttpError: Cannot be empty.")
     public void testSystemSettings() {
         String projectNameForVerification = WorkflowService.loginCreateProjectFromTemplate(User.ADMIN, "Sample Project");
         EditorPage editorPage = new EditorPage();
@@ -121,58 +115,6 @@ public class TestAdminSystemSettings extends BaseTest {
         for (String invalidThreadCount : INVALID_THREAD_COUNTS) {
             validateThreadCountError(systemSettings, invalidThreadCount, originalThreadCount);
         }
-
-        systemSettings = editorPage.openUserMenu()
-                .navigateToAdministration()
-                .navigateToSystemSettingsPage();
-
-        String originalDateFormat = systemSettings.getDateFormat();
-        String originalTimeFormat = systemSettings.getTimeFormat();
-
-        systemSettings.setDateFormat("yyyy-MM-dd");
-        systemSettings.setTimeFormat("HH:mm:ss");
-        systemSettings.applySettingsAndRelogin(User.ADMIN);
-
-        systemSettings = editorPage.openUserMenu()
-                .navigateToAdministration()
-                .navigateToSystemSettingsPage();
-        assertThat(systemSettings.getDateFormat()).isEqualTo("yyyy-MM-dd");
-        assertThat(systemSettings.getTimeFormat()).isEqualTo("HH:mm:ss");
-
-        systemSettings.setDateFormat(originalDateFormat);
-        systemSettings.setTimeFormat(originalTimeFormat);
-        systemSettings.applySettingsAndRelogin(User.ADMIN);
-
-        systemSettings = editorPage.openUserMenu()
-                .navigateToAdministration()
-                .navigateToSystemSettingsPage();
-        systemSettings.setDateFormat("abc");
-        systemSettings.clickApplyButton();
-        assertThat(systemSettings.getAllMessages())
-                .as("A date format of 'abc' must be refused")
-                .contains("Error: Invalid date pattern");
-
-        systemSettings.setDateFormat(originalDateFormat);
-        systemSettings.setTimeFormat("xyz");
-        systemSettings.clickApplyButton();
-        assertThat(systemSettings.getAllMessages())
-                .as("A time format of 'xyz' must be refused")
-                .contains("Error: Invalid time pattern");
-
-        systemSettings.setTimeFormat(originalTimeFormat);
-        systemSettings.setDateFormat("");
-        systemSettings.clickApplyButton();
-        assertThat(systemSettings.getAllMessages())
-                .as("An empty date format must be refused")
-                .contains("Error: Cannot be empty.");
-
-        systemSettings.closeAllMessages();
-        systemSettings.setDateFormat(originalDateFormat);
-        systemSettings.setTimeFormat("");
-        systemSettings.clickApplyButton();
-        assertThat(systemSettings.getAllMessages())
-                .as("An empty time format must be refused")
-                .contains("Error: Cannot be empty.");
     }
 
     private void validateThreadCountError(SystemSettingsPageComponent systemSettings, String invalidValue,

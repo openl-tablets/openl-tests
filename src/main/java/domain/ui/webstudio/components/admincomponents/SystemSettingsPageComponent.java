@@ -22,9 +22,6 @@ public class SystemSettingsPageComponent extends BaseComponent {
     private WebElement cancelModalBtn;
     private WebElement applyButton;
 
-    private WebElement dateFormatField;
-    private WebElement timeFormatField;
-
     private WebElement databaseUrlField;
     private WebElement databaseUserField;
     private WebElement databasePasswordField;
@@ -53,9 +50,6 @@ public class SystemSettingsPageComponent extends BaseComponent {
         clearAllHistoryBtn = createScopedElement("xpath=.//button[./span[text()='Clear All History']]", "clearAllHistoryBtn");
         cancelModalBtn = new WebElement(page, "xpath=//div[contains(@class,'ant-modal-container')]//button[./span[contains(text(),'Cancel')]]", "cancelModalBtn");
         applyButton = createScopedElement("xpath=.//button[./span[text()='Apply Changes'] or ./span[text()='Apply']]", "applyButton");
-
-        dateFormatField = createScopedElement("xpath=.//input[@id='datePattern']", "dateFormatField");
-        timeFormatField = createScopedElement("xpath=.//input[@id='timeFormat']", "timeFormatField");
 
         databaseUrlField = createScopedElement("xpath=.//input[@id='db_url']", "databaseUrlField");
         databaseUserField = createScopedElement("xpath=.//input[@id='db_user']", "databaseUserField");
@@ -99,22 +93,6 @@ public class SystemSettingsPageComponent extends BaseComponent {
     public void applySettingsAndRelogin(User user) {
         clickApplyButton();
         new LoginPage().login(UserService.getUser(user));
-    }
-
-    public void setDateFormat(String format) {
-        dateFormatField.fill(format);
-    }
-
-    public String getDateFormat() {
-        return dateFormatField.getAttribute("value");
-    }
-
-    public void setTimeFormat(String format) {
-        timeFormatField.fill(format);
-    }
-
-    public String getTimeFormat() {
-        return timeFormatField.getAttribute("value");
     }
 
     public String getDatabaseUrl() {

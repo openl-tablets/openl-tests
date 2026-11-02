@@ -1,5 +1,6 @@
 package domain.ui.webstudio.components.admincomponents;
 
+import com.microsoft.playwright.Locator;
 import configuration.core.ui.WebElement;
 import configuration.driver.DriverPool;
 import domain.ui.webstudio.components.BaseComponent;
@@ -10,11 +11,11 @@ import java.util.List;
 
 public class TagsPageComponent extends BaseComponent {
 
-    private static final int COL_TAG_TYPE = 1;
-    private static final int COL_EXTENSIBLE = 2;
-    private static final int COL_NULLABLE = 3;
-    private static final int COL_TAGS = 4;
-    private static final int COL_ACTIONS = 5;
+    private static final int COL_TAG_TYPE = 2;
+    private static final int COL_EXTENSIBLE = 3;
+    private static final int COL_REQUIRED = 4;
+    private static final int COL_TAGS = 5;
+    private static final int COL_ACTIONS = 6;
 
     private TableComponent tagsTable;
 
@@ -41,8 +42,6 @@ public class TagsPageComponent extends BaseComponent {
         projectNameTemplatesTextarea = createScopedElement("xpath=.//textarea[contains(@class,'ant-input')]", "projectNameTemplatesTextarea");
         saveTemplatesBtn = createScopedElement("xpath=.//button[.//span[text()='Save Templates']]", "saveTemplatesBtn");
         fillTagsForProjectBtn = createScopedElement("xpath=.//button[.//span[text()='Fill Tags for Project']]", "fillTagsForProjectBtn");
-        // The preview modal confirms with its own OK button, labelled "Fill Tags"; scope it to the footer so
-        // the page's "Fill Tags for Project" button is not matched.
         fillPreviewApplyBtn = new WebElement(page,
                 "xpath=//div[contains(@class,'ant-modal-footer')]//button[.//span[normalize-space()='Fill Tags']]",
                 "fillPreviewApplyBtn");
@@ -54,10 +53,12 @@ public class TagsPageComponent extends BaseComponent {
     }
 
     public int getTagTypeRowByName(String tagTypeName) {
-        for (int i = 1; i <= tagsTable.getRows().size(); i++)
-            if (getTagTypeName(i).equals(tagTypeName))
-                return i;
-        throw new RuntimeException("No such tagTypeName found!");
+        return WaitUtil.retryOnException(() -> {
+            for (int i = 1; i <= tagsTable.getRows().size(); i++)
+                if (getTagTypeName(i).equals(tagTypeName))
+                    return i;
+            throw new RuntimeException("No such tagTypeName found: " + tagTypeName);
+        }, DEFAULT_TIMEOUT_MS, 250, "Waiting for tag type '" + tagTypeName + "' to be drawn in the Tags table");
     }
 
     public TagsPageComponent editTagTypeName(String oldTagTypeName, String newTagTypeName) {
@@ -72,23 +73,35 @@ public class TagsPageComponent extends BaseComponent {
         return tagsTable.getCell(rowIndex, COL_TAG_TYPE).getText().trim();
     }
 
-    public boolean isExtensibleChecked(int rowIndex) {
-        return tagsTable.getCell(rowIndex, COL_EXTENSIBLE).getLocator().locator("xpath=.//input[@type='checkbox']").isChecked();
+    public boolean isExtensibleChecked(String tagTypeName) {
+        return checkbox(tagTypeName, COL_EXTENSIBLE).isChecked();
     }
 
-    public TagsPageComponent setExtensible(int rowIndex, boolean checked) {
-        if (isExtensibleChecked(rowIndex) != checked)
-            tagsTable.getCell(rowIndex, COL_EXTENSIBLE).getLocator().locator("xpath=.//input[@type='checkbox']").click();
-        return this;
+    public TagsPageComponent setExtensible(String tagTypeName, boolean checked) {
+        return setCheckbox(tagTypeName, COL_EXTENSIBLE, checked);
     }
 
-    public boolean isNullableChecked(int rowIndex) {
-        return tagsTable.getCell(rowIndex, COL_NULLABLE).getLocator().locator("xpath=.//input[@type='checkbox']").isChecked();
+    public boolean isRequiredChecked(String tagTypeName) {
+        return checkbox(tagTypeName, COL_REQUIRED).isChecked();
     }
 
-    public TagsPageComponent setNullable(int rowIndex, boolean checked) {
-        if (isNullableChecked(rowIndex) != checked)
-            tagsTable.getCell(rowIndex, COL_NULLABLE).getLocator().locator("xpath=.//input[@type='checkbox']").click();
+    public TagsPageComponent setRequired(String tagTypeName, boolean required) {
+        return setCheckbox(tagTypeName, COL_REQUIRED, required);
+    }
+
+    private Locator checkbox(String tagTypeName, int column) {
+        return tagsTable.getCell(getTagTypeRowByName(tagTypeName), column).getLocator().locator("xpath=.//input[@type='checkbox']");
+    }
+
+    private TagsPageComponent setCheckbox(String tagTypeName, int column, boolean checked) {
+        if (checkbox(tagTypeName, column).isChecked() != checked) {
+            checkbox(tagTypeName, column).click();
+            WaitUtil.retryOnException(() -> {
+                if (checkbox(tagTypeName, column).isChecked() != checked)
+                    throw new IllegalStateException("Checkbox of tag type '" + tagTypeName + "' did not take the new state yet");
+                return true;
+            }, DEFAULT_TIMEOUT_MS, 250, "Waiting for the saved checkbox state of tag type '" + tagTypeName + "'");
+        }
         return this;
     }
 
@@ -142,14 +155,8 @@ public class TagsPageComponent extends BaseComponent {
         return this;
     }
 
-    /**
-     * Fills tags for the projects whose names match the templates. Studio 6.4.0 first shows a preview of
-     * what it is about to fill, so the run has to be confirmed there.
-     */
     public TagsPageComponent fillTagsForProject() {
         fillTagsForProjectBtn.click();
-        // The modal lists the projects a template names a tag for and pre-selects every one it may change,
-        // so confirming is all that is left.
         fillPreviewApplyBtn.waitForVisible(DEFAULT_TIMEOUT_MS).click();
         waitUntilSpinnerLoaded();
         return this;

@@ -46,14 +46,14 @@ public class TestFillTagsForProject extends BaseTest {
         tagsPage.addNewTagType(TAG_TYPE_NAME)
                 .addTag(TAG_TYPE_NAME, "Tag1")
                 .addTag(TAG_TYPE_NAME, "Tag2")
-                .setExtensible(1, false)
-                .setNullable(1, true);
+                .setExtensible(TAG_TYPE_NAME, false)
+                .setRequired(TAG_TYPE_NAME, false);
 
         tagsPage.addNewTagType(TAG_TYPE_OPT)
                 .addTag(TAG_TYPE_OPT, "TagOpt1")
                 .addTag(TAG_TYPE_OPT, "TagOpt2")
-                .setExtensible(2, false)
-                .setNullable(2, true);
+                .setExtensible(TAG_TYPE_OPT, false)
+                .setRequired(TAG_TYPE_OPT, false);
 
         tagsPage.setProjectNameTemplates(NAME_TEMPLATE)
                 .saveTemplates();
@@ -64,8 +64,6 @@ public class TestFillTagsForProject extends BaseTest {
 
         tagsPage.fillTagsForProject();
 
-        // Return to the projects list with a fresh load (navigating back from Administration can leave it
-        // stale), then open the project detail to read its filled tags.
         ProjectDetailPage projectDetail = repositoryPage.openProjectsList().openProjectDetail(PROJECT_NAME);
 
         assertThat(projectDetail.getTagValueForType(TAG_TYPE_NAME))
