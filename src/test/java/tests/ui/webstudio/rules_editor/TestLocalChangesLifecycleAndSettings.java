@@ -1,6 +1,7 @@
 package tests.ui.webstudio.rules_editor;
 
 import configuration.annotations.Description;
+import configuration.annotations.KnownIssue;
 import configuration.annotations.TestCaseId;
 import configuration.annotations.AppContainerConfig;
 import configuration.appcontainer.AppContainerStartParameters;
@@ -96,8 +97,11 @@ public class TestLocalChangesLifecycleAndSettings extends BaseTest {
 
     @Test
     @TestCaseId("IPBQA-30730")
-    @Description("Steps 17-19 and cancel: Cancel Clear All History preserves history; Clear All History removes all entries; historyCount=0 disables tracking; historyCount=10 re-enables tracking with compare dialog.")
+    @Description("Steps 17-19 and cancel: Cancel Clear All History preserves history; Clear All History removes all entries; historyCount=0 disables tracking; historyCount=10 re-enables tracking with compare dialog. "
+            + "Fails on EPBDS-17077: the edit saved while historyCount=0 is kept as a version another program wrote, "
+            + "so the first edit after historyCount=10 shows 2 changes.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
+    @KnownIssue(value = "EPBDS-17077", failsWith = "[historyCount=10 should re-enable local change tracking] expected: 1 but was: 2")
     public void testAdminHistorySettings() {
         String projectName = WorkflowService.loginCreateProjectFromTemplate(User.ADMIN, "Sample Project");
         EditorPage editorPage = new EditorPage();
