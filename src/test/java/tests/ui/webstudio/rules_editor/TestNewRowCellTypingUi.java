@@ -14,6 +14,8 @@ import helpers.service.WorkflowService;
 import org.testng.annotations.Test;
 import tests.BaseTest;
 
+import java.util.function.ObjIntConsumer;
+
 import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.DATA;
 import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.DECISION;
 import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.TEST;
@@ -27,14 +29,49 @@ public class TestNewRowCellTypingUi extends BaseTest {
     private static final String TYPED = "abc7";
     private static final String KEPT = "7";
     private static final String VOCABULARY_NOT_TYPED = "A cell of a new Vocabulary row must refuse letters";
+    private static final String TYPED_PRICE = "abc1.5x";
+    private static final String KEPT_PRICE = "1.5";
+    private static final int PRICE_COLUMN = 2;
+    private static final int SINCE_COLUMN = 3;
+    private static final int PICKED_DAY = 15;
+    private static final int DATA_LAST_ROW = 5;
+    private static final ObjIntConsumer<TableComponent> NOTHING_MORE = (table, newRow) -> { };
 
     @Test
     @TestCaseId("EPBDS-16881")
-    @Description("EPBDS-16750: a row added to a Data table gets cells of the Integer field: letters are refused, "
-            + "the digits are kept and saved.")
+    @Description("EPBDS-16750: a row added to a Data table gets cells of the types of its fields: the Integer and "
+            + "the Double cells refuse letters and keep the number, the Date cell takes no typing and a date is picked "
+            + "from the calendar; all of them are saved.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void newDataTableRowRefusesLetters() {
-        typeIntoNewRow(DATA, "myData", 5, "A cell of a new Data table row must refuse letters");
+        TableComponent saved = typeIntoNewRow(DATA, "myData", DATA_LAST_ROW,
+                "A cell of a new Data table row must refuse letters", this::fillPriceAndSinceOfNewRow);
+        assertThat(saved.getCellText(DATA_LAST_ROW + 1, PRICE_COLUMN))
+                .as("The decimal typed into the Double cell of the new row must be saved")
+                .isEqualTo(KEPT_PRICE);
+        assertThat(saved.getCellText(DATA_LAST_ROW + 1, SINCE_COLUMN))
+                .as("The date picked for the Date cell of the new row must be saved as the dates of the other rows")
+                .matches("\\d{2}/" + PICKED_DAY + "/\\d{4}");
+    }
+
+    private void fillPriceAndSinceOfNewRow(TableComponent table, int newRow) {
+        WebElement price = table.openCellEditor(newRow, PRICE_COLUMN);
+        price.clear();
+        price.fillSequentially(TYPED_PRICE);
+        assertThat(price.getCurrentInputValue())
+                .as("The Double cell of a new Data table row must refuse letters and keep the decimal")
+                .isEqualTo(KEPT_PRICE);
+        price.press("Enter");
+
+        WebElement since = table.openCellEditor(newRow, SINCE_COLUMN);
+        assertThat(since.getAttribute("placeholder"))
+                .as("The Date cell of a new Data table row must be a date picker, as in the other rows")
+                .isEqualTo("Select date");
+        since.fillSequentially(TYPED);
+        assertThat(since.getCurrentInputValue())
+                .as("The Date cell of a new Data table row must refuse what is not a date")
+                .isEmpty();
+        table.pickDayInOpenDateEditor(PICKED_DAY);
     }
 
     @Test
@@ -43,7 +80,7 @@ public class TestNewRowCellTypingUi extends BaseTest {
             + "refused, the digits are kept and saved.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void newRuleRowRefusesLetters() {
-        typeIntoNewRow(DECISION, "Hello", 4, "A condition cell of a new rule must refuse letters");
+        typeIntoNewRow(DECISION, "Hello", 4, "A condition cell of a new rule must refuse letters", NOTHING_MORE);
     }
 
     @Test
@@ -52,7 +89,7 @@ public class TestNewRowCellTypingUi extends BaseTest {
             + "refused, the digits are kept and saved.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void newTestCaseRowRefusesLetters() {
-        typeIntoNewRow(TEST, "HelloTest", 5, "A parameter cell of a new test case must refuse letters");
+        typeIntoNewRow(TEST, "HelloTest", 5, "A parameter cell of a new test case must refuse letters", NOTHING_MORE);
     }
 
     @Test
@@ -94,10 +131,11 @@ public class TestNewRowCellTypingUi extends BaseTest {
             + "the digits are kept and saved.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void newVocabularyRowRefusesLetters() {
-        typeIntoNewRow(VOCABULARY, "Level", 4, VOCABULARY_NOT_TYPED);
+        typeIntoNewRow(VOCABULARY, "Level", 4, VOCABULARY_NOT_TYPED, NOTHING_MORE);
     }
 
-    private void typeIntoNewRow(String folder, String tableName, int lastRow, String refusal) {
+    private TableComponent typeIntoNewRow(String folder, String tableName, int lastRow, String refusal,
+                                          ObjIntConsumer<TableComponent> otherCellsOfNewRow) {
         EditorPage editorPage = openTable(folder, tableName);
         editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
         TableComponent table = editorPage.getCenterTable();
@@ -124,6 +162,7 @@ public class TestNewRowCellTypingUi extends BaseTest {
                 .as(refusal)
                 .isEqualTo(KEPT);
         added.press("Enter");
+        otherCellsOfNewRow.accept(table, lastRow + 1);
         actions.clickSaveChanges();
 
         editorPage.reloadPage();
@@ -135,6 +174,7 @@ public class TestNewRowCellTypingUi extends BaseTest {
         assertThat(table.getCellText(lastRow + 1, 1))
                 .as("Only the digits typed into the new row must be saved")
                 .isEqualTo(KEPT);
+        return table;
     }
 
     private EditorPage openTable(String folder, String tableName) {

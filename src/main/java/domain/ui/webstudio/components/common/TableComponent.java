@@ -16,6 +16,8 @@ public class TableComponent extends BaseComponent {
     private static final String CELL_USAGE = "[starts-with(@data-testid,'cell-usage-')]";
     private static final String OPEN_DROPDOWN = "//div[contains(concat(' ', normalize-space(@class), ' '), ' ant-dropdown ')]"
             + "[not(contains(@class,'ant-dropdown-hidden'))]";
+    private static final String OPEN_CALENDAR = "//div[contains(concat(' ', normalize-space(@class), ' '), ' ant-picker-dropdown ')]"
+            + "[not(contains(@class,'ant-picker-dropdown-hidden'))]";
     private static final String RAISED_CELL_TEXTS = """
             cells => cells.filter(cell => {
                 const style = getComputedStyle(cell);
@@ -240,6 +242,15 @@ public class TableComponent extends BaseComponent {
 
     public void keepEditedText() {
         openEditorInput().press("Enter");
+        waitForTheEditToApply();
+    }
+
+    public void pickDayInOpenDateEditor(int day) {
+        cellEditor.click();
+        WebElement dayOfShownMonth = new WebElement(page, "xpath=" + OPEN_CALENDAR
+                + "//td[contains(@class,'ant-picker-cell-in-view')][normalize-space()='" + day + "']", "calendarDay");
+        dayOfShownMonth.waitForVisible(DEFAULT_TIMEOUT_MS);
+        dayOfShownMonth.click();
         waitForTheEditToApply();
     }
 
