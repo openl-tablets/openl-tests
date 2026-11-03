@@ -15,6 +15,8 @@ public class SystemSettingsPageComponent extends BaseComponent {
     private WebElement verifyOnEditCheckbox;
     private WebElement testThreadCountField;
     private WebElement testThreadCountError;
+    private WebElement auditRetentionField;
+    private WebElement auditRetentionError;
     private WebElement projectHistoryCountField;
     private WebElement detectProjectsByExcelFilesCheckbox;
     private WebElement formatTablesOnSaveCheckbox;
@@ -41,9 +43,9 @@ public class SystemSettingsPageComponent extends BaseComponent {
         dispatchingValidationCheckbox = createScopedElement("xpath=.//*[@id='dispatchingValidationEnabled']", "dispatchingValidationCheckbox");
         verifyOnEditCheckbox = createScopedElement("xpath=.//*[@id='autoCompile']", "verifyOnEditCheckbox");
         testThreadCountField = createScopedElement("xpath=.//*[@id='testRunThreadCount']", "testThreadCountField");
-        testThreadCountError = createScopedElement("xpath=.//*[@id='testRunThreadCount']/ancestor::div[contains("
-                + "concat(' ', normalize-space(@class), ' '), ' ant-form-item ')][1]"
-                + "//div[contains(@class,'ant-form-item-explain-error')]", "testThreadCountError");
+        testThreadCountError = createScopedElement(errorUnder("testRunThreadCount"), "testThreadCountError");
+        auditRetentionField = createScopedElement("xpath=.//*[@id='auditRetention']", "auditRetentionField");
+        auditRetentionError = createScopedElement(errorUnder("auditRetention"), "auditRetentionError");
         projectHistoryCountField = createScopedElement("xpath=.//*[@id='projectHistoryCount']", "projectHistoryCountField");
         detectProjectsByExcelFilesCheckbox = createScopedElement("xpath=.//*[@id='detectProjectsByExcelFiles']", "detectProjectsByExcelFilesCheckbox");
         formatTablesOnSaveCheckbox = createScopedElement("xpath=.//*[@id='formatTablesOnSave']", "formatTablesOnSaveCheckbox");
@@ -83,6 +85,23 @@ public class SystemSettingsPageComponent extends BaseComponent {
 
     public void waitForTestThreadCountErrorHidden() {
         testThreadCountError.waitForHidden(FIELD_ERROR_SHOWN_MS);
+    }
+
+    public void setAuditRetention(String value) {
+        auditRetentionField.fill(value);
+    }
+
+    public String getAuditRetentionError() {
+        return auditRetentionError.isVisible(FIELD_ERROR_SHOWN_MS) ? auditRetentionError.getText().trim() : "";
+    }
+
+    public void waitForAuditRetentionErrorHidden() {
+        auditRetentionError.waitForHidden(FIELD_ERROR_SHOWN_MS);
+    }
+
+    private static String errorUnder(String fieldId) {
+        return "xpath=.//*[@id='" + fieldId + "']/ancestor::div[contains(concat(' ', normalize-space(@class), ' '), "
+                + "' ant-form-item ')][1]//div[contains(@class,'ant-form-item-explain-error')]";
     }
 
     public void clickApplyButton() {

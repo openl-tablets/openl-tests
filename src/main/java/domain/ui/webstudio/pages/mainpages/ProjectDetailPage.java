@@ -38,6 +38,7 @@ public class ProjectDetailPage extends BasePage {
     @Getter
     private TabSwitcherComponent tabSwitcherComponent;
     private WebElement overviewTab;
+    private WebElement missingProject;
     private WebElement filesTab;
     private WebElement historyTab;
     private WebElement managementTab;
@@ -72,6 +73,7 @@ public class ProjectDetailPage extends BasePage {
     private void initializeComponents() {
         tabSwitcherComponent = createScopedComponent(TabSwitcherComponent.class, "xpath=//ul[@role='menu' and contains(@class,'ant-menu-horizontal')]", "tabSwitcherComponent");
         overviewTab = new WebElement(page, "xpath=//div[@data-node-key='overview']", "overviewTab");
+        missingProject = new WebElement(page, "xpath=//*[@data-testid='project-workspace-missing']", "missingProject");
         filesTab = new WebElement(page, "xpath=//div[@data-node-key='files']", "filesTab");
         historyTab = new WebElement(page, "xpath=//div[@data-node-key='history']", "historyTab");
         managementTab = new WebElement(page, "xpath=//div[@data-node-key='access']", "managementTab");
@@ -320,6 +322,10 @@ public class ProjectDetailPage extends BasePage {
     public String getTagValueForType(String tagType) {
         openOverviewTab();
         return overview.getTagValueForType(tagType);
+    }
+
+    public boolean isShownAsMissing() {
+        return missingProject.isVisible(DEFAULT_TIMEOUT_MS);
     }
 
     public String getStatus() {

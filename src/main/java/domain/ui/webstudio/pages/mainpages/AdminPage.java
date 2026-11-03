@@ -2,6 +2,7 @@ package domain.ui.webstudio.pages.mainpages;
 
 import configuration.core.ui.WebElement;
 import domain.ui.webstudio.components.admincomponents.AdminNavigationComponent;
+import domain.ui.webstudio.components.admincomponents.AuditLogPageComponent;
 import domain.ui.webstudio.components.common.TabSwitcherComponent;
 import domain.ui.webstudio.components.admincomponents.EmailPageComponent;
 import domain.ui.webstudio.components.admincomponents.MyProfilePageComponent;
@@ -30,6 +31,7 @@ public class AdminPage extends BasePage {
     private NotificationPageComponent notificationPageComponent;
     private TagsPageComponent tagsPageComponent;
     private PersonalAccessTokenPageComponent personalAccessTokenPageComponent;
+    private AuditLogPageComponent auditLogPageComponent;
 
     private WebElement adminNavigation;
     private WebElement contentContainer;
@@ -54,6 +56,7 @@ public class AdminPage extends BasePage {
         notificationPageComponent = new NotificationPageComponent(contentContainer);
         tagsPageComponent = new TagsPageComponent(contentContainer);
         personalAccessTokenPageComponent = new PersonalAccessTokenPageComponent(contentContainer);
+        auditLogPageComponent = new AuditLogPageComponent(contentContainer);
     }
 
     public EmailPageComponent navigateToEmailPage() {
@@ -99,5 +102,10 @@ public class AdminPage extends BasePage {
     public TagsPageComponent navigateToTagsPage() {
         adminNavigationComponent.clickTags();
         return tagsPageComponent;
+    }
+
+    public AuditLogPageComponent navigateToAuditLogPage() {
+        adminNavigationComponent.clickAuditLog();
+        return auditLogPageComponent;
     }
 }
