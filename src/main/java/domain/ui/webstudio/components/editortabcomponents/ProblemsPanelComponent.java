@@ -290,27 +290,4 @@ public class ProblemsPanelComponent extends BaseComponent {
     public boolean isCompilationProgressBarNotSavedProjectVisible() {
         return compileState.isVisible(PROBE_MS);
     }
-
-    public String getCompilationProgressBarText() {
-        if (!compilingScreen.isVisible(PROBE_MS)) {
-            return "";
-        }
-        return compilingScreen.getText();
-    }
-
-    public String getCompilationProgressBarNotSavedProjectText() {
-        if (!compileState.isVisible(PROBE_MS)) {
-            return "";
-        }
-        return String.valueOf(compileState.getAttribute("aria-label"));
-    }
-
-    public void waitForCompilationProgressBarToContain(String text, long timeoutMs) {
-        WaitUtil.waitForCondition(
-                () -> getCompilationProgressBarText().contains(text)
-                        || getCompilationProgressBarNotSavedProjectText().contains(text),
-                timeoutMs, 1000,
-                "Waiting for the compilation indicator to report: " + text
-        );
-    }
 }

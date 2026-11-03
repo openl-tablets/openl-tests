@@ -160,7 +160,7 @@ public class TestTestButtonAvailable extends BaseTest {
         editorPage.reloadPage();
         editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(NAME_PROJECT_MY, "module_KS");
-        editorPage.getProblemsPanelComponent().waitForCompilationProgressBarToContain("Loaded", 200000);
+        editorPage.getProblemsPanelComponent().assertCompilationCompletes();
     }
     private void waitForTable(EditorPage editorPage) {
         WaitUtil.waitForCondition(() -> editorPage.getCenterTable().isVisible(),
