@@ -28,7 +28,7 @@ public class TestProtectedBranchBypassCancelMergeUi extends BaseTest {
     @Test
     @TestCaseId("EPBDS-15960")
     @Description("H.3: Cancel on the bypass confirmation modal aborts the merge — the modal "
-            + "closes, no Merge Successful toast appears, and the Sync dialog is still showing "
+            + "closes, no Merge Summary appears, and the Sync dialog is still showing "
             + "the bypass warning so the user can retry or close it manually.")
     @AppContainerConfig(startParams = AppContainerStartParameters.STUDIO_BYPASS_ENABLED_PARAMS)
     public void testCancelOnBypassConfirmAbortsTheMerge() {
@@ -60,7 +60,7 @@ public class TestProtectedBranchBypassCancelMergeUi extends BaseTest {
                 .as("H.3 — confirmation modal disappears after Cancel")
                 .isTrue();
         assertThat(confirmDialog.isMergeSuccessNoticeAbsent())
-                .as("H.3 — Cancel must not produce a Merge Successful toast")
+                .as("H.3 — Cancel must not produce a Merge Summary")
                 .isTrue();
         assertThat(syncDialog.isVisible())
                 .as("H.3 — Sync dialog is still open after Cancel so the user can retry or close")

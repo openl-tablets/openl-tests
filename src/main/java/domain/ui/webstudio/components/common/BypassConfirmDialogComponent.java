@@ -39,8 +39,7 @@ public class BypassConfirmDialogComponent extends BaseComponent {
                 "xpath=" + modalRoot + "//div[contains(@class,'ant-modal-title')]",
                 "bypassConfirmTitle");
         mergeSuccessNotice = new WebElement(DriverPool.getPage(),
-                "xpath=//div[contains(@class,'ant-notification')]//*[normalize-space(text())='Merge Successful']",
-                "mergeSuccessNotice");
+                "xpath=//*[@data-testid='merge-summary-result']", "mergeSummaryResult");
         errorNotice = new WebElement(DriverPool.getPage(),
                 "xpath=//div[contains(@class,'ant-notification-notice-error')] | //div[contains(@class,'ant-modal-container')]//div[contains(@class,'ant-alert-error')]",
                 "mergeErrorNotice");
@@ -91,7 +90,7 @@ public class BypassConfirmDialogComponent extends BaseComponent {
                 return true;
             }
             return false;
-        }, MERGE_TIMEOUT_MS, 250, "Waiting for the merge to finish with a success toast or an error");
+        }, MERGE_TIMEOUT_MS, 250, "Waiting for the merge to finish with the Merge Summary or an error");
         String result = outcome.get();
         if (result == null) {
             return "No merge outcome within " + MERGE_TIMEOUT_MS + " ms";

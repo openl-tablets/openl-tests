@@ -22,12 +22,6 @@ import tests.BaseTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-// EPBDS-16462: on a modify/delete conflict the dialog offered all three Download links for every file,
-// because file existence was taken from the first conflicted file and stored per revision rather than per
-// file, so following the link for the missing side opened a 404. Covered here only through the UI on a real
-// git repository; the per-side rendering is already asserted in ConflictResolutionStep.test.tsx and the API
-// contract in ITEST task_EPBDS-16462.
-// Requires an image containing a10fbcc440.
 public class TestMergeConflictDeletedFileUi extends BaseTest {
 
     private static final String PROJECT = "DeletedFileConflict";
@@ -74,8 +68,6 @@ public class TestMergeConflictDeletedFileUi extends BaseTest {
                 .as("The file must be gone from master before the merge, otherwise there is no modify/delete conflict")
                 .isFalse();
 
-        // Deleting a file only changes the workspace copy. Until the project is saved it stays in editing
-        // state, and merging is refused with "the project is not in a valid state for merging".
         editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectProject(PROJECT);
         editorPage.getEditorToolbarPanelComponent().clickSave();
@@ -111,6 +103,7 @@ public class TestMergeConflictDeletedFileUi extends BaseTest {
 
         conflicts.resolveConflictUseTheirs();
         repositoryPage.waitUntilSpinnerLoaded();
+        repositoryPage.closeMergeSummary();
         assertThat(detail.isFilePresent(CONFLICTED_FILE))
                 .as("Resolving with their version must bring the file back into master")
                 .isTrue();
