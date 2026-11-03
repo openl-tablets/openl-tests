@@ -17,6 +17,8 @@ import org.assertj.core.api.SoftAssertions;
 import org.testng.annotations.Test;
 import tests.BaseTest;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestRepositoriesInheritedThroughEnvironmentUi extends BaseTest {
@@ -24,12 +26,15 @@ public class TestRepositoriesInheritedThroughEnvironmentUi extends BaseTest {
     private static final String RATING = "openl-rating";
     private static final String POLICY_LIFE = "openl-policy-life";
     private static final String INHERITED_SAVE = "EPBDS- {project-name} saved";
+    private static final List<String> INHERITED_SETTINGS = List.of("branch", "protectedBranches", "newBranchTemplate",
+            "useCustomComments", "defaultCommentSave");
     private static final String NOTHING_UNSAVED = "Leaving a repository whose settings were only looked at should not ask to discard unsaved changes";
 
     @Test
-    @TestCaseId("IPBQA-32308")
+    @TestCaseId({"IPBQA-32308", "EPBDS-17083"})
     @Description("Design repositories declared in environment variables with _REF_ inherit the settings of the templates "
-            + "they refer to, two levels deep, keep their own overrides, and Admin shows what they inherit")
+            + "they refer to, two levels deep, keep their own overrides, and Admin shows what they inherit as read-only, "
+            + "with no repository to add to a list the environment sets (EPBDS-17054)")
     @AppContainerConfig(startParams = AppContainerStartParameters.STUDIO_REF_REPOSITORIES_PARAMS)
     public void testRepositoriesInheritSettingsThroughEnvironmentRefs() {
         EditorPage editorPage = login();
@@ -45,6 +50,17 @@ public class TestRepositoriesInheritedThroughEnvironmentUi extends BaseTest {
         softly.assertThat(repositories.getProtectedBranches())
                 .as("%s should inherit the protected branches of design.repo-git", RATING).isEqualTo("master, release-*");
         assertSecondLevelInherited(softly, repositories, RATING, INHERITED_SAVE);
+        softly.assertThat(repositories.isDesignRepositoryTypeEditable())
+                .as("Type of %s, inherited through its $ref, is read-only", RATING).isFalse();
+        for (String setting : INHERITED_SETTINGS) {
+            softly.assertThat(repositories.isSettingEditable(setting))
+                    .as("%s of %s comes through its $ref and is read-only", setting, RATING).isFalse();
+        }
+        softly.assertThat(repositories.isAddRepositoryEnabled())
+                .as("No design repository can be added to a list the environment sets").isFalse();
+        softly.assertThat(repositories.getAddRepositoryHint())
+                .as("Add Design Repository tells why it is disabled")
+                .contains("The list of repositories is set outside OpenL Studio");
 
         repositories.selectDesignRepositoryLeavingChanges(POLICY_LIFE);
         softly.assertThat(repositories.getSettingValue("branch"))

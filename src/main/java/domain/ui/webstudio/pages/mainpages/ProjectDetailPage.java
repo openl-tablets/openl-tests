@@ -324,6 +324,20 @@ public class ProjectDetailPage extends BasePage {
         return overview.getTagValueForType(tagType);
     }
 
+    public String getTagNotAllowedWarning(String tagType) {
+        return tagWarning("tag-not-allowed-" + tagType);
+    }
+
+    public String getMandatoryTagsWarning() {
+        return tagWarning("tags-mandatory");
+    }
+
+    private String tagWarning(String testId) {
+        openOverviewTab();
+        return new WebElement(page, "xpath=//*[@data-testid='" + testId + "']", testId)
+                .waitForVisible(DEFAULT_TIMEOUT_MS).getInnerText().trim();
+    }
+
     public boolean isShownAsMissing() {
         return missingProject.isVisible(DEFAULT_TIMEOUT_MS);
     }

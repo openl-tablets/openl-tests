@@ -16,6 +16,10 @@ public interface ITraceWindow {
     boolean isBusinessToggleShown(int timeoutInMillis);
     ITraceWindow toggleDetailedTrace();
     String getSimpleTreeText();
+    ITraceWindow expandSimpleStep(String step);
+    int getSimpleCallsCount(String step);
+    String getSimpleMoreCallsText(String step);
+    ITraceWindow showMoreSimpleCalls(String step);
     ITraceWindow setBreakWhenRuleFires();
     ITraceWindow pickBreakOnRule(String ruleName);
     ITraceWindow addWatch(String expression);

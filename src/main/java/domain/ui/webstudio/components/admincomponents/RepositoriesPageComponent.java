@@ -29,6 +29,7 @@ public class RepositoriesPageComponent extends BaseComponent {
 
     private WebElement remoteRepositoryNameField;
     private WebElement remoteRepositoryTypeSelector;
+    private WebElement remoteRepositoryTypeInput;
     private WebElement remoteRepositoryCheckBox;
     private WebElement remoteRepositoryPathField;
     private WebElement remoteRepositoryLoginField;
@@ -81,6 +82,7 @@ public class RepositoriesPageComponent extends BaseComponent {
         deleteRepositoryBtnTemplate = new WebElement(page, "xpath=//div[contains(@class,'ant-tabs-card')]//div[contains(@class,'ant-tabs-nav-list')]//div[contains(@class,'ant-tabs-tab') and .//*[text()='%s']]//button[contains(@class,'ant-tabs-tab-remove')]", "deleteRepositoryBtn");
         repositoryTypeOptions = createElementList("xpath=//div[contains(@class,'ant-select-dropdown') and not(contains(@class,'ant-select-dropdown-hidden'))]//div[contains(@class,'ant-select-item') and contains(@class,'ant-select-item-option') and not(contains(@class,'ant-select-item-option-content'))]", "repoTypeOptions");
         settingField = createScopedElement("xpath=.//div[contains(@class,'ant-tabs-card')]//input[@id='settings_%s']", "settingField");
+        remoteRepositoryTypeInput = createScopedElement("xpath=.//div[contains(@class,'ant-tabs-card')]//input[@id='type']", "remoteRepositoryTypeInput");
         settingSelector = createScopedElement("xpath=.//div[contains(@class,'ant-tabs-card')]//div[contains(@class,'ant-select') and .//input[@id='settings_%s']]//div[contains(@class,'ant-select-content')]", "settingSelector");
         unsavedChangesPrompt = new WebElement(page, UNSAVED_CHANGES_PROMPT, "unsavedChangesPrompt");
         unsavedChangesLeaveBtn = new WebElement(page, UNSAVED_CHANGES_PROMPT + "//button[normalize-space()='OK']", "unsavedChangesLeaveBtn");
@@ -187,6 +189,25 @@ public class RepositoriesPageComponent extends BaseComponent {
 
     public boolean isSettingChecked(String setting) {
         return settingField.format(setting).isChecked();
+    }
+
+    public boolean isSettingEditable(String setting) {
+        return settingField.format(setting).isEnabled();
+    }
+
+    public boolean isDesignRepositoryTypeEditable() {
+        return remoteRepositoryTypeInput.isEnabled();
+    }
+
+    public boolean isAddRepositoryEnabled() {
+        return addRepositoryBtn.isEnabled();
+    }
+
+    public String getAddRepositoryHint() {
+        addRepositoryBtn.hover();
+        WebElement hint = new WebElement(page, "xpath=//div[contains(@class,'ant-tooltip')][not(contains(@class,'ant-tooltip-hidden'))]"
+                + "//div[contains(@class,'ant-tooltip-container')]", "addRepositoryHint");
+        return hint.isVisible(DEFAULT_TIMEOUT_MS) ? hint.getInnerText().trim() : "";
     }
 
     public RepositoriesPageComponent setS3Connection(String serviceEndpoint, String bucketName, String regionName,

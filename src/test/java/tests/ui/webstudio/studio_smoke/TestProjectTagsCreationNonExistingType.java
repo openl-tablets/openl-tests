@@ -32,9 +32,10 @@ public class TestProjectTagsCreationNonExistingType extends BaseTest {
     private static final String TAG_TYPE_UNKNOWN = "TagNonExisging";
 
     @Test
-    @TestCaseId("IPBQA-32767")
+    @TestCaseId({"IPBQA-32767", "EPBDS-17083"})
     @Description("Create project from zip with a non-existing tag type: the tags declared by tags.properties "
-            + "are applied as they are, including a type that the Tags settings do not know")
+            + "are applied as they are, including a type that the Tags settings do not know, and the Overview warns "
+            + "about the mandatory tag type the project lacks (EPBDS-16604)")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void testNonExistingTagTypeHandling() {
         LoginService loginService = new LoginService(DriverPool.getPage());
@@ -48,6 +49,9 @@ public class TestProjectTagsCreationNonExistingType extends BaseTest {
         ProjectDetailPage projectDetail = repositoryPage.openProjectsList().openProjectDetail(PROJECT_NAME);
         assertThat(projectDetail.getTagValueForType(TAG_TYPE_EXT)).as("An extensible type should take the zip's value").isEqualTo("TagExt3");
         assertThat(projectDetail.getTagValueForType(TAG_TYPE_UNKNOWN)).as("A type missing from the Tags settings should still be shown as the zip declares it").isEqualTo("Tag3");
+        assertThat(projectDetail.getMandatoryTagsWarning())
+                .as("The Overview warns that the project lacks the mandatory tag type Tag")
+                .isEqualTo("Tag type 'Tag' is mandatory.");
     }
 
     private void setupRequiredTagTypes(EditorPage editorPage) {

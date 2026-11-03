@@ -1,5 +1,6 @@
 package domain.ui.webstudio.components.editortabcomponents.toolbar;
 
+import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import configuration.core.ui.WebElement;
 import domain.ui.webstudio.pages.BasePage;
@@ -138,6 +139,45 @@ public class TraceWindowComponent extends BasePage implements ITraceWindow {
     @Override
     public String getSimpleTreeText() {
         return simpleTree.waitForVisible(DEFAULT_TIMEOUT_MS).getText().replaceAll("\\s+", " ").trim();
+    }
+
+    @Override
+    public ITraceWindow expandSimpleStep(String step) {
+        getPage().locator("xpath=//*[@data-testid='simple-toggle-" + simpleStepKey(step) + "']").click();
+        WaitUtil.requireCondition(() -> getSimpleCallsCount(step) > 0, CALL_TREE_TIMEOUT_MS, 250,
+                "Waiting for the calls of the step " + step + " to be listed");
+        return this;
+    }
+
+    @Override
+    public int getSimpleCallsCount(String step) {
+        return getPage().locator("xpath=//*[starts-with(@data-testid,'simple-node-" + simpleStepKey(step) + "#')]").count();
+    }
+
+    @Override
+    public String getSimpleMoreCallsText(String step) {
+        Locator more = simpleMoreCalls(step);
+        return more.count() == 0 ? "" : more.innerText().trim();
+    }
+
+    @Override
+    public ITraceWindow showMoreSimpleCalls(String step) {
+        int shown = getSimpleCallsCount(step);
+        simpleMoreCalls(step).click();
+        WaitUtil.requireCondition(() -> getSimpleCallsCount(step) > shown, CALL_TREE_TIMEOUT_MS, 250,
+                "Waiting for the further calls of the step " + step + " to be listed");
+        return this;
+    }
+
+    private Locator simpleMoreCalls(String step) {
+        return getPage().locator("xpath=//*[@data-testid='simple-more-" + simpleStepKey(step) + "/more']");
+    }
+
+    private String simpleStepKey(String step) {
+        simpleTree.waitForVisible(DEFAULT_TIMEOUT_MS);
+        Locator stepRow = getPage().locator("xpath=//*[starts-with(@data-testid,'simple-step-')]"
+                + "[starts-with(normalize-space(),'" + step + " ')]");
+        return stepRow.getAttribute("data-testid").substring("simple-step-".length());
     }
 
     @Override

@@ -12,6 +12,9 @@ import helpers.service.WorkflowService;
 import org.testng.annotations.Test;
 import tests.BaseTest;
 
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.DECISION;
 
@@ -20,12 +23,18 @@ public class TestTraceBusinessModeUi extends BaseTest {
     private static final String MODULE = "Main";
     private static final String TABLE_FOLDER = DECISION;
     private static final String TABLE_NAME = "Hello";
+    private static final String SPREADSHEET = "GreetAll";
+    private static final String STEP_NAME = "Greetings";
+    private static final String STEP = "$" + STEP_NAME;
+    private static final int CALLS = 150;
+    private static final int HOURS_A_DAY = 24;
 
     @Test
-    @TestCaseId("IPBQA-33031")
+    @TestCaseId({"IPBQA-33031", "EPBDS-17083"})
     @Description("EPBDS-16292: without the Advanced tracer switch the trace opens in the business view - no "
             + "debugger toolbar, the result-oriented tree names the fired rule, and the detailed toggle breaks "
-            + "the decision table into its conditions; closing and relaunching works cleanly.")
+            + "the decision table into its conditions; closing and relaunching works cleanly. A step calling a rule "
+            + "150 times lists its calls 100 at a time and shows the rest on request (EPBDS-17009).")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void testBusinessTraceShowsFiredRuleAndConditions() {
         EditorPage editorPage = openHelloTable();
@@ -59,6 +68,29 @@ public class TestTraceBusinessModeUi extends BaseTest {
                 .as("A relaunch after closing the trace must work and reflect the new input")
                 .contains("Good Night");
         secondTrace.close();
+
+        editorPage.getEditorToolbarPanelComponent().clickCreateTable();
+        editorPage.getCreateTableDialogComponent().waitForDialogToAppear()
+                .selectType("Spreadsheet")
+                .setTechnicalName(SPREADSHEET)
+                .setRow(1, STEP_NAME, helloCalledForEveryHour())
+                .save();
+        editorPage.waitUntilSpinnerLoaded();
+        ITraceWindow manyCalls = editorPage.getEditorToolbarPanelComponent().clickTrace().clickTraceInsideMenuBusiness()
+                .expandSimpleStep(STEP);
+        assertThat(manyCalls.getSimpleCallsCount(STEP)).as("A step lists its calls 100 at a time").isEqualTo(100);
+        assertThat(manyCalls.getSimpleMoreCallsText(STEP)).as("The calls not listed yet are counted")
+                .isEqualTo("+50 more executions");
+        manyCalls.showMoreSimpleCalls(STEP);
+        assertThat(manyCalls.getSimpleCallsCount(STEP)).as("Show more lists every call of the step, the 150th included")
+                .isEqualTo(CALLS);
+        assertThat(manyCalls.getSimpleMoreCallsText(STEP)).as("Nothing is left to show").isEmpty();
+        manyCalls.close();
+    }
+
+    private static String helloCalledForEveryHour() {
+        return "= Hello(new Integer[]{" + IntStream.range(0, CALLS).mapToObj(call -> String.valueOf(call % HOURS_A_DAY))
+                .collect(Collectors.joining(",")) + "})";
     }
 
     private EditorPage openHelloTable() {
