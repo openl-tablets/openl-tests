@@ -303,4 +303,29 @@ public class CompareLocalChangesDialogComponent extends BaseComponent {
             comparePopup.close();
         }
     }
+
+    public String getComparedText() {
+        return new WebElement(getPage(), "xpath=//*[@data-testid='compare-text-diff']", "compareTextDiff")
+                .waitForVisible(COMPARISON_TIMEOUT_MS).getInnerText();
+    }
+
+    public String getEarlierRevision() {
+        return revisionCard("compare-revisions-base");
+    }
+
+    public String getLaterRevision() {
+        return revisionCard("compare-revisions-revision");
+    }
+
+    public List<String> getFilesChangedBetweenRevisions() {
+        new WebElement(getPage(), "xpath=(//*[@data-testid='revision-changes-file'])[1]", "revisionChangesFile")
+                .waitForVisible(COMPARISON_TIMEOUT_MS);
+        return getPage().locator("xpath=//*[@data-testid='revision-changes-file']//strong").allInnerTexts().stream()
+                .map(String::trim).toList();
+    }
+
+    private String revisionCard(String testId) {
+        return new WebElement(getPage(), "xpath=//*[@data-testid='" + testId + "']", testId)
+                .waitForVisible(COMPARISON_TIMEOUT_MS).getInnerText().replaceAll("\\s+", " ").trim();
+    }
 }

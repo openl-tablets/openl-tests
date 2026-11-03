@@ -8,6 +8,7 @@ import configuration.driver.DriverPool;
 import domain.serviceclasses.constants.User;
 import domain.ui.webstudio.components.common.CreateNewProjectComponent;
 import domain.ui.webstudio.components.common.TabSwitcherComponent;
+import domain.ui.webstudio.components.editortabcomponents.CompareLocalChangesDialogComponent;
 import domain.ui.webstudio.components.projectdetail.ProjectHistoryTabComponent;
 import domain.ui.webstudio.pages.mainpages.ProjectDetailPage;
 import domain.ui.webstudio.pages.mainpages.RepositoryPage;
@@ -27,11 +28,13 @@ public class TestRevisionsTechnicalAndSearchUi extends BaseTest {
 
     private static final String BRANCH = "Branch";
     private static final String MASTER = "master";
+    private static final String BROWSER_DATE_TIME = "\\d{2}/\\d{2}/\\d{4} \\d{1,2}:\\d{2}:\\d{2} [AP]M";
 
     @Test
     @TestCaseId("IPBQA-32483")
     @Description("Revisions of a Git project hide the commits that do not change it until technical revisions are shown, "
-            + "draw them as technical without Open, and search finds revisions by comment and revision id")
+            + "draw them as technical without Open, and search finds revisions by comment and revision id. A revision "
+            + "lists the files it changed, each opening Compare, and two picked revisions are compared (EPBDS-17052)")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void testTechnicalRevisionsAndSearch() {
         RepositoryPage repositoryPage = new LoginService(DriverPool.getPage()).login(UserService.getUser(User.ADMIN))
@@ -55,6 +58,13 @@ public class TestRevisionsTechnicalAndSearchUi extends BaseTest {
         assertThat(history.getShownTechnicalRevisionDescriptions())
                 .as("The commit of the neighbour project is marked technical")
                 .containsExactly(otherCreated);
+        assertThat(history.getChangesNote(otherCreated))
+                .as("The commit of the neighbour project changes no file of this project")
+                .isEqualTo("The revision changes no file of the project");
+        assertThat(history.getChangedFiles(created))
+                .as("The first revision lists every file of the project as added")
+                .contains("Added rules.xml")
+                .allMatch(file -> file.startsWith("Added "));
         history.showTechnicalRevisions(false);
 
         String saved = "Revision to find";
@@ -63,6 +73,16 @@ public class TestRevisionsTechnicalAndSearchUi extends BaseTest {
         repositoryPage.openProjectsList().saveProject(project, saved);
         history = repositoryPage.openProjectsList().openProjectDetail(project).getHistoryTab();
         assertShown(history::getShownRevisionDescriptions, List.of(saved, created), "A save adds a revision on top");
+        assertThat(history.getChangedFiles(saved)).as("The save of the Overview changes only rules.xml")
+                .containsExactly("Modified rules.xml");
+        history.collapseRevision(saved);
+        assertThat(history.isRevisionExpanded(saved)).as("A second click collapses the revision").isFalse();
+        ProjectHistoryTabComponent collapsed = history;
+        WaitUtil.waitForCondition(() -> !collapsed.areChangedFilesShown(saved), 5000, 200,
+                "Waiting for the collapsed revision to hide its files");
+        assertThat(history.areChangedFilesShown(saved)).as("A collapsed revision hides its files").isFalse();
+        assertThat(history.getRevisionDate(saved)).as("The date of a revision is written in the format of the browser")
+                .matches(BROWSER_DATE_TIME);
         assertThat(history.isOpenOffered(created)).as("An earlier revision of the project can be opened").isTrue();
         String createdId = history.getRevisionId(created);
 
@@ -104,6 +124,24 @@ public class TestRevisionsTechnicalAndSearchUi extends BaseTest {
                 .hasSize(2)
                 .contains(otherCreated)
                 .anyMatch(description -> description.contains(BRANCH));
+
+        String mergeRevision = merged.getShownTechnicalRevisionDescriptions().stream()
+                .filter(description -> description.contains(BRANCH)).findFirst().orElseThrow();
+        assertThat(merged.getChangedFiles(mergeRevision)).as("The merge revision lists what the branch brought in")
+                .containsExactly("Modified rules.xml");
+        CompareLocalChangesDialogComponent fileComparison = merged.openChangedFile(saved, "rules.xml");
+        assertThat(fileComparison.getComparedText())
+                .as("Compare shows rules.xml before and after the revision, with the new description")
+                .contains("Changed for the revisions")
+                .doesNotContain("Changed on the branch");
+        fileComparison.close();
+        CompareLocalChangesDialogComponent revisions = merged.pickRevision(saved).pickRevision(created).compareRevisions();
+        assertThat(revisions.getEarlierRevision()).as("The earlier revision comes first, whatever order they were picked in")
+                .contains(created);
+        assertThat(revisions.getLaterRevision()).as("The later revision comes second").contains(saved);
+        assertThat(revisions.getFilesChangedBetweenRevisions()).as("Only rules.xml differs between the two revisions")
+                .containsExactly("rules.xml");
+        revisions.close();
     }
 
     private static void assertShown(Supplier<List<String>> shown, List<String> expected, String because) {
