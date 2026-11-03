@@ -21,6 +21,7 @@ import tests.BaseTest;
 
 import java.util.List;
 
+import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.DATA;
 import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.DATATYPE;
 import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.DECISION;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -223,9 +224,10 @@ public class TestRulesEditorMergedRowsAndColumnsUi extends BaseTest {
 
     @Test
     @TestCaseId("EPBDS-16879")
-    @Description("EPBDS-16723: after Insert Row in a Datatype table each shifted cell opens with the editor of its "
-            + "own field: the Double default of rate takes 0.75 with its decimal point, and the String default of the "
-            + "new field takes text.")
+    @Description("EPBDS-16723: after an unsaved Insert Row, Remove Row or Insert Column each shifted cell opens with "
+            + "the editor of its own field: the Double rate and the BigDecimal limit of a Datatype keep their decimal "
+            + "point after Insert Row and after Remove Row, the String default of the new field takes text, and the "
+            + "Double price of a Data table keeps its decimal point after Insert Column.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void shiftedCellsOpenWithTheEditorOfTheirOwnField() {
         EditorPage editorPage = openWorkbookTable(SHIFTED_WORKBOOK, DATATYPE, "Policy");
@@ -246,17 +248,10 @@ public class TestRulesEditorMergedRowsAndColumnsUi extends BaseTest {
                 .isEqualTo("memo");
         noteDefault.press("Enter");
 
-        int rateRow = table.getRowIndexHolding("Double", "rate");
-        WebElement rateDefault = table.openCellEditor(rateRow, 3);
-        assertThat(rateDefault.getCurrentInputValue())
-                .as("The rate default shifted by the insert must open showing its own value")
-                .isEqualTo("0.5");
-        rateDefault.clear();
-        rateDefault.fillSequentially("0.75");
-        assertThat(rateDefault.getCurrentInputValue())
-                .as("The Double default must take the decimal point")
-                .isEqualTo("0.75");
-        rateDefault.press("Enter");
+        typeDecimal(table, table.getRowIndexHolding("Double", "rate"), 3, "0.5", "0.75",
+                "The Double rate default shifted by the insert");
+        typeDecimal(table, table.getRowIndexHolding("BigDecimal", "limit"), 3, "1000.5", "2500.75",
+                "The BigDecimal limit default shifted by the insert");
         actions.clickSaveChanges();
 
         reloadTable(editorPage, DATATYPE, "Policy");
@@ -264,9 +259,60 @@ public class TestRulesEditorMergedRowsAndColumnsUi extends BaseTest {
         assertThat(table.getRow(table.getRowIndexHolding("Double", "rate")).getValue())
                 .as("rate must be saved as 0.75, not as 75")
                 .containsExactly("Double", "rate", "0.75");
+        assertThat(table.getRow(table.getRowIndexHolding("BigDecimal", "limit")).getValue())
+                .as("limit must be saved as 2500.75, not as 250075")
+                .containsExactly("BigDecimal", "limit", "2500.75");
         assertThat(table.getRow(table.getRowIndexHolding("String", "note")).getValue())
                 .as("The new field must be saved as typed")
                 .containsExactly("String", "note", "memo");
+
+        editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
+        table = editorPage.getCenterTable();
+        table.clickCell(table.getRowIndexHolding("Integer", "count"), 2);
+        actions.clickRemoveRow();
+        typeDecimal(table, table.getRowIndexHolding("BigDecimal", "limit"), 3, "2500.75", "3000.25",
+                "The BigDecimal limit default shifted into the place of the removed Integer field");
+        actions.clickSaveChanges();
+
+        reloadTable(editorPage, DATATYPE, "Policy");
+        table = editorPage.getCenterTable();
+        assertThat(table.getColumn(2))
+                .as("Only the removed field must be gone")
+                .contains("name", "note", "rate", "limit", "flag")
+                .doesNotContain("count");
+        assertThat(table.getRow(table.getRowIndexHolding("BigDecimal", "limit")).getValue())
+                .as("limit must be saved as 3000.25 after Remove Row, not as 300025")
+                .containsExactly("BigDecimal", "limit", "3000.25");
+
+        editorPage.getEditorLeftRulesTreeComponent()
+                .expandFolderInTree(DATA)
+                .selectItemInFolder(DATA, "lines");
+        editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
+        table = editorPage.getCenterTable();
+        int lineRow = table.getRowIndexHolding("12.5", "2");
+        table.clickCell(lineRow, 1);
+        actions.clickInsertColumnBefore();
+        typeDecimal(table, lineRow, 2, "12.5", "12.75",
+                "The Double price shifted into the place of the Integer qty by Insert Column");
+        actions.clickSaveChanges();
+
+        reloadTable(editorPage, DATA, "lines");
+        assertThat(editorPage.getCenterTable().getRow(lineRow).getValue())
+                .as("price must be saved as 12.75 after Insert Column, not as 1275")
+                .containsExactly("", "12.75", "2");
+    }
+
+    private void typeDecimal(TableComponent table, int row, int column, String shown, String typed, String what) {
+        WebElement editor = table.openCellEditor(row, column);
+        assertThat(editor.getCurrentInputValue())
+                .as(what + " must open showing its own value")
+                .isEqualTo(shown);
+        editor.clear();
+        editor.fillSequentially(typed);
+        assertThat(editor.getCurrentInputValue())
+                .as(what + " must take the decimal point")
+                .isEqualTo(typed);
+        editor.press("Enter");
     }
 
     private EditorPage openTable(String template, String module, String tableName) {
