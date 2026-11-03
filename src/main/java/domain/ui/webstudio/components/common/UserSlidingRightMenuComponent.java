@@ -51,6 +51,13 @@ public class UserSlidingRightMenuComponent extends BaseComponent {
         select(MenuElements.SIGN_OUT);
     }
 
+    public void close() {
+        WebElement closeBtn = new WebElement(page, "xpath=//div[contains(@class,'ant-drawer-open')]"
+                + "//button[contains(@class,'ant-drawer-close')]", "Close User Menu");
+        closeBtn.click();
+        closeBtn.waitForHidden(DEFAULT_TIMEOUT_MS);
+    }
+
     private void select(MenuElements element) {
         switch (element) {
             case MY_PROFILE:

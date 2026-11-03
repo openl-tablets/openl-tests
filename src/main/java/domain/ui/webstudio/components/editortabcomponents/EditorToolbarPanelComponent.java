@@ -34,6 +34,7 @@ public class EditorToolbarPanelComponent extends BaseComponent {
     private WebElement verifyBtn;
     private WebElement createTableBtn;
     private WebElement refreshProjectBtn;
+    private WebElement changedOnDiskNotice;
     private WebElement allTopToolbarLinks;
     private WebElement factorTextField;
 
@@ -59,6 +60,7 @@ public class EditorToolbarPanelComponent extends BaseComponent {
         projectActionsMoreBtn = new WebElement(page,
                 "xpath=//button[@data-testid='project-actions-more']", "projectActionsMoreBtn");
         refreshProjectBtn = new WebElement(page, "xpath=//button[@data-testid='module-refresh']", "refreshProjectBtn");
+        changedOnDiskNotice = new WebElement(page, "xpath=//*[@data-testid='module-changed-on-disk']", "changedOnDiskNotice");
         createTableBtn = new WebElement(page, "xpath=//button[@data-testid='module-createTable']", "createTableBtn");
         allTopToolbarLinks = new WebElement(page, "xpath=//div[@data-testid='module-actions']//button", "allTopToolbarLinks");
         factorTextField = new WebElement(page, "xpath=//div[@data-testid='table-input-anchor']//input[@type='text']", "factorTextField");
@@ -120,6 +122,10 @@ public class EditorToolbarPanelComponent extends BaseComponent {
 
     public void clickProjectRefresh() {
         refreshProjectBtn.waitForVisible(DEFAULT_TIMEOUT_MS).click();
+    }
+
+    public String getChangedOnDiskNotice(int timeoutMs) {
+        return changedOnDiskNotice.isVisible(timeoutMs) ? changedOnDiskNotice.getInnerText().trim() : "";
     }
 
     public void clickSync() {

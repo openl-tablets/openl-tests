@@ -12,6 +12,8 @@ public class EditorTableActionsPanelComponent extends BaseComponent {
     private static final int SAVE_PROBE_MS = 1000;
     private static final long SAVE_SETTLE_MS = 10000;
     private static final int DISCARD_PROBE_MS = 3000;
+    private static final String SAVE_REFUSED = "xpath=//div[contains(concat(' ',normalize-space(@class),' '),' ant-notification-notice-wrapper ')]"
+            + "[.//*[normalize-space()='Failed to save the table']]";
 
     private WebElement saveChangesBtn;
     private WebElement undoChangesBtn;
@@ -20,6 +22,8 @@ public class EditorTableActionsPanelComponent extends BaseComponent {
     private WebElement removeRowBtn;
     private WebElement insertColumnBeforeBtn;
     private WebElement removeColumnBtn;
+    private WebElement closeEditorBtn;
+    private WebElement discardDialog;
 
     public EditorTableActionsPanelComponent() {
         super(DriverPool.getPage());
@@ -39,16 +43,16 @@ public class EditorTableActionsPanelComponent extends BaseComponent {
         removeRowBtn = createScopedElement("xpath=.//button[@data-testid='table-edit-remove_row']", "removeRowBtn");
         insertColumnBeforeBtn = createScopedElement("xpath=.//button[@data-testid='table-edit-insert_column']", "insertColumnBeforeBtn");
         removeColumnBtn = createScopedElement("xpath=.//button[@data-testid='table-edit-remove_column']", "removeColumnBtn");
+        closeEditorBtn = createScopedElement("xpath=.//button[@data-testid='table-edit-cancel']", "closeEditorBtn");
+        discardDialog = new WebElement(page,
+                "xpath=//div[contains(@class,'ant-modal')][.//button[@data-testid='table-edit-discard']]",
+                "discardChangesDialog");
     }
 
     private void waitWhileTablePanelActionExecuted() {
         WaitUtil.sleep(250, "Waiting for table panel action to complete and UI to update");
     }
 
-    /**
-     * Keeps what was written into the table, and says so when it was not kept: the screen offers to keep
-     * changes only while there are any, so a table that still has something to keep was refused.
-     */
     public void clickSaveChanges() {
         try {
             page.waitForResponse(
@@ -64,10 +68,7 @@ public class EditorTableActionsPanelComponent extends BaseComponent {
         WebElement writing = new WebElement(page, "xpath=//*[@data-testid='table-edit-saving']", "tableBeingWritten");
         WaitUtil.waitForCondition(() -> !writing.exists(), SAVE_SETTLE_MS, 200,
                 "Waiting for the table to be written");
-        WebElement refusal = new WebElement(page,
-                "xpath=//div[contains(concat(' ',normalize-space(@class),' '),' ant-notification-notice-wrapper ')]"
-                        + "[.//*[normalize-space()='Failed to save the table']]",
-                "tableSaveRefused");
+        WebElement refusal = new WebElement(page, SAVE_REFUSED, "tableSaveRefused");
         boolean kept = WaitUtil.waitForCondition(
                 () -> !refusal.exists()
                         && (!saveChangesBtn.isVisible(SAVE_PROBE_MS) || !saveChangesBtn.isEnabled()),
@@ -78,7 +79,6 @@ public class EditorTableActionsPanelComponent extends BaseComponent {
         }
     }
 
-    /** What the screen says about a refusal, while it is still saying it. */
     private String refusalSaid() {
         WebElement notice = new WebElement(page,
                 "xpath=(//div[contains(concat(' ',normalize-space(@class),' '),' ant-notification-notice-wrapper ')]"
@@ -88,27 +88,30 @@ public class EditorTableActionsPanelComponent extends BaseComponent {
                 : "the screen says nothing";
     }
 
-    /**
-     * Leaves the table as it stands. Everything written into it has been kept by then, so the screen has
-     * nothing to ask about; it asking is a change that was not kept, and that is said rather than discarded.
-     */
     public void closeTableEditor() {
-        WebElement close = createScopedElement("xpath=.//button[@data-testid='table-edit-cancel']", "closeEditorBtn");
-        if (!close.isVisible(SAVE_PROBE_MS)) {
+        if (!closeEditorBtn.isVisible(SAVE_PROBE_MS)) {
             return;
         }
-        close.click();
-        WebElement asked = new WebElement(page,
-                "xpath=//div[contains(@class,'ant-modal')][.//button[@data-testid='table-edit-discard']]",
-                "discardChangesDialog");
-        if (asked.isVisible(DISCARD_PROBE_MS)) {
+        closeEditorBtn.click();
+        if (discardDialog.isVisible(DISCARD_PROBE_MS)) {
             String why = saveChangesBtn.isVisible(SAVE_PROBE_MS)
                     ? String.valueOf(saveChangesBtn.getAttribute("title"))
                     : "";
             throw new AssertionError("Leaving the table was questioned, so something written into it was "
-                    + "never kept: " + asked.getInnerText().trim().replace("\n", " ")
+                    + "never kept: " + discardDialog.getInnerText().trim().replace("\n", " ")
                     + (why.isEmpty() || "null".equals(why) ? "" : "; keeping it is offered as: " + why));
         }
+    }
+
+    public String clickSaveChangesAndReadRefusal() {
+        saveChangesBtn.click();
+        return new WebElement(page, SAVE_REFUSED, "tableSaveRefused").waitForVisible(SAVE_SETTLE_MS).getInnerText()
+                .trim().replace("\n", " ");
+    }
+
+    public void discardChanges() {
+        closeEditorBtn.click();
+        discardDialog.child("xpath=.//button[@data-testid='table-edit-discard']").click();
     }
 
     public void undoClickChanges() {

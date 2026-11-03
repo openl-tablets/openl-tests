@@ -18,6 +18,7 @@ public enum AppContainerStartParameters {
     STUDIO_AD_PARAMS,
     STUDIO_MAIL_MOCK_PARAMS,
     STUDIO_SINGLE_PARAMS,
+    STUDIO_SINGLE_FILE_REPO_PARAMS,
     SINGLE_USER_STUDIO_PARAMS,
     DEPLOY_STUDIO_PARAMS,
     STUDIO_GIT,
@@ -27,6 +28,7 @@ public enum AppContainerStartParameters {
     STUDIO_CENTRAL_GROUP_1_PARAMS,
     STUDIO_CENTRAL_GROUP_2_PARAMS;
 
+    public static final String SINGLE_FILE_REPO_URI = "/opt/openl/local/design-files";
     private static final String STUDIO_CENTRAL_BASE = "https://dev2eisgengit02.exigengroup.com/gitlab/genesis/";
 
     private static final String SAML_LOCAL_CERTIFICATE = "MIIE+zCCAuOgAwIBAgIGAYkGsTnzMA0GCSqGSIb3DQEBCwUAMBQxEjAQBgNVBAMMCXdlYnN0dWRpbzAeFw0yMzA2MjcxMDI3MDVaFw0zMzA2MjYxMDI3MDVaMBQxEjAQBgNVBAMMCXdlYnN0dWRpbzCCAiIwDQYJKoZIhvcNAQEBBQADggIPADCCAgoCggIBAISZnphnpon/GmCOWNQmife+N23/qendOULVcwK+H2wtmcAw2Jmc/MH3Kh/ZDAHZ4AtfxqTza6HTzK1a6isZUSMicC4BFOYH7mprNhCg4U59FNaoF+PwkYbl6M8SglHuk5m5Gp2d/A34tqyGmM+IQ4WaWY8HNCCa3uJxmhit/uLa+TR0+a5KW3N5+YRT9A8j1pyPpncAGDx30u+JCPZXqVNN0EwXndWJ0pBiSnnoKfF1mhJSdYrCS+eq5eFPaY+FDqFDWw/OtrIqWiwEZhXv3O3BNQktuVby4Way37RVOGuHsOCBEbF0O0lxmVUsJvVSLcijENBaqXDluMMmgYc8Cw3eK/JKUro62qPj3vlh6A4Bs666jAhkB2Fqz53gFlD/Zn7j5FqQdPK+E/tL9ocoXy471QrgqzT3wTs8P/RgOlBMR26Y7f4FD7F+o1/klIyHt8BsuhgIAGFqeZVBsxl3u5+VpFXH/uI/pl2wZOCz31CjYbj+vHHxWJvf1G5Brd2CjkxymPPkoRlbdkjh0AXxGBnB/RuVARwmpym2Leq40zjVwuSXZJGOBxLOfw3rFOcm+8mFTv8mvxEcNwNPYDiSP7V4Fp3sPJsv2Zj8ouc1NqZ+IS5FBimu2U6djTp2JyYR0eo0xl2H8tZEBuy1uzjcNVDC9D3OEaUp0n3Rc/ICcTXdAgMBAAGjUzBRMB0GA1UdDgQWBBRlTJMBUgkKSXyKmWohnXP+4FAURjAfBgNVHSMEGDAWgBRlTJMBUgkKSXyKmWohnXP+4FAURjAPBgNVHRMBAf8EBTADAQH/MA0GCSqGSIb3DQEBCwUAA4ICAQAptRTpPwO4UdjNYXXt3C4DgsfKiNwFeoz8VroLIE3bk/PjRRZxWViv4H9wFBG3yMUXSkVj8a7brDSCaKgLoA30wp6LdtJPnNOLOTCdZ93URTIouTEChAZmTcnUHza1wZa8jWTRkw8PvpkkX1DGAGV6nn9PJdenGIYMvGIRF6q9wLrUDQtchNAErSV30H5t8L9xdcmqdVb7vPl4zbMywrVIiQ3d16CwbnRhr5GHKCtW/eBcNc1oTvBJnbNnH3BKTTeLNu96w/xzf6QjT3eZMI98WR5wpW64kYwI0qOxOJTzedpEJB7xqiKK7SOY/iMh/cBNJpOn5LAtdkUotkDJQZxDULaZ76XiRRFx50KNSRmdEqGYoEPIGhAvylmNZoepSH3C1Klwi58/plL5YaIbTB0xbhaHl55OCekXRbk0OWT7/ch76tDwxY9KS4u4Oa3mDiHaLdk/FfOy4cJobMvg9G9jyn18hZm8POuFuo+IM9d0JqUSRNfkPj1YUD1BcdQKu2Q85jPu3vG2eG/4nei1AaEo2qadb7g06mh1Olhsvyz14vOUesw20Ek0flFFjKc9xaz5A+zOFd2pA8DvzTGatDzfa+dLROn+VUhVUC61vOjaI1Cvo/GXyllGXVAiIk6AV8kzp7zAlbVwHG4EuLK68rVQ/t9eTEoH9N9/BFl4cpLl9Q==";
@@ -44,6 +46,11 @@ public enum AppContainerStartParameters {
                 config.put("user.mode", "single");
                 config.put("security.single.username", "singleuser");
                 config.put("security.administrators", "singleuser");
+                break;
+            case STUDIO_SINGLE_FILE_REPO_PARAMS:
+                config.putAll(STUDIO_SINGLE_PARAMS.getParameterMap());
+                config.put("REPOSITORY_DESIGN__REF_", "repo-file");
+                config.put("REPOSITORY_DESIGN_URI", SINGLE_FILE_REPO_URI);
                 break;
             case SINGLE_USER_STUDIO_PARAMS:
                 config.putAll(EMPTY.getParameterMap());
