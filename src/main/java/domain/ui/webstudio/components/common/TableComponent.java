@@ -1,6 +1,9 @@
 package domain.ui.webstudio.components.common;
 
+import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.PlaywrightException;
+import com.microsoft.playwright.options.MouseButton;
+import com.microsoft.playwright.options.WaitForSelectorState;
 import configuration.core.ui.WebElement;
 import domain.ui.webstudio.components.BaseComponent;
 import configuration.driver.DriverPool;
@@ -11,6 +14,8 @@ import java.util.List;
 public class TableComponent extends BaseComponent {
 
     private static final String CELL_USAGE = "[starts-with(@data-testid,'cell-usage-')]";
+    private static final String OPEN_DROPDOWN = "//div[contains(concat(' ', normalize-space(@class), ' '), ' ant-dropdown ')]"
+            + "[not(contains(@class,'ant-dropdown-hidden'))]";
     private static final String RAISED_CELL_TEXTS = """
             cells => cells.filter(cell => {
                 const style = getComputedStyle(cell);
@@ -121,6 +126,10 @@ public class TableComponent extends BaseComponent {
 
     public void editCell(int rowIndex, int columnIndex, String text, boolean pressEnter) {
         openCellEditor(rowIndex, columnIndex);
+        writeIntoOpenEditor(rowIndex, columnIndex, text, pressEnter);
+    }
+
+    private void writeIntoOpenEditor(int rowIndex, int columnIndex, String text, boolean pressEnter) {
         boolean written = WaitUtil.waitForCondition(() -> {
             if (String.valueOf(cellEditor.getAttribute("class")).contains("ant-select")) {
                 WebElement picker = new WebElement(cellEditor, "xpath=.//input", "cellValueInput");
@@ -149,7 +158,7 @@ public class TableComponent extends BaseComponent {
             throw new IllegalStateException("The editor of cell [" + rowIndex + "," + columnIndex
                     + "] took neither the value nor a pick from a list");
         }
-        WaitUtil.sleep(250, "Waiting for cell edit to be applied");
+        waitForTheEditToApply();
     }
 
     private String keepsWhatIsWritten() {
@@ -170,6 +179,91 @@ public class TableComponent extends BaseComponent {
 
     public void editCell(int rowIndex, int columnIndex, String text) {
         editCell(rowIndex, columnIndex, text, true);
+    }
+
+    public List<String> getEditorsOffered(int rowIndex, int columnIndex) {
+        List<String> editors = openEditorSwitch(rowIndex, columnIndex, "").allInnerTexts().stream().map(String::trim).toList();
+        page.keyboard().press("Escape");
+        page.locator("xpath=" + OPEN_DROPDOWN).first().waitFor(new Locator.WaitForOptions()
+                .setState(WaitForSelectorState.DETACHED).setTimeout(DEFAULT_TIMEOUT_MS));
+        if (openEditorInput().isVisible()) {
+            openEditorInput().press("Escape");
+        }
+        return editors;
+    }
+
+    public void editCellIn(int rowIndex, int columnIndex, String editor, String text) {
+        openEditorSwitch(rowIndex, columnIndex, "[normalize-space()='" + editor + "']").click();
+        waitUntilTheEditorIsDrawn();
+        writeIntoOpenEditor(rowIndex, columnIndex, text, true);
+    }
+
+    private Locator openEditorSwitch(int rowIndex, int columnIndex, String itemPredicate) {
+        openCellEditor(rowIndex, columnIndex);
+        new WebElement(page, "xpath=//*[@data-testid='table-cell-switch']", "cellEditorSwitch").getLocator()
+                .click(new Locator.ClickOptions().setButton(MouseButton.RIGHT));
+        Locator offered = page.locator("xpath=" + OPEN_DROPDOWN + "//li[@role='menuitem']" + itemPredicate);
+        offered.first().waitFor();
+        return offered;
+    }
+
+    public void markFirstLetters(int letters, String mark) {
+        selectFirstLetters(letters);
+        clickMarkButton(mark);
+    }
+
+    public void clearMarkOfFirstLetters(int letters) {
+        selectFirstLetters(letters);
+        clickMarkButton("clear");
+    }
+
+    private void clickMarkButton(String suffix) {
+        new WebElement(page, "xpath=//button[@data-testid='table-edit-mark_" + suffix + "']", "markButton").click();
+    }
+
+    private void selectFirstLetters(int letters) {
+        Locator input = openEditorInput();
+        input.press("Home");
+        for (int letter = 0; letter < letters; letter++) {
+            input.press("Shift+ArrowRight");
+        }
+    }
+
+    public List<String> getMarksInEditor() {
+        return page.locator("xpath=//*[@data-testid='table-cell-marked-input']//span[@data-mark]").all().stream()
+                .map(span -> span.getAttribute("data-mark") + ": " + span.innerText()).toList();
+    }
+
+    public String getOpenEditorText() {
+        return String.valueOf(openEditorInput().evaluate("element => element.value ?? element.innerText"));
+    }
+
+    public void keepEditedText() {
+        openEditorInput().press("Enter");
+        waitForTheEditToApply();
+    }
+
+    private Locator openEditorInput() {
+        return page.locator("xpath=//*[@data-testid='table-cell-input' or @data-testid='table-cell-marked-input']").first();
+    }
+
+    public List<String> getBoldParts(int rowIndex, int columnIndex) {
+        return boldPartsOf(rowIndex, columnIndex).allInnerTexts().stream().map(String::trim).toList();
+    }
+
+    public List<String> getBoldPartColours(int rowIndex, int columnIndex) {
+        @SuppressWarnings("unchecked")
+        List<String> colours = (List<String>) boldPartsOf(rowIndex, columnIndex)
+                .evaluateAll("parts => parts.map(part => getComputedStyle(part).color)");
+        return colours;
+    }
+
+    private Locator boldPartsOf(int rowIndex, int columnIndex) {
+        return getCell(rowIndex, columnIndex).getLocator().locator("xpath=.//span[contains(@style,'font-weight: bold')]");
+    }
+
+    private void waitForTheEditToApply() {
+        WaitUtil.sleep(250, "Waiting for cell edit to be applied");
     }
 
     public int getRowIndexHolding(String... values) {
