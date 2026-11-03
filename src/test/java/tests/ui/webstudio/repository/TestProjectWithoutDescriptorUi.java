@@ -22,9 +22,11 @@ public class TestProjectWithoutDescriptorUi extends BaseTest {
     @Test
     @TestCaseId("EPBDS-16638")
     @Description("The card of a project whose rules.xml was deleted opens and its Management tab lists the "
-            + "roles of the project. Fails on EPBDS-16638: the card answers 404.")
+            + "roles of the project. Fails on EPBDS-16638: the roles are refused with 410 as of a deleted project, "
+            + "and the tab says Failed to load access.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
-    @KnownIssue(value = "EPBDS-16638", failsWith = "Opening the Management tab should read the roles, not answer 404")
+    @KnownIssue(value = "EPBDS-16638",
+            failsWith = "The Management tab should read the roles of the project, not refuse them")
     public void testManagementTabOpensForAProjectWithoutDescriptor() {
         ProjectDetailPage card = projectWithoutDescriptor();
         assertThat(card.isManagementTabOffered())
