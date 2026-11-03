@@ -48,7 +48,7 @@ public class TestReactMergeConflictSmoke extends BaseTest {
     private static final String STEP1_CELL = "C7";
 
     @Test
-    @TestCaseId("EPBDS-16885")
+    @TestCaseId("EPBDS-17078")
     @Description("Sync with conflicts in a workbook and in rules.xml: Compare File Versions opens on Their Changes "
             + "(EPBDS-16637), rules.xml is merged line by line, and the workbook table by table: the cells only one "
             + "branch changed are merged by themselves, Take Yours, Take Base and Take Theirs stand above the table "

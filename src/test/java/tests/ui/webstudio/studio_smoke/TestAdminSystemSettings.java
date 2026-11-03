@@ -28,7 +28,7 @@ public class TestAdminSystemSettings extends BaseTest {
     private static final String VERIFY_ON_EDIT = "compile.auto";
 
     @Test
-    @TestCaseId("IPBQA-30651")
+    @TestCaseId({"IPBQA-30651", "EPBDS-17079"})
     @Description("System Settings - Test Dispatching Validation, Verify on Edit, Thread Number and audit log retention validation; "
             + "the audit log records each settings change and the restarts that end the sessions (EPBDS-14601, EPBDS-17027)")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)

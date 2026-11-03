@@ -206,7 +206,7 @@ public final class TestExportUtil {
         Class<?> testClass = testClassOf(result, method);
         TestCaseId testCaseId = method.getAnnotation(TestCaseId.class) != null ? method.getAnnotation(TestCaseId.class) : testClass.getAnnotation(TestCaseId.class);
         if (testCaseId != null) {
-            metadata.put("testCaseId", testCaseId.value());
+            metadata.put("testCaseId", String.join(", ", testCaseId.value()));
         }
         Description description = method.getAnnotation(Description.class) != null ? method.getAnnotation(Description.class) : testClass.getAnnotation(Description.class);
         if (description != null) {

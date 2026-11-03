@@ -31,7 +31,7 @@ import static org.assertj.core.api.Assertions.fail;
 public class TestACLProjectLevelRoles extends BaseTest {
 
     @Test
-    @TestCaseId("IPBQA-32912")
+    @TestCaseId({"IPBQA-32912", "EPBDS-17079"})
     @Description("ACL: project-level role assignment (Manager/Viewer on specific projects) and permission verification without external auth system. "
             + "The audit log records the refused and the accepted sign-ins, the projects created and the roles granted and changed, "
             + "finds the events of one project and exports them (EPBDS-14601)")

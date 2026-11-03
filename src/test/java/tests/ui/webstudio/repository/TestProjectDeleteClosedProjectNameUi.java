@@ -24,7 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class TestProjectDeleteClosedProjectNameUi extends BaseTest {
 
     @Test
-    @TestCaseId("EPBDS-16231")
+    @TestCaseId({"EPBDS-16231", "EPBDS-17079"})
     @Description("EPBDS-16231: the Confirm Delete dialog for a CLOSED project shows the plain project name, not the name with a hash appended. "
             + "Once deleted, the audit log names the project by the path it was created at (EPBDS-17029) and its old link "
             + "opens as a link to no project (EPBDS-16946).")

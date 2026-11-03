@@ -519,6 +519,8 @@ public void testAdminEmail() {
 }
 ```
 
+A test extended for another ticket keeps its old id and adds the ticket: `@TestCaseId({"IPBQA-29455", "EPBDS-17078"})`.
+
 ### Container Configuration
 
 ```java

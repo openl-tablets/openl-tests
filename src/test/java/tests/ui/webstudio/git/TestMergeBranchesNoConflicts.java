@@ -41,7 +41,7 @@ public class TestMergeBranchesNoConflicts extends BaseTest {
     private static final int LAST_STEP_ROW = 5;
 
     @Test
-    @TestCaseId("IPBQA-29455")
+    @TestCaseId({"IPBQA-29455", "EPBDS-17078"})
     @Description("Git - Merge branches without conflicts between master and MyBranch. Verifies EPBDS-8488: the "
             + "merge commit is authored by the WebStudio user's display name, not a .gitconfig identity, and the "
             + "first save on MyBranch after a module is deleted and another uploaded succeeds (regression guard for "

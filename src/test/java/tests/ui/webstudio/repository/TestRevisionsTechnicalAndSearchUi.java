@@ -31,7 +31,7 @@ public class TestRevisionsTechnicalAndSearchUi extends BaseTest {
     private static final String BROWSER_DATE_TIME = "\\d{2}/\\d{2}/\\d{4} \\d{1,2}:\\d{2}:\\d{2} [AP]M";
 
     @Test
-    @TestCaseId("IPBQA-32483")
+    @TestCaseId({"IPBQA-32483", "EPBDS-17080"})
     @Description("Revisions of a Git project hide the commits that do not change it until technical revisions are shown, "
             + "draw them as technical without Open, and search finds revisions by comment and revision id. A revision "
             + "lists the files it changed, each opening Compare, and two picked revisions are compared (EPBDS-17052)")
