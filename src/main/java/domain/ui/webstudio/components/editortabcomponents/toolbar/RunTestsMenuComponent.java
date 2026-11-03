@@ -3,6 +3,7 @@ package domain.ui.webstudio.components.editortabcomponents.toolbar;
 import com.microsoft.playwright.Page;
 import configuration.core.ui.WebElement;
 import domain.ui.webstudio.components.BaseComponent;
+import domain.ui.webstudio.components.editortabcomponents.TestResultValidationComponent;
 import helpers.utils.WaitUtil;
 
 public class RunTestsMenuComponent extends BaseComponent implements IRunTestsMenu {
@@ -69,6 +70,7 @@ public class RunTestsMenuComponent extends BaseComponent implements IRunTestsMen
     public void clickTestButton() {
         closeWindowsOverTheScreen();
         waitUntilTheModuleHasCounted();
+        TestResultValidationComponent.putAwayShownResults(page);
         testBtn.click();
     }
 
@@ -94,6 +96,7 @@ public class RunTestsMenuComponent extends BaseComponent implements IRunTestsMen
 
     public void clickRunTestsButton() {
         runTestsBtn.waitForVisible();
+        TestResultValidationComponent.putAwayShownResults(page);
         runTestsBtn.click();
     }
 
@@ -124,6 +127,7 @@ public class RunTestsMenuComponent extends BaseComponent implements IRunTestsMen
     @Override
     public void runTests() {
         openDropdown();
+        TestResultValidationComponent.putAwayShownResults(page);
         runTestsBtn.click();
     }
 

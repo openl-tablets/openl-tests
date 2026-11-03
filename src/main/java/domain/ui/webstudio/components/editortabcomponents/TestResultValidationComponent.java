@@ -1,6 +1,7 @@
 package domain.ui.webstudio.components.editortabcomponents;
 
 import com.microsoft.playwright.Locator;
+import com.microsoft.playwright.Page;
 import configuration.core.ui.WebElement;
 import configuration.driver.DriverPool;
 import domain.ui.webstudio.components.BaseComponent;
@@ -8,97 +9,113 @@ import domain.ui.webstudio.components.common.TableComponent;
 import helpers.utils.WaitUtil;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 public class TestResultValidationComponent extends BaseComponent {
 
-    private static final String RESULTS = "xpath=//div[contains(@class,'ant-modal-container')]"
-            + "[.//button[@data-testid='execution-close']]";
-    private static final String TABLE_LINK = RESULTS + "//a[starts-with(@data-testid,'test-table-')]";
-    private static final String CASE_STATUS = RESULTS + "//table[starts-with(@data-testid,'test-results-')]//span[@title='%s']";
-    private static final String RESULT_TABLE = "(" + RESULTS.substring("xpath=".length())
+    private static final String RESULTS_WINDOW_PATH = "/execution-results";
+    private static final String READ_MARK = "data-aqa-read";
+    private static final String RESULTS = "//div[contains(@class,'ant-modal-container')][.//button[@data-testid='execution-close']]"
+            + " | //main[not(@" + READ_MARK + ")][.//button[@data-testid='execution-close']]";
+    private static final String IN_RESULTS = "(" + RESULTS + ")";
+    private static final String TABLE_LINK = IN_RESULTS + "//a[starts-with(@data-testid,'test-table-')]";
+    private static final String FAILED_TABLE_LINK = TABLE_LINK + "[contains(@class,'ant-typography-danger')]";
+    private static final String CASES = IN_RESULTS + "//table[starts-with(@data-testid,'test-results-')]";
+    private static final String PASSED_CASE = CASES + "//span[@title='Passed']";
+    private static final String FAILED_CASE = CASES + "//span[@title='Failed' or @title='Error']";
+    private static final String RESULT_TABLE = "(" + IN_RESULTS
             + "//table[@data-testid='run-result-table' or starts-with(@data-testid,'test-results-')])[1]";
     private static final int PROBE_MS = 500;
     private static final long RESULTS_TIMEOUT_MS = 30000;
 
-    private WebElement resultsWindow;
-    private WebElement resultsTitle;
-    private WebElement resultTableHeader;
-    private TableComponent resultTable;
-    private WebElement failedTableLinkTemplate;
-    private List<WebElement> tableLinks;
-    private List<WebElement> failedTableLinks;
-    private List<WebElement> passedCases;
-    private List<WebElement> failedCases;
-    private WebElement failuresOnlyCheckbox;
-
     public TestResultValidationComponent() {
         super(DriverPool.getPage());
-        initializeElements();
     }
 
     public TestResultValidationComponent(WebElement rootLocator) {
         super(rootLocator);
-        initializeElements();
     }
 
-    private void initializeElements() {
-        resultsWindow = new WebElement(page, RESULTS, "testResultsWindow");
-        resultsTitle = new WebElement(page, RESULTS + "//div[contains(@class,'ant-modal-title')]", "testResultsTitle");
-        resultTableHeader = new WebElement(page, "xpath=" + RESULT_TABLE + "/thead/tr", "resultTableHeader");
-        resultTable = createScopedComponent(TableComponent.class, "xpath=" + RESULT_TABLE, "resultTable");
-        tableLinks = createElementList(TABLE_LINK, "testTableLinks");
-        failedTableLinks = createElementList(TABLE_LINK + "[contains(@class,'ant-typography-danger')]", "failedTestTableLinks");
-        failedTableLinkTemplate = new WebElement(page,
-                TABLE_LINK + "[contains(@class,'ant-typography-danger')][normalize-space()='%s']", "failedTestTableLink");
-        passedCases = createElementList(String.format(CASE_STATUS, "Passed"), "passedCases");
-        failedCases = createElementList(RESULTS + "//table[starts-with(@data-testid,'test-results-')]"
-                + "//span[@title='Failed' or @title='Error']", "failedCases");
-        failuresOnlyCheckbox = new WebElement(page, RESULTS + "//input[@data-testid='tests-failures-only']", "failuresOnlyCheckbox");
+    public static void putAwayShownResults(Page editor) {
+        resultWindows(editor).forEach(window -> window.evaluate("mark => document.querySelectorAll('main')"
+                + ".forEach(shown => shown.setAttribute(mark, 'true'))", READ_MARK));
+    }
+
+    private static Stream<Page> resultWindows(Page any) {
+        return any.context().pages().stream()
+                .filter(opened -> !opened.isClosed() && opened.url().contains(RESULTS_WINDOW_PATH));
+    }
+
+    private Page resultsPage() {
+        return resultWindows(page).reduce((first, last) -> last).orElse(page);
+    }
+
+    private Locator results(String xpath) {
+        return resultsPage().locator("xpath=" + xpath);
+    }
+
+    private WebElement resultsWindow() {
+        return new WebElement(resultsPage(), "xpath=" + RESULTS, "testResultsWindow");
+    }
+
+    private TableComponent resultTable() {
+        return new TableComponent(new WebElement(resultsPage(), "xpath=" + RESULT_TABLE, "resultTable"));
+    }
+
+    private void waitUntilResultsOpen() {
+        WaitUtil.requireCondition(() -> results(RESULTS).count() > 0, RESULTS_TIMEOUT_MS, 250,
+                "Waiting for the results of the run to open");
     }
 
     private void waitForResults() {
-        resultsWindow.waitForVisible(RESULTS_TIMEOUT_MS);
-        WaitUtil.requireCondition(() -> !tableLinks.isEmpty() || resultTable.isVisible(), RESULTS_TIMEOUT_MS, 250,
+        waitUntilResultsOpen();
+        resultsWindow().waitForVisible(RESULTS_TIMEOUT_MS);
+        WaitUtil.requireCondition(() -> results(TABLE_LINK).count() > 0 || resultTable().isVisible(), RESULTS_TIMEOUT_MS, 250,
                 "Waiting for the run to report its results");
     }
 
     public int rowsTheRunReported() {
-        resultsWindow.waitForVisible(RESULTS_TIMEOUT_MS);
-        boolean drawn = WaitUtil.waitForCondition(() -> resultTable.isVisible(PROBE_MS),
+        waitUntilResultsOpen();
+        boolean drawn = WaitUtil.waitForCondition(() -> resultTable().isVisible(PROBE_MS),
                 RESULTS_TIMEOUT_MS, 250, "Waiting for the run to draw what it returned");
-        return drawn ? resultTable.getRows().size() : 0;
+        return drawn ? resultTable().getRows().size() : 0;
     }
 
     public TableComponent getResultTable() {
         waitForResults();
-        WaitUtil.requireCondition(() -> resultTable.isVisible() && !resultTable.getRows().isEmpty(),
+        TableComponent table = resultTable();
+        WaitUtil.requireCondition(() -> table.isVisible() && !table.getRows().isEmpty(),
                 DEFAULT_TIMEOUT_MS, 100, "Waiting for the table of test cases to be drawn");
-        return resultTable;
+        return table;
+    }
+
+    public int countResultWindows() {
+        return (int) resultWindows(page).count();
     }
 
     public boolean isTestTableFailed() {
         waitForResults();
-        return !failedTableLinks.isEmpty();
+        return results(FAILED_TABLE_LINK).count() > 0;
     }
 
     public boolean isTestTablePassed() {
         waitForResults();
-        return failedTableLinks.isEmpty();
+        return results(FAILED_TABLE_LINK).count() == 0;
     }
 
     public int getFailedTestCount() {
         waitForResults();
-        return failedCases.size();
+        return results(FAILED_CASE).count();
     }
 
     public int getPassedTestCount() {
         waitForResults();
-        return passedCases.size();
+        return results(PASSED_CASE).count();
     }
 
     public int getTotalTestCount() {
         waitForResults();
-        return passedCases.size() + failedCases.size();
+        return getPassedTestCount() + getFailedTestCount();
     }
 
     public String getTestResultSummary() {
@@ -108,12 +125,13 @@ public class TestResultValidationComponent extends BaseComponent {
 
     public String getResultTableHeader() {
         waitForResults();
-        return resultTableHeader.getText().trim();
+        return new WebElement(resultsPage(), "xpath=" + RESULT_TABLE + "/thead/tr", "resultTableHeader").getText().trim();
     }
 
     public String getRunSummary() {
         waitForResults();
-        return resultsTitle.getText().trim();
+        return results(IN_RESULTS + "//div[contains(@class,'ant-modal-title')] | " + IN_RESULTS + "//h1").first()
+                .innerText().trim();
     }
 
     public List<String> getTestResult(int rowIndex) {
@@ -122,40 +140,48 @@ public class TestResultValidationComponent extends BaseComponent {
 
     public int countTestTables() {
         waitForResults();
-        return tableLinks.size();
+        return results(TABLE_LINK).count();
     }
 
     public void checkAllTablesPassed() {
         waitForResults();
-        if (!failedTableLinks.isEmpty()) {
+        if (results(FAILED_TABLE_LINK).count() > 0) {
             throw new AssertionError("Expected all test tables to pass, but found failures: " + getAllFailedTests());
         }
     }
 
     public void checkTestTableFailed(String tableName) {
         waitForResults();
-        boolean listed = tableLinks.stream().anyMatch(link -> link.getText().contains(tableName));
+        boolean listed = results(TABLE_LINK).allInnerTexts().stream().anyMatch(link -> link.contains(tableName));
         if (!listed) {
             throw new AssertionError("Test table '" + tableName + "' not found in results");
         }
-        if (!failedTableLinkTemplate.format(tableName).isVisible(PROBE_MS)) {
+        if (!new WebElement(resultsPage(), "xpath=" + FAILED_TABLE_LINK + "[normalize-space()='" + tableName + "']",
+                "failedTestTableLink").isVisible(PROBE_MS)) {
             throw new AssertionError("Expected test table '" + tableName + "' to have failures, but it passed");
         }
     }
 
     public boolean isFailuresOnlyFilterChecked() {
-        return failuresOnlyCheckbox.isVisible(PROBE_MS) && failuresOnlyCheckbox.isChecked();
+        WebElement failuresOnly = failuresOnlyCheckbox();
+        return failuresOnly.isVisible(PROBE_MS) && failuresOnly.isChecked();
     }
 
     public void setFailuresOnlyFilter(boolean enabled) {
-        failuresOnlyCheckbox.waitForVisible(DEFAULT_TIMEOUT_MS);
-        if (failuresOnlyCheckbox.isChecked() == enabled) {
+        WebElement failuresOnly = failuresOnlyCheckbox();
+        failuresOnly.waitForVisible(DEFAULT_TIMEOUT_MS);
+        if (failuresOnly.isChecked() == enabled) {
             return;
         }
-        failuresOnlyCheckbox.click();
-        WaitUtil.requireCondition(() -> failuresOnlyCheckbox.isChecked() == enabled,
+        failuresOnly.click();
+        WaitUtil.requireCondition(() -> failuresOnly.isChecked() == enabled,
                 DEFAULT_TIMEOUT_MS, 100, "Waiting for the 'Failures only' filter to switch to " + enabled);
         waitUntilSpinnerLoaded();
+    }
+
+    private WebElement failuresOnlyCheckbox() {
+        return new WebElement(resultsPage(), "xpath=" + IN_RESULTS + "//input[@data-testid='tests-failures-only']",
+                "failuresOnlyCheckbox");
     }
 
     public List<String> getFailedTestNamesLenient() {
@@ -164,20 +190,39 @@ public class TestResultValidationComponent extends BaseComponent {
 
     public void assertNoTestFailures(String contextMsg) {
         waitForResults();
-        if (failedTableLinks.isEmpty() && failedCases.isEmpty()) {
+        int failedTables = results(FAILED_TABLE_LINK).count();
+        int failedCases = results(FAILED_CASE).count();
+        if (failedTables == 0 && failedCases == 0) {
             return;
         }
         throw new AssertionError(String.format(
                 "Test failures detected. %s%nFailed test tables (%d): %s%nFailed cases: %d%nResults: %s",
-                contextMsg, failedTableLinks.size(), getAllFailedTests(), failedCases.size(), getRunSummary()));
+                contextMsg, failedTables, getAllFailedTests(), failedCases, getRunSummary()));
     }
 
     public void closeResults() {
-        WebElement closeBtn = new WebElement(page, RESULTS + "//button[@data-testid='execution-close']", "closeResultsBtn");
+        Page shown = resultsPage();
+        WebElement closeBtn = closeButtonOn(shown);
+        if (!closeBtn.isVisible(PROBE_MS)) {
+            return;
+        }
+        if (shown == page) {
+            closeResultsOverTheEditor();
+        } else {
+            shown.waitForClose(closeBtn::click);
+        }
+    }
+
+    public void closeResultsOverTheEditor() {
+        WebElement closeBtn = closeButtonOn(page);
         if (closeBtn.isVisible(PROBE_MS)) {
             closeBtn.click();
-            resultsWindow.waitForHidden(DEFAULT_TIMEOUT_MS);
+            new WebElement(page, "xpath=" + RESULTS, "testResultsDialog").waitForHidden(DEFAULT_TIMEOUT_MS);
         }
+    }
+
+    private WebElement closeButtonOn(Page shown) {
+        return new WebElement(shown, "xpath=" + IN_RESULTS + "//button[@data-testid='execution-close']", "closeResultsBtn");
     }
 
     public List<String> getRunColumnHeadings() {
@@ -209,13 +254,12 @@ public class TestResultValidationComponent extends BaseComponent {
     }
 
     private Locator runResultTable() {
-        return page.locator(RESULTS + "//table[@data-testid='run-result-table']");
+        return results(IN_RESULTS + "//table[@data-testid='run-result-table']");
     }
 
     public List<String> getAllFailedTests() {
         waitForResults();
-        return failedTableLinks.stream()
-                .map(WebElement::getText)
+        return results(FAILED_TABLE_LINK).allInnerTexts().stream()
                 .map(String::trim)
                 .filter(name -> !name.isEmpty())
                 .distinct()

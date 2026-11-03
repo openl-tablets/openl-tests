@@ -3,15 +3,11 @@ package domain.ui.webstudio.components.editortabcomponents.toolbar;
 import com.microsoft.playwright.Page;
 import configuration.core.ui.WebElement;
 import domain.ui.webstudio.components.BaseComponent;
+import domain.ui.webstudio.components.editortabcomponents.TestResultValidationComponent;
 import helpers.utils.WaitUtil;
 
 import java.util.List;
 
-/**
- * The second-line (table) toolbar of the editor: Run / Trace / Benchmark launchers with their dropdown
- * arrows, the Edit / Copy / Remove / Create Test table actions and the target-table / available-test-runs
- * sections. Scoped under {@code div#tableToolbarPanel} (verified against the live 6.4.0 DOM).
- */
 public class TableToolbarComponent extends BaseComponent {
 
     private static final int TRACE_WINDOW_TIMEOUT_MS = 65000;
@@ -33,11 +29,8 @@ public class TableToolbarComponent extends BaseComponent {
     private final WebElement availableTestRunsPopup;
     private final WebElement tableActionsTestBtn;
     private final WebElement tableActionsTestDropdownBtn;
-    // These two live inside the run/test dropdowns of this toolbar; they are located by their unique ids
-    // at page level because the menus only exist in the DOM while open.
     private final WebElement withinCurrentModuleOnlyInputArgs;
     private final WebElement withinCurrentModuleOnlyTestTables;
-    // Whichever launcher stands open says so by the button it starts its own run with.
     private final List<WebElement> openLaunchers;
 
     public TableToolbarComponent(Page page) {
@@ -64,19 +57,11 @@ public class TableToolbarComponent extends BaseComponent {
         tableActionsTestBtn = createScopedElement("xpath=.//button[@data-testid='table-tests']", "tableActionsTestBtn");
         tableActionsTestDropdownBtn = createScopedElement("xpath=.//button[@data-testid='table-tests']", "tableActionsTestDropdownBtn");
         withinCurrentModuleOnlyInputArgs = new WebElement(page, "xpath=//input[@data-testid='launch-module-only']", "withinCurrentModuleOnlyInputArgs");
-        // The launcher that asks for the input of a table and the one that runs the tests written against it
-        // each carry the box of their own.
         withinCurrentModuleOnlyTestTables = new WebElement(page, "xpath=//input[@data-testid='tests-module-only']", "withinCurrentModuleOnlyTestTables");
         openLaunchers = createElementList("xpath=//button[@data-testid='run-start' or @data-testid='trace-start'"
                 + " or @data-testid='tests-start' or @data-testid='benchmark-start']", "openLaunchers");
     }
 
-    // ========== Launchers ==========
-
-    /**
-     * Closes what the last press left over the toolbar: the window a run put its results in, and the
-     * launcher another button opened, which hangs under that button and lies over the toolbar beside it.
-     */
     private void closeOpenLauncher() {
         closeWindowsOverTheScreen();
         if (openLaunchers.isEmpty()) {
@@ -104,16 +89,9 @@ public class TableToolbarComponent extends BaseComponent {
         return launcher;
     }
 
-    /**
-     * Traces the table the page shows, step by step. The button opens the launcher, and the trace itself
-     * starts from there — a table that declares no parameters is asked all the same, because the launcher
-     * carries the settings the trace runs under.
-     */
     public ITraceWindow clickTraceExpectTraceWindow() {
         waitUntilSpinnerLoaded();
         traceBtn.waitForVisible();
-        // The press can land before the rule is ready to be traced, and then no window opens at all, so the
-        // whole of opening the launcher and starting from it is tried again rather than waited out.
         return WaitUtil.retryOnException(() -> {
             traceBtn.click();
             TraceMenuComponent launcher = new TraceMenuComponent(page);
@@ -126,10 +104,6 @@ public class TableToolbarComponent extends BaseComponent {
         benchmarkBtn.click();
     }
 
-    /**
-     * Opens the Run launcher. The settings the old toolbar kept behind a caret beside Run are inside the
-     * launcher itself now, so opening it is the same press as running.
-     */
     public void clickRunDropdown() {
         closeOpenLauncher();
         runBtn.waitForVisible();
@@ -154,8 +128,6 @@ public class TableToolbarComponent extends BaseComponent {
         return benchmarkBtn.isVisible(1000);
     }
 
-    // ========== Table actions ==========
-
     public WebElement getEditTableBtn() {
         return editTableBtn;
     }
@@ -172,15 +144,12 @@ public class TableToolbarComponent extends BaseComponent {
         return createTestBtn;
     }
 
-    /**
-     * Runs the tests written against the table. The button opens the launcher the run is settled in, and the
-     * run itself starts from there, so pressing the button is opening it and starting from it.
-     */
     public void clickTableActionsTestBtn() {
         closeOpenLauncher();
         tableActionsTestBtn.click();
         WebElement start = new WebElement(page, "xpath=//button[@data-testid='tests-start']", "testsStartBtn");
         start.waitForVisible(DEFAULT_TIMEOUT_MS);
+        TestResultValidationComponent.putAwayShownResults(page);
         start.click();
     }
 
@@ -189,8 +158,6 @@ public class TableToolbarComponent extends BaseComponent {
         tableActionsTestBtn.waitForVisible();
         tableActionsTestBtn.click();
     }
-
-    // ========== Target table and available test runs ==========
 
     public String getTargetTableText() {
         if (targetTableLink.isVisible(2000)) {
@@ -232,13 +199,7 @@ public class TableToolbarComponent extends BaseComponent {
         return availableTestRunsExpandLink.isVisible(1000);
     }
 
-    /**
-     * Opens what the band keeps behind its caret. The band names the first of the tables beside it and
-     * folds the rest away, so the caret stands there only while there is more than one.
-     */
     public void clickAvailableTestRunsExpandLink() {
-        // The band shares its line with the panel of properties, which squeezes it when it is open. A
-        // reader who cannot see the end of the band folds that panel away, which is what is done here.
         WebElement openProperties = new WebElement(page,
                 "xpath=//div[@data-testid='table-details-body']", "openPropertiesPanel");
         if (openProperties.isVisible(1000)) {
@@ -252,11 +213,6 @@ public class TableToolbarComponent extends BaseComponent {
         }, DEFAULT_TIMEOUT_MS, 500, "Opening the rest of the tables beside this one");
     }
 
-    /**
-     * The tables the band folded away, one per line. The band names the first of them itself and keeps the
-     * rest behind the caret, so what is read here is the rest — as it was when the whole lot stood in a
-     * list of its own.
-     */
     public String getAvailableTestRunsPopupText() {
         List<WebElement> folded = createElementList(
                 "xpath=//div[contains(@class,'ant-dropdown')][not(contains(@class,'ant-dropdown-hidden'))]"
@@ -266,8 +222,6 @@ public class TableToolbarComponent extends BaseComponent {
         return folded.stream().map(WebElement::getText).map(String::trim)
                 .collect(java.util.stream.Collectors.joining("\n"));
     }
-
-    // ========== Within Current Module Only (run/test dropdowns) ==========
 
     public boolean isWithinCurrentModuleOnlyInputArgsChecked() {
         return withinCurrentModuleOnlyInputArgs.isChecked();

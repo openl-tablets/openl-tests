@@ -22,8 +22,9 @@ public class TestTestResultsShowDoublesRoundedUi extends BaseTest {
     private static final String TEST_TABLE = "mySprTest";
 
     @Test
-    @TestCaseId("EPBDS-16890")
-    @Description("EPBDS-16890: the results of a test table show a double as 6.4.0 did: 1.73*12 reads 20.76.")
+    @TestCaseId({"EPBDS-16890", "EPBDS-17084"})
+    @Description("EPBDS-16890: the results of a test table show a double as 6.4.0 did: 1.73*12 reads 20.76. The results "
+            + "open in a separate window, and a second run shows its results in that window (EPBDS-16959, EPBDS-16868).")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void testResultsShowADoubleRounded() {
         String projectName = WorkflowService.loginCreateProjectFromExcelFile(User.ADMIN, WORKBOOK);
@@ -46,5 +47,11 @@ public class TestTestResultsShowDoublesRoundedUi extends BaseTest {
         assertThat(results.getTestResult(1))
                 .as("The result of 1.73*12 must read 20.76, as 6.4.0 showed it")
                 .contains("20.76");
+
+        editorPage.getEditorToolbarPanelComponent().clickRun().clickRunInsideMenu();
+        assertThat(results.getTestResult(1)).as("A second run shows its results again").contains("20.76");
+        assertThat(results.countResultWindows())
+                .as("The results of a second run are shown in the window already open, not in a new one")
+                .isEqualTo(1);
     }
 }

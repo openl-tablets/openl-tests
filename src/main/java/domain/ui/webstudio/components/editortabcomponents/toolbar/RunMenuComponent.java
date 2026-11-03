@@ -2,6 +2,7 @@ package domain.ui.webstudio.components.editortabcomponents.toolbar;
 
 import com.microsoft.playwright.Page;
 import configuration.core.ui.WebElement;
+import domain.ui.webstudio.components.editortabcomponents.TestResultValidationComponent;
 
 import java.util.List;
 
@@ -37,6 +38,7 @@ public class RunMenuComponent extends TableInputLauncherComponent implements IRu
     @Override
     public IRunMenu clickRunInsideMenu() {
         runBtn.waitForVisible(DEFAULT_TIMEOUT_MS);
+        TestResultValidationComponent.putAwayShownResults(page);
         runBtn.click();
         return this;
     }
