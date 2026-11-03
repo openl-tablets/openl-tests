@@ -1,5 +1,6 @@
 package domain.ui.webstudio.components.common;
 
+import com.microsoft.playwright.PlaywrightException;
 import configuration.core.ui.WebElement;
 import configuration.driver.DriverPool;
 import domain.ui.webstudio.components.BaseComponent;
@@ -12,6 +13,7 @@ public class SettingsMenuComponent extends BaseComponent {
     private static final int MENU_TIMEOUT_MS = 5000;
     private static final int OPTION_PROBE_MS = 1000;
     private static final int POLL_MS = 100;
+    private static final int CLOSE_PROBE_MS = 1500;
     private static final String TESTS_PER_PAGE_LABEL = "Tests Per Page";
     private static final String ALL_TESTS_LABEL = "All";
     private static final String MENU = "//div[contains(concat(' ',normalize-space(@class),' '),' ant-dropdown ')]"
@@ -48,9 +50,20 @@ public class SettingsMenuComponent extends BaseComponent {
     }
 
     private void close() {
-        if (isOpen()) {
-            settingsButton.click();
-            menu.waitForHidden(MENU_TIMEOUT_MS);
+        WaitUtil.requireCondition(() -> {
+            if (isOpen()) {
+                settingsButton.click();
+            }
+            return closesWithin(CLOSE_PROBE_MS);
+        }, MENU_TIMEOUT_MS, POLL_MS, "Waiting for the settings menu to close");
+    }
+
+    private boolean closesWithin(int timeoutMs) {
+        try {
+            menu.waitForHidden(timeoutMs);
+            return true;
+        } catch (PlaywrightException stillOpen) {
+            return false;
         }
     }
 
