@@ -22,21 +22,29 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestProjectLinkUi extends BaseTest {
 
+    private static final String DESIGN_REPOSITORY = "design";
+
     @Test
     @TestCaseId("IPBQA-33051")
-    @Description("EPBDS-10235: a project link opens the project by the issued id, by a rebuilt id and by the bare name, and offers Open for a closed project")
+    @Description("EPBDS-10235: a project link opens the project by the issued id and offers Open for a closed "
+            + "project. Since EPBDS-16945 a link by the Base64 id of OpenL Studio 6.4 or by the bare name names no "
+            + "project and shows it as missing.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void testProjectLinkOpensTheProjectBySpellingTheServerAccepts() {
         String projectName = WorkflowService.loginCreateProjectFromTemplate(User.ADMIN, "Sample Project");
         RepositoryPage repositoryPage = new EditorPage().getTabSwitcherComponent()
                 .selectTab(TabSwitcherComponent.TabName.REPOSITORY);
         String issuedId = repositoryPage.openProjectsList().openProjectDetail(projectName).getProjectId();
-        String rebuiltId = EntityIdUtil.encodeProjectId(EntityIdUtil.repositoryOf(issuedId), projectName);
-        assertThat(rebuiltId).as("rebuilt id must differ from the issued one").isNotEqualTo(issuedId);
+        DriverPool.getPage().navigate(ProjectLinkUtil.projectLink(issuedId));
+        assertThat(new ProjectDetailPage().getOverviewPath())
+                .as("project link by the issued id")
+                .isEqualTo(projectName);
 
-        for (String spelling : List.of(issuedId, rebuiltId, projectName)) {
+        for (String spelling : List.of(EntityIdUtil.encodeProjectId(DESIGN_REPOSITORY, projectName), projectName)) {
             DriverPool.getPage().navigate(ProjectLinkUtil.projectLink(spelling));
-            assertThat(new ProjectDetailPage().getOverviewPath()).as("project link by '%s'", spelling).isEqualTo(projectName);
+            assertThat(new ProjectDetailPage().isShownAsMissing())
+                    .as("a project link by '%s' names no project since EPBDS-16945", spelling)
+                    .isTrue();
         }
 
         repositoryPage.openProjectsList();

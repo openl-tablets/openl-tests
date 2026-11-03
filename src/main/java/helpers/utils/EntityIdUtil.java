@@ -6,6 +6,7 @@ import java.util.Base64;
 public final class EntityIdUtil {
 
     public static final String URL_SAFE_BASE64_PATTERN = "[A-Za-z0-9_=-]+";
+    public static final String PROJECT_ID_PATTERN = "[0-9A-HJKMNP-TV-Z]{13}";
 
     private static final String PROJECT_ID_SEPARATOR = ":";
 
@@ -25,14 +26,5 @@ public final class EntityIdUtil {
     public static String encodeProjectId(String repositoryId, String projectName) {
         byte[] source = (repositoryId + PROJECT_ID_SEPARATOR + projectName).getBytes(StandardCharsets.UTF_8);
         return Base64.getUrlEncoder().encodeToString(source);
-    }
-
-    public static String repositoryOf(String projectId) {
-        String decoded = decodeUrlSafeId(projectId);
-        int separator = decoded.indexOf(PROJECT_ID_SEPARATOR);
-        if (separator == -1) {
-            throw new IllegalArgumentException("Not a project id: " + projectId);
-        }
-        return decoded.substring(0, separator);
     }
 }

@@ -17,9 +17,6 @@ import helpers.utils.EntityIdUtil;
 import org.testng.annotations.Test;
 import tests.BaseTest;
 
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestProjectIdUrlSafeEncodingUi extends BaseTest {
@@ -29,9 +26,9 @@ public class TestProjectIdUrlSafeEncodingUi extends BaseTest {
 
     @Test
     @TestCaseId("IPBQA-33034")
-    @Description("EPBDS-16402: the standard Base64 of this project's id contains both '+' and '/', so a regression "
-            + "to non-URL-safe ids breaks every screen with HTTP 400. The id in the URL must stay URL-safe through "
-            + "create, project detail, Files, Revisions, the editor bridge, a deep link and delete.")
+    @Description("EPBDS-16402: a project with a non-ASCII name must work through create, project detail, Files, "
+            + "Revisions, the editor bridge, a deep link and delete. Since EPBDS-16945 its id in the URL is the "
+            + "opaque 13-character Crockford Base32 id, safe in a URL as it is and not built from the name.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void testUrlSafeIdSurvivesFullProjectLifecycle() {
         EditorPage editorPage = new LoginService(DriverPool.getPage()).login(UserService.getUser(User.ADMIN));
@@ -41,51 +38,43 @@ public class TestProjectIdUrlSafeEncodingUi extends BaseTest {
 
         ProjectDetailPage detail = repositoryPage.openProjectsList().openProjectDetail(PROJECT);
         String detailUrl = DriverPool.getPage().url();
-        String idSegment = URLDecoder.decode(EntityIdUtil.lastUrlSegment(detailUrl), StandardCharsets.UTF_8);
+        String idSegment = EntityIdUtil.lastUrlSegment(detailUrl);
         assertThat(idSegment)
-                .as("The project id in the URL must use only the URL-safe Base64 alphabet, with the "
-                        + "padding percent-escaped at most")
-                .matches(EntityIdUtil.URL_SAFE_BASE64_PATTERN)
-                .doesNotContain("+", "/");
-        assertThat(idSegment)
-                .as("This project name must force a character the URL-safe alphabet replaces, otherwise the "
-                        + "check above proves nothing")
-                .containsAnyOf("-", "_");
-        assertThat(EntityIdUtil.decodeUrlSafeId(idSegment))
-                .as("The URL segment must decode as the URL-safe Base64 of the real project id")
-                .contains(PROJECT);
+                .as("The project id in the URL must be the 13 characters of Crockford Base32, not a name the "
+                        + "URL has to escape")
+                .matches(EntityIdUtil.PROJECT_ID_PATTERN);
 
         detail.openFilesTab();
         assertThat(detail.isFilePresent("Main.xlsx"))
-                .as("The Files tab must list the template module when the project id needs URL-safe encoding")
+                .as("The Files tab must list the template module for a project with a non-ASCII name")
                 .isTrue();
 
         detail.openHistoryTab();
         assertThat(detail.getRevisionsCount())
-                .as("The Revisions tab must load the history when the project id needs URL-safe encoding")
+                .as("The Revisions tab must load the history for a project with a non-ASCII name")
                 .isGreaterThanOrEqualTo(1);
 
         editorPage = new EditorPage();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(PROJECT, MODULE);
         assertThat(editorPage.getEditorLeftRulesTreeComponent().waitForTreeFoldersToLoad().getAllEndNodesNames())
-                .as("The editor must open the module of the project whose id needs URL-safe encoding")
+                .as("The editor must open the module of the project with a non-ASCII name")
                 .isNotEmpty();
 
         DriverPool.getPage().navigate(detailUrl);
         detail = new ProjectDetailPage();
         assertThat(detail.getStatus())
-                .as("A deep link holding the URL-safe id must open the project detail, not HTTP 400")
+                .as("A deep link holding the id of a project with a non-ASCII name must open the project detail, not HTTP 400")
                 .isNotBlank();
 
         repositoryPage.openProjectsList();
         repositoryPage.closeProject(PROJECT);
         repositoryPage.deleteProject(PROJECT)
-                .enterDeletionComment("Removed by the URL-safe id regression test")
+                .enterDeletionComment("Removed by the non-ASCII project name regression test")
                 .acknowledgePermanentDeletion()
                 .clickDelete();
         repositoryPage.waitUntilSpinnerLoaded();
         assertThat(repositoryPage.isProjectPresent(PROJECT))
-                .as("Delete must work for the project whose id needs URL-safe encoding")
+                .as("Delete must work for the project with a non-ASCII name")
                 .isFalse();
     }
 }
