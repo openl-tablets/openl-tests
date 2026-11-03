@@ -12,17 +12,14 @@ import java.util.NoSuchElementException;
 
 public class UsersPageComponent extends BaseComponent {
 
-    // Column indices for users table (1-based)
     private static final int COL_USERNAME = 1;
     private static final int COL_FULLNAME = 2;
     private static final int COL_EMAIL = 3;
     private static final int COL_ACTIONS = 4;
 
-    // ==== Table Section ====
     private TableComponent usersTable;
     private WebElement addUserBtn;
 
-    // ==== Drawer (Edit Form) Section ====
     private WebElement drawer;
     private WebElement drawerCloseBtn;
     private WebElement usernameField;
@@ -35,7 +32,6 @@ public class UsersPageComponent extends BaseComponent {
     private WebElement drawerSubmitBtn;
     private WebElement cancelBtn;
 
-    // ==== Role Management Section ====
     private WebElement projectsTab;
     private WebElement deployReposTab;
     private WebElement addRoleBtn;
@@ -47,7 +43,6 @@ public class UsersPageComponent extends BaseComponent {
     private WebElement projectRoleSelectorTemplate;
     private WebElement removeRoleBtn;
 
-    // ==== Error Handling Section ====
     private WebElement errorNotification;
     private WebElement errorDescription;
 
@@ -62,15 +57,12 @@ public class UsersPageComponent extends BaseComponent {
     }
 
     private void initializeElements() {
-        // Initialize table
         usersTable = createScopedComponent(TableComponent.class, "xpath=.//table", "usersTable");
         addUserBtn = createScopedElement("xpath=.//button[./span[text()='Add User']]", "addUserBtn");
 
-        // Drawer elements (not scoped to rootLocator as drawer is outside content div)
         drawer = new WebElement(page, "xpath=//div[contains(@class,'ant-drawer-open')]", "drawer");
         drawerCloseBtn = new WebElement(page, "xpath=//div[contains(@class,'ant-drawer-open')]//button[contains(@class,'ant-drawer-close')]", "drawerCloseBtn");
 
-        // Form fields
         usernameField = new WebElement(page, "xpath=//input[@id='username']", "usernameField");
         emailField = new WebElement(page, "xpath=//input[@id='email']", "emailField");
         passwordField = new WebElement(page, "xpath=//input[@id='password']", "passwordField");
@@ -79,11 +71,9 @@ public class UsersPageComponent extends BaseComponent {
         displayNamePatternDropdown = new WebElement(page, "xpath=//input[@id='displayNameSelect']", "displayNamePatternDropdown");
         displayNameField = new WebElement(page, "xpath=//input[@id='displayName']", "displayNameField");
 
-        // Form buttons
         drawerSubmitBtn = new WebElement(page, "xpath=//div[contains(@class,'ant-drawer-open')]//button[./span[text()='Save']]", "drawerSubmitBtn");
         cancelBtn = new WebElement(page, "xpath=//div[contains(@class,'ant-drawer-open')]//button[./span[text()='Cancel']]", "cancelBtn");
 
-        // Role management
         projectsTab = new WebElement(page, "xpath=//div[@data-node-key='projects']", "projectsTab");
         deployReposTab = new WebElement(page, "xpath=//div[@data-node-key='deployRepos']", "deployReposTab");
         addRoleBtn = new WebElement(page, "xpath=//div[@role='tabpanel' and @aria-hidden='false']//button[./span[contains(text(),'Add Role')]]", "addRoleBtn");
@@ -95,17 +85,16 @@ public class UsersPageComponent extends BaseComponent {
         projectRoleSelectorTemplate = new WebElement(page, "xpath=//input[@id='projects_%s_role']", "projectRoleSelectorTemplate");
         removeRoleBtn = new WebElement(page, "xpath=//button[./span[contains(@aria-label,'delete')] and ancestor::div[contains(@class,'ant-form-item')]]", "removeRoleBtn");
 
-        // Error handling
         errorNotification = new WebElement(page, "xpath=//div[contains(@class,'ant-notification-notice-error')]", "errorNotification");
         errorDescription = new WebElement(page, "xpath=//div[contains(@class,'ant-notification-notice-error')]//div[contains(@class,'ant-notification-notice-description')]", "errorDescription");
     }
 
-    // Locate an action button (edit/delete) anywhere in the user's row — the Actions column index
-    // shifts between auth modes (oauth2/SAML add a Groups column), so anchor on the row, not a cell.
+    private com.microsoft.playwright.Locator userRow(int row) {
+        return usersTable.getCell(row, COL_USERNAME).getLocator().locator("xpath=ancestor::tr[1]");
+    }
+
     private com.microsoft.playwright.Locator rowActionButton(int row, String icon) {
-        return usersTable.getCell(row, COL_USERNAME).getLocator()
-                .locator("xpath=ancestor::tr[1]")
-                .locator("xpath=.//button[.//*[@data-icon='" + icon + "']]");
+        return userRow(row).locator("xpath=.//button[.//*[@data-icon='" + icon + "']]");
     }
 
     public int getUserRow(String username) {
@@ -118,6 +107,18 @@ public class UsersPageComponent extends BaseComponent {
             }
         }
         throw new NoSuchElementException("User not found in table: " + username);
+    }
+
+    public boolean isUserShownOnline(String username) {
+        return userRow(getUserRow(username))
+                .locator("xpath=.//sup[contains(@class,'ant-badge-dot')][contains(@class,'ant-badge-color-green')]")
+                .count() > 0;
+    }
+
+    public UsersPageComponent reloadPage() {
+        page.reload();
+        waitUntilSpinnerLoaded();
+        return this;
     }
 
     public String getUsernameFromRow(int rowIndex) {
@@ -178,10 +179,6 @@ public class UsersPageComponent extends BaseComponent {
             }, 5000, 100, "Waiting for user deletion to complete");
 
     }
-
-    // ========================================
-    // Form Methods - Add/Edit User
-    // ========================================
 
     public UsersPageComponent clickAddUser() {
         addUserBtn.click();
@@ -301,11 +298,6 @@ public class UsersPageComponent extends BaseComponent {
             drawer.waitForHidden(3000);
     }
 
-    /**
-     * Studio 6.4.0 made Email mandatory and defaults the Display Name mode to "Custom", which makes that
-     * field mandatory too, so a save leaving either empty is rejected with "Please fix the errors before
-     * saving". Fills whichever the caller did not set, the way a user filling the form would.
-     */
     private void fillRequiredIdentityFields() {
         if (emailField.isEnabled() && emailField.getCurrentInputValue().isBlank()) {
             emailField.fill(getUsername() + "@test.com");
@@ -317,7 +309,6 @@ public class UsersPageComponent extends BaseComponent {
     }
 
     public void cancelUser() {
-        // A post-save error notification overlaps the drawer's Cancel button; Escape closes the drawer regardless
         WaitUtil.retryOnException(() -> {
             page.keyboard().press("Escape");
             drawer.waitForHidden(2000);
