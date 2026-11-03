@@ -11,6 +11,9 @@ import java.util.List;
 public class ProjectHistoryTabComponent extends BaseComponent {
 
     private static final String AUTHOR_RELATIVE_TO_COMMENT = "xpath=../following-sibling::div[1]/span[1]";
+    private static final String COMMENT_PREDICATE = "[starts-with(@data-testid,'revision-comment-') and not(contains(@data-testid,'-toggle'))]";
+    private static final String TEXT_WITHOUT_TOGGLE = "comments => comments.map(comment => [...comment.childNodes]"
+            + ".filter(node => node.nodeName !== 'BUTTON').map(node => node.textContent).join('').trim())";
 
     private final WebElement revisionEntries;
     private final WebElement technicalRevisionEntries;
@@ -26,14 +29,14 @@ public class ProjectHistoryTabComponent extends BaseComponent {
 
     public ProjectHistoryTabComponent(WebElement rootLocator) {
         super(rootLocator);
-        revisionEntries = createScopedElement("xpath=.//*[starts-with(@data-testid,'revision-comment-')]", "revisionEntries");
+        revisionEntries = createScopedElement("xpath=.//*" + COMMENT_PREDICATE, "revisionEntries");
         technicalRevisionEntries = createScopedElement("xpath=.//li[.//span[contains(@class,'ant-tag') and normalize-space()='technical']]"
-                + "//*[starts-with(@data-testid,'revision-comment-')]", "technicalRevisionEntries");
+                + "//*" + COMMENT_PREDICATE, "technicalRevisionEntries");
         technicalRevisionsSwitch = createScopedElement("xpath=.//*[@data-testid='revisions-tech']", "technicalRevisionsSwitch");
         searchField = createScopedElement("xpath=.//*[starts-with(@data-testid,'revisions-search-')]/descendant-or-self::input", "searchField");
-        openRevisionButton = createScopedElement("xpath=.//li[.//*[starts-with(@data-testid,'revision-comment-') and normalize-space()='%s']]"
+        openRevisionButton = createScopedElement("xpath=.//li[.//*" + COMMENT_PREDICATE + "[normalize-space()='%s']]"
                 + "//button[starts-with(@data-testid,'revision-open-')]", "openRevisionButton");
-        revisionComment = createScopedElement("xpath=.//*[starts-with(@data-testid,'revision-comment-') and normalize-space()='%s']", "revisionComment");
+        revisionComment = createScopedElement("xpath=.//*" + COMMENT_PREDICATE + "[normalize-space()='%s']", "revisionComment");
         emptyState = createScopedElement("xpath=.//div[contains(@class,'ant-empty-description')]", "emptyState");
     }
 
@@ -104,8 +107,9 @@ public class ProjectHistoryTabComponent extends BaseComponent {
         return testId == null ? "" : testId.substring(testId.lastIndexOf('-') + 1);
     }
 
+    @SuppressWarnings("unchecked")
     private List<String> texts(WebElement entries) {
-        return entries.getLocator().allTextContents().stream().map(String::trim).toList();
+        return (List<String>) entries.getLocator().evaluateAll(TEXT_WITHOUT_TOGGLE);
     }
 
     public int getRevisionsCount() {

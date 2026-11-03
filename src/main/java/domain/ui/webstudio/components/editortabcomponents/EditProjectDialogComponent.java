@@ -42,7 +42,7 @@ public class EditProjectDialogComponent extends BaseComponent {
     }
 
     public String getDescription() {
-        return descriptionField.getAttribute("value");
+        return descriptionField.waitForVisible(DEFAULT_TIMEOUT_MS).getCurrentInputValue();
     }
 
     public void clickUpdateButton() {

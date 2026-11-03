@@ -15,6 +15,7 @@ public class RepositoryPage extends BasePage {
 
     private static final int PROJECT_LISTED_TIMEOUT_MS = 90000;
     private static final int ROW_PROBE_MS = 1000;
+    private static final int MERGE_SUMMARY_SHOWN_MS = 30000;
 
     private TabSwitcherComponent tabSwitcherComponent;
     private WebElement refreshBtn;
@@ -23,6 +24,7 @@ public class RepositoryPage extends BasePage {
     private ProjectsFilterRailComponent filterRail;
     private WebElement discardCloseConfirmBtn;
     private WebElement mergeSummaryCloseBtn;
+    private WebElement mergeSummaryResult;
     private WebElement copyProjectNameField;
     private WebElement copyProjectSubmitBtn;
     private WebElement filterByNameInput;
@@ -50,6 +52,7 @@ public class RepositoryPage extends BasePage {
         filterRail = new ProjectsFilterRailComponent(page);
         discardCloseConfirmBtn = new WebElement(page, "xpath=//*[@data-testid='discard-close-confirm']", "discardCloseConfirmBtn");
         mergeSummaryCloseBtn = new WebElement(page, "xpath=//*[@data-testid='merge-summary-close']", "mergeSummaryCloseBtn");
+        mergeSummaryResult = new WebElement(page, "xpath=//*[@data-testid='merge-summary-result']", "mergeSummaryResult");
         copyProjectNameField = new WebElement(page, "xpath=//*[@data-testid='copy-project-name']", "copyProjectNameField");
         copyProjectSubmitBtn = new WebElement(page, "xpath=//*[@data-testid='copy-project-submit']", "copyProjectSubmitBtn");
 
@@ -130,6 +133,17 @@ public class RepositoryPage extends BasePage {
         waitUntilSpinnerLoaded();
         if (configureCommitInfoComponentShade.isVisible(3000))
             configureCommitInfoComponent.fillCommitInfoWithRandomData();
+    }
+
+    public String getMergeSummaryResult() {
+        return mergeSummaryResult.waitForVisible(MERGE_SUMMARY_SHOWN_MS).getInnerText().trim();
+    }
+
+    public List<String> getMergeSummarySheets(String fileName) {
+        mergeSummaryResult.waitForVisible(MERGE_SUMMARY_SHOWN_MS);
+        return page.locator("xpath=//*[@data-testid='merge-summary-file'][.//strong[normalize-space()='" + fileName
+                        + "']]//*[@data-testid='merge-summary-sheets']//span[contains(@class,'ant-tag')]")
+                .allInnerTexts().stream().map(String::trim).toList();
     }
 
     public void closeMergeSummary() {
@@ -266,6 +280,14 @@ public class RepositoryPage extends BasePage {
         clickRowAction(projectName, "Save");
         saveProjectDialogComponent.waitForVisible().setComment(comment).submit();
         waitUntilSpinnerLoaded();
+    }
+
+    public List<String> saveProjectAndGetChangedFiles(String projectName, String comment) {
+        clickRowAction(projectName, "Save");
+        List<String> changes = saveProjectDialogComponent.waitForVisible().getChangedFiles();
+        saveProjectDialogComponent.setComment(comment).submit();
+        waitUntilSpinnerLoaded();
+        return changes;
     }
 
     public void saveProjectWithCommitInfo(String projectName, String comment) {

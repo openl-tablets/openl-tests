@@ -1,13 +1,19 @@
 package domain.ui.webstudio.components.repositorytabcomponents;
 
+import com.microsoft.playwright.Locator;
 import configuration.core.ui.WebElement;
 import configuration.driver.DriverPool;
 import domain.ui.webstudio.components.BaseComponent;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class SaveProjectDialogComponent extends BaseComponent {
 
     private static final String MODAL_ROOT =
             "//div[contains(@class,'ant-modal')][.//div[contains(@class,'ant-modal-title') and contains(normalize-space(),'Save project')]]";
+
+    private static final String CHANGES = MODAL_ROOT + "//div[@data-testid='save-project-changes']";
 
     private WebElement commentField;
     private WebElement submitBtn;
@@ -30,6 +36,24 @@ public class SaveProjectDialogComponent extends BaseComponent {
     public SaveProjectDialogComponent waitForVisible() {
         commentField.waitForVisible();
         return this;
+    }
+
+    public List<String> getChangedFiles() {
+        WebElement header = new WebElement(DriverPool.getPage(),
+                "xpath=" + CHANGES + "//div[contains(@class,'ant-collapse-header')]", "saveProjectChangesHeader");
+        header.waitForVisible();
+        if (!"true".equals(header.getAttribute("aria-expanded"))) {
+            header.click();
+        }
+        Locator rows = DriverPool.getPage().locator("xpath=" + CHANGES + "//*[@data-testid='save-project-changes-file']");
+        rows.first().waitFor();
+        List<String> files = new ArrayList<>();
+        for (int i = 0; i < rows.count(); i++) {
+            Locator row = rows.nth(i);
+            files.add(row.locator("xpath=.//span[@aria-label]").first().getAttribute("aria-label") + " "
+                    + row.locator("strong").first().innerText().trim());
+        }
+        return files;
     }
 
     public SaveProjectDialogComponent setComment(String comment) {

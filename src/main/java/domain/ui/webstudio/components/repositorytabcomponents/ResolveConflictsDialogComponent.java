@@ -1,11 +1,14 @@
 package domain.ui.webstudio.components.repositorytabcomponents;
 
+import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import configuration.core.ui.WebElement;
 import configuration.driver.DriverPool;
 import domain.ui.webstudio.components.BaseComponent;
 import domain.ui.webstudio.components.editortabcomponents.CompareLocalChangesDialogComponent;
 import helpers.utils.WaitUtil;
+
+import java.util.List;
 
 public class ResolveConflictsDialogComponent extends BaseComponent {
 
@@ -30,6 +33,8 @@ public class ResolveConflictsDialogComponent extends BaseComponent {
     }
 
     private static final String FILE_ROW = "//tr[.//*[normalize-space()='%s']]";
+    private static final String WORKBOOK_TABLE = "//*[@data-testid='workbook-merge-table-%d']";
+    private static final long MERGE_EDITOR_SHOWN_MS = 15000;
 
     private WebElement useYoursRadio;
     private WebElement useTheirsRadio;
@@ -38,6 +43,10 @@ public class ResolveConflictsDialogComponent extends BaseComponent {
     private WebElement saveButton;
     private WebElement cancelButton;
     private WebElement compareLink;
+    private WebElement textMergeTakeTheirs;
+    private WebElement textMergeProgress;
+    private WebElement textMergeApply;
+    private WebElement workbookMergeApply;
 
     public ResolveConflictsDialogComponent() {
         super(DriverPool.getPage());
@@ -57,9 +66,12 @@ public class ResolveConflictsDialogComponent extends BaseComponent {
         saveButton = createScopedElement("xpath=.//button[contains(@class, 'ant-btn-primary') and contains(., 'Save and Resolve')]", "saveButton");
         cancelButton = createScopedElement("xpath=.//button[contains(@class, 'ant-btn-default') and contains(., 'Cancel')]", "cancelButton");
         compareLink = new WebElement(page, "xpath=//button[contains(normalize-space(.),'Compare File Versions')]", "compareLink");
+        textMergeTakeTheirs = new WebElement(page, "xpath=//button[@data-testid='text-merge-take-theirs']", "textMergeTakeTheirs");
+        textMergeProgress = new WebElement(page, "xpath=//*[@data-testid='text-merge-progress']", "textMergeProgress");
+        textMergeApply = new WebElement(page, "xpath=//button[@data-testid='text-merge-apply']", "textMergeApply");
+        workbookMergeApply = new WebElement(page, "xpath=//button[@data-testid='workbook-merge-apply']", "workbookMergeApply");
     }
 
-    // Availability is reported per file, not per revision, so every lookup is scoped to the row of that file.
     public boolean isDownloadOffered(String fileName, ConflictSide side) {
         return fileRowElement(fileName, "//button[normalize-space()='" + side.downloadLabel() + "']").exists();
     }
@@ -68,23 +80,19 @@ public class ResolveConflictsDialogComponent extends BaseComponent {
         return fileRowElement(fileName, "//*[normalize-space()='" + side.deletedLabel() + "']").exists();
     }
 
-    // The deleted side must be a plain label. Rendering it as a button is the defect: clicking it opened a 404.
     public boolean isDeletedStatusRenderedAsButton(String fileName, ConflictSide side) {
         return fileRowElement(fileName, "//button[normalize-space()='" + side.deletedLabel() + "']").exists();
     }
 
     public boolean isCompareOffered(String fileName) {
-        return fileRowElement(fileName, "//button[normalize-space()='Compare File Versions']").exists();
+        return compareButton(fileName).exists();
     }
 
-    // Scoped to the dialog: the Files tab of the project sits under the modal and holds the same file names.
     private WebElement fileRowElement(String fileName, String relativeXpath) {
         return createScopedElement("xpath=." + String.format(FILE_ROW, fileName) + relativeXpath,
                 "conflictRowElement");
     }
 
-    // Throws rather than returning quietly: a dialog that never opened would let negative assertions about
-    // its contents pass as if the expected absence had been observed.
     public void waitForDialogToAppear() {
         if (!WaitUtil.waitForCondition(() -> useYoursRadio.isVisible(), 10000, 250,
                 "Waiting for Resolve Conflicts dialog to appear")) {
@@ -137,17 +145,77 @@ public class ResolveConflictsDialogComponent extends BaseComponent {
         WaitUtil.sleep(500, "Wait for compare screen to load");
     }
 
-    /**
-     * Opens the comparison of the two versions of the conflicted file. Every comparison the studio draws
-     * opens on the comparison screen, in a window of its own, whatever kind of file is being compared.
-     */
     public CompareLocalChangesDialogComponent clickCompareLinkAsPopup() {
-        compareLink.waitForVisible(10000);
-        Page popup = page.waitForPopup(() -> {
-            compareLink.clickForce();
-        });
+        return openCompareAsPopup(compareLink);
+    }
+
+    private CompareLocalChangesDialogComponent openCompareAsPopup(WebElement compare) {
+        compare.waitForVisible(10000);
+        Page popup = page.waitForPopup(compare::clickForce);
         popup.waitForLoadState();
         return new CompareLocalChangesDialogComponent(popup);
     }
 
+    public void waitForConflictedFile(String fileName) {
+        compareButton(fileName).waitForVisible(MERGE_EDITOR_SHOWN_MS);
+    }
+
+    public void chooseResolution(String fileName, String resolution) {
+        fileRowElement(fileName, "//label[.//span[normalize-space()='" + resolution + "']]").click();
+    }
+
+    public CompareLocalChangesDialogComponent openCompareAsPopup(String fileName) {
+        return openCompareAsPopup(compareButton(fileName));
+    }
+
+    private WebElement compareButton(String fileName) {
+        return fileRowElement(fileName, "//button[normalize-space()='Compare File Versions']");
+    }
+
+    public void takeTheirsInTextMerge() {
+        textMergeTakeTheirs.waitForVisible(MERGE_EDITOR_SHOWN_MS);
+        textMergeTakeTheirs.click();
+    }
+
+    public String getTextMergeProgress() {
+        return textMergeProgress.getText().trim();
+    }
+
+    public String getTextMergeResult(int conflict) {
+        return new WebElement(page, "xpath=//*[@data-testid='text-merge-result-" + conflict + "']", "textMergeResult")
+                .getInnerText();
+    }
+
+    public void applyTextMerge() {
+        textMergeApply.click();
+        textMergeApply.waitForHidden(10000);
+    }
+
+    public List<String> getWorkbookTableActions(int table) {
+        Locator takes = page.locator("xpath=" + String.format(WORKBOOK_TABLE, table)
+                + "//button[starts-with(@data-testid,'workbook-merge-table-" + table + "-take-')]");
+        new WebElement(page, "xpath=//button[@data-testid='workbook-merge-table-" + table + "-take-theirs']",
+                "workbookMergeTakeTheirs").waitForVisible(MERGE_EDITOR_SHOWN_MS);
+        return takes.all().stream().filter(Locator::isVisible).map(button -> button.innerText().trim()).toList();
+    }
+
+    public boolean isWorkbookTableStatusShown(int table, String status) {
+        return new WebElement(page, "xpath=" + String.format(WORKBOOK_TABLE, table)
+                + "//span[contains(@class,'ant-tag')][normalize-space()='" + status + "']", "workbookMergeTableStatus").isVisible(5000);
+    }
+
+    public void takeTheirsForCell(int table, String cell) {
+        new WebElement(page, "xpath=//button[@data-testid='workbook-merge-table-" + table + "-" + cell + "-take-theirs']",
+                "workbookMergeTakeTheirsForCell").click();
+    }
+
+    public String getWorkbookMergedTable(int table) {
+        return new WebElement(page, "xpath=//*[@data-testid='workbook-merge-table-" + table + "-merged']",
+                "workbookMergedTable").getInnerText();
+    }
+
+    public void applyWorkbookMerge() {
+        workbookMergeApply.click();
+        workbookMergeApply.waitForHidden(10000);
+    }
 }
