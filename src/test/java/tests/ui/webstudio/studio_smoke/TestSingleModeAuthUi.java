@@ -8,6 +8,7 @@ import configuration.driver.DriverPool;
 import domain.ui.webstudio.components.common.CreateNewProjectComponent;
 import domain.ui.webstudio.components.common.TabSwitcherComponent;
 import domain.ui.webstudio.components.common.UserSlidingRightMenuComponent;
+import domain.ui.webstudio.components.editortabcomponents.ChangesDialogComponent;
 import domain.ui.webstudio.components.editortabcomponents.EditorTableActionsPanelComponent;
 import domain.ui.webstudio.components.editortabcomponents.EditorToolbarPanelComponent;
 import domain.ui.webstudio.components.editortabcomponents.leftmenu.EditorLeftRulesTreeComponent;
@@ -34,13 +35,18 @@ public class TestSingleModeAuthUi extends BaseTest {
     private static final int TOTAL_ROW = 4;
     private static final int VALUE_COLUMN = 2;
     private static final int DISK_CHANGE_SHOWN_MS = 30000;
+    private static final String EXTRA_MODULE = "InPlaceExtra";
+    private static final String EXTRA_WORKBOOK = "InPlaceExtra.xlsx";
+    private static final String RULES_WITH_EXTRA_MODULE = "rules_with_extra_module.xml";
 
     @Test
-    @TestCaseId("EPBDS-17081")
+    @TestCaseId({"EPBDS-17081", "EPBDS-17103"})
     @Description("Single-user mode: opening the app auto-authenticates with no login form, and the "
             + "configured single user has admin access (Administration menu visible). With a file design repository "
             + "a project is edited in place: nothing to open, close or save, an edit lands in the file, a change of "
-            + "the file on disk is told with Refresh, an edit over it is refused, and Refresh shows the file (EPBDS-16987).")
+            + "the file on disk is told with Refresh, an edit over it is refused, and Refresh shows the file (EPBDS-16987). "
+            + "The local history keeps the version from disk and restores it, and a workbook and rules.xml changed on disk "
+            + "are told with Refresh.")
     @AppContainerConfig(startParams = AppContainerStartParameters.STUDIO_SINGLE_FILE_REPO_PARAMS)
     public void testSingleModeAutoAuthentication() {
         DriverPool.getPage().navigate(DriverPool.getAppUrl());
@@ -110,6 +116,38 @@ public class TestSingleModeAuthUi extends BaseTest {
         assertThat(editorPage.getCenterTable().getCellText(TOTAL_ROW, VALUE_COLUMN))
                 .as("Refresh shows the value of the file changed on disk")
                 .isEqualTo("36");
+
+        toolbar.getEditTableBtn().click();
+        editorPage.getCenterTable().editCell(TOTAL_ROW, VALUE_COLUMN, "50");
+        actions.clickSaveChanges();
+        ChangesDialogComponent localChanges = toolbar.clickMore().clickChanges();
+        assertThat(localChanges.isRowCurrent(1))
+                .as("The edit made after Refresh is the current version of the module")
+                .isTrue();
+        localChanges.clickRestoreAtRow(2);
+        localChanges.closeIfOpen();
+        WaitUtil.waitForCondition(() -> "36".equals(editorPage.getCenterTable().getCellText(TOTAL_ROW, VALUE_COLUMN)),
+                DISK_CHANGE_SHOWN_MS, 500, "Waiting for the restored version of the module");
+        assertThat(editorPage.getCenterTable().getCellText(TOTAL_ROW, VALUE_COLUMN))
+                .as("The local history kept the version another program saved before OpenL Studio wrote over it, "
+                        + "and restoring it brings that version back")
+                .isEqualTo("36");
+
+        assertThat(toolbar.getChangedOnDiskNotice(1000))
+                .as("A restore made in the editor is not taken for a change made outside OpenL Studio")
+                .isEmpty();
+        String projectFolder = SINGLE_FILE_REPO_URI + "/" + PROJECT;
+        AppContainerFileService.copyFileToContainer(TestDataUtil.getFilePathFromResources(EXTRA_WORKBOOK),
+                projectFolder + "/rules/" + EXTRA_WORKBOOK);
+        AppContainerFileService.copyFileToContainer(TestDataUtil.getFilePathFromResources(RULES_WITH_EXTRA_MODULE),
+                projectFolder + "/rules.xml");
+        assertThat(toolbar.getChangedOnDiskNotice(DISK_CHANGE_SHOWN_MS))
+                .as("The editor tells that rules.xml and the modules of the project changed on disk")
+                .contains("The files of the project were changed outside OpenL Studio");
+        toolbar.clickProjectRefresh();
+        assertThat(editorPage.getEditorLeftProjectModuleSelectorComponent().getAllModuleNames(PROJECT))
+                .as("After Refresh the workbook added on disk is a module of the project")
+                .contains(MODULE, EXTRA_MODULE);
     }
 
     private void openTable(EditorPage editorPage) {
