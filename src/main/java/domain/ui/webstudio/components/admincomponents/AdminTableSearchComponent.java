@@ -23,6 +23,10 @@ public class AdminTableSearchComponent extends BaseComponent {
         return this;
     }
 
+    public String getQuery() {
+        return searchInput.getCurrentInputValue();
+    }
+
     public AdminTableSearchComponent clear() {
         searchInput.waitForVisible(DEFAULT_TIMEOUT_MS);
         searchInput.fill("");

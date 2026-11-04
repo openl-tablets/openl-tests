@@ -19,7 +19,6 @@ public class UsersPageComponent extends BaseComponent {
 
     private TableComponent usersTable;
     private WebElement addUserBtn;
-    private WebElement searchField;
 
     private WebElement drawer;
     private WebElement drawerCloseBtn;
@@ -60,7 +59,6 @@ public class UsersPageComponent extends BaseComponent {
     private void initializeElements() {
         usersTable = createScopedComponent(TableComponent.class, "xpath=.//table", "usersTable");
         addUserBtn = createScopedElement("xpath=.//button[./span[text()='Add User']]", "addUserBtn");
-        searchField = createScopedElement("xpath=.//input[@data-testid='users-search-input']", "searchField");
 
         drawer = new WebElement(page, "xpath=//div[contains(@class,'ant-drawer-open')]", "drawer");
         drawerCloseBtn = new WebElement(page, "xpath=//div[contains(@class,'ant-drawer-open')]//button[contains(@class,'ant-drawer-close')]", "drawerCloseBtn");
@@ -91,12 +89,12 @@ public class UsersPageComponent extends BaseComponent {
         errorDescription = new WebElement(page, "xpath=//div[contains(@class,'ant-notification-notice-error')]//div[contains(@class,'ant-notification-notice-description')]", "errorDescription");
     }
 
-    private com.microsoft.playwright.Locator userRow(int row) {
-        return usersTable.getCell(row, COL_USERNAME).getLocator().locator("xpath=ancestor::tr[1]");
+    private WebElement rowElement(int row, String xpath) {
+        return usersTable.getCell(row, COL_USERNAME).child("xpath=ancestor::tr[1]" + xpath);
     }
 
     private com.microsoft.playwright.Locator rowActionButton(int row, String icon) {
-        return userRow(row).locator("xpath=.//button[.//*[@data-icon='" + icon + "']]");
+        return rowElement(row, "//button[.//*[@data-icon='" + icon + "']]").getLocator();
     }
 
     public int getUserRow(String username) {
@@ -112,9 +110,9 @@ public class UsersPageComponent extends BaseComponent {
     }
 
     public boolean isUserShownOnline(String username) {
-        return userRow(getUserRow(username))
-                .locator("xpath=.//sup[contains(@class,'ant-badge-dot')][contains(@class,'ant-badge-color-green')]")
-                .count() > 0;
+        return rowElement(getUserRow(username),
+                "//sup[contains(@class,'ant-badge-dot')][contains(@class,'ant-badge-color-green')]")
+                .getLocator().count() > 0;
     }
 
     public UsersPageComponent reloadPage() {
@@ -182,26 +180,9 @@ public class UsersPageComponent extends BaseComponent {
 
     }
 
-    public UsersPageComponent searchUsers(String text) {
-        searchField.fill(text);
-        getUserRow(text);
-        return this;
-    }
-
-    public String getSearchText() {
-        return searchField.getCurrentInputValue();
-    }
-
-    private WebElement rowElement(String username, String xpath) {
-        return usersTable.getCell(getUserRow(username), COL_USERNAME).child("xpath=ancestor::tr[1]" + xpath);
-    }
-
-    private WebElement showLessGroupsBtn(String username) {
-        return rowElement(username, "//button[./span[text()='Show less']]");
-    }
-
     public List<String> getUserGroups(String username) {
-        return rowElement(username, "//span[contains(@class,'ant-tag')]").getLocator().allInnerTexts().stream()
+        return rowElement(getUserRow(username), "//span[contains(@class,'ant-tag')]").getLocator().allInnerTexts()
+                .stream()
                 .map(String::trim)
                 .toList();
     }
@@ -212,7 +193,8 @@ public class UsersPageComponent extends BaseComponent {
 
     public UsersPageComponent expandUserGroups(String username, String badge) {
         WebElement showLessBtn = showLessGroupsBtn(username);
-        rowElement(username, "//span[contains(@class,'ant-tag') and normalize-space()='" + badge + "']").click();
+        rowElement(getUserRow(username), "//span[contains(@class,'ant-tag') and normalize-space()='" + badge + "']")
+                .click();
         showLessBtn.waitForVisible(DEFAULT_TIMEOUT_MS);
         return this;
     }
@@ -222,6 +204,10 @@ public class UsersPageComponent extends BaseComponent {
         showLessBtn.click();
         showLessBtn.waitForHidden(DEFAULT_TIMEOUT_MS);
         return this;
+    }
+
+    private WebElement showLessGroupsBtn(String username) {
+        return rowElement(getUserRow(username), "//button[./span[text()='Show less']]");
     }
 
     public UsersPageComponent clickAddUser() {
