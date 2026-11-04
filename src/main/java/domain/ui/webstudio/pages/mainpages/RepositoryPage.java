@@ -348,4 +348,8 @@ public class RepositoryPage extends BasePage {
     public List<String> getProjectActionLabels(String projectName) {
         return projectsListTable.getProjectActionLabels(projectName);
     }
+
+    public boolean isCreateProjectOffered() {
+        return createProjectLink.isVisible(DEFAULT_TIMEOUT_MS / 5);
+    }
 }

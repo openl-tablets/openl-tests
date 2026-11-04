@@ -48,9 +48,21 @@ public enum AppContainerStartParameters {
                 config.put("security.administrators", "singleuser");
                 break;
             case STUDIO_SINGLE_FILE_REPO_PARAMS:
-                config.putAll(STUDIO_SINGLE_PARAMS.getParameterMap());
-                config.put("REPOSITORY_DESIGN__REF_", "repo-file");
-                config.put("REPOSITORY_DESIGN_URI", SINGLE_FILE_REPO_URI);
+                config.putAll(EMPTY.getParameterMap());
+                config.put("USER_MODE", "single");
+                config.put("SECURITY_ALLOW-PROJECT-CREATE-DELETE", "false");
+                config.put("SECURITY_SINGLE_USERNAME", "singleuser");
+                config.put("SECURITY_SINGLE_FIRST-NAME", "Single");
+                config.put("SECURITY_SINGLE_LAST-NAME", "User");
+                config.put("SECURITY_SINGLE_EMAIL", "singleuser@example.com");
+                config.put("SECURITY_SINGLE_DISPLAY-NAME", "Single User");
+                config.put("DESIGN-REPOSITORY-CONFIGS", "local-rules");
+                config.put("REPOSITORY_IGNORED-PATHS",
+                        "${repository.default-ignored-paths}, **/target/**, **/automation/**, **/applications/**");
+                config.put("REPOSITORY_LOCAL-RULES_FACTORY", "repo-file");
+                config.put("REPOSITORY_LOCAL-RULES_NAME", "local-rules");
+                config.put("REPOSITORY_LOCAL-RULES_URI", SINGLE_FILE_REPO_URI);
+                config.put("REPOSITORY_LOCAL-RULES_LISTENER-TIMER-PERIOD", "5");
                 break;
             case SINGLE_USER_STUDIO_PARAMS:
                 config.putAll(EMPTY.getParameterMap());

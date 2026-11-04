@@ -5,7 +5,6 @@ import configuration.annotations.AppContainerConfig;
 import configuration.annotations.TestCaseId;
 import configuration.appcontainer.AppContainerStartParameters;
 import configuration.driver.DriverPool;
-import domain.ui.webstudio.components.common.CreateNewProjectComponent;
 import domain.ui.webstudio.components.common.TabSwitcherComponent;
 import domain.ui.webstudio.components.common.UserSlidingRightMenuComponent;
 import domain.ui.webstudio.components.editortabcomponents.ChangesDialogComponent;
@@ -14,6 +13,7 @@ import domain.ui.webstudio.components.editortabcomponents.EditorToolbarPanelComp
 import domain.ui.webstudio.components.editortabcomponents.leftmenu.EditorLeftRulesTreeComponent;
 import domain.ui.webstudio.pages.mainpages.EditorPage;
 import domain.ui.webstudio.pages.mainpages.LoginPage;
+import domain.ui.webstudio.pages.mainpages.ProjectDetailPage;
 import domain.ui.webstudio.pages.mainpages.RepositoryPage;
 import helpers.service.AppContainerFileService;
 import helpers.utils.TestDataUtil;
@@ -38,17 +38,25 @@ public class TestSingleModeAuthUi extends BaseTest {
     private static final String EXTRA_MODULE = "InPlaceExtra";
     private static final String EXTRA_WORKBOOK = "InPlaceExtra.xlsx";
     private static final String RULES_WITH_EXTRA_MODULE = "rules_with_extra_module.xml";
+    private static final String PROJECT_DESCRIPTOR = "rules.xml";
+    private static final String IN_PLACE_DESCRIPTOR = "in_place_rules.xml";
+    private static final String PROJECT_FOLDER = SINGLE_FILE_REPO_URI + "/lob/" + PROJECT;
+    private static final String IGNORED_PROJECT = "InAutomation";
 
     @Test
-    @TestCaseId({"EPBDS-17081", "EPBDS-17103"})
-    @Description("Single-user mode: opening the app auto-authenticates with no login form, and the "
-            + "configured single user has admin access (Administration menu visible). With a file design repository "
-            + "a project is edited in place: nothing to open, close or save, an edit lands in the file, a change of "
-            + "the file on disk is told with Refresh, an edit over it is refused, and Refresh shows the file (EPBDS-16987). "
-            + "The local history keeps the version from disk and restores it, and a workbook and rules.xml changed on disk "
-            + "are told with Refresh.")
+    @TestCaseId({"EPBDS-17081", "EPBDS-17103", "EPBDS-17102"})
+    @Description("Single-user mode, started with the settings a tool running OpenL Studio on a developer's machine "
+            + "passes: a file design repository set through the environment, no project creation or deletion, ignored "
+            + "folders. Opening the app auto-authenticates with no login form, and the single user has admin access "
+            + "(Administration menu visible). A project in a nested folder is listed, one in an ignored folder is not, "
+            + "and none can be created, copied or deleted. The project is edited in place: nothing to open, close or "
+            + "save, no revisions, an edit lands in the file, a change of the file on disk is told with Refresh, an edit "
+            + "over it is refused, and Refresh shows the file (EPBDS-16987). The local history keeps the version from "
+            + "disk and restores it, and a workbook and rules.xml changed on disk are told with Refresh.")
     @AppContainerConfig(startParams = AppContainerStartParameters.STUDIO_SINGLE_FILE_REPO_PARAMS)
     public void testSingleModeAutoAuthentication() {
+        putProjectOnDisk(SINGLE_FILE_REPO_URI + "/automation/" + IGNORED_PROJECT);
+        putProjectOnDisk(PROJECT_FOLDER);
         DriverPool.getPage().navigate(DriverPool.getAppUrl());
         DriverPool.getPage().waitForLoadState();
         new LoginPage().completeProfileIfRequested();
@@ -66,11 +74,18 @@ public class TestSingleModeAuthUi extends BaseTest {
 
         RepositoryPage repositoryPage = editorPage.getTabSwitcherComponent()
                 .selectTab(TabSwitcherComponent.TabName.REPOSITORY);
-        repositoryPage.createProject(CreateNewProjectComponent.TabName.EXCEL_FILES, PROJECT, WORKBOOK);
+        repositoryPage.waitUntilProjectListed(PROJECT);
+        assertThat(repositoryPage.getAllVisibleProjectsInTable())
+                .as("A project in an ignored folder is not listed")
+                .doesNotContain(IGNORED_PROJECT);
+        assertThat(repositoryPage.isCreateProjectOffered())
+                .as("No project can be created when project creation and deletion are not allowed")
+                .isFalse();
         assertThat(repositoryPage.getProjectActionLabels(PROJECT))
-                .as("A project of a file repository is edited in place: there is nothing to open, close, save or sync")
+                .as("A project of a file repository is edited in place: there is nothing to open, close, save or sync, "
+                        + "and it can be neither copied nor deleted")
                 .contains("Export")
-                .doesNotContain("Open", "Close", "Save", "Discard", "Sync");
+                .doesNotContain("Open", "Close", "Save", "Discard", "Sync", "Copy", "Delete");
 
         EditorToolbarPanelComponent toolbar = editorPage.getEditorToolbarPanelComponent();
         EditorTableActionsPanelComponent actions = editorPage.getEditorTableActionsPanelComponent();
@@ -88,16 +103,20 @@ public class TestSingleModeAuthUi extends BaseTest {
                 .as("The edit is written into the file and stays after a reload")
                 .isEqualTo("48");
         repositoryPage = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.REPOSITORY);
-        assertThat(repositoryPage.openProjectDetail(PROJECT).getStatus())
+        ProjectDetailPage projectDetail = repositoryPage.openProjectDetail(PROJECT);
+        assertThat(projectDetail.getStatus())
                 .as("A project edited in place is never shown as modified")
                 .isEqualTo("No Changes");
+        assertThat(projectDetail.isHistoryTabOffered())
+                .as("A project of a file repository has no revisions to show")
+                .isFalse();
 
         openTable(editorPage);
         assertThat(toolbar.getChangedOnDiskNotice(1000))
                 .as("The edits of the editor itself are not taken for a change made outside OpenL Studio")
                 .isEmpty();
         AppContainerFileService.copyFileToContainer(TestDataUtil.getFilePathFromResources(CHANGED_WORKBOOK),
-                SINGLE_FILE_REPO_URI + "/" + PROJECT + "/rules/" + WORKBOOK);
+                PROJECT_FOLDER + "/rules/" + WORKBOOK);
         assertThat(toolbar.getChangedOnDiskNotice(DISK_CHANGE_SHOWN_MS))
                 .as("The editor tells that the file changed on disk, as Excel would save it")
                 .contains("The files of the project were changed outside OpenL Studio");
@@ -136,11 +155,10 @@ public class TestSingleModeAuthUi extends BaseTest {
         assertThat(toolbar.getChangedOnDiskNotice(1000))
                 .as("A restore made in the editor is not taken for a change made outside OpenL Studio")
                 .isEmpty();
-        String projectFolder = SINGLE_FILE_REPO_URI + "/" + PROJECT;
         AppContainerFileService.copyFileToContainer(TestDataUtil.getFilePathFromResources(EXTRA_WORKBOOK),
-                projectFolder + "/rules/" + EXTRA_WORKBOOK);
+                PROJECT_FOLDER + "/rules/" + EXTRA_WORKBOOK);
         AppContainerFileService.copyFileToContainer(TestDataUtil.getFilePathFromResources(RULES_WITH_EXTRA_MODULE),
-                projectFolder + "/rules.xml");
+                PROJECT_FOLDER + "/" + PROJECT_DESCRIPTOR);
         assertThat(toolbar.getChangedOnDiskNotice(DISK_CHANGE_SHOWN_MS))
                 .as("The editor tells that rules.xml and the modules of the project changed on disk")
                 .contains("The files of the project were changed outside OpenL Studio");
@@ -148,6 +166,13 @@ public class TestSingleModeAuthUi extends BaseTest {
         assertThat(editorPage.getEditorLeftProjectModuleSelectorComponent().getAllModuleNames(PROJECT))
                 .as("After Refresh the workbook added on disk is a module of the project")
                 .contains(MODULE, EXTRA_MODULE);
+    }
+
+    private void putProjectOnDisk(String folder) {
+        AppContainerFileService.copyFileToContainer(TestDataUtil.getFilePathFromResources(IN_PLACE_DESCRIPTOR),
+                folder + "/" + PROJECT_DESCRIPTOR);
+        AppContainerFileService.copyFileToContainer(TestDataUtil.getFilePathFromResources(WORKBOOK),
+                folder + "/rules/" + WORKBOOK);
     }
 
     private void openTable(EditorPage editorPage) {

@@ -190,6 +190,11 @@ public class ProjectDetailPage extends BasePage {
         return managementTab.isVisible(DEFAULT_TIMEOUT_MS / 2);
     }
 
+    public boolean isHistoryTabOffered() {
+        filesTab.waitForVisible(DEFAULT_TIMEOUT_MS);
+        return historyTab.isVisible();
+    }
+
     public boolean isPageNotFound() {
         return notFoundCode.isVisible(DEFAULT_TIMEOUT_MS / 4);
     }
