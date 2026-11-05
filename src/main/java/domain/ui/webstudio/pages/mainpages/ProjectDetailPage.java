@@ -146,6 +146,56 @@ public class ProjectDetailPage extends BasePage {
         return this;
     }
 
+    public ProjectDetailPage startEditingDeployConfig() {
+        openPublishTab();
+        deployConfigEditBtn().waitForVisible(DEFAULT_TIMEOUT_MS).click();
+        return this;
+    }
+
+    public boolean isDeployConfigXmlEditable() {
+        WebElement xml = deployConfigXml().waitForVisible(DEFAULT_TIMEOUT_MS);
+        return WaitUtil.waitForCondition(() -> "true".equals(xml.getAttribute("contenteditable")), DEFAULT_TIMEOUT_MS, 250,
+                "Waiting for the Configuration (XML) block to take input");
+    }
+
+    public ProjectDetailPage typeIntoDeployConfigXml(String text) {
+        deployConfigXml().waitForVisible(DEFAULT_TIMEOUT_MS).click();
+        deployConfigXml().fillSequentially(text);
+        return this;
+    }
+
+    public String getDeployConfigXml() {
+        openPublishTab();
+        return deployConfigXml().waitForVisible(DEFAULT_TIMEOUT_MS).getInnerText().trim();
+    }
+
+    public ProjectDetailPage typeDeployPublisherAndConfirm(String publisher) {
+        WebElement input = new WebElement(page, "xpath=//*[@data-testid='deploy-publishers']//input",
+                "deployPublishersInput");
+        input.waitForVisible(DEFAULT_TIMEOUT_MS).fillSequentially(publisher);
+        input.press("Enter");
+        input.press("Escape");
+        return this;
+    }
+
+    public String getDeployPublishers() {
+        return new WebElement(page, "xpath=//*[@data-testid='deploy-publishers']", "deployPublishers")
+                .waitForVisible(DEFAULT_TIMEOUT_MS).getInnerText().trim();
+    }
+
+    public ProjectDetailPage saveDeployConfig() {
+        deployConfigSaveBtn().waitForVisible(DEFAULT_TIMEOUT_MS).click();
+        waitUntilSpinnerLoaded();
+        deployConfigEditBtn().waitForVisible(DEFAULT_TIMEOUT_MS);
+        return this;
+    }
+
+    private WebElement deployConfigXml() {
+        return new WebElement(page,
+                "xpath=//*[@data-testid='deploy-configuration']//div[contains(@class,'cm-content')]",
+                "deployConfigXml");
+    }
+
     private WebElement deployConfigEditBtn() {
         return new WebElement(page, "xpath=//*[@data-testid='deploy-config-edit']", "deployConfigEdit");
     }
