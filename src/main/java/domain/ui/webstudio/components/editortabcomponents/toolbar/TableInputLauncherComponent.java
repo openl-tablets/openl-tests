@@ -97,6 +97,35 @@ public abstract class TableInputLauncherComponent extends BaseComponent {
         return boxes.size();
     }
 
+    public boolean isUseRangeOffered() {
+        return useRangeBox().isVisible(DEFAULT_TIMEOUT_MS);
+    }
+
+    public void useRange(String range) {
+        WebElement box = useRangeBox();
+        box.waitForVisible(DEFAULT_TIMEOUT_MS);
+        if (!box.isChecked()) {
+            box.click();
+        }
+        WebElement field = new WebElement(page, "xpath=//input[@data-testid='launch-range']", "rangeOfIds");
+        field.waitForVisible(DEFAULT_TIMEOUT_MS).fillSequentially(range);
+    }
+
+    public List<String> getCaseLabels() {
+        WaitUtil.waitForListNotEmpty(() -> caseLabels(), DEFAULT_TIMEOUT_MS, 200,
+                "Waiting for the cases of the table to be listed");
+        return caseLabels().stream().map(WebElement::getText).map(String::trim).toList();
+    }
+
+    private List<WebElement> caseLabels() {
+        return createElementList("xpath=//*[@data-testid='test-cases']//*[starts-with(@data-testid,'summary-case-')]",
+                "caseLabels");
+    }
+
+    private WebElement useRangeBox() {
+        return new WebElement(page, "xpath=//input[@data-testid='launch-use-range']", "useRangeBox");
+    }
+
     public String getTotalCasesText() {
         WebElement total = new WebElement(page,
                 "xpath=//*[@data-testid='test-cases']//li[contains(@class,'ant-pagination-total-text')]",

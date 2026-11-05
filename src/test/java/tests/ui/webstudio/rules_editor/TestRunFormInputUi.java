@@ -11,6 +11,7 @@ import domain.ui.webstudio.components.editortabcomponents.TestResultValidationCo
 import domain.ui.webstudio.components.editortabcomponents.leftmenu.EditorLeftRulesTreeComponent;
 import domain.ui.webstudio.components.editortabcomponents.toolbar.IRunMenu;
 import domain.ui.webstudio.components.editortabcomponents.toolbar.ITraceMenu;
+import domain.ui.webstudio.components.editortabcomponents.toolbar.RunMenuComponent;
 import domain.ui.webstudio.pages.mainpages.EditorPage;
 import domain.ui.webstudio.pages.mainpages.RepositoryPage;
 import helpers.service.WorkflowService;
@@ -172,6 +173,47 @@ public class TestRunFormInputUi extends BaseTest {
         assertThat(run.offersParameter(RUNTIME_CONTEXT))
                 .as("The Runtime Context must not be offered while the project does not provide it")
                 .isFalse();
+    }
+
+    @Test
+    @TestCaseId({"EPBDS-16607", "EPBDS-16606"})
+    @Description("EPBDS-16607: the Run menu of DriverPremiumTest of Example 3, which takes its input objects from a Data "
+            + "table, names each case by the type and the key of the Data table row, as Driver (Sara). EPBDS-16606: the "
+            + "menu offers Use the Range, and the range 2-3 runs exactly the cases 2 and 3.")
+    @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
+    public void runMenuOfDataDrivenTestNamesItsCasesAndRunsTheirRange() {
+        EditorPage editorPage = openDriverPremiumTest();
+        editorPage.getEditorToolbarPanelComponent().clickRun();
+        RunMenuComponent run = editorPage.getEditorToolbarPanelComponent().getRunLauncher();
+        run.waitForLauncher();
+
+        assertThat(run.getCaseLabels())
+                .as("Every input object must be named by its type and the key of the Data table in the braces")
+                .containsExactly("Driver (Sara)", "Driver (Spencer, Sara's Son)", "Driver (Spencer, No Training)");
+        assertThat(run.isUseRangeOffered())
+                .as("The Run menu of a test table must offer Use the Range")
+                .isTrue();
+
+        run.useRange("2-3");
+        run.clickRunInsideMenu();
+
+        TestResultValidationComponent results = editorPage.getTestResultValidationComponent();
+        assertThat(results.getResultTable().getRows())
+                .as("Only the two cases named by the range 2-3 must run, not all three cases of the table")
+                .hasSize(2);
+        assertThat(results.getTestResult(1).get(0))
+                .as("The first case of the results must be the case 2")
+                .startsWith("2");
+        assertThat(results.getTestResult(2).get(0))
+                .as("The second case of the results must be the case 3")
+                .startsWith("3");
+    }
+
+    private EditorPage openDriverPremiumTest() {
+        String projectName = WorkflowService.loginCreateProjectFromTemplate(User.ADMIN, EXAMPLE_3);
+        EditorPage editorPage = new EditorPage();
+        selectTable(editorPage, projectName, "AutoPolicyTests", "Test", "DriverPremiumTest");
+        return editorPage;
     }
 
     private IRunMenu openRunWithRuntimeContext() {
