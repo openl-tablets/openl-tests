@@ -15,6 +15,7 @@ import domain.ui.webstudio.components.common.TabSwitcherComponent;
 import domain.ui.webstudio.components.editortabcomponents.EditorToolbarPanelComponent;
 import domain.ui.webstudio.pages.mainpages.EditorPage;
 import domain.ui.webstudio.pages.mainpages.LoginPage;
+import domain.ui.webstudio.pages.mainpages.ProjectDetailPage;
 import domain.ui.webstudio.pages.mainpages.RepositoryPage;
 import helpers.service.LoginService;
 import helpers.service.UserService;
@@ -31,10 +32,11 @@ import static org.assertj.core.api.Assertions.fail;
 public class TestACLProjectLevelRoles extends BaseTest {
 
     @Test
-    @TestCaseId({"IPBQA-32912", "EPBDS-17079"})
+    @TestCaseId({"IPBQA-32912", "EPBDS-17079", "EPBDS-16598"})
     @Description("ACL: project-level role assignment (Manager/Viewer on specific projects) and permission verification without external auth system. "
             + "The audit log records the refused and the accepted sign-ins, the projects created and the roles granted and changed, "
-            + "finds the events of one project and exports them (EPBDS-14601)")
+            + "finds the events of one project and exports them (EPBDS-14601). "
+            + "The Username field of the Add access dialog on the Management tab of a project hints at a username, not at an email address (EPBDS-16598)")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void testACLProjectLevelRoles() {
         LoginService loginService = new LoginService(DriverPool.getPage());
@@ -54,6 +56,15 @@ public class TestACLProjectLevelRoles extends BaseTest {
 
         String project2Name = StringUtil.generateUniqueName("ProjectRoleTest2");
         adminRepoPage.createProject(CreateNewProjectComponent.TabName.TEMPLATE, project2Name, "Sample Project");
+
+        ProjectDetailPage projectCard = adminRepoPage.openProjectsList().openProjectDetail(project1Name);
+        String usernameHint = projectCard.openAddAccessDialogAndGetUsernameHint();
+        assertThat(usernameHint)
+                .as("The Username field of Add access hints at a username, not at an email address (EPBDS-16598)")
+                .isEqualTo("username")
+                .doesNotContain("@");
+        projectCard.cancelAddAccessDialog();
+        adminRepoPage.openProjectsList();
 
         UsersPageComponent usersComponent = editorPage
                 .openUserMenu()

@@ -186,6 +186,24 @@ public class ProjectDetailPage extends BasePage {
                 "Waiting for the Management tab to read the roles of the project");
     }
 
+    public String openAddAccessDialogAndGetUsernameHint() {
+        openManagementTab();
+        new WebElement(page, "xpath=//*[@data-testid='access-add']", "addAccessButton")
+                .waitForVisible(DEFAULT_TIMEOUT_MS).click();
+        return new WebElement(page,
+                "xpath=//*[@data-testid='add-access-sid']//*[contains(concat(' ',normalize-space(@class),' '),' ant-select-placeholder ')]",
+                "addAccessUsernameHint").waitForVisible(DEFAULT_TIMEOUT_MS).getInnerText().trim();
+    }
+
+    public ProjectDetailPage cancelAddAccessDialog() {
+        new WebElement(page,
+                "xpath=//div[@role='dialog'][.//*[@data-testid='add-access-sid']]//button[normalize-space()='Cancel']",
+                "addAccessCancelButton").click();
+        new WebElement(page, "xpath=//*[@data-testid='add-access-sid']", "addAccessUsername")
+                .waitForHidden(DEFAULT_TIMEOUT_MS);
+        return this;
+    }
+
     public boolean isManagementTabOffered() {
         return managementTab.isVisible(DEFAULT_TIMEOUT_MS / 2);
     }
