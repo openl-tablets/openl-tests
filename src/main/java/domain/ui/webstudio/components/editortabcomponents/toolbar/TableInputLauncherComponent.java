@@ -51,6 +51,14 @@ public abstract class TableInputLauncherComponent extends BaseComponent {
         return errorMsg.isVisible(PROBE_MS) ? errorMsg.getText().trim() : "";
     }
 
+    public void blockPopupWindows() {
+        page.evaluate("() => { window.open = () => null; }");
+    }
+
+    public String waitForLaunchError() {
+        return errorMsg.waitForVisible(DEFAULT_TIMEOUT_MS).getText().trim();
+    }
+
     public boolean isAllCasesOffered() {
         return allCasesBox().isVisible(DEFAULT_TIMEOUT_MS);
     }

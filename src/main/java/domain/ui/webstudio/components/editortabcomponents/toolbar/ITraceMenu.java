@@ -18,4 +18,6 @@ public interface ITraceMenu {
     boolean offersTheFirstElementAsAList();
     ITraceMenu unfoldParameter(String name);
     String getFieldValue(String name);
+    String waitForLaunchError();
+    void blockPopupWindows();
 }

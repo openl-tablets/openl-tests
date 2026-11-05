@@ -30,6 +30,8 @@ public class TestResultValidationComponent extends BaseComponent {
     private static final String TABLE_LINK = IN_RESULTS + "//a[starts-with(@data-testid,'test-table-')]";
     private static final String FAILED_TABLE_LINK = TABLE_LINK + "[contains(@class,'ant-typography-danger')]";
     private static final String CASES = IN_RESULTS + "//table[starts-with(@data-testid,'test-results-')]";
+    private static final String CASE_ID_CELLS = CASES + "//tbody/tr/td[1]";
+    private static final String CASES_PAGER = IN_RESULTS + "//*[starts-with(@data-testid,'test-cases-pagination-')]";
     private static final String PASSED_CASE = CASES + "//span[@title='Passed']";
     private static final String FAILED_CASE = CASES + "//span[@title='Failed' or @title='Error']";
     private static final String RESULT_TABLE = "(" + IN_RESULTS
@@ -118,6 +120,32 @@ public class TestResultValidationComponent extends BaseComponent {
             return results(TABLE_LINK).count() > 0;
         }, LONG_RUN_TIMEOUT_MS, 30, "Waiting for the run to end while counting the test tables it reports as done");
         return most[0];
+    }
+
+    public List<String> getShownCaseIds() {
+        waitForResults();
+        WaitUtil.requireCondition(() -> results(CASE_ID_CELLS).count() > 0, RESULTS_TIMEOUT_MS, 250,
+                "Waiting for the test cases of the results to be drawn");
+        WaitUtil.waitForStableSize(() -> results(CASE_ID_CELLS).count(), RESULTS_TIMEOUT_MS, 250,
+                "Waiting for the listed test cases to stop changing");
+        return results(CASE_ID_CELLS).allInnerTexts().stream().map(String::trim).toList();
+    }
+
+    public void openCasesPage(int pageNumber) {
+        Locator pageLink = results(CASES_PAGER + "//li[@title='" + pageNumber + "']").first();
+        WaitUtil.requireCondition(() -> pageLink.isVisible(), RESULTS_TIMEOUT_MS, 250,
+                "Waiting for page " + pageNumber + " of the test cases to be offered");
+        pageLink.click();
+        WaitUtil.requireCondition(() -> results(CASES_PAGER + "//li[@title='" + pageNumber
+                        + "'][contains(@class,'ant-pagination-item-active')]").count() > 0, RESULTS_TIMEOUT_MS, 250,
+                "Waiting for page " + pageNumber + " of the test cases to be the one shown");
+    }
+
+    public int countCasesPages() {
+        waitForResults();
+        WaitUtil.requireCondition(() -> results(CASES_PAGER).count() > 0, RESULTS_TIMEOUT_MS, 250,
+                "Waiting for the pager of the test cases to be drawn");
+        return results(CASES_PAGER + "//li[starts-with(@class,'ant-pagination-item')]").count();
     }
 
     public String getResultsTextMatching(String regex) {

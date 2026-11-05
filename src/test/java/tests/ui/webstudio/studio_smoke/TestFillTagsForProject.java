@@ -30,8 +30,10 @@ public class TestFillTagsForProject extends BaseTest {
     private static final String NAME_TEMPLATE = "%Tag%-%TagOpt%-*";
 
     @Test
-    @TestCaseId("EPBDS-15749")
-    @Description("Tags admin: Save Templates persists template; Fill Tags for Project assigns tags from matching project name")
+    @TestCaseId({"EPBDS-15749", "EPBDS-15766"})
+    @Description("Tags admin: Save Templates persists template; Fill Tags for Project assigns tags from matching project name. "
+            + "EPBDS-15766: the window turns into the Filled tags result, which counts the projects updated and lists "
+            + "the tag values each project got")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void testFillTagsForProjectFromTemplate() {
         LoginService loginService = new LoginService(DriverPool.getPage());
@@ -63,6 +65,17 @@ public class TestFillTagsForProject extends BaseTest {
                 .isEqualTo(NAME_TEMPLATE);
 
         tagsPage.fillTagsForProject();
+
+        assertThat(tagsPage.getFillResultSummary())
+                .as("EPBDS-15766: the Filled tags window must count the projects updated and left alone")
+                .isEqualTo("1 project(s) updated, 0 left alone.");
+        assertThat(tagsPage.getFillResultTags(PROJECT_NAME, TAG_TYPE_NAME))
+                .as("EPBDS-15766: the Filled tags window must list the '%s' value the project got", TAG_TYPE_NAME)
+                .isEqualTo("Tag1");
+        assertThat(tagsPage.getFillResultTags(PROJECT_NAME, TAG_TYPE_OPT))
+                .as("EPBDS-15766: the Filled tags window must list the '%s' value the project got", TAG_TYPE_OPT)
+                .isEqualTo("TagOpt1");
+        tagsPage.closeFillResult();
 
         ProjectDetailPage projectDetail = repositoryPage.openProjectsList().openProjectDetail(PROJECT_NAME);
 

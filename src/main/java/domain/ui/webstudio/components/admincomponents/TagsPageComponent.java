@@ -24,6 +24,8 @@ public class TagsPageComponent extends BaseComponent {
     private WebElement saveTemplatesBtn;
     private WebElement fillTagsForProjectBtn;
     private WebElement fillPreviewApplyBtn;
+    private WebElement fillResultSummary;
+    private WebElement fillResultCloseBtn;
 
     public TagsPageComponent() {
         super(DriverPool.getPage());
@@ -45,6 +47,12 @@ public class TagsPageComponent extends BaseComponent {
         fillPreviewApplyBtn = new WebElement(page,
                 "xpath=//div[contains(@class,'ant-modal-footer')]//button[.//span[normalize-space()='Fill Tags']]",
                 "fillPreviewApplyBtn");
+        fillResultSummary = new WebElement(page,
+                "xpath=//div[contains(@class,'ant-modal')]//*[@data-testid='fill-result-summary']",
+                "fillResultSummary");
+        fillResultCloseBtn = new WebElement(page,
+                "xpath=//div[contains(@class,'ant-modal-footer')]//button[.//span[normalize-space()='Close']]",
+                "fillResultCloseBtn");
     }
 
     public TableComponent getTagsTable() {
@@ -159,6 +167,23 @@ public class TagsPageComponent extends BaseComponent {
         fillTagsForProjectBtn.click();
         fillPreviewApplyBtn.waitForVisible(DEFAULT_TIMEOUT_MS).click();
         waitUntilSpinnerLoaded();
+        return this;
+    }
+
+    public String getFillResultSummary() {
+        return fillResultSummary.waitForVisible(DEFAULT_TIMEOUT_MS).getText().trim();
+    }
+
+    public String getFillResultTags(String projectName, String tagType) {
+        WebElement tags = new WebElement(page,
+                "xpath=//div[contains(@class,'ant-modal')]//*[@data-testid='fill-result-" + projectName + "-" + tagType + "']",
+                "fillResultTags");
+        return tags.waitForVisible(DEFAULT_TIMEOUT_MS).getText().replaceAll("\\s+", " ").trim();
+    }
+
+    public TagsPageComponent closeFillResult() {
+        fillResultCloseBtn.waitForVisible(DEFAULT_TIMEOUT_MS).click();
+        fillResultCloseBtn.waitForHidden(DEFAULT_TIMEOUT_MS);
         return this;
     }
 }

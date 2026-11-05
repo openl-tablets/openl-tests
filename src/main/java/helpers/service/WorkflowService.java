@@ -8,7 +8,6 @@ import domain.ui.webstudio.pages.mainpages.EditorPage;
 import domain.ui.webstudio.pages.mainpages.RepositoryPage;
 import helpers.utils.StringUtil;
 
-// Playwright version of WorkflowService for complete login → project creation → editor workflow
 public class WorkflowService {
     private static String loginCreateProject(User user, CreateNewProjectComponent.TabName projectType, String sourceName) {
         LoginService loginService = new LoginService(DriverPool.getPage());
@@ -16,6 +15,13 @@ public class WorkflowService {
         RepositoryPage repositoryPage = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.REPOSITORY);
         String projectName = StringUtil.generateUniqueName("project");
         repositoryPage.createProject(projectType, projectName, sourceName);
+        return projectName;
+    }
+
+    public static String createProjectFromExcelFile(String excelFileName) {
+        RepositoryPage repositoryPage = new EditorPage().getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.REPOSITORY);
+        String projectName = StringUtil.generateUniqueName("project");
+        repositoryPage.createProject(CreateNewProjectComponent.TabName.EXCEL_FILES, projectName, excelFileName);
         return projectName;
     }
 
