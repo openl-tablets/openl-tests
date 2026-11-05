@@ -13,6 +13,8 @@ public class CreateTableDialogComponent extends BaseComponent {
     private static final int DATATYPE_TYPE_COLUMN = 0;
     private static final int DATATYPE_NAME_COLUMN = 1;
     private static final int MAX_SKELETON_ROWS = 30;
+    private static final int MAX_TYPE_OPTIONS = 20;
+    private static final int OPTION_PROBE_MS = 100;
     private static final int SETTLE_MS = 400;
     private static final int LOADING_TIMEOUT_MS = 60000;
 
@@ -23,6 +25,7 @@ public class CreateTableDialogComponent extends BaseComponent {
     private WebElement moduleInput;
     private WebElement sheetInput;
     private WebElement resultTypeInput;
+    private WebElement datatypeInput;
     private WebElement headerPreview;
     private WebElement createButton;
     private WebElement argumentTypeTemplate;
@@ -65,6 +68,9 @@ public class CreateTableDialogComponent extends BaseComponent {
         resultTypeInput = new WebElement(page,
                 "xpath=//*[@data-testid='create-table-result-type']//input | //input[@data-testid='create-table-result-type']",
                 "createTableResultType");
+        datatypeInput = new WebElement(page,
+                "xpath=//*[@data-testid='create-table-datatype']//input | //input[@data-testid='create-table-datatype']",
+                "createTableDatatype");
         headerPreview = new WebElement(page, "xpath=//*[@data-testid='create-table-header']", "createTableHeader");
         createButton = new WebElement(page,
                 "xpath=" + MODAL + "//div[contains(@class,'ant-modal-footer')]//button[.//span[normalize-space()='Create']]",
@@ -126,7 +132,11 @@ public class CreateTableDialogComponent extends BaseComponent {
         String option = type.replaceAll("(?i)\\s+table$", "").trim();
         typeSelect.waitForVisible(DEFAULT_TIMEOUT_MS);
         typeSelect.click();
-        openDropdownOption(typeSelectInput, option).waitForVisible(DEFAULT_TIMEOUT_MS).click(DEFAULT_TIMEOUT_MS / 2);
+        WebElement optionElement = openDropdownOption(typeSelectInput, option);
+        for (int step = 0; step < MAX_TYPE_OPTIONS && !optionElement.isVisible(OPTION_PROBE_MS); step++) {
+            typeSelectInput.press("ArrowDown");
+        }
+        optionElement.waitForVisible(DEFAULT_TIMEOUT_MS).click(DEFAULT_TIMEOUT_MS / 2);
         return this;
     }
 
@@ -137,6 +147,16 @@ public class CreateTableDialogComponent extends BaseComponent {
     public CreateTableDialogComponent setTechnicalName(String name) {
         nameInput.waitForVisible(DEFAULT_TIMEOUT_MS);
         retype(nameInput, name);
+        return this;
+    }
+
+    public CreateTableDialogComponent selectDatatype(String datatype) {
+        datatypeInput.waitForVisible(DEFAULT_TIMEOUT_MS);
+        datatypeInput.click();
+        datatypeInput.fillSequentially(datatype);
+        openDropdownOption(datatypeInput, datatype).waitForVisible(DEFAULT_TIMEOUT_MS).click(DEFAULT_TIMEOUT_MS / 2);
+        WaitUtil.waitForCondition(() -> getGeneratedHeader().contains(datatype), DEFAULT_TIMEOUT_MS, 200,
+                "Waiting for the create table header to name the datatype '" + datatype + "'");
         return this;
     }
 
@@ -347,11 +367,6 @@ public class CreateTableDialogComponent extends BaseComponent {
         }
     }
 
-    /**
-     * The value in the list the given field opens. A list closed a moment ago is left in the page until it has
-     * finished folding away, and every cell of a column offers the same values, so the list is told from the
-     * others by the box it belongs to: a Select names its own list {@code <id of its input>_list}.
-     */
     private WebElement openDropdownOption(WebElement field, String text) {
         String owned = field.getAttribute("aria-controls");
         String list = owned != null && !owned.isEmpty() ? owned : field.getAttribute("id") + "_list";
