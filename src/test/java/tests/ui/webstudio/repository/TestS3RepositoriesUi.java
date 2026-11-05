@@ -7,6 +7,7 @@ import configuration.appcontainer.AppContainerStartParameters;
 import configuration.driver.DriverPool;
 import domain.serviceclasses.constants.User;
 import domain.ui.webstudio.components.admincomponents.RepositoriesPageComponent;
+import domain.ui.webstudio.components.admincomponents.SystemSettingsPageComponent;
 import domain.ui.webstudio.components.common.CreateNewProjectComponent;
 import domain.ui.webstudio.components.common.TabSwitcherComponent;
 import domain.ui.webstudio.components.repositorytabcomponents.DeployModalComponent;
@@ -43,9 +44,11 @@ public class TestS3RepositoriesUi extends BaseTest {
     }
 
     @Test
-    @TestCaseId("IPBQA-32111")
+    @TestCaseId({"IPBQA-32111", "EPBDS-16650"})
     @Description("An S3-compatible storage reached by its service endpoint works as a design repository: "
-            + "its settings are kept, and a project is created, saved, copied and deleted in the bucket")
+            + "its settings are kept, and a project is created, saved, copied and deleted in the bucket. "
+            + "EPBDS-16650: the Detect projects by Excel files setting says it does not apply to such a repository, "
+            + "and the repository lists its project with the setting on")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void testS3DesignRepositoryKeepsProjects() {
         String bucket = s3.createBucket();
@@ -95,6 +98,18 @@ public class TestS3RepositoriesUi extends BaseTest {
                 .as("The deleted copy should leave the bucket, the original should stay")
                 .doesNotContainKey(key(copy))
                 .containsKey(key(project));
+
+        SystemSettingsPageComponent systemSettings = repositoryPage.openUserMenu().navigateToAdministration()
+                .navigateToSystemSettingsPage();
+        assertThat(systemSettings.getDetectProjectsByExcelFilesInfo())
+                .as("The Detect projects by Excel files hint says a database or AWS S3 repository lists its projects either way (EPBDS-16650)")
+                .contains("AWS S3 repository")
+                .contains("lists its projects either way");
+        systemSettings.setDetectProjectsByExcelFiles(true);
+        systemSettings.applySettingsAndRelogin(User.ADMIN);
+        assertThat(new RepositoryPage().waitUntilProjectListed(project).getAllVisibleProjectsInTable())
+                .as("The project of an AWS S3 repository is listed with Detect projects by Excel files on (EPBDS-16650)")
+                .contains(project);
     }
 
     @Test

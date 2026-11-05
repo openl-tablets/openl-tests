@@ -121,6 +121,18 @@ public class GitContainerService {
         LOGGER.info("Gitea ready. Host URL: {} | in-network URL: {}", getHostUrl(), getInNetworkUrl());
     }
 
+    public void addBranch(String newBranch, String fromBranch, Path directory) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("branch", fromBranch);
+        body.put("new_branch", newBranch);
+        body.put("message", "Add " + newBranch);
+        body.put("files", readDirectory(directory).entrySet().stream()
+                .map(file -> createFileOperation(file.getKey(), file.getValue())).toList());
+        Response response = ownerRequest().body(body)
+                .post(hostBaseUrl() + "/api/v1/repos/" + owner + "/" + repoName + "/contents");
+        requireStatus(response, 201, "create the branch " + newBranch + " from " + fromBranch + " in " + repoName);
+    }
+
     public String getHostUrl() {
         return hostBaseUrl() + "/" + owner + "/" + repoName + ".git";
     }
@@ -207,14 +219,20 @@ public class GitContainerService {
         if (externalLfsUrl != null) {
             files.put(".lfsconfig", ("[lfs]\n\turl = " + externalLfsUrl + "\n").getBytes(StandardCharsets.UTF_8));
         }
-        try (Stream<Path> paths = Files.walk(fixtureDir)) {
-            paths.filter(Files::isRegularFile).sorted().forEach(file ->
-                    files.put(fixtureDir.relativize(file).toString().replace('\\', '/'), readFixtureFile(file)));
-        } catch (IOException e) {
-            throw new UncheckedIOException("Cannot read the fixture " + fixtureDir, e);
-        }
+        files.putAll(readDirectory(fixtureDir));
         files.putAll(replacedFiles);
         return files.entrySet().stream().map(file -> createFileOperation(file.getKey(), file.getValue())).toList();
+    }
+
+    private static Map<String, byte[]> readDirectory(Path directory) {
+        Map<String, byte[]> files = new LinkedHashMap<>();
+        try (Stream<Path> paths = Files.walk(directory)) {
+            paths.filter(Files::isRegularFile).sorted().forEach(file ->
+                    files.put(directory.relativize(file).toString().replace('\\', '/'), readFixtureFile(file)));
+        } catch (IOException e) {
+            throw new UncheckedIOException("Cannot read the fixture " + directory, e);
+        }
+        return files;
     }
 
     private byte[] lfsAttributes() {

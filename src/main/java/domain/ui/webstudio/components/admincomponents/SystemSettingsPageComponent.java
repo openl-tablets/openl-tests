@@ -19,6 +19,8 @@ public class SystemSettingsPageComponent extends BaseComponent {
     private WebElement auditRetentionError;
     private WebElement projectHistoryCountField;
     private WebElement detectProjectsByExcelFilesCheckbox;
+    private WebElement detectProjectsByExcelFilesInfoIcon;
+    private WebElement infoTooltip;
     private WebElement formatTablesOnSaveCheckbox;
     private WebElement clearAllHistoryBtn;
     private WebElement cancelModalBtn;
@@ -48,6 +50,8 @@ public class SystemSettingsPageComponent extends BaseComponent {
         auditRetentionError = createScopedElement(errorUnder("auditRetention"), "auditRetentionError");
         projectHistoryCountField = createScopedElement("xpath=.//*[@id='projectHistoryCount']", "projectHistoryCountField");
         detectProjectsByExcelFilesCheckbox = createScopedElement("xpath=.//*[@id='detectProjectsByExcelFiles']", "detectProjectsByExcelFilesCheckbox");
+        detectProjectsByExcelFilesInfoIcon = createScopedElement("xpath=.//label[@for='detectProjectsByExcelFiles']//*[contains(@class,'ant-form-item-tooltip')]", "detectProjectsByExcelFilesInfoIcon");
+        infoTooltip = new WebElement(page, "xpath=//div[@role='tooltip'][contains(@class,'ant-tooltip-container')][not(ancestor::div[contains(@class,'ant-tooltip-hidden')])]", "infoTooltip");
         formatTablesOnSaveCheckbox = createScopedElement("xpath=.//*[@id='formatTablesOnSave']", "formatTablesOnSaveCheckbox");
         clearAllHistoryBtn = createScopedElement("xpath=.//button[./span[text()='Clear All History']]", "clearAllHistoryBtn");
         cancelModalBtn = new WebElement(page, "xpath=//div[contains(@class,'ant-modal-container')]//button[./span[contains(text(),'Cancel')]]", "cancelModalBtn");
@@ -170,6 +174,11 @@ public class SystemSettingsPageComponent extends BaseComponent {
 
     public boolean isDetectProjectsByExcelFilesEnabled() {
         return detectProjectsByExcelFilesCheckbox.isChecked();
+    }
+
+    public String getDetectProjectsByExcelFilesInfo() {
+        detectProjectsByExcelFilesInfoIcon.hover();
+        return infoTooltip.waitForVisible().getText().trim();
     }
 
     public void setFormatTablesOnSave(boolean enable) {

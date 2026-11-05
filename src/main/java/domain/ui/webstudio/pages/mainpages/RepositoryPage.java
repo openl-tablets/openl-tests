@@ -199,6 +199,14 @@ public class RepositoryPage extends BasePage {
         filterRail.setStatusFilter(status, checked);
     }
 
+    public List<String> getBranchFilterOptions() {
+        return filterRail.getBranchFilterOptions();
+    }
+
+    public void setBranchFilter(String branch, boolean checked) {
+        filterRail.setBranchFilter(branch, checked);
+    }
+
     public String getProjectStatusFromDetail(String projectName) {
         String status = openProjectDetail(projectName).getStatus();
         openProjectsList();
