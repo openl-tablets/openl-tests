@@ -27,18 +27,15 @@ public class TestProtectedBranchMergeProtection extends BaseTest {
     private static final String PROJECT_NAME = "ProtectedBranchProject";
     private static final String BRANCH_NAME = "MyBranch";
     private static final String MASTER_BRANCH = "master";
+    private static final String NEW_PROJECT_NAME = "ProjectInProtectedMaster";
 
     @Test
-    @TestCaseId("EPBDS-15753")
-    @Description("Git - Cannot merge into protected branch: UI shows server 409 error in merge dialog")
+    @TestCaseId({"EPBDS-15753", "EPBDS-16558"})
+    @Description("Git - Cannot merge into protected branch: UI shows server 409 error in merge dialog; "
+            + "EPBDS-16558: creating a project in the protected branch is refused in the Create project dialog "
+            + "with the protected-branch message, not a full-page 403")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void testCannotMergeIntoProtectedBranch() {
-        // EPBDS-15818 introduced `security.allow-bypass-protected-branches`. When ON, an
-        // Admin (Manager-eligible) merging into a protected branch sees a "Bypass branch
-        // protection?" confirm modal instead of a hard error — see EPBDS-15960 section H.1.
-        // This test verifies the legacy "hard 403 + error alert" behavior, so pin the flag
-        // to OFF before logging in. The PATCH triggers an application restart and
-        // invalidates the browser session, so authentication happens after the toggle.
         new AuthenticationSettingsMethod().setAllowBypassProtectedBranches(false);
 
         LoginService loginService = new LoginService(DriverPool.getPage());
@@ -47,11 +44,8 @@ public class TestProtectedBranchMergeProtection extends BaseTest {
         RepositoryPage repositoryPage = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.REPOSITORY);
         repositoryPage.createProject(CreateNewProjectComponent.TabName.ZIP_ARCHIVE, PROJECT_NAME, "TestMergeBranchesNoConflicts_NoConflicts.zip");
 
-        // 6.4.0: branching happens in the Copy dialog and leaves the project on the new branch.
         repositoryPage.openProjectDetail(PROJECT_NAME).createBranch(BRANCH_NAME, true);
 
-        // The dialog only reports the protection when there is something to merge, so commit a change
-        // on the branch first ("There are changes to merge, but the branch ... is protected").
         repositoryPage.openProjectsList().openProjectDetail(PROJECT_NAME).openFilesTab()
                 .uploadFile(TestDataUtil.getFilePathFromResources("TestMergeBranchesNoConflicts_Module6.xlsx"));
         repositoryPage.openProjectsList().saveProject(PROJECT_NAME, BRANCH_NAME + ": add Module6");
@@ -63,7 +57,6 @@ public class TestProtectedBranchMergeProtection extends BaseTest {
                 .applyChangesAndRelogin(User.ADMIN);
 
         repositoryPage = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.REPOSITORY);
-        // The project is already open on the new branch (createBranch switched onto it), so go straight to the editor.
         EditorPage editor = new EditorPage();
         editor.getEditorLeftProjectModuleSelectorComponent().selectProject(PROJECT_NAME);
         assertThat(editor.getEditorToolbarPanelComponent().isSyncButtonVisible())
@@ -75,8 +68,6 @@ public class TestProtectedBranchMergeProtection extends BaseTest {
         syncDialog.waitForDialogToAppear();
         syncDialog.selectBranch(MASTER_BRANCH);
 
-        // 6.4.0 states the reason up front instead of failing the attempt with a 403: the dialog explains
-        // that the target branch is protected and leaves both merge buttons disabled.
         assertThat(syncDialog.hasBlockedMessageContaining("protected"))
                 .as("The dialog should say the target branch '%s' is protected", MASTER_BRANCH)
                 .isTrue();
@@ -88,5 +79,14 @@ public class TestProtectedBranchMergeProtection extends BaseTest {
                 .isFalse();
 
         syncDialog.clickCancel();
+
+        repositoryPage = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.REPOSITORY);
+        repositoryPage.getCreateProjectLink().click();
+        CreateNewProjectComponent createDialog = repositoryPage.getCreateNewProjectComponent();
+        createDialog.createProjectFromTemplate("Sample Project", NEW_PROJECT_NAME, false);
+        assertThat(createDialog.submitExpectingRefusal())
+                .as("EPBDS-16558: the Create project dialog stays open and names the protected branch '%s'", MASTER_BRANCH)
+                .isEqualTo("The branch '" + MASTER_BRANCH + "' is protected, and you cannot bypass its protection.");
+        createDialog.cancelCreation();
     }
 }

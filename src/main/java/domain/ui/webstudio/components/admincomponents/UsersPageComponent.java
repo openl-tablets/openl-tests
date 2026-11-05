@@ -42,6 +42,7 @@ public class UsersPageComponent extends BaseComponent {
     private WebElement projectSelectorTemplate;
     private WebElement projectRoleSelectorTemplate;
     private WebElement removeRoleBtn;
+    private WebElement removeProjectRoleBtn;
 
     private WebElement resendVerificationEmailBtn;
     private WebElement tooltip;
@@ -87,6 +88,7 @@ public class UsersPageComponent extends BaseComponent {
         projectSelectorTemplate = new WebElement(page, "xpath=//input[@id='projects_%s_id']", "projectSelectorTemplate");
         projectRoleSelectorTemplate = new WebElement(page, "xpath=//input[@id='projects_%s_role']", "projectRoleSelectorTemplate");
         removeRoleBtn = new WebElement(page, "xpath=//button[./span[contains(@aria-label,'delete')] and ancestor::div[contains(@class,'ant-form-item')]]", "removeRoleBtn");
+        removeProjectRoleBtn = new WebElement(page, "xpath=//div[@role='tabpanel' and @aria-hidden='false']//div[contains(@class,'ant-space-horizontal')][.//div[@title='%s']]//*[@data-icon='minus-circle']", "removeProjectRoleBtn");
 
         resendVerificationEmailBtn = new WebElement(page, "xpath=//div[contains(@class,'ant-drawer-open')]//button[./span[text()='Resend Verification Email']]", "resendVerificationEmailBtn");
         tooltip = new WebElement(page, "xpath=//div[@role='tooltip'][contains(@class,'ant-tooltip-container')][not(ancestor::div[contains(@class,'ant-tooltip-hidden')])]", "tooltip");
@@ -330,6 +332,11 @@ public class UsersPageComponent extends BaseComponent {
 
     public String getRole(int row) {
         return roleNameTemplate.format(row).child("xpath=/..").getAttribute("title");
+    }
+
+    public UsersPageComponent removeProjectRole(String projectName) {
+        removeProjectRoleBtn.format(projectName).click();
+        return this;
     }
 
     public UsersPageComponent clearAllRoles() {

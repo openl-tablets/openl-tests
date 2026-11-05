@@ -18,6 +18,7 @@ public class SaveProjectDialogComponent extends BaseComponent {
     private WebElement commentField;
     private WebElement submitBtn;
     private WebElement cancelBtn;
+    private WebElement failureDescription;
 
     public SaveProjectDialogComponent() {
         super(DriverPool.getPage());
@@ -31,6 +32,10 @@ public class SaveProjectDialogComponent extends BaseComponent {
                 "xpath=//button[@data-testid='save-project-submit']", "saveProjectSubmit");
         cancelBtn = new WebElement(DriverPool.getPage(),
                 "xpath=" + MODAL_ROOT + "//button[normalize-space(.)='Cancel']", "saveProjectCancel");
+        failureDescription = new WebElement(DriverPool.getPage(),
+                "xpath=//div[contains(@class,'ant-notification-notice')][.//div[contains(@class,'ant-notification-notice-title')]"
+                        + "[normalize-space()='Failed to save project']]//div[contains(@class,'ant-notification-notice-description')]",
+                "saveProjectFailureDescription");
     }
 
     public SaveProjectDialogComponent waitForVisible() {
@@ -78,6 +83,10 @@ public class SaveProjectDialogComponent extends BaseComponent {
 
     public void waitForSubmitHidden() {
         submitBtn.waitForHidden(10000);
+    }
+
+    public String waitForFailureMessage(int timeoutMs) {
+        return failureDescription.waitForVisible(timeoutMs).getText().trim();
     }
 
     public void cancel() {

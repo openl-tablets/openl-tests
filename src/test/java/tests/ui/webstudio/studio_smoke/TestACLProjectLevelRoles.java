@@ -32,11 +32,12 @@ import static org.assertj.core.api.Assertions.fail;
 public class TestACLProjectLevelRoles extends BaseTest {
 
     @Test
-    @TestCaseId({"IPBQA-32912", "EPBDS-17079", "EPBDS-16598"})
+    @TestCaseId({"IPBQA-32912", "EPBDS-17079", "EPBDS-16598", "EPBDS-14474"})
     @Description("ACL: project-level role assignment (Manager/Viewer on specific projects) and permission verification without external auth system. "
             + "The audit log records the refused and the accepted sign-ins, the projects created and the roles granted and changed, "
             + "finds the events of one project and exports them (EPBDS-14601). "
-            + "The Username field of the Add access dialog on the Management tab of a project hints at a username, not at an email address (EPBDS-16598)")
+            + "The Username field of the Add access dialog on the Management tab of a project hints at a username, not at an email address (EPBDS-16598). "
+            + "When the admin removes the project role of a user who has the project open, the project disappears from the user's list (EPBDS-14474)")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void testACLProjectLevelRoles() {
         LoginService loginService = new LoginService(DriverPool.getPage());
@@ -185,6 +186,29 @@ public class TestACLProjectLevelRoles extends BaseTest {
         assertThat(toolbarPanel.getEditTableBtn().isVisible(2000))
                 .as("Viewer should NOT see Edit button for tables in Editor")
                 .isFalse();
+
+        editorPage.openUserMenu().signOut();
+        editorPage = loginService.login(UserService.getUser(User.ADMIN));
+        editorPage.openUserMenu()
+                .navigateToAdministration()
+                .navigateToUsersPage()
+                .clickEditUser("test")
+                .clickProjectsTab()
+                .removeProjectRole(project1Name)
+                .saveUser();
+
+        editorPage.openUserMenu().signOut();
+        editorPage = loginService.login(testUser);
+        repositoryPage = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.REPOSITORY);
+        RepositoryPage revokedRepositoryPage = repositoryPage;
+        assertThat(WaitUtil.waitForCondition(
+                () -> revokedRepositoryPage.getAllVisibleProjectsInTable().contains(project2Name),
+                15000, 500, "Waiting for '" + project2Name + "' to be listed for the user after the role of " + project1Name + " is removed"))
+                .as("User 'test' still sees %s, whose role was kept", project2Name)
+                .isTrue();
+        assertThat(revokedRepositoryPage.getAllVisibleProjectsInTable())
+                .as("EPBDS-14474: the project the user had open is hidden once its role is removed")
+                .doesNotContain(project1Name);
 
         editorPage.openUserMenu().signOut();
         editorPage = loginService.login(UserService.getUser(User.ADMIN));
