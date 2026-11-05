@@ -2,6 +2,7 @@ package domain.ui.webstudio.components.common;
 
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.PlaywrightException;
+import com.microsoft.playwright.options.BoundingBox;
 import com.microsoft.playwright.options.MouseButton;
 import com.microsoft.playwright.options.WaitForSelectorState;
 import configuration.core.ui.WebElement;
@@ -29,6 +30,22 @@ public class TableComponent extends BaseComponent {
             """;
     private static final String RAISED_CELL_TEXTS = OUTLINED_CELL_TEXTS.formatted("red > 2 * green && red > 2 * blue");
     private static final String PICKED_CELL_TEXTS = OUTLINED_CELL_TEXTS.formatted("blue > 2 * red && blue > green");
+
+    private static final String TEXT_INSET_EM = """
+            cell => {
+                const walker = document.createTreeWalker(cell, NodeFilter.SHOW_TEXT);
+                let node = walker.nextNode();
+                while (node && !node.textContent.trim()) {
+                    node = walker.nextNode();
+                }
+                const range = document.createRange();
+                range.selectNodeContents(node);
+                const text = range.getBoundingClientRect();
+                const box = cell.getBoundingClientRect();
+                const font = parseFloat(getComputedStyle(cell).fontSize);
+                return [(text.left - box.left) / font, (box.right - text.right) / font];
+            }
+            """;
 
     private WebElement allCells;
     private WebElement cellEditor;
@@ -65,8 +82,29 @@ public class TableComponent extends BaseComponent {
     }
 
     public double getCellTop(int rowIndex, int columnIndex) {
+        return cellBox(rowIndex, columnIndex).y;
+    }
+
+    private BoundingBox cellBox(int rowIndex, int columnIndex) {
         return Objects.requireNonNull(getCell(rowIndex, columnIndex).getLocator().first().boundingBox(),
-                "Cell [" + rowIndex + "," + columnIndex + "] is not drawn").y;
+                "Cell [" + rowIndex + "," + columnIndex + "] is not drawn");
+    }
+
+    public double getCellHeight(int rowIndex, int columnIndex) {
+        return cellBox(rowIndex, columnIndex).height;
+    }
+
+    public double getTextInsetFromLeftEm(int rowIndex, int columnIndex) {
+        return textInsetsEm(rowIndex, columnIndex).get(0).doubleValue();
+    }
+
+    public double getTextInsetFromRightEm(int rowIndex, int columnIndex) {
+        return textInsetsEm(rowIndex, columnIndex).get(1).doubleValue();
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<Number> textInsetsEm(int rowIndex, int columnIndex) {
+        return (List<Number>) getCell(rowIndex, columnIndex).getLocator().first().evaluate(TEXT_INSET_EM);
     }
 
     public WebElement getCell(int rowIndex, int columnIndex) {

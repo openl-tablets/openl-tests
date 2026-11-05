@@ -31,6 +31,7 @@ public class TestDeployProjectMessagesAndValidationUi extends BaseTest {
     private static final String TEMPLATE_NAME = "Example 1 - Bank Rating";
     private static final String REMOVED_FEATURE_NAME = "Deploy Configuration";
     private static final String INVALID_DEPLOYMENT_NAME = "bad:name?*";
+    private static final String NO_BORDER_STYLE = "none";
 
     private static final Map<String, String> additionalContainerFiles = new HashMap<>();
 
@@ -79,14 +80,23 @@ public class TestDeployProjectMessagesAndValidationUi extends BaseTest {
     }
 
     @Test
-    @TestCaseId("EPBDS-16271")
-    @Description("The Deployment Name field must reject forbidden characters, as the REST deploy API does.")
+    @TestCaseId({"EPBDS-16271", "EPBDS-16267"})
+    @Description("The Deployment Name field must reject forbidden characters, as the REST deploy API does. "
+            + "EPBDS-16267: while the Repository and Deployment Name fields are focused, the search input inside each "
+            + "field draws no border of its own, so no blue rectangle shows inside the field.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEPLOY_STUDIO_PARAMS)
     public void testDeploymentNameRejectsForbiddenCharacters() {
         RepositoryPage repositoryPage = openRepositoryWithProject("DeployName");
         String projectName = lastCreatedProject;
 
         DeployModalComponent deployModal = repositoryPage.clickDeploy(projectName);
+        assertThat(deployModal.getFocusedRepositoryInputBorderStyle())
+                .as("EPBDS-16267: the focused Repository field must draw no border around its search input")
+                .isEqualTo(NO_BORDER_STYLE);
+        deployModal.selectRepository(null);
+        assertThat(deployModal.getFocusedDeploymentNameInputBorderStyle())
+                .as("EPBDS-16267: the focused Deployment Name field must draw no border around its search input")
+                .isEqualTo(NO_BORDER_STYLE);
         deployModal.deployWithAllFields(null, INVALID_DEPLOYMENT_NAME, "Deploy with a forbidden deployment name");
 
         assertThat(deployModal.isDeploymentNameErrorShown() || !deployModal.isSuccessNotificationVisible())

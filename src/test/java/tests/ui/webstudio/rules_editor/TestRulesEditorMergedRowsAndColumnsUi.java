@@ -10,6 +10,7 @@ import domain.serviceclasses.constants.User;
 import domain.ui.webstudio.components.common.SettingsMenuComponent;
 import domain.ui.webstudio.components.common.SettingsMenuComponent.Setting;
 import domain.ui.webstudio.components.common.TableComponent;
+import domain.ui.webstudio.components.common.ThemeMenuComponent;
 import domain.ui.webstudio.components.editortabcomponents.EditorTableActionsPanelComponent;
 import domain.ui.webstudio.components.editortabcomponents.RightTableDetailsComponent;
 import domain.ui.webstudio.components.editortabcomponents.leftmenu.EditorLeftRulesTreeComponent;
@@ -25,6 +26,7 @@ import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableT
 import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.DATATYPE;
 import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.DECISION;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
 
 public class TestRulesEditorMergedRowsAndColumnsUi extends BaseTest {
 
@@ -37,6 +39,7 @@ public class TestRulesEditorMergedRowsAndColumnsUi extends BaseTest {
     private static final String EXAMPLE_3_MODULE = "AutoPolicyCalculation";
     private static final String LONG_GROUP_WORKBOOK = "LongMergedGroup.xlsx";
     private static final String SHIFTED_WORKBOOK = "ShiftedCellEditor.xlsx";
+    private static final String LAYOUT_WORKBOOK = "RenderedTableLayout.xlsx";
 
     @Test
     @TestCaseId("EPBDS-16879")
@@ -383,6 +386,51 @@ public class TestRulesEditorMergedRowsAndColumnsUi extends BaseTest {
                 .doesNotContain("Beverly Hills", "CA", "1600 Pennsylvania Avenue NW");
     }
 
+    @Test
+    @TestCaseId({"EPBDS-16766", "EPBDS-13609"})
+    @Description("EPBDS-16766: with Excel Formatting on, the indent the workbook gives a cell is drawn: the text indented "
+            + "by 2 on the left starts 2 em further from the left border than the plain one, and the right-aligned "
+            + "text indented by 4 ends 4 em further from the right border. EPBDS-13609: in the rules table myRule "
+            + "a1 and a2 are each merged over two rules while true and BBB are merged over the two middle ones, so some "
+            + "rows have all their cells merged into the next row; a1 and a2 must still be equally tall and cover two "
+            + "rows each.")
+    @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
+    public void indentsAreDrawnAndMergedRowsKeepTheirHeight() {
+        String projectName = WorkflowService.loginCreateProjectFromExcelFile(User.ADMIN, LAYOUT_WORKBOOK);
+        EditorPage editorPage = new EditorPage();
+        new ThemeMenuComponent().setExcelFormatting(true);
+        selectWorkbookTable(editorPage, projectName, LAYOUT_WORKBOOK, DECISION, "Hello");
+        TableComponent table = editorPage.getCenterTable();
+
+        assertThat(List.of(table.getCellText(3, 1), table.getCellText(3, 2), table.getCellText(4, 1),
+                table.getCellText(4, 2)))
+                .as("Precondition: the first rule is plain, the second one is the indented Bob rule")
+                .containsExactly("Alice", "Hello Alice", "Bob", "Hello Bob");
+        assertThat(table.getTextInsetFromLeftEm(4, 1) - table.getTextInsetFromLeftEm(3, 1))
+                .as("EPBDS-16766: the text indented by 2 must start 2 em further from the left border of its cell")
+                .isCloseTo(2.0, within(0.1));
+        assertThat(table.getTextInsetFromRightEm(4, 2) - table.getTextInsetFromRightEm(3, 2))
+                .as("EPBDS-16766: the right-aligned text indented by 4 must end 4 em further from the right border "
+                        + "of its cell")
+                .isCloseTo(4.0, within(0.1));
+
+        editorPage.getEditorLeftRulesTreeComponent().selectItemInFolder(DECISION, "myRule");
+        TableComponent merged = editorPage.getCenterTable();
+        WaitUtil.requireCondition(() -> merged.getCellText(1, 1).contains("myRule"), 15000, 250,
+                "Waiting for the table myRule to be drawn");
+        assertThat(List.of(merged.getCellText(3, 1), merged.getCellText(3, 3), merged.getCellText(4, 1),
+                merged.getCellText(4, 2), merged.getCellText(5, 1)))
+                .as("Precondition: a1 and a2 stand in the first column, true and BBB are merged over the middle rules")
+                .containsExactly("a1", "AAA", "true", "BBB", "a2");
+        double single = merged.getCellHeight(3, 3);
+        assertThat(merged.getCellHeight(3, 1))
+                .as("EPBDS-13609: a1 merged over two rules must be as tall as two rows")
+                .isGreaterThan(single * 1.9);
+        assertThat(merged.getCellHeight(5, 1))
+                .as("EPBDS-13609: a2 merged over two rules must be as tall as a1")
+                .isCloseTo(merged.getCellHeight(3, 1), within(1.5));
+    }
+
     private void typeDecimal(TableComponent table, int row, int column, String shown, String typed, String what) {
         WebElement editor = table.openCellEditor(row, column);
         assertThat(editor.getCurrentInputValue())
@@ -406,13 +454,18 @@ public class TestRulesEditorMergedRowsAndColumnsUi extends BaseTest {
     private EditorPage openWorkbookTable(String workbook, String folder, String tableName) {
         String projectName = WorkflowService.loginCreateProjectFromExcelFile(User.ADMIN, workbook);
         EditorPage editorPage = new EditorPage();
+        selectWorkbookTable(editorPage, projectName, workbook, folder, tableName);
+        return editorPage;
+    }
+
+    private void selectWorkbookTable(EditorPage editorPage, String projectName, String workbook, String folder,
+                                     String tableName) {
         editorPage.getEditorLeftProjectModuleSelectorComponent()
                 .selectModule(projectName, workbook.replace(".xlsx", ""));
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
                 .expandFolderInTree(folder)
                 .selectItemInFolder(folder, tableName);
-        return editorPage;
     }
 
     private TableComponent showAllRows(EditorPage editorPage) {

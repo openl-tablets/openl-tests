@@ -12,6 +12,7 @@ public class DeployModalComponent extends BaseComponent {
 
     private WebElement modal;
     private WebElement repositorySelect;
+    private WebElement repositorySearchInput;
     private WebElement deploymentNameSelect;
     private WebElement deploymentNameSearchInput;
     private WebElement commentTextarea;
@@ -35,6 +36,7 @@ public class DeployModalComponent extends BaseComponent {
     private void initializeElements() {
         modal = new WebElement(page, "xpath=" + MODAL_BASE, "deployModal");
         repositorySelect = new WebElement(page, "xpath=" + MODAL_BASE + "//div[contains(@class,'ant-select') and .//input[@id='deploy_form_repository']]//div[contains(@class,'ant-select-content')]", "repositorySelect");
+        repositorySearchInput = new WebElement(page, "xpath=" + MODAL_BASE + "//input[@id='deploy_form_repository']", "repositorySearchInput");
         deploymentNameSelect = new WebElement(page, "xpath=" + MODAL_BASE + "//div[contains(@class,'ant-select') and .//input[@id='deploy_form_deploymentName']]//div[contains(@class,'ant-select-content')]", "deploymentNameSelect");
         deploymentNameSearchInput = new WebElement(page, "xpath=" + MODAL_BASE + "//input[@id='deploy_form_deploymentName']", "deploymentNameSearchInput");
         commentTextarea = new WebElement(page, "xpath=" + MODAL_BASE + "//textarea[@id='deploy_form_comment']", "commentTextarea");
@@ -68,6 +70,24 @@ public class DeployModalComponent extends BaseComponent {
             firstDropdownOption.click();
         }
         return this;
+    }
+
+    public String getFocusedRepositoryInputBorderStyle() {
+        return focusAndReadBorderStyle(repositorySelect, repositorySearchInput);
+    }
+
+    public String getFocusedDeploymentNameInputBorderStyle() {
+        return focusAndReadBorderStyle(deploymentNameSelect, deploymentNameSearchInput);
+    }
+
+    private String focusAndReadBorderStyle(WebElement select, WebElement searchInput) {
+        select.click();
+        WaitUtil.requireCondition(() -> (Boolean) searchInput.getLocator().evaluate("input => document.activeElement === input"),
+                DEFAULT_TIMEOUT_MS, 100, "Waiting for the search input of the field to take the focus");
+        String borderStyle = searchInput.getCssValue("border-top-style");
+        page.keyboard().press("Escape");
+        firstDropdownOption.waitForHidden(DEFAULT_TIMEOUT_MS);
+        return borderStyle;
     }
 
     public DeployModalComponent fillDeploymentName(String name) {
