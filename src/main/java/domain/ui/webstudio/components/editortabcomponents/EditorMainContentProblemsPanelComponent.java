@@ -17,6 +17,7 @@ public class EditorMainContentProblemsPanelComponent extends BaseComponent {
     private WebElement problemsPanel;
     private WebElement body;
     private WebElement toggle;
+    private WebElement markedParts;
     private WebElement errorsCounter;
     private WebElement warningsCounter;
     private List<WebElement> errorMessages;
@@ -39,6 +40,7 @@ public class EditorMainContentProblemsPanelComponent extends BaseComponent {
         toggle = new WebElement(page, PANEL + "//button[@data-testid='table-problems-toggle']", "tableProblemsToggle");
         errorsCounter = new WebElement(page, PANEL + "//span[@data-testid='table-problems-errors']", "tableProblemsErrors");
         warningsCounter = new WebElement(page, PANEL + "//span[@data-testid='table-problems-warnings']", "tableProblemsWarnings");
+        markedParts = new WebElement(page, BODY + "//span[contains(@data-testid,'-code-marked')]", "tableProblemsMarkedParts");
         errorMessages = createElementList(BODY + "/ul[1]/li", "tableErrorMessages");
         warningsAfterErrors = createElementList(BODY + "/ul[2]/li", "tableWarningMessagesAfterErrors");
         warningsAlone = createElementList(BODY + "/ul[1]/li", "tableWarningMessages");
@@ -167,6 +169,11 @@ public class EditorMainContentProblemsPanelComponent extends BaseComponent {
         WaitUtil.waitForListNotEmpty(this::warningMessages, DEFAULT_TIMEOUT_MS, 250,
                 "Waiting for the warnings of the table to be listed");
         return warnings.stream().map(e -> CompileMessageReader.textOf(e.getLocator())).toList();
+    }
+
+    public List<String> getMarkedParts() {
+        openPanel();
+        return markedParts.getLocator().allInnerTexts().stream().map(String::trim).toList();
     }
 
     private List<WebElement> warningMessages() {
