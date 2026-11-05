@@ -129,6 +129,23 @@ public class ResolveConflictsDialogComponent extends BaseComponent {
         clickSave();
     }
 
+    public int getConflictedFilesCount() {
+        return theirsRadios().count();
+    }
+
+    public int chooseTheirsForEveryFile() {
+        Locator radios = theirsRadios();
+        int count = radios.count();
+        for (int i = 0; i < count; i++) {
+            radios.nth(i).check(new Locator.CheckOptions().setForce(true));
+        }
+        return count;
+    }
+
+    private Locator theirsRadios() {
+        return page.locator("xpath=//input[@type='radio' and @value='THEIRS']");
+    }
+
     public void clickSave() {
         WaitUtil.waitForCondition(() -> saveButton.isVisible() && saveButton.isEnabled(), 5000, 100, "Waiting for Save button");
         saveButton.click();
