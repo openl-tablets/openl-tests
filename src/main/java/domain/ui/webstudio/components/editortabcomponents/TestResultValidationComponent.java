@@ -179,6 +179,11 @@ public class TestResultValidationComponent extends BaseComponent {
         waitUntilSpinnerLoaded();
     }
 
+    public FailuresOptionComponent failuresOption() {
+        waitForResults();
+        return new FailuresOptionComponent(resultsPage(), IN_RESULTS);
+    }
+
     private WebElement failuresOnlyCheckbox() {
         return new WebElement(resultsPage(), "xpath=" + IN_RESULTS + "//input[@data-testid='tests-failures-only']",
                 "failuresOnlyCheckbox");

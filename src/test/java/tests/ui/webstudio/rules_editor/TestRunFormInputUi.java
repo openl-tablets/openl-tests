@@ -7,6 +7,7 @@ import configuration.annotations.TestCaseId;
 import configuration.appcontainer.AppContainerStartParameters;
 import domain.serviceclasses.constants.User;
 import domain.ui.webstudio.components.common.TabSwitcherComponent;
+import domain.ui.webstudio.components.editortabcomponents.FailuresOptionComponent;
 import domain.ui.webstudio.components.editortabcomponents.TestResultValidationComponent;
 import domain.ui.webstudio.components.editortabcomponents.leftmenu.EditorLeftRulesTreeComponent;
 import domain.ui.webstudio.components.editortabcomponents.toolbar.IRunMenu;
@@ -207,6 +208,57 @@ public class TestRunFormInputUi extends BaseTest {
         assertThat(results.getTestResult(2).get(0))
                 .as("The second case of the results must be the case 3")
                 .startsWith("3");
+    }
+
+    @Test
+    @TestCaseId({"EPBDS-16714", "EPBDS-16715"})
+    @Description("EPBDS-16714: in the Run menu of a test table of Example 3 and in the Test menu of AutoPolicyTests, ticking "
+            + "Failures Only makes the Failures per test list available. EPBDS-16715: that list, in the menus and on the "
+            + "results screen, offers All beside 1, 5 and 20, and All can be picked.")
+    @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
+    public void failuresPerTestIsAvailableWithFailuresOnlyAndOffersAll() {
+        EditorPage editorPage = openDriverPremiumTest();
+        FailuresOptionComponent failuresOption = new FailuresOptionComponent(editorPage.getPage());
+        List<String> counts = List.of("1", "5", "20", "All");
+
+        editorPage.getEditorToolbarPanelComponent().clickRun();
+        RunMenuComponent run = editorPage.getEditorToolbarPanelComponent().getRunLauncher();
+        run.waitForLauncher();
+        failuresOption.setFailuresOnly(true);
+        assertThat(failuresOption.isFailuresPerTestEnabled())
+                .as("EPBDS-16714: the Run menu must offer Failures per test once Failures Only is ticked")
+                .isTrue();
+        assertThat(failuresOption.getFailuresPerTestOptions())
+                .as("EPBDS-16715: Failures per test of the Run menu must offer All beside the counts")
+                .containsExactlyElementsOf(counts);
+        failuresOption.pickFailuresPerTest("All");
+        run.clickRunInsideMenu();
+
+        TestResultValidationComponent results = editorPage.getTestResultValidationComponent();
+        FailuresOptionComponent shownOption = results.failuresOption();
+        assertThat(shownOption.getFailuresPerTest())
+                .as("The results must open with the Failures per test the Run menu was left with")
+                .isEqualTo("All");
+        assertThat(shownOption.getFailuresPerTestOptions())
+                .as("EPBDS-16715: Failures per test on the results screen must offer All beside the counts")
+                .containsExactlyElementsOf(counts);
+        shownOption.pickFailuresPerTest("20").pickFailuresPerTest("All");
+        assertThat(shownOption.getFailuresPerTest())
+                .as("EPBDS-16715: All must be picked from Failures per test on the results screen")
+                .isEqualTo("All");
+        results.closeResults();
+
+        editorPage.getEditorToolbarPanelComponent().clickTestDropdown();
+        assertThat(failuresOption.isFailuresPerTestEnabled())
+                .as("Failures per test of the Test menu must wait while Failures Only is clear")
+                .isFalse();
+        failuresOption.setFailuresOnly(true);
+        assertThat(failuresOption.isFailuresPerTestEnabled())
+                .as("EPBDS-16714: the Test menu must offer Failures per test once Failures Only is ticked")
+                .isTrue();
+        assertThat(failuresOption.getFailuresPerTestOptions())
+                .as("EPBDS-16715: Failures per test of the Test menu must offer All beside the counts")
+                .containsExactlyElementsOf(counts);
     }
 
     private EditorPage openDriverPremiumTest() {
