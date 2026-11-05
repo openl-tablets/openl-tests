@@ -124,6 +124,11 @@ public class EditorToolbarPanelComponent extends BaseComponent {
         refreshProjectBtn.waitForVisible(DEFAULT_TIMEOUT_MS).click();
     }
 
+    public void clickProjectRefreshInBurst(int times) {
+        refreshProjectBtn.waitForVisible(DEFAULT_TIMEOUT_MS).getLocator()
+                .click(new com.microsoft.playwright.Locator.ClickOptions().setClickCount(times));
+    }
+
     public String getChangedOnDiskNotice(int timeoutMs) {
         return changedOnDiskNotice.isVisible(timeoutMs) ? changedOnDiskNotice.getInnerText().trim() : "";
     }

@@ -35,6 +35,11 @@ public class ProjectHeaderActionsComponent extends BaseComponent {
         overflowItem.format(actionLabel).click();
     }
 
+    public boolean isActionEnabled(String actionLabel) {
+        WebElement action = actionByLabel.format(actionIdOf(actionLabel));
+        return action.isVisible(PROBE_MS) && action.isEnabled();
+    }
+
     public boolean isActionAvailable(String actionLabel) {
         WebElement action = actionByLabel.format(actionIdOf(actionLabel));
         if (action.isVisible(PROBE_MS)) {

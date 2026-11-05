@@ -9,6 +9,7 @@ import domain.ui.webstudio.components.editortabcomponents.CompareExcelFilesDialo
 import domain.ui.webstudio.pages.mainpages.EditorPage;
 import helpers.service.WorkflowService;
 import helpers.utils.TestDataUtil;
+import helpers.utils.WaitUtil;
 import org.testng.annotations.Test;
 import tests.BaseTest;
 
@@ -19,11 +20,14 @@ public class TestCompareExcelFiles extends BaseTest {
 
     private static final String FILE_1 = "All_tables_type.xlsx";
     private static final String FILE_2 = "All_tables_type2.xlsx";
+    private static final String RESIZED_FILE_1 = "Resized_table_first.xlsx";
+    private static final String RESIZED_FILE_2 = "Resized_table_second.xlsx";
 
     @Test
-    @TestCaseId("IPBQA-28380")
+    @TestCaseId({"IPBQA-28380", "EPBDS-16578"})
     @Description("Compare Excel files: the action opens the comparison of two workbooks a reader uploads, "
-            + "which lists the sheets that differ and marks the cells that changed.")
+            + "which lists the sheets that differ and marks the cells that changed, "
+            + "including the cells of a table that changed both its width and its height (EPBDS-16578).")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void testCompareExcelFiles() {
         String projectName = WorkflowService.loginCreateProjectFromTemplate(User.ADMIN, "Sample Project");
@@ -129,6 +133,31 @@ public class TestCompareExcelFiles extends BaseTest {
         compareDialog.showSideBySide();
         assertThat(compareDialog.isFirstFragmentPresent()).isTrue();
         assertThat(compareDialog.isSecondFragmentPresent()).isTrue();
+
+        compareDialog.backToFilePicking();
+        compareDialog.uploadFile(TestDataUtil.getFilePathFromResources(RESIZED_FILE_1));
+        compareDialog.uploadFile(TestDataUtil.getFilePathFromResources(RESIZED_FILE_2));
+        compareDialog.clickCompareExcel();
+        compareDialog.openTreeNode("Types");
+        compareDialog.clickTreeNode("Datatype Person");
+        compareDialog.showSideBySide();
+        assertThat(compareDialog.getCellContent(2, 3, 2))
+                .as("The second version of the resized table reads the renamed field")
+                .isEqualTo("years");
+        WaitUtil.waitForCondition(() -> compareDialog.getHighlightedCellCount(2) > 0, 5000, 250,
+                "Waiting for the second version of the resized table to be marked");
+        assertThat(compareDialog.isCellFramed(1, 3, 2))
+                .as("The renamed field is marked in the first version of a table that changed both its width and its height")
+                .isTrue();
+        assertThat(compareDialog.isCellFramed(2, 3, 2))
+                .as("The renamed field is marked in the second version of a table that changed both its width and its height")
+                .isTrue();
+        assertThat(compareDialog.getHighlightedCellCount(1))
+                .as("The first version marks only the renamed field")
+                .isEqualTo(1);
+        assertThat(compareDialog.getHighlightedCellCount(2))
+                .as("The second version marks the renamed field, the added row and the added column")
+                .isEqualTo(7);
 
         compareDialog.close();
     }

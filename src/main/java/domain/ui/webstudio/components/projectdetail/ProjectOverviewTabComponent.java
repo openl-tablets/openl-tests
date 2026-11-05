@@ -89,9 +89,17 @@ public class ProjectOverviewTabComponent extends BaseComponent {
     }
 
     public void switchBranch(String branchName) {
+        chooseBranch(branchName);
+        waitUntilSpinnerLoaded();
+    }
+
+    public void chooseBranch(String branchName) {
         branchSwitcherTrigger.click();
         branchMenuItem.format(branchName, branchName).click();
-        waitUntilSpinnerLoaded();
+    }
+
+    public boolean isBranchSwitching() {
+        return Boolean.parseBoolean(branchSwitcherTrigger.getAttribute("aria-busy"));
     }
 
     public boolean isBranchPresent(String branchName) {

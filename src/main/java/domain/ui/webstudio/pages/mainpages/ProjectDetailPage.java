@@ -66,6 +66,7 @@ public class ProjectDetailPage extends BasePage {
     private WebElement notFoundCode;
     private WebElement detailRoot;
     private WebElement errorNotification;
+    private WebElement busyVeil;
 
     public ProjectDetailPage() {
         super();
@@ -108,6 +109,7 @@ public class ProjectDetailPage extends BasePage {
         syncUpdatesDialogComponent = new SyncUpdatesDialogComponent();
         detailRoot = new WebElement(page, "xpath=//*[@data-testid='project-detail']", "detailRoot");
         errorNotification = new WebElement(page, "xpath=(//div[contains(@class,'ant-notification-notice')])[last()]", "errorNotification");
+        busyVeil = new WebElement(page, "xpath=//*[@data-testid='project-workspace-overlay']", "busyVeil");
     }
 
     public ProjectHistoryTabComponent getHistoryTab() {
@@ -307,6 +309,23 @@ public class ProjectDetailPage extends BasePage {
         return this;
     }
 
+    public boolean isHeaderActionEnabled(String actionLabel) {
+        return headerActions.isActionEnabled(actionLabel);
+    }
+
+    public boolean isBusy() {
+        return busyVeil.isVisible(HEADER_ACTION_PROBE_MS);
+    }
+
+    public boolean isBusyWithBranchSwitch() {
+        return overview.isBranchSwitching();
+    }
+
+    public ProjectDetailPage startSwitchBranch(String branchName) {
+        overview.chooseBranch(branchName);
+        return this;
+    }
+
     public boolean isHeaderActionAvailable(String actionLabel) {
         return headerActions.isActionAvailable(actionLabel);
     }
@@ -389,6 +408,10 @@ public class ProjectDetailPage extends BasePage {
 
     public String getCurrentBranch() {
         openOverviewTab();
+        return overview.getCurrentBranch();
+    }
+
+    public String getShownBranch() {
         return overview.getCurrentBranch();
     }
 
