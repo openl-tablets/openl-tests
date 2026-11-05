@@ -22,7 +22,9 @@ import static domain.ui.webstudio.components.editortabcomponents.leftmenu.Editor
 import static domain.ui.webstudio.components.editortabcomponents.leftmenu.EditorLeftRulesTreeComponent.FilterOptions.BY_CATEGORY_DETAILED;
 import static domain.ui.webstudio.components.editortabcomponents.leftmenu.EditorLeftRulesTreeComponent.FilterOptions.BY_CATEGORY_INVERSED;
 import static domain.ui.webstudio.components.editortabcomponents.leftmenu.EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE;
+import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.DATATYPE;
 import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.DECISION;
+import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.VOCABULARY;
 
 public class TestOrderingModeDefaults extends BaseTest {
 
@@ -66,10 +68,11 @@ public class TestOrderingModeDefaults extends BaseTest {
     }
 
     @Test
-    @TestCaseId("IPBQA-32117")
+    @TestCaseId({"IPBQA-32117", "EPBDS-16654"})
     @Description("In multi-user mode the tables tree opens on the Excel Sheet view until a view is picked, the browser "
-            + "keeps the view picked last for whoever signs in next, and the Type view groups the tables by their kind, "
-            + "an alias datatype standing in a Vocabulary group of its own.")
+            + "keeps the view picked last for whoever signs in next, and the Type view groups the tables by their kind. "
+            + "EPBDS-16654: the alias datatypes County and Gender stand in a Vocabulary group of their own, "
+            + "not among the Datatype tables.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void testDefaultOrderForMultiUser() {
         String projectName = StringUtil.generateUniqueName("TestOrderingMode");
@@ -119,6 +122,12 @@ public class TestOrderingModeDefaults extends BaseTest {
         assertThat(rulesTree.getFoldersVisible())
                 .as("The Type view should group the tables by their kind, Vocabulary among them")
                 .contains(DECISION, "Spreadsheet", "Test", "Datatype", "Vocabulary");
+        assertThat(rulesTree.getTablesOfFolder(VOCABULARY))
+                .as("The Vocabulary group should hold the alias datatypes")
+                .containsExactlyInAnyOrder("County", "Gender");
+        assertThat(rulesTree.getTablesOfFolder(DATATYPE))
+                .as("The Datatype group should hold no alias datatype")
+                .containsExactlyInAnyOrder("Family", "Person");
     }
 
     private void createProject(EditorPage editorPage, String projectName) {
