@@ -19,20 +19,16 @@ import tests.BaseTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-// EPBDS-16528: Local Changes read and restored the history of the project's first module instead of the
-// selected one, because changes.xhtml rendered data-module-name from an EL variable that page never
-// defines. Needs a project with several modules: with one module "first" and "selected" coincide, which is
-// why TestLocalChangesCoreMechanics on the single-module Sample Project could not catch it.
-// Requires an image containing 48b1f6e688.
 public class TestLocalChangesModuleScopeUi extends BaseTest {
 
     private static final String PROJECT = "LocalChangesModuleScope";
+    private static final String OTHER_PROJECT = "LocalChangesOtherProject";
     private static final String ARCHIVE = "TestMergeBranchesNoConflicts_NoConflicts.zip";
     private static final String SPREADSHEET_FOLDER = "Spreadsheet";
     private static final int CELL_ROW = 3;
     private static final int CELL_COLUMN = 2;
 
-    private boolean moduleOpened;
+    private String openedProject;
 
     @Test
     @TestCaseId("EPBDS-16569")
@@ -83,6 +79,46 @@ public class TestLocalChangesModuleScopeUi extends BaseTest {
     }
 
     @Test
+    @TestCaseId("EPBDS-16494")
+    @Description("EPBDS-16494: Local Changes answers for the project the screen shows, not for the project the browser "
+            + "session opened last. Two projects hold histories of different lengths, the second is opened in another "
+            + "tab of the same session, and the first tab still lists its own single change.")
+    @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
+    public void localChangesAreScopedToTheProjectOfTheTab() {
+        EditorPage editorPage = createMultiModuleProject();
+        RepositoryPage repositoryPage = editorPage.getTabSwitcherComponent()
+                .selectTab(TabSwitcherComponent.TabName.REPOSITORY);
+        repositoryPage.createProject(CreateNewProjectComponent.TabName.ZIP_ARCHIVE, OTHER_PROJECT, ARCHIVE);
+        editorPage = new EditorPage();
+
+        editSpreadsheet(editorPage, OTHER_PROJECT, "Module1", "MySpr1", "Other-edit-1");
+        editSpreadsheet(editorPage, OTHER_PROJECT, "Module1", "MySpr1", "Other-edit-2");
+        String otherModuleAddress = DriverPool.getPage().url();
+        editSpreadsheet(editorPage, PROJECT, "Module1", "MySpr1", "Own-edit-1");
+
+        DriverPool.BrowserSession secondTab =
+                new DriverPool.BrowserSession(DriverPool.getBrowserContext(), DriverPool.createNewPage());
+        try {
+            DriverPool.actIn(secondTab, () -> {
+                DriverPool.getPage().navigate(otherModuleAddress);
+                ChangesDialogComponent otherChanges =
+                        new EditorPage().getEditorToolbarPanelComponent().clickMore().clickChanges();
+                assertThat(otherChanges.getChangesCount())
+                        .as("The other project holds two changes of its own")
+                        .isEqualTo(2);
+            });
+        } finally {
+            secondTab.page().close();
+        }
+
+        ChangesDialogComponent changes = editorPage.getEditorToolbarPanelComponent().clickMore().clickChanges();
+        assertThat(changes.getChangesCount())
+                .as("The first tab shows the project it is on, with its one change, not the two changes of the "
+                        + "project the same session opened in the other tab")
+                .isEqualTo(1);
+    }
+
+    @Test
     @TestCaseId("EPBDS-16569")
     @Description("EPBDS-16528: Restore from Local Changes rolls back only the selected module. Two modules are "
             + "edited, the restore is performed on one of them, and the other module's table must keep its edit - "
@@ -112,7 +148,7 @@ public class TestLocalChangesModuleScopeUi extends BaseTest {
     }
 
     private EditorPage createMultiModuleProject() {
-        moduleOpened = false;
+        openedProject = null;
         EditorPage editorPage = new LoginService(DriverPool.getPage()).login(UserService.getUser(User.ADMIN));
         RepositoryPage repositoryPage = editorPage.getTabSwitcherComponent()
                 .selectTab(TabSwitcherComponent.TabName.REPOSITORY);
@@ -120,21 +156,21 @@ public class TestLocalChangesModuleScopeUi extends BaseTest {
         return new EditorPage();
     }
 
-    // Before any module is open the breadcrumbs are absent and only the project tree can select a module;
-    // afterwards the tree is replaced by the rules tree and the breadcrumb dropdown is the way across.
-    // The choice is tracked rather than probed, because the breadcrumb re-renders during the post-save
-    // recompile and a visibility probe would intermittently take the wrong branch.
-    private void selectModule(EditorPage editorPage, String moduleName) {
-        if (moduleOpened) {
-            editorPage.getEditorToolbarPanelComponent().selectBreadcrumbModule(PROJECT, moduleName);
+    private void selectModule(EditorPage editorPage, String project, String moduleName) {
+        if (project.equals(openedProject)) {
+            editorPage.getEditorToolbarPanelComponent().selectBreadcrumbModule(project, moduleName);
         } else {
-            editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(PROJECT, moduleName);
-            moduleOpened = true;
+            editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(project, moduleName);
+            openedProject = project;
         }
     }
 
     private void openSpreadsheet(EditorPage editorPage, String moduleName, String tableName) {
-        selectModule(editorPage, moduleName);
+        openSpreadsheet(editorPage, PROJECT, moduleName, tableName);
+    }
+
+    private void openSpreadsheet(EditorPage editorPage, String project, String moduleName, String tableName) {
+        selectModule(editorPage, project, moduleName);
         editorPage.getEditorLeftRulesTreeComponent()
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
                 .expandFolderInTree(SPREADSHEET_FOLDER)
@@ -143,7 +179,12 @@ public class TestLocalChangesModuleScopeUi extends BaseTest {
     }
 
     private void editSpreadsheet(EditorPage editorPage, String moduleName, String tableName, String value) {
-        openSpreadsheet(editorPage, moduleName, tableName);
+        editSpreadsheet(editorPage, PROJECT, moduleName, tableName, value);
+    }
+
+    private void editSpreadsheet(EditorPage editorPage, String project, String moduleName, String tableName,
+                                 String value) {
+        openSpreadsheet(editorPage, project, moduleName, tableName);
         editorPage.getCenterTable().editCell(CELL_ROW, CELL_COLUMN, value);
         editorPage.getEditorTableActionsPanelComponent().clickSaveChanges();
         editorPage.waitUntilSpinnerLoaded();
@@ -155,8 +196,6 @@ public class TestLocalChangesModuleScopeUi extends BaseTest {
     }
 
     private ChangesDialogComponent openLocalChanges(EditorPage editorPage, String moduleName, String tableName) {
-        // The history stands over the module screen, so one left open is closed before another table is
-        // opened; closing it also forgets the readings made so far, so the next one answers for itself.
         new ChangesDialogComponent().closeIfOpen();
         openSpreadsheet(editorPage, moduleName, tableName);
         return editorPage.getEditorToolbarPanelComponent().clickMore().clickChanges();
