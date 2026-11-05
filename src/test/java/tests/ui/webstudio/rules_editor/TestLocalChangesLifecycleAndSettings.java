@@ -215,6 +215,7 @@ public class TestLocalChangesLifecycleAndSettings extends BaseTest {
         compareDialog.waitForDialogToAppear();
         compareDialog.openTreeNode("Rules");
         compareDialog.clickTreeNode("Rules String Hello (Integer hour)");
+        compareDialog.showSideBySide();
 
         assertThat(compareDialog.isDifferenceShown(2, "Good Evening3"))
                 .as("The value the edit wrote must be shown as a difference in the version that carries it")

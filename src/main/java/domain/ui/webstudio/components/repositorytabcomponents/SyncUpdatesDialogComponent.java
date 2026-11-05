@@ -13,6 +13,7 @@ public class SyncUpdatesDialogComponent extends BaseComponent {
             "//div[contains(@class,'ant-modal')][.//div[contains(@class,'ant-modal-title') and contains(normalize-space(),'Sync updates')]]";
 
     private static final String SCOPE_PROJECT = MODAL_ROOT + "//div[@data-testid='merge-scope-project']";
+    private static final String CHANGED_IN_BOTH = SCOPE_PROJECT + "//*[@data-testid='merge-scope-changed-in-both-file']";
     private static final long SCOPE_SHOWN_MS = 15000;
 
     private WebElement modalTitle;
@@ -81,9 +82,30 @@ public class SyncUpdatesDialogComponent extends BaseComponent {
 
     public List<String> getFilesChangedInBoth() {
         waitForScope();
-        Locator files = DriverPool.getPage().locator("xpath=" + SCOPE_PROJECT
-                + "//div[@data-testid='merge-scope-changed-in-both']/span[1]");
-        return files.allInnerTexts().stream().map(String::trim).toList();
+        return changedInBoth().all().stream()
+                .map(file -> {
+                    String name = file.locator("xpath=.//strong").innerText().trim();
+                    Locator folder = file.locator("xpath=.//span[contains(@class,'ant-typography-secondary')]");
+                    return folder.count() == 0 ? name : folder.first().innerText().trim() + "/" + name;
+                })
+                .toList();
+    }
+
+    public String getMergeEstimateOf(String fileName) {
+        waitForScope();
+        return DriverPool.getPage().locator("xpath=" + CHANGED_IN_BOTH + "[.//strong[normalize-space()=\"" + fileName + "\"]]"
+                + "//*[@data-testid='file-conflict' or @data-testid='file-merges-by-itself']").innerText().trim();
+    }
+
+    public String getConflictsNote() {
+        waitForScope();
+        return new WebElement(DriverPool.getPage(), "xpath=" + MODAL_ROOT
+                + "//*[@data-testid='merge-scope-conflicts' or @data-testid='merge-scope-no-conflicts']", "mergeScopeConflictsNote")
+                .waitForVisible(SCOPE_SHOWN_MS).getInnerText().replaceAll("\\s+", " ").trim();
+    }
+
+    private Locator changedInBoth() {
+        return DriverPool.getPage().locator("xpath=" + CHANGED_IN_BOTH);
     }
 
     private WebElement waitForScope() {

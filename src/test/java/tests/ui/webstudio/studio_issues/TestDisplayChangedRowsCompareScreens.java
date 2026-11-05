@@ -21,6 +21,7 @@ import helpers.utils.TestDataUtil;
 import org.testng.annotations.Test;
 import tests.BaseTest;
 
+import static domain.ui.webstudio.components.editortabcomponents.CompareLocalChangesDialogComponent.COMBINED;
 import static org.assertj.core.api.Assertions.assertThat;
 import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.DECISION;
 
@@ -29,6 +30,7 @@ public class TestDisplayChangedRowsCompareScreens extends BaseTest {
     private static final String BANK_RATING_FILE_1 = "Bank_Rating_1.xlsx";
     private static final String BANK_RATING_FILE_2 = "Bank_Rating_2.xlsx";
     private static final int BANK_LIMIT_INDEX_TOP_ROW = 8;
+    private static final String BANK_RATING_WORKBOOK = "Bank Rating.xlsx";
 
     @Test
     @TestCaseId("IPBQA-32105")
@@ -63,6 +65,8 @@ public class TestDisplayChangedRowsCompareScreens extends BaseTest {
         compareDialog.openTreeNode("Limit");
         compareDialog.clickTreeNode("Rules Double BankLimitIndex (Bank bank, RatingGroup bankRatingGroup)");
 
+        validateOneTable(compareDialog);
+        compareDialog.showSideBySide();
         assertThat(compareDialog.getNumberOfRows(1))
                 .as("Left fragment should have more than 4 rows with equal rows shown")
                 .isGreaterThan(4);
@@ -104,9 +108,15 @@ public class TestDisplayChangedRowsCompareScreens extends BaseTest {
         ProjectDetailPage projectDetail = repositoryPage.openProjectDetail(projectName);
 
         CompareGitRevisionsDialogComponent repoCompareDialog = projectDetail.openRevisionCompare();
+        assertThat(repoCompareDialog.getFilesChangedBetweenRevisions())
+                .as("The comparison with the last revision lists the workbook edited since it")
+                .containsExactly(BANK_RATING_WORKBOOK);
+        repoCompareDialog.openChangedFile(BANK_RATING_WORKBOOK);
         repoCompareDialog.openTreeNode("Limit");
         repoCompareDialog.clickTreeNode("Rules Double BankLimitIndex (Bank bank, RatingGroup bankRatingGroup)");
         repoCompareDialog.setShowEqualRows(true);
+        validateOneTable(repoCompareDialog);
+        repoCompareDialog.showSideBySide();
 
         validateRepositoryCompareWindowCells(repoCompareDialog);
         assertThat(repoCompareDialog.getNumberOfRows(1))
@@ -116,10 +126,10 @@ public class TestDisplayChangedRowsCompareScreens extends BaseTest {
 
         repoCompareDialog.setShowEqualRows(false);
         assertThat(repoCompareDialog.getHighlightedCellCount(1))
-                .as("The differences must still be shown in the working copy with the equal rows left out")
+                .as("The differences must still be shown in the revision with the equal rows left out")
                 .isPositive();
         assertThat(repoCompareDialog.getHighlightedCellCount(2))
-                .as("The differences must still be shown in the revision with the equal rows left out")
+                .as("The differences must still be shown in the working copy with the equal rows left out")
                 .isPositive();
         repoCompareDialog.setShowEqualRows(true);
         validateRepositoryCompareWindowCells(repoCompareDialog);
@@ -153,6 +163,16 @@ public class TestDisplayChangedRowsCompareScreens extends BaseTest {
 
         compareDialog.openTreeNode("Limit");
         compareDialog.clickTreeNode("Rules Double BankLimitIndex (Bank bank, RatingGroup bankRatingGroup)");
+
+        int drawnAsOne = compareDialog.getNumberOfRows(COMBINED);
+        validateCombinedCells(compareDialog);
+        compareDialog.setShowEqualRows(true);
+        assertThat(compareDialog.getNumberOfRows(COMBINED))
+                .as("Asking for the rows that read the same draws more of the two workbooks drawn as one table")
+                .isGreaterThan(drawnAsOne);
+        validateCombinedCells(compareDialog);
+        compareDialog.setShowEqualRows(false);
+        compareDialog.showSideBySide();
 
         int drawnLeft = compareDialog.getNumberOfRows(1);
         int drawnRight = compareDialog.getNumberOfRows(2);
@@ -211,6 +231,32 @@ public class TestDisplayChangedRowsCompareScreens extends BaseTest {
                 .isFalse();
     }
 
+    private void validateOneTable(CompareLocalChangesDialogComponent dialog) {
+        assertThat(dialog.isDrawnAsOneTable())
+                .as("The comparison opens with the two versions drawn as one table")
+                .isTrue();
+        validateCombinedCells(dialog);
+        int shown = dialog.getNumberOfRows(COMBINED);
+        dialog.setShowEqualRows(false);
+        assertThat(dialog.getNumberOfRows(COMBINED))
+                .as("Hiding the rows that read the same must leave fewer rows in the one table")
+                .isLessThan(shown);
+        assertThat(dialog.getEqualRowsLeftOut(COMBINED))
+                .as("The one table must say how many equal rows it leaves out between the edits")
+                .isNotEmpty();
+        validateCombinedCells(dialog);
+        dialog.setShowEqualRows(true);
+    }
+
+    private void validateCombinedCells(CompareLocalChangesDialogComponent dialog) {
+        assertThat(dialog.isSheetRowHighlighted(COMBINED, bankLimitIndexSheetRow(7)))
+                .as("The first edit must show as a difference on row 7 of the one table")
+                .isTrue();
+        assertThat(dialog.isSheetRowHighlighted(COMBINED, bankLimitIndexSheetRow(16)))
+                .as("The second edit must show as a difference on row 16 of the one table")
+                .isTrue();
+    }
+
     private void validateCompareWindowCells(CompareLocalChangesDialogComponent dialog) {
         assertThat(dialog.isSheetRowHighlighted(1, bankLimitIndexSheetRow(7)))
                 .as("The first edit must show as a difference on row 7 of the left version")
@@ -232,16 +278,16 @@ public class TestDisplayChangedRowsCompareScreens extends BaseTest {
 
     private void validateRepositoryCompareWindowCells(CompareGitRevisionsDialogComponent dialog) {
         assertThat(dialog.isRowHighlighted(1, 7))
-                .as("The first edit must show as a difference on row 7 of the working copy")
-                .isTrue();
-        assertThat(dialog.isRowHighlighted(2, 7))
                 .as("The first edit must show as a difference on row 7 of the revision")
                 .isTrue();
+        assertThat(dialog.isRowHighlighted(2, 7))
+                .as("The first edit must show as a difference on row 7 of the working copy")
+                .isTrue();
         assertThat(dialog.isRowHighlighted(1, 16))
+                .as("The second edit must show as a difference on row 16 of the revision")
+                .isTrue();
+        assertThat(dialog.isRowHighlighted(2, 16))
                 .as("The second edit must show as a difference on row 16 of the working copy")
                 .isTrue();
-        assertThat(dialog.getHighlightedCellCount(2))
-                .as("The revision must show what the working copy differs from it in")
-                .isPositive();
     }
 }

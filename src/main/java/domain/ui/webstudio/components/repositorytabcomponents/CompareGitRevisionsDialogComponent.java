@@ -5,28 +5,24 @@ import configuration.core.ui.WebElement;
 import domain.ui.webstudio.components.editortabcomponents.CompareLocalChangesDialogComponent;
 import helpers.utils.WaitUtil;
 
-/**
- * The comparison of a project against one of its own revisions. It is the same window a comparison of two
- * local versions is shown in — what differs is how the two sides are chosen: the working copy stands on the
- * left, and the revision to hold it against is picked on the right.
- */
 public class CompareGitRevisionsDialogComponent extends CompareLocalChangesDialogComponent {
 
     private static final int PICKER_PROBE_MS = 1000;
 
     private final WebElement revisionSelect;
     private final WebElement compareBtn;
+    private final WebElement changesSummary;
+    private final WebElement changedFileTemplate;
 
     public CompareGitRevisionsDialogComponent(Page comparePopup) {
         super(comparePopup);
         revisionSelect = new WebElement(getPage(), "xpath=//div[@data-testid='compare-revision']//input", "revisionSelect");
         compareBtn = new WebElement(getPage(), "xpath=//button[@data-testid='compare-start']", "compareStartBtn");
+        changesSummary = new WebElement(getPage(), "xpath=//*[@data-testid='compare-revisions-summary']", "compareRevisionsSummary");
+        changedFileTemplate = new WebElement(getPage(),
+                "xpath=//*[@data-testid='revision-changes-file'][.//strong[normalize-space()=\"%s\"]]", "revisionChangedFile");
     }
 
-    /**
-     * Picks the revision to hold the working copy against, counted from the newest and from zero: the
-     * revision the window opens on is the newest, and 0 asks for that one.
-     */
     public void selectRevision(int index) {
         revisionSelect.waitForVisible(DEFAULT_TIMEOUT_MS);
         revisionSelect.click();
@@ -37,48 +33,19 @@ public class CompareGitRevisionsDialogComponent extends CompareLocalChangesDialo
         option.click();
     }
 
-    /**
-     * The Excel files the working copy offers to be compared, in the order the window offers them; the
-     * revision's own list is asked for in the same way.
-     */
-    public java.util.List<String> getWorkingCopyFilesOffered() {
-        return filesOffered("compare-working-file");
-    }
-
-    public java.util.List<String> getRevisionFilesOffered() {
-        return filesOffered("compare-revision-file");
-    }
-
-    private java.util.List<String> filesOffered(String box) {
-        WebElement picker = new WebElement(getPage(),
-                "xpath=//*[@data-testid='" + box + "']//input", "compareFilePicker");
-        picker.waitForVisible(DEFAULT_TIMEOUT_MS);
-        picker.click();
-        WaitUtil.requireCondition(() -> "true".equals(picker.getAttribute("aria-expanded")),
-                DEFAULT_TIMEOUT_MS, 200, "Waiting for the list of workbooks to stand open");
-        String list = picker.getAttribute("aria-controls");
-        String options = "//div[contains(@class,'ant-select-dropdown')][.//*[@id='" + list + "']]"
-                + "//div[@role='option']";
-        new WebElement(getPage(), "xpath=(" + options + ")[1]", "compareFileOption")
-                .waitForVisible(DEFAULT_TIMEOUT_MS);
-        java.util.List<String> named = getPage().locator("xpath=" + options)
-                .all().stream()
-                .map(option -> option.getAttribute("title"))
-                .toList();
-        picker.press("Escape");
-        return named;
-    }
-
     public void clickCompareBtn() {
         compareBtn.waitForVisible(DEFAULT_TIMEOUT_MS);
         compareBtn.click();
-        waitForDialogToAppear();
+        changesSummary.waitForVisible(COMPARISON_TIMEOUT_MS);
     }
 
-    /**
-     * Waits for the window to be ready to be read: either the two sides are already held against each other,
-     * or the revision to hold the working copy against is still to be picked.
-     */
+    public CompareGitRevisionsDialogComponent openChangedFile(String fileName) {
+        changedFileTemplate.format(fileName).waitForVisible(COMPARISON_TIMEOUT_MS).click();
+        WaitUtil.requireCondition(this::isComparisonDrawn, COMPARISON_TIMEOUT_MS, 250,
+                "Waiting for '" + fileName + "' to be compared");
+        return this;
+    }
+
     @Override
     public CompareGitRevisionsDialogComponent waitForDialogToAppear() {
         WaitUtil.requireCondition(() -> isComparisonDrawn() || compareBtn.isVisible(PICKER_PROBE_MS),

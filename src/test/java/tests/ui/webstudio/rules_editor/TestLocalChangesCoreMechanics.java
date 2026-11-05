@@ -87,6 +87,7 @@ public class TestLocalChangesCoreMechanics extends BaseTest {
         compareDialog.waitForDialogToAppear();
         compareDialog.openTreeNode("Rules");
         compareDialog.clickTreeNode("Rules String Hello (Integer hour)");
+        compareDialog.showSideBySide();
 
         assertThat(compareDialog.isDifferenceShown(1, "Good Morning"))
                 .as("The older state should show 'Good Morning' as what differs after the single edit")
@@ -126,6 +127,7 @@ public class TestLocalChangesCoreMechanics extends BaseTest {
         compareDialog.waitForDialogToAppear();
         compareDialog.openTreeNode("Rules");
         compareDialog.clickTreeNode("Rules String Hello (Integer hour)");
+        compareDialog.showSideBySide();
 
         assertThat(compareDialog.isDifferenceShown(1, "Good Afternoon"))
                 .as("The older state should show 'Good Afternoon' as what differs after the second edit")
@@ -281,6 +283,7 @@ public class TestLocalChangesCoreMechanics extends BaseTest {
         compareDialog.waitForDialogToAppear();
         compareDialog.openTreeNode("Rules");
         compareDialog.clickTreeNode("Rules String Hello (Integer hour)");
+        compareDialog.showSideBySide();
 
         assertThat(compareDialog.isDifferenceShown(1, "Good Morning1"))
                 .as("The saved state should show 'Good Morning1' as what differs after the edit")

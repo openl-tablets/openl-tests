@@ -48,7 +48,8 @@ public class TestMergeBranchesNoConflicts extends BaseTest {
             + "EPBDS-16361). Both branches change MySpr1 of the same sheet: Sync combines the sheet without a conflict, "
             + "the steps both branches add at its end are all kept, those of the receiving branch first, and the Save "
             + "dialog, the Sync dialog and the Merge Summary show the files and the sheet the merge combines "
-            + "(EPBDS-16883, EPBDS-16884, EPBDS-16962, EPBDS-16896).")
+            + "(EPBDS-16883, EPBDS-16884, EPBDS-16962, EPBDS-16896), and the Sync dialog expects the merge to "
+            + "go without a conflict (EPBDS-17092).")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void testMergeBranchesNoConflicts() {
         LoginService loginService = new LoginService(DriverPool.getPage());
@@ -108,6 +109,12 @@ public class TestMergeBranchesNoConflicts extends BaseTest {
         assertThat(receive.getFilesChangedInBoth())
                 .as("The Sync dialog names the workbook both branches changed")
                 .containsExactly(PROJECT_NAME + "/Module1.xlsx");
+        assertThat(receive.getMergeEstimateOf("Module1.xlsx"))
+                .as("The Sync dialog estimates that the workbook both branches changed in different parts merges by itself")
+                .isEqualTo("Merges by itself");
+        assertThat(receive.getConflictsNote())
+                .as("The Sync dialog of an admin, who reads every project, expects no conflict")
+                .isEqualTo("No conflicts expected: the changes of both branches do not overlap.");
         receive.clickReceive();
         repositoryPage.fillCommitInfo();
         repositoryPage.waitUntilSpinnerLoaded();

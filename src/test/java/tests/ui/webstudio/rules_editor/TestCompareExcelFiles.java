@@ -12,6 +12,7 @@ import helpers.utils.TestDataUtil;
 import org.testng.annotations.Test;
 import tests.BaseTest;
 
+import static domain.ui.webstudio.components.editortabcomponents.CompareLocalChangesDialogComponent.COMBINED;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestCompareExcelFiles extends BaseTest {
@@ -76,6 +77,17 @@ public class TestCompareExcelFiles extends BaseTest {
         assertThat(compareDialog.isTreeItemPresent("Conditions  testConditions")).isTrue();
         assertThat(compareDialog.isTreeItemPresent("Returns")).isTrue();
 
+        compareDialog.clickTreeNode("Spreadsheet SpreadsheetResult SpreadsheetTable (ByteValue a_byte)");
+        assertThat(compareDialog.isDrawnAsOneTable())
+                .as("The comparison opens with the two versions drawn as one table")
+                .isTrue();
+        assertThat(compareDialog.isCellFramed(COMBINED, 3, 3))
+                .as("The changed cell is framed in the one table")
+                .isTrue();
+        assertThat(compareDialog.getCellContent(COMBINED, 3, 3))
+                .as("The changed cell of the one table carries the first value before the second")
+                .containsSubsequence("200", "201");
+        compareDialog.showSideBySide();
         verifyDifferenceInCells(compareDialog, "Spreadsheet SpreadsheetResult SpreadsheetTable (ByteValue a_byte)", 3, 3, "200", "201");
         verifyDifferenceInCells(compareDialog, "SimpleRules int SimpleRulesTable(Boolean CondValue)", 2, 1, "Val", "Val1");
         verifyDifferenceInCells(compareDialog, "SimpleRules BigDecimal SimpleRuleTable(integer e_var)", 4, 1, "2", "3");
@@ -87,6 +99,7 @@ public class TestCompareExcelFiles extends BaseTest {
 
         compareDialog.openTreeNode("ColumnMatch <MATCH> String ColumnMatchTable(Long RandNumber)");
         compareDialog.clickTreeNode("SmartRules DoubleValue SmartRules1(String stringValue, int integerValue)");
+        compareDialog.showSideBySide();
         assertThat(compareDialog.isFirstFragmentPresent()).as("SmartRules1 stands in the first workbook").isTrue();
         assertThat(compareDialog.isSecondFragmentPresent()).as("SmartRules1 is not in the second").isFalse();
         compareDialog.clickTreeNode("Actions");
@@ -113,6 +126,7 @@ public class TestCompareExcelFiles extends BaseTest {
                 .isTrue();
         compareDialog.openTreeNode("Const");
         compareDialog.clickTreeNode("Constants");
+        compareDialog.showSideBySide();
         assertThat(compareDialog.isFirstFragmentPresent()).isTrue();
         assertThat(compareDialog.isSecondFragmentPresent()).isTrue();
 
@@ -123,6 +137,7 @@ public class TestCompareExcelFiles extends BaseTest {
                                          String nodeName, int row, int col,
                                          String expectedValue1, String expectedValue2) {
         dialog.clickTreeNode(nodeName);
+        dialog.showSideBySide();
         assertThat(dialog.isFirstFragmentPresent()).as(nodeName + " should have first fragment").isTrue();
         assertThat(dialog.isSecondFragmentPresent()).as(nodeName + " should have second fragment").isTrue();
         assertThat(dialog.getCellContent(1, row, col))
@@ -131,5 +146,11 @@ public class TestCompareExcelFiles extends BaseTest {
         assertThat(dialog.getCellContent(2, row, col))
                 .as(nodeName + " cell[" + row + "," + col + "] in second file")
                 .isEqualTo(expectedValue2);
+        assertThat(dialog.isCellFramed(1, row, col))
+                .as(nodeName + " cell[" + row + "," + col + "] is framed as changed in the first file")
+                .isTrue();
+        assertThat(dialog.isCellFramed(2, row, col))
+                .as(nodeName + " cell[" + row + "," + col + "] is framed as changed in the second file")
+                .isTrue();
     }
 }

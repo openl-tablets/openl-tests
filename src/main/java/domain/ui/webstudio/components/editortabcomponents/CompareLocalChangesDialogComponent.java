@@ -7,18 +7,32 @@ import domain.ui.webstudio.components.BaseComponent;
 import helpers.utils.WaitUtil;
 
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.Map;
 
 public class CompareLocalChangesDialogComponent extends BaseComponent {
+
+    public static final int COMBINED = 0;
 
     private static final String TREE = "//div[@data-testid='compare-tree']";
     private static final String TREE_NODE = TREE + "//div[contains(@class,'ant-tree-treenode')]";
     private static final String PANE = "//div[@data-testid='compare-pane-%s']";
-    private static final String CELL = "./td[not(.//span[@data-testid='table-line-number'])]";
+    private static final String ANY_PANE = "//div[starts-with(@data-testid,'compare-pane-')]";
+    private static final String ROWS = "//table//tbody[not(@aria-hidden='true')]/tr";
+    private static final String ADDRESSED = "td[@data-cell][not(starts-with(@data-cell,'#'))]";
+    private static final String VERSION_ROW = ROWS + "[" + ADDRESSED + "]";
+    private static final String LEFT_OUT_ROW = ROWS + "[not(" + ADDRESSED + ")][contains(normalize-space(),'equal row')]";
+    private static final String VIEW_OPTION = "//*[@data-testid='%s']//label[contains(@class,'ant-segmented-item')]";
+    private static final String SIDE_BY_SIDE = "Side by side";
+    private static final String ALL_VERSIONS = "All Versions";
+    private static final String CHANGED_FRAME = "rgb(250, 173, 20)";
+    private static final String CONFLICT_FRAME = "rgb(255, 77, 79)";
+    private static final List<String> ADDED_OR_REMOVED = List.of("rgb(246, 255, 237)", "rgb(255, 242, 240)");
+    private static final String COUNT_MARKED = "(cells, marks) => cells.filter(cell => {"
+            + " const style = getComputedStyle(cell);"
+            + " return marks.frames.some(colour => style.boxShadow.includes(colour))"
+            + " || marks.paints.includes(style.backgroundColor); }).length";
     protected static final int PROBE_MS = 1000;
     protected static final int COMPARISON_TIMEOUT_MS = 90000;
-    private static final Pattern RGB = Pattern.compile("rgba?\\((\\d+),\\s*(\\d+),\\s*(\\d+)(?:,\\s*([\\d.]+))?\\)");
 
     protected final WebElement tree;
     protected final WebElement identicalNotice;
@@ -126,8 +140,44 @@ public class CompareLocalChangesDialogComponent extends BaseComponent {
         if (!node.getAttribute("class").contains("ant-tree-treenode-selected")) {
             node.getLocator().locator("xpath=.//span[contains(@class,'ant-tree-title')]").first().click();
         }
-        WaitUtil.requireCondition(() -> rowsOf(1).count() > 0 || rowsOf(2).count() > 0 || identicalNotice.isVisible(PROBE_MS),
-                DEFAULT_TIMEOUT_MS, 250, "Waiting for '" + nodeName + "' to be shown side by side");
+        WaitUtil.requireCondition(() -> node.getAttribute("class").contains("ant-tree-treenode-selected")
+                        && (getPage().locator("xpath=" + ANY_PANE + ROWS).count() > 0 || identicalNotice.isVisible(PROBE_MS)),
+                DEFAULT_TIMEOUT_MS, 250, "Waiting for '" + nodeName + "' to be drawn");
+    }
+
+    public boolean isDrawnAsOneTable() {
+        return getPage().locator("xpath=" + pane(COMBINED)).count() > 0
+                && "Combined".equals(selectedOption("compare-view"));
+    }
+
+    public void showSideBySide() {
+        if (SIDE_BY_SIDE.equals(selectedOption("compare-view"))) {
+            return;
+        }
+        Locator option = getPage().locator("xpath=" + String.format(VIEW_OPTION, "compare-view")
+                + "[normalize-space()='" + SIDE_BY_SIDE + "']");
+        option.click();
+        WaitUtil.requireCondition(() -> getPage().locator("xpath=" + pane(COMBINED)).count() == 0
+                        && (getPage().locator("xpath=" + pane(1)).count() > 0 || getPage().locator("xpath=" + pane(2)).count() > 0),
+                DEFAULT_TIMEOUT_MS, 250, "Waiting for the two versions to stand side by side");
+    }
+
+    public String getConflictView() {
+        return selectedOption("compare-conflict-view");
+    }
+
+    public void showConflictView(String view) {
+        getPage().locator("xpath=" + String.format(VIEW_OPTION, "compare-conflict-view")
+                + "[normalize-space()='" + view + "']").click();
+        WaitUtil.requireCondition(() -> view.equals(selectedOption("compare-conflict-view")) && isComparisonDrawn()
+                        && (getPage().locator("xpath=" + paneOf("yours")).count() > 0) == ALL_VERSIONS.equals(view),
+                COMPARISON_TIMEOUT_MS, 250, "Waiting for the view '" + view + "' of the conflicted file");
+    }
+
+    private String selectedOption(String testId) {
+        Locator selected = getPage().locator("xpath=" + String.format(VIEW_OPTION, testId)
+                + "[contains(@class,'ant-segmented-item-selected')]");
+        return selected.count() == 0 ? "" : selected.first().innerText().trim();
     }
 
     public boolean isTreeItemPresent(String name) {
@@ -135,98 +185,86 @@ public class CompareLocalChangesDialogComponent extends BaseComponent {
     }
 
     public boolean isFirstFragmentPresent() {
-        return rowsOf(1).count() > 0;
+        return versionRows(pane(1)).count() > 0;
     }
 
     public boolean isSecondFragmentPresent() {
-        return rowsOf(2).count() > 0;
+        return versionRows(pane(2)).count() > 0;
     }
 
     public String getCellContent(int fragment, int row, int col) {
-        return cellOf(fragment, row, col).innerText().trim();
+        return cellOf(pane(fragment), row, col).innerText().trim();
     }
 
-    public boolean isCellContainsExpectedValue(int row, int col, String fragment, String expectedValue) {
-        return getCellContent(Integer.parseInt(fragment), row, col).equalsIgnoreCase(expectedValue);
-    }
-
-    public boolean isCellHighlighted(int row, int col, int fragment) {
-        return isPaintedAsDifference(colourOf(fragment, row, col));
-    }
-
-    public boolean isCellHighlightedWhite(int row, int col, String fragment) {
-        return !isCellHighlighted(row, col, Integer.parseInt(fragment));
-    }
-
-    public boolean isCellHighlightedGreen(int row, int col, String fragment) {
-        return isCellHighlighted(row, col, Integer.parseInt(fragment));
-    }
-
-    public boolean isCellHighlightedWithColor(int row, int col, String fragment, String colorRGBA) {
-        return colourOf(Integer.parseInt(fragment), row, col).equals(colorRGBA);
+    public boolean isCellFramed(int fragment, int row, int col) {
+        return countMarked(cellOf(pane(fragment), row, col), List.of(CHANGED_FRAME, CONFLICT_FRAME), List.of()) > 0;
     }
 
     public boolean isRowHighlighted(int fragment, int row) {
-        String pane = String.format(PANE, fragment == 1 ? "first" : "second");
-        String corner = getPage().locator("xpath=" + pane + "//td[@data-cell]").first().getAttribute("data-cell");
-        return isSheetRowHighlighted(fragment, Integer.parseInt(corner.replaceAll("[^0-9]", "")) + row - 1);
+        return countMarked(versionRow(pane(fragment), row).locator("xpath=./" + ADDRESSED)) > 0;
     }
 
     public boolean isSheetRowHighlighted(int fragment, int sheetRow) {
-        String pane = String.format(PANE, fragment == 1 ? "first" : "second");
-        return countPainted(getPage().locator("xpath=" + pane + "//td[@data-cell]"
+        return countMarked(getPage().locator("xpath=" + pane(fragment) + "//" + ADDRESSED
                 + "[translate(@data-cell,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','') = '" + sheetRow + "']")) > 0;
     }
 
-    private static int countPainted(Locator cells) {
-        int painted = 0;
-        for (int index = 0; index < cells.count(); index++) {
-            if (isPaintedAsDifference(cells.nth(index).evaluate("node => getComputedStyle(node).backgroundColor").toString())) {
-                painted++;
-            }
-        }
-        return painted;
-    }
-
-    private static boolean isPaintedAsDifference(String colour) {
-        Matcher channels = RGB.matcher(colour);
-        if (!channels.matches()) {
-            return false;
-        }
-        boolean opaque = channels.group(4) == null || Double.parseDouble(channels.group(4)) > 0;
-        boolean grey = channels.group(1).equals(channels.group(2)) && channels.group(2).equals(channels.group(3));
-        return opaque && !grey;
-    }
-
     public boolean isDifferenceShown(int fragment, String text) {
-        String pane = String.format(PANE, fragment == 1 ? "first" : "second");
-        return countPainted(getPage().locator("xpath=" + pane + "//td[@data-cell][normalize-space()=\"" + text + "\"]")) > 0;
+        return countMarked(cellsReading(pane(fragment), text)) > 0;
+    }
+
+    public boolean isDifferenceShownIn(String version, String text) {
+        return countMarked(cellsReading(paneOf(version), text), List.of(CHANGED_FRAME), ADDED_OR_REMOVED) > 0;
+    }
+
+    public boolean isConflictShownIn(String version, String text) {
+        return countMarked(cellsReading(paneOf(version), text), List.of(CONFLICT_FRAME), List.of()) > 0;
     }
 
     public int getHighlightedCellCount(int fragment) {
-        String pane = String.format(PANE, fragment == 1 ? "first" : "second");
-        return countPainted(getPage().locator("xpath=" + pane + "//td[@data-cell]"));
+        return countMarked(getPage().locator("xpath=" + pane(fragment) + "//" + ADDRESSED));
     }
 
-    private String colourOf(int fragment, int row, int col) {
-        Locator cell = cellOf(fragment, row, col);
-        return cell.evaluate("node => getComputedStyle(node).backgroundColor").toString();
+    public int getNumberOfCells(int fragment) {
+        return getPage().locator("xpath=" + pane(fragment) + "//" + ADDRESSED).count();
     }
 
-    private Locator cellOf(int fragment, int row, int col) {
-        String address = addressOf(fragment, row, col);
-        String pane = String.format(PANE, fragment == 1 ? "first" : "second");
-        return getPage().locator("xpath=" + pane + "//td[@data-cell='" + address + "']");
+    public int getNumberOfCellsIn(String version) {
+        return getPage().locator("xpath=" + paneOf(version) + "//" + ADDRESSED).count();
     }
 
-    private String addressOf(int fragment, int row, int col) {
-        String pane = String.format(PANE, fragment == 1 ? "first" : "second");
-        Locator firstAddressed = getPage().locator("xpath=" + pane + "//td[@data-cell]").first();
-        firstAddressed.waitFor();
-        String corner = firstAddressed.getAttribute("data-cell");
-        String letters = corner.replaceAll("[0-9]", "");
-        int firstRow = Integer.parseInt(corner.replaceAll("[^0-9]", ""));
-        return columnName(columnNumber(letters) + col - 1) + (firstRow + row - 1);
+    public int getHighlightedCellCountIn(String version) {
+        return countMarked(getPage().locator("xpath=" + paneOf(version) + "//" + ADDRESSED));
+    }
+
+    public List<String> getEqualRowsLeftOut(int fragment) {
+        return getPage().locator("xpath=" + pane(fragment) + LEFT_OUT_ROW).allInnerTexts().stream()
+                .map(text -> text.replaceAll("\\s+", " ").trim()).toList();
+    }
+
+    private Locator cellsReading(String pane, String text) {
+        return getPage().locator("xpath=" + pane + "//" + ADDRESSED + "[normalize-space()=\"" + text + "\"]");
+    }
+
+    private static int countMarked(Locator cells) {
+        return countMarked(cells, List.of(CHANGED_FRAME, CONFLICT_FRAME), ADDED_OR_REMOVED);
+    }
+
+    private static int countMarked(Locator cells, List<String> frames, List<String> paints) {
+        Object marked = cells.evaluateAll(COUNT_MARKED, Map.of("frames", frames, "paints", paints));
+        return ((Number) marked).intValue();
+    }
+
+    private Locator cellOf(String pane, int row, int col) {
+        Locator corner = getPage().locator("xpath=(" + pane + "//" + ADDRESSED + ")[1]");
+        corner.waitFor();
+        String letters = columnName(columnNumber(corner.getAttribute("data-cell").replaceAll("[0-9]", "")) + col - 1);
+        Locator cell = versionRow(pane, row).locator("xpath=./" + ADDRESSED
+                + "[translate(@data-cell,'0123456789','') = '" + letters + "']");
+        if (cell.count() == 0) {
+            throw new AssertionError("Row " + row + " of " + pane + " draws no cell in column " + letters);
+        }
+        return cell.first();
     }
 
     private static int columnNumber(String letters) {
@@ -246,25 +284,46 @@ public class CompareLocalChangesDialogComponent extends BaseComponent {
     }
 
     public int getNumberOfRows(int fragment) {
-        WaitUtil.waitForCondition(() -> rowsOf(fragment).count() > 0, DEFAULT_TIMEOUT_MS, 250,
+        Locator rows = versionRows(pane(fragment));
+        WaitUtil.waitForCondition(() -> rows.count() > 0, DEFAULT_TIMEOUT_MS, 250,
                 "Waiting for the rows of version " + fragment);
-        WaitUtil.waitForStableSize(() -> rowsOf(fragment).count(), DEFAULT_TIMEOUT_MS, 250,
+        WaitUtil.waitForStableSize(rows::count, DEFAULT_TIMEOUT_MS, 250,
                 "Waiting for the rows of version " + fragment + " to settle");
-        return rowsOf(fragment).count();
+        return rows.count();
     }
 
     public int getNumberOfColumns(int fragment) {
-        Locator rows = rowsOf(fragment);
+        Locator rows = versionRows(pane(fragment));
         int widest = 0;
         for (int index = 0; index < rows.count(); index++) {
-            widest = Math.max(widest, rows.nth(index).locator("xpath=" + CELL).count());
+            widest = Math.max(widest, rows.nth(index).locator("xpath=./" + ADDRESSED).count());
         }
         return widest;
     }
 
-    private Locator rowsOf(int fragment) {
-        String pane = String.format(PANE, fragment == 1 ? "first" : "second");
-        return getPage().locator("xpath=" + pane + "//table//tbody/tr");
+    private Locator versionRows(String pane) {
+        return getPage().locator("xpath=" + pane + VERSION_ROW);
+    }
+
+    private Locator versionRow(String pane, int row) {
+        Locator rows = versionRows(pane);
+        if (rows.count() < row) {
+            throw new AssertionError(pane + " draws " + rows.count() + " rows, not row " + row);
+        }
+        return rows.nth(row - 1);
+    }
+
+    private static String pane(int fragment) {
+        return String.format(PANE, switch (fragment) {
+            case COMBINED -> "combined";
+            case 1 -> "first";
+            case 2 -> "second";
+            default -> throw new IllegalArgumentException("No version " + fragment + " is compared");
+        });
+    }
+
+    private static String paneOf(String version) {
+        return String.format(PANE, version);
     }
 
     public void setShowEqualRows(boolean value) {

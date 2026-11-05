@@ -13,6 +13,7 @@ import helpers.service.WorkflowService;
 import org.testng.annotations.Test;
 import tests.BaseTest;
 
+import static domain.ui.webstudio.components.editortabcomponents.CompareLocalChangesDialogComponent.COMBINED;
 import static org.assertj.core.api.Assertions.assertThat;
 import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.DECISION;
 
@@ -50,6 +51,13 @@ public class TestDisplayChangedRowsTableStructure extends BaseTest {
         compareDialog.clickTreeNode("Rules Double newTable (Bank bank, RatingGroup bankRatingGroup)");
 
         compareDialog.setShowEqualRows(false);
+        assertThat(compareDialog.getNumberOfRows(COMBINED))
+                .as("The one table shows all 17 rows of the new table")
+                .isEqualTo(17);
+        assertThat(compareDialog.getHighlightedCellCount(COMBINED))
+                .as("Every cell of the new table is marked as added in the one table")
+                .isEqualTo(compareDialog.getNumberOfCells(COMBINED));
+        compareDialog.showSideBySide();
         assertThat(compareDialog.getNumberOfRows(1))
                 .as("Left fragment (original, no new table): 0 rows")
                 .isEqualTo(0);
@@ -105,6 +113,13 @@ public class TestDisplayChangedRowsTableStructure extends BaseTest {
         compareDialog.clickTreeNode("Rules String Hello (Integer hour)");
 
         compareDialog.setShowEqualRows(false);
+        assertThat(compareDialog.getNumberOfRows(COMBINED))
+                .as("The one table: the 9 rows of the original and the added one")
+                .isEqualTo(10);
+        assertThat(compareDialog.getNumberOfColumns(COMBINED))
+                .as("The one table: the 4 columns of the original and the added one")
+                .isEqualTo(5);
+        compareDialog.showSideBySide();
         assertThat(compareDialog.getNumberOfRows(1))
                 .as("Left fragment (original): 9 rows")
                 .isEqualTo(9);
@@ -169,28 +184,38 @@ public class TestDisplayChangedRowsTableStructure extends BaseTest {
         compareDialog.clickTreeNode("Rules String Hello (Integer hour)");
 
         compareDialog.setShowEqualRows(false);
+        assertThat(compareDialog.getNumberOfRows(COMBINED))
+                .as("The one table shows every row, since the added column runs through all of them")
+                .isEqualTo(9);
+        assertThat(compareDialog.getEqualRowsLeftOut(COMBINED))
+                .as("A table with a column added leaves out no equal row")
+                .isEmpty();
+        compareDialog.showSideBySide();
         assertThat(compareDialog.getNumberOfRows(1))
-                .as("Left fragment (original): the eight rows that differ")
-                .isEqualTo(8);
+                .as("Left fragment (original): every row, since the added column runs through all of them")
+                .isEqualTo(9);
+        assertThat(compareDialog.getEqualRowsLeftOut(1))
+                .as("Left fragment leaves out no equal row of a table with a column added")
+                .isEmpty();
         assertThat(compareDialog.getNumberOfColumns(1))
                 .as("Left fragment (original): 4 columns")
                 .isEqualTo(4);
         assertThat(compareDialog.getNumberOfRows(2))
-                .as("Right fragment (column added): the same eight rows")
-                .isEqualTo(8);
+                .as("Right fragment (column added): every row as well")
+                .isEqualTo(9);
         assertThat(compareDialog.getNumberOfColumns(2))
                 .as("Right fragment (column added): 5 columns")
                 .isEqualTo(5);
 
         compareDialog.setShowEqualRows(true);
         assertThat(compareDialog.getNumberOfRows(1))
-                .as("Left fragment: all nine rows once the equal one is shown too")
+                .as("Left fragment: still all nine rows once the equal ones are asked for")
                 .isEqualTo(9);
         assertThat(compareDialog.getNumberOfColumns(1))
                 .as("Left fragment columns unchanged")
                 .isEqualTo(4);
         assertThat(compareDialog.getNumberOfRows(2))
-                .as("Right fragment: all nine rows once the equal one is shown too")
+                .as("Right fragment: still all nine rows once the equal ones are asked for")
                 .isEqualTo(9);
         assertThat(compareDialog.getNumberOfColumns(2))
                 .as("Right fragment columns unchanged")

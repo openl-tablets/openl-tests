@@ -14,12 +14,15 @@ import helpers.service.WorkflowService;
 import org.testng.annotations.Test;
 import tests.BaseTest;
 
+import static domain.ui.webstudio.components.editortabcomponents.CompareLocalChangesDialogComponent.COMBINED;
 import static org.assertj.core.api.Assertions.assertThat;
 import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.DECISION;
 
 public class TestDisplayChangedRowsResolveConflicts extends BaseTest {
 
     private static final String EPBDS_12417_FILE = "EPBDS-12417.xlsx";
+    private static final int BENEFIT_PREMIUM_ROWS = 5;
+    private static final int BENEFIT_PREMIUM_ROWS_AROUND_THE_EDIT = 3;
 
     @Test
     @TestCaseId("IPBQA-32105")
@@ -53,12 +56,36 @@ public class TestDisplayChangedRowsResolveConflicts extends BaseTest {
         compareDialog.clickTreeNode("Test BenefitPremium");
 
         compareDialog.setShowEqualRows(false);
+        assertThat(compareDialog.getNumberOfRows(COMBINED))
+                .as("The one table shows the header, the changed row and the equal row next to it")
+                .isEqualTo(BENEFIT_PREMIUM_ROWS_AROUND_THE_EDIT);
+        assertThat(compareDialog.getEqualRowsLeftOut(COMBINED))
+                .as("The one table says how many equal rows it leaves out")
+                .containsExactly("⋯ 2 equal rows");
+        int paintedAsOne = compareDialog.getHighlightedCellCount(COMBINED);
+        assertThat(paintedAsOne).as("The one table must carry what differs").isPositive();
+        compareDialog.setShowEqualRows(true);
+        assertThat(compareDialog.getNumberOfRows(COMBINED))
+                .as("The one table shows every row once the equal ones are asked for")
+                .isEqualTo(BENEFIT_PREMIUM_ROWS);
+        assertThat(compareDialog.getEqualRowsLeftOut(COMBINED))
+                .as("No equal row is left out once they are asked for")
+                .isEmpty();
+        assertThat(compareDialog.getHighlightedCellCount(COMBINED))
+                .as("Showing the rows that read the same must add nothing to what differs in the one table")
+                .isEqualTo(paintedAsOne);
+        compareDialog.setShowEqualRows(false);
+        compareDialog.showSideBySide();
+
         assertThat(compareDialog.getNumberOfRows(1))
-                .as("Left fragment: only 1 changed row when equal rows hidden")
-                .isEqualTo(1);
+                .as("Left fragment: the header, the changed row and the equal row next to it when equal rows hidden")
+                .isEqualTo(BENEFIT_PREMIUM_ROWS_AROUND_THE_EDIT);
         assertThat(compareDialog.getNumberOfRows(2))
-                .as("Right fragment: only 1 changed row when equal rows hidden")
-                .isEqualTo(1);
+                .as("Right fragment: the header, the changed row and the equal row next to it when equal rows hidden")
+                .isEqualTo(BENEFIT_PREMIUM_ROWS_AROUND_THE_EDIT);
+        assertThat(compareDialog.getEqualRowsLeftOut(1))
+                .as("Left fragment says how many equal rows it leaves out")
+                .containsExactly("⋯ 2 equal rows");
         int paintedLeft = compareDialog.getHighlightedCellCount(1);
         int paintedRight = compareDialog.getHighlightedCellCount(2);
         assertThat(paintedLeft)
@@ -70,11 +97,11 @@ public class TestDisplayChangedRowsResolveConflicts extends BaseTest {
 
         compareDialog.setShowEqualRows(true);
         assertThat(compareDialog.getNumberOfRows(1))
-                .as("Left fragment should have more than 1 row when equal rows shown")
-                .isGreaterThan(1);
+                .as("Left fragment shows every row when equal rows shown")
+                .isEqualTo(BENEFIT_PREMIUM_ROWS);
         assertThat(compareDialog.getNumberOfRows(2))
-                .as("Right fragment should have more than 1 row when equal rows shown")
-                .isGreaterThan(1);
+                .as("Right fragment shows every row when equal rows shown")
+                .isEqualTo(BENEFIT_PREMIUM_ROWS);
         assertThat(compareDialog.getHighlightedCellCount(1))
                 .as("Showing the rows that read the same must add nothing to what differs")
                 .isEqualTo(paintedLeft);
@@ -121,6 +148,17 @@ public class TestDisplayChangedRowsResolveConflicts extends BaseTest {
         compareDialog.clickTreeNode("Rules Double BankLimitIndex (Bank bank, RatingGroup bankRatingGroup)");
 
         compareDialog.setShowEqualRows(false);
+        int rowsAsOne = compareDialog.getNumberOfRows(COMBINED);
+        assertThat(compareDialog.getCellContent(COMBINED, rowsAsOne, 1))
+                .as("The one table ends with the added row, carrying what was written")
+                .isEqualTo("changedValue");
+        assertThat(compareDialog.isRowHighlighted(COMBINED, rowsAsOne))
+                .as("The added row should be marked as the difference in the one table")
+                .isTrue();
+        assertThat(compareDialog.isRowHighlighted(COMBINED, rowsAsOne - 1))
+                .as("The row before the added one reads the same in the one table")
+                .isFalse();
+        compareDialog.showSideBySide();
         int rowsBefore = compareDialog.getNumberOfRows(1);
         int rowsAfterAdding = compareDialog.getNumberOfRows(2);
         assertThat(rowsAfterAdding - rowsBefore)
@@ -181,6 +219,13 @@ public class TestDisplayChangedRowsResolveConflicts extends BaseTest {
         compareDialog.clickTreeNode("Rules Double BankLimitIndex (Bank bank, RatingGroup bankRatingGroup)");
 
         compareDialog.setShowEqualRows(false);
+        assertThat(compareDialog.getNumberOfRows(COMBINED))
+                .as("The one table shows all 17 rows of the deleted table")
+                .isEqualTo(17);
+        assertThat(compareDialog.getHighlightedCellCount(COMBINED))
+                .as("Every cell of the deleted table is marked as removed in the one table")
+                .isEqualTo(compareDialog.getNumberOfCells(COMBINED));
+        compareDialog.showSideBySide();
         assertThat(compareDialog.getNumberOfRows(1))
                 .as("Left fragment (original): should have 17 rows")
                 .isEqualTo(17);

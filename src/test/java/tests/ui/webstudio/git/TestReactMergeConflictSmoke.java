@@ -46,11 +46,17 @@ public class TestReactMergeConflictSmoke extends BaseTest {
     private static final int STEP3_ROW = 5;
     private static final int TABLE = 1;
     private static final String STEP1_CELL = "C7";
+    private static final String ALL_VERSIONS = "All Versions";
+    private static final String THEIR_CHANGES = "Their Changes";
+    private static final String YOUR_VERSION = "yours";
+    private static final String BASE_VERSION = "base";
+    private static final String THEIR_VERSION = "theirs";
 
     @Test
     @TestCaseId("EPBDS-17078")
-    @Description("Sync with conflicts in a workbook and in rules.xml: Compare File Versions opens on Their Changes "
-            + "(EPBDS-16637), rules.xml is merged line by line, and the workbook table by table: the cells only one "
+    @Description("Sync with conflicts in a workbook and in rules.xml: Compare File Versions opens on All Versions, "
+            + "the cell both branches changed framed as a conflict (EPBDS-12415), and Their Changes shows what MyBranch "
+            + "wrote (EPBDS-16637); rules.xml is merged line by line, and the workbook table by table: the cells only one "
             + "branch changed are merged by themselves, Take Yours, Take Base and Take Theirs stand above the table "
             + "(EPBDS-17026) and the conflicting cell takes their value (EPBDS-16885, EPBDS-16964).")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
@@ -85,10 +91,27 @@ public class TestReactMergeConflictSmoke extends BaseTest {
 
         CompareLocalChangesDialogComponent compare = conflicts.openCompareAsPopup(WORKBOOK);
         compare.clickTreeNode(TABLE_NODE);
+        assertThat(compare.getConflictView())
+                .as("Compare File Versions opens on the three versions of the workbook").isEqualTo(ALL_VERSIONS);
+        assertThat(compare.isConflictShownIn(THEIR_VERSION, THEIR_STEP1))
+                .as("Their version frames the Step1 both branches changed as a conflict").isTrue();
+        assertThat(compare.isConflictShownIn(YOUR_VERSION, YOUR_STEP1))
+                .as("Your version frames the Step1 both branches changed as a conflict").isTrue();
+        assertThat(compare.isDifferenceShownIn(THEIR_VERSION, THEIR_STEP2))
+                .as("Their version frames the Step2 value only MyBranch changed").isTrue();
+        assertThat(compare.isDifferenceShownIn(YOUR_VERSION, YOUR_STEP3))
+                .as("Your version frames the Step3 value only master changed").isTrue();
+        assertThat(compare.getNumberOfCellsIn(BASE_VERSION))
+                .as("The base version stands between yours and theirs").isPositive();
+        assertThat(compare.getHighlightedCellCountIn(BASE_VERSION))
+                .as("The base version, which neither branch wrote, carries no mark").isZero();
+        compare.showConflictView(THEIR_CHANGES);
+        compare.clickTreeNode(TABLE_NODE);
+        compare.showSideBySide();
         assertThat(compare.isDifferenceShown(2, THEIR_STEP1))
-                .as("Compare File Versions opens on Their Changes, showing the Step1 MyBranch wrote").isTrue();
+                .as("Their Changes shows the Step1 MyBranch wrote").isTrue();
         assertThat(compare.isDifferenceShown(2, THEIR_STEP2))
-                .as("Compare File Versions opens on Their Changes, showing the Step2 value MyBranch wrote").isTrue();
+                .as("Their Changes shows the Step2 value MyBranch wrote").isTrue();
         compare.close();
 
         conflicts.chooseResolution(DESCRIPTOR, "Merge line by line");
