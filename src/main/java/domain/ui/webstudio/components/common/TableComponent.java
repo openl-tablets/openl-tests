@@ -14,6 +14,7 @@ import java.util.Objects;
 
 public class TableComponent extends BaseComponent {
 
+    private static final String DRAWN_ROW = "tbody[not(@aria-hidden='true')]/tr";
     private static final String CELL_USAGE = "[starts-with(@data-testid,'cell-usage-')]";
     private static final String OPEN_DROPDOWN = "//div[contains(concat(' ', normalize-space(@class), ' '), ' ant-dropdown ')]"
             + "[not(contains(@class,'ant-dropdown-hidden'))]";
@@ -45,11 +46,11 @@ public class TableComponent extends BaseComponent {
     }
 
     private void initializeElements() {
-        allCells = createScopedElement("xpath=.//td", "allCells");
+        allCells = createScopedElement("xpath=.//td[not(ancestor::tbody[@aria-hidden='true'])]", "allCells");
         cellEditor = new WebElement(page, "xpath=//*[@data-testid='table-cell-input']", "cellEditor");
         firstRowLineNumber = createScopedElement("xpath=./tbody/tr[1]//span[@data-testid='table-line-number']", "firstRowLineNumber");
         numberedFirstColumn = createScopedElement("xpath=./tbody/tr[last()]/td[1][.//span[@data-testid='table-line-number']]", "numberedFirstColumn");
-        rows = createScopedComponentList(PlaywrightTableRowComponent.class, "xpath=.//tbody/tr", "rowSelectorTemplate");
+        rows = createScopedComponentList(PlaywrightTableRowComponent.class, "xpath=.//" + DRAWN_ROW, "rowSelectorTemplate");
         propertyValueTemplate = createScopedElement("xpath=//tr/td[text()='%s']/following-sibling::td[1]", "propertyValue");
     }
 
