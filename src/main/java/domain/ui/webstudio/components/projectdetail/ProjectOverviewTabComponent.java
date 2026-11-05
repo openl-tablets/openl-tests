@@ -318,6 +318,42 @@ public class ProjectOverviewTabComponent extends BaseComponent {
         return migrateBtn.isEnabled();
     }
 
+    public List<String> getDependencyNames(String section) {
+        dependencyRows(section).first().waitFor();
+        List<String> names = readDependencyNames(section);
+        WaitUtil.waitForCondition(() -> {
+            List<String> again = readDependencyNames(section);
+            boolean stable = again.equals(names);
+            names.clear();
+            names.addAll(again);
+            return stable;
+        }, DEFAULT_TIMEOUT_MS, PROBE_MS, "Waiting for the " + section + " list to stop changing");
+        return names;
+    }
+
+    private List<String> readDependencyNames(String section) {
+        List<String> names = new ArrayList<>();
+        for (Locator row : dependencyRows(section).all()) {
+            names.add(row.locator("xpath=./*[1]").innerText().trim());
+        }
+        return names;
+    }
+
+    public String getDependencyRowText(String section, String name) {
+        Locator row = dependencyRows(section).filter(new Locator.FilterOptions()
+                .setHas(page.locator("xpath=./*[1][normalize-space()=\"" + name + "\"]")));
+        return row.first().innerText().trim().replaceAll("\\s+", " ");
+    }
+
+    public void openDependency(String name) {
+        dependencyRows("Depends on").locator("xpath=./a[normalize-space()=\"" + name + "\"]").click();
+    }
+
+    private Locator dependencyRows(String section) {
+        return page.locator("xpath=//*[@data-testid='overview-left']//span[normalize-space()='" + section
+                + "']/following-sibling::ul[1]/li");
+    }
+
     public String getModifiedBy() {
         String whole = modifiedValue.getText().trim();
         String date = modifiedDate.getText().trim();

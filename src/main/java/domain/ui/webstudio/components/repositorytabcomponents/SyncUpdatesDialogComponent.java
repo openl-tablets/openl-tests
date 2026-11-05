@@ -113,6 +113,33 @@ public class SyncUpdatesDialogComponent extends BaseComponent {
                 .waitForVisible(SCOPE_SHOWN_MS);
     }
 
+    public SyncUpdatesDialogComponent openTargetBranchList() {
+        new WebElement(DriverPool.getPage(), "xpath=" + MODAL_ROOT + "//*[@data-testid='merge-target-branch']",
+                "syncTargetBranchSelect").waitForVisible(SCOPE_SHOWN_MS).click();
+        return this;
+    }
+
+    public boolean isTargetBranchListSpinning() {
+        return openBranchList().locator("xpath=.//*[contains(@class,'ant-spin')]").count() > 0;
+    }
+
+    public boolean isTargetBranchListEmptyStateShown() {
+        return openBranchList().locator("xpath=.//*[contains(@class,'ant-empty')]").count() > 0;
+    }
+
+    public List<String> getOfferedTargetBranches() {
+        return openBranchList().locator("xpath=.//div[contains(@class,'ant-select-item-option')]").allInnerTexts().stream()
+                .map(text -> text.trim().split("\\s+")[0])
+                .toList();
+    }
+
+    private Locator openBranchList() {
+        Locator list = DriverPool.getPage().locator("xpath=//div[contains(@class,'ant-select-dropdown')"
+                + " and not(contains(@class,'ant-select-dropdown-hidden'))]");
+        list.first().waitFor();
+        return list;
+    }
+
     public String getHeader() {
         return modalTitle.getText().trim();
     }
