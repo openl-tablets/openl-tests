@@ -35,6 +35,8 @@ public class TestRunFormInputUi extends BaseTest {
     private static final String RUN_FORM_WORKBOOK = "RunFormInput.xlsx";
     private static final String RUN_FORM_MODULE = "RunFormInput";
     private static final String SHOW = "Show";
+    private static final String RETURNS_NULL = "ReturnsNull";
+    private static final String FAILS_AT_RUNTIME = "FailsAtRuntime";
     private static final String TRACE_KEEPS_RUN_INPUT = "The Trace form must keep the input entered in the Run form";
 
     @Test
@@ -177,6 +179,45 @@ public class TestRunFormInputUi extends BaseTest {
     }
 
     @Test
+    @TestCaseId({"EPBDS-16192", "EPBDS-16792"})
+    @Description("EPBDS-16192: in a project whose rules-deploy.xml has no isProvideRuntimeContext, a table is run with "
+            + "the JSON {} and shows its result, not the error Cannot invoke Boolean.booleanValue(). EPBDS-16792: a run "
+            + "that fails with a runtime error shows the error in the Result column, not as a banner and not as "
+            + "undefined, and a run that returns null shows null there.")
+    @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
+    public void runWithoutRuntimeContextFlagShowsResultsErrorAndNullInResultColumn() {
+        String projectName = WorkflowService.loginCreateProjectFromExcelFile(User.ADMIN, RUN_FORM_WORKBOOK);
+        RepositoryPage repositoryPage = new EditorPage().getTabSwitcherComponent()
+                .selectTab(TabSwitcherComponent.TabName.REPOSITORY);
+        repositoryPage.openProjectsList().openProjectDetail(projectName).writeDeployConfigServiceName("RunFormService");
+        EditorPage editorPage = new EditorPage();
+        selectTable(editorPage, projectName, RUN_FORM_MODULE, METHOD, RETURNS_NULL);
+
+        IRunMenu run = editorPage.getEditorToolbarPanelComponent().clickRun();
+        run.showJsonInput().pasteJsonInput("{}");
+        run.clickRunInsideMenu();
+        TestResultValidationComponent results = editorPage.getTestResultValidationComponent();
+        assertThat(results.getUnfoldedRunCellText("Result"))
+                .as("EPBDS-16192: the table must run with the JSON {} while rules-deploy.xml has no "
+                        + "isProvideRuntimeContext, and show its result")
+                .isEqualTo("\"Hello null\"");
+        results.closeResults();
+
+        runWithName(editorPage, "UNKNOWN");
+        assertThat(results.getUnfoldedRunCellText("Result"))
+                .as("EPBDS-16792: a table that returns null must show null in the Result column, not undefined")
+                .isEqualTo("null");
+        results.closeResults();
+
+        editorPage.getEditorLeftRulesTreeComponent().selectItemInFolder(METHOD, FAILS_AT_RUNTIME);
+        runWithName(editorPage, "UNKNOWN");
+        assertThat(results.getUnfoldedRunCellText("Result"))
+                .as("EPBDS-16792: the runtime error must be shown in the Result column as the result of the run, "
+                        + "not as a banner and not as undefined")
+                .isEqualTo("The name UNKNOWN is not supported");
+    }
+
+    @Test
     @TestCaseId({"EPBDS-16607", "EPBDS-16606"})
     @Description("EPBDS-16607: the Run menu of DriverPremiumTest of Example 3, which takes its input objects from a Data "
             + "table, names each case by the type and the key of the Data table row, as Driver (Sara). EPBDS-16606: the "
@@ -266,6 +307,12 @@ public class TestRunFormInputUi extends BaseTest {
         EditorPage editorPage = new EditorPage();
         selectTable(editorPage, projectName, "AutoPolicyTests", "Test", "DriverPremiumTest");
         return editorPage;
+    }
+
+    private void runWithName(EditorPage editorPage, String name) {
+        IRunMenu run = editorPage.getEditorToolbarPanelComponent().clickRun();
+        run.showFormInput().writeFieldValue("name", name);
+        run.clickRunInsideMenu();
     }
 
     private IRunMenu openRunWithRuntimeContext() {
