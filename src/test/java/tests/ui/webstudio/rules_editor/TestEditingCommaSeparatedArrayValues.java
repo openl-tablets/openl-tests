@@ -1,6 +1,7 @@
 package tests.ui.webstudio.rules_editor;
 
 import configuration.annotations.Description;
+import configuration.annotations.KnownIssue;
 import configuration.annotations.TestCaseId;
 import configuration.annotations.AppContainerConfig;
 import configuration.appcontainer.AppContainerStartParameters;
@@ -61,8 +62,10 @@ public class TestEditingCommaSeparatedArrayValues extends BaseTest {
 
     @Test
     @TestCaseId("IPBQA-25824")
-    @Description("Editing comma-separated array values via the multiselect popup: chosen/non-chosen values, Select All / Deselect All, save and re-open, switch to Formula Editor and back, multiple table types (Decision/Spreadsheet/TBasic/Method)")
+    @Description("Editing comma-separated array values via the multiselect popup: chosen/non-chosen values, Select All / Deselect All, save and re-open, switch to Formula Editor and back, multiple table types (Decision/Spreadsheet/TBasic/Method). "
+            + "Fails on EPBDS-17140: in Chromium on Linux the region cell of MethodTable opens a plain text area instead of the list of values.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
+    @KnownIssue(value = "EPBDS-17140", failsWith = "Waiting for the list of the cell to be folded open")
     public void testEditingCommaSeparatedArrayValues() {
         String projectName = WorkflowService.loginCreateProjectFromExcelFile(User.ADMIN, DDL_PROJECT_FILE);
         EditorPage editorPage = new EditorPage();
