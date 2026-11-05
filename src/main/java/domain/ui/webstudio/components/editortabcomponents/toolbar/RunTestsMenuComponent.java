@@ -18,6 +18,7 @@ public class RunTestsMenuComponent extends BaseComponent implements IRunTestsMen
     private final WebElement failuresOnlyCheckbox;
     private final WebElement compoundResultCheckbox;
     private final WebElement runTestsBtn;
+    private final WebElement testsIntoFileBtn;
     private final WebElement withinCurrentModuleOnly;
 
     public RunTestsMenuComponent(Page page) {
@@ -29,6 +30,7 @@ public class RunTestsMenuComponent extends BaseComponent implements IRunTestsMen
         testBtn = rootLocator;
         dropdownToggle = rootLocator;
         runTestsBtn = new WebElement(page, LAUNCHER + "//button[@data-testid='tests-start']", "runTestsBtn");
+        testsIntoFileBtn = new WebElement(page, LAUNCHER + "//button[@data-testid='tests-into-file']", "testsIntoFileBtn");
         perPageDropdown = new WebElement(page, LAUNCHER + "//div[@data-testid='tests-per-page']//input", "testPerPageDropdown");
         failuresOnlyCheckbox = new WebElement(page, LAUNCHER + "//input[@data-testid='tests-failures-only']", "failuresOnlyCheckbox");
         compoundResultCheckbox = new WebElement(page, LAUNCHER + "//input[@data-testid='tests-compound-result']", "compoundResultCheckbox");
@@ -98,6 +100,15 @@ public class RunTestsMenuComponent extends BaseComponent implements IRunTestsMen
         runTestsBtn.waitForVisible();
         TestResultValidationComponent.putAwayShownResults(page);
         runTestsBtn.click();
+    }
+
+    public void clickTestIntoFile() {
+        testsIntoFileBtn.waitForVisible(DEFAULT_TIMEOUT_MS);
+        testsIntoFileBtn.click();
+    }
+
+    public void waitForTestLauncherToClose() {
+        runTestsBtn.waitForHidden(DEFAULT_TIMEOUT_MS);
     }
 
     @Override

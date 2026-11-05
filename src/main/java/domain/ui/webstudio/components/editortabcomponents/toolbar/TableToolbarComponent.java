@@ -104,6 +104,19 @@ public class TableToolbarComponent extends BaseComponent {
         benchmarkBtn.click();
     }
 
+    public void clickRunBesideOpenLauncher() {
+        runBtn.waitForVisible();
+        runBtn.click();
+    }
+
+    public void clickBenchmarkStart() {
+        clickBenchmarkDropdown();
+        WebElement start = new WebElement(page, "xpath=//button[@data-testid='benchmark-start']", "benchmarkStartBtn");
+        start.waitForVisible(DEFAULT_TIMEOUT_MS);
+        TestResultValidationComponent.putAwayShownResults(page);
+        start.click();
+    }
+
     public void clickRunDropdown() {
         closeOpenLauncher();
         runBtn.waitForVisible();

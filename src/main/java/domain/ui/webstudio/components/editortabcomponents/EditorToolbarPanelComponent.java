@@ -247,6 +247,14 @@ public class EditorToolbarPanelComponent extends BaseComponent {
         tableToolbar.clickBenchmark();
     }
 
+    public void clickRunBesideOpenLauncher() {
+        tableToolbar.clickRunBesideOpenLauncher();
+    }
+
+    public void clickBenchmarkStart() {
+        tableToolbar.clickBenchmarkStart();
+    }
+
     public void clickRunDropdown() {
         tableToolbar.clickRunDropdown();
     }

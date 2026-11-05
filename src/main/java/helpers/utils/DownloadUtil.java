@@ -34,6 +34,10 @@ public class DownloadUtil {
         return downloadFile(trigger::click, timeoutMs);
     }
 
+    public static File downloadFile(Runnable trigger) {
+        return downloadFile(trigger, getDefaultTimeout());
+    }
+
     public static File downloadFromLink(String url) {
         return downloadFile(() -> followLink(url), getDefaultTimeout());
     }
@@ -49,7 +53,7 @@ public class DownloadUtil {
         }
     }
 
-    private static File downloadFile(Runnable trigger, int timeoutMs) {
+    public static File downloadFile(Runnable trigger, int timeoutMs) {
         if (isDockerMode()) {
             LOGGER.info("Downloading file in DOCKER mode using createReadStream()");
             return downloadFileFromContainer(trigger, timeoutMs);

@@ -1,5 +1,6 @@
 package domain.ui.webstudio.components.editortabcomponents;
 
+import com.microsoft.playwright.Download;
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import configuration.core.ui.WebElement;
@@ -8,7 +9,15 @@ import domain.ui.webstudio.components.BaseComponent;
 import domain.ui.webstudio.components.common.TableComponent;
 import helpers.utils.WaitUtil;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 public class TestResultValidationComponent extends BaseComponent {
@@ -27,6 +36,8 @@ public class TestResultValidationComponent extends BaseComponent {
             + "//table[@data-testid='run-result-table' or starts-with(@data-testid,'test-results-')])[1]";
     private static final int PROBE_MS = 500;
     private static final long RESULTS_TIMEOUT_MS = 30000;
+    private static final long LONG_RUN_TIMEOUT_MS = 90000;
+    private static final Pattern TABLES_DONE = Pattern.compile("(\\d+) test tables? done");
 
     public TestResultValidationComponent() {
         super(DriverPool.getPage());
@@ -94,6 +105,46 @@ public class TestResultValidationComponent extends BaseComponent {
         WaitUtil.requireCondition(() -> table.isVisible() && !table.getRows().isEmpty(),
                 DEFAULT_TIMEOUT_MS, 100, "Waiting for the table of test cases to be drawn");
         return table;
+    }
+
+    public int mostTestTablesDoneWhileRunning() {
+        waitUntilResultsOpen();
+        int[] most = {0};
+        WaitUtil.requireCondition(() -> {
+            Matcher done = TABLES_DONE.matcher(results(IN_RESULTS).first().innerText());
+            while (done.find()) {
+                most[0] = Math.max(most[0], Integer.parseInt(done.group(1)));
+            }
+            return results(TABLE_LINK).count() > 0;
+        }, LONG_RUN_TIMEOUT_MS, 30, "Waiting for the run to end while counting the test tables it reports as done");
+        return most[0];
+    }
+
+    public String getResultsTextMatching(String regex) {
+        waitUntilResultsOpen();
+        Pattern wanted = Pattern.compile(regex, Pattern.DOTALL);
+        WaitUtil.waitForCondition(() -> wanted.matcher(results(IN_RESULTS).first().innerText()).find(),
+                LONG_RUN_TIMEOUT_MS, 500, "Waiting for the results window to say " + regex);
+        return results(IN_RESULTS).first().innerText().trim();
+    }
+
+    public void closeResultsOnceOpen() {
+        waitUntilResultsOpen();
+        closeResults();
+    }
+
+    public File saveResultsToExcel() {
+        waitUntilResultsOpen();
+        Page shown = resultsPage();
+        Locator save = shown.locator("xpath=" + IN_RESULTS + "//button[@data-testid='tests-save']").first();
+        Download download = shown.waitForDownload(save::click);
+        try (InputStream content = download.createReadStream()) {
+            File saved = File.createTempFile("playwright_results_", "_" + download.suggestedFilename());
+            Files.copy(content, saved.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            return saved;
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     public int countResultWindows() {
