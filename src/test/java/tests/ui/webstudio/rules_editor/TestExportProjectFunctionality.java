@@ -24,7 +24,12 @@ import org.testng.annotations.Test;
 import tests.BaseTest;
 
 import java.io.File;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -41,6 +46,10 @@ public class TestExportProjectFunctionality extends BaseTest {
     private static final String REVISION_SEPARATOR = " · ";
     private static final String REVISION_LABEL = "^\\S+ · .+: .+\\d{1,2}:\\d{2}:\\d{2}.*$";
 
+    private static final Pattern REVISION_MOMENT = Pattern.compile("\\d{2}/\\d{2}/\\d{4}[\\s\\u00A0\\u202F]\\d{1,2}:\\d{2}:\\d{2}[\\s\\u00A0\\u202F][AP]M");
+    private static final DateTimeFormatter REVISION_MOMENT_FORMAT = DateTimeFormatter.ofPattern("MM/dd/yyyy h:mm:ss a", Locale.US);
+    private static final DateTimeFormatter FILE_NAME_MOMENT_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss");
+
     private static List<String> committedRevisions(List<String> revisions) {
         return revisions.stream().filter(entry -> !VIEWING.equals(entry)).toList();
     }
@@ -49,6 +58,13 @@ public class TestExportProjectFunctionality extends BaseTest {
         List<String> committed = committedRevisions(revisions);
         assertThat(committed).as("Committed revisions offered for export").hasSize(1);
         return committed.getFirst();
+    }
+
+    private static String momentInFileName(String revisionLabel) {
+        Matcher moment = REVISION_MOMENT.matcher(revisionLabel);
+        assertThat(moment.find()).as("A revision label carries its moment: " + revisionLabel).isTrue();
+        return LocalDateTime.parse(moment.group().replaceAll("[\\s\\u00A0\\u202F]", " "), REVISION_MOMENT_FORMAT)
+                .format(FILE_NAME_MOMENT_FORMAT);
     }
 
     private static String newRevisionIn(List<String> revisions, List<String> known) {
@@ -85,8 +101,9 @@ public class TestExportProjectFunctionality extends BaseTest {
     }
 
     @Test
-    @TestCaseId("IPBQA-25697")
-    @Description("Rules Editor - Export Project: Full functionality with revision selection, branches, and multi-user scenarios")
+    @TestCaseId({"IPBQA-25697", "EPBDS-16704"})
+    @Description("Rules Editor - Export Project: Full functionality with revision selection, branches, and multi-user scenarios. "
+            + "The archive of an exported revision is named after the chosen revision, in the moment shown in the revision list (EPBDS-16704)")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void testExportProjectFunctionality() {
 
@@ -147,7 +164,6 @@ public class TestExportProjectFunctionality extends BaseTest {
         editorPage.getEditorLeftProjectModuleSelectorComponent()
                 .selectModule(PROJECT_NAME, MODULE_FILE1);
 
-        // A module is the workbook it is written in, so it is copied where the project's files are.
         editorPage.copyModuleWorkbook(PROJECT_NAME, MODULE_FILE1 + ".xls", MODULE_FILE4 + ".xls");
 
         editorPage.getEditorToolbarPanelComponent().clickExport();
@@ -194,12 +210,22 @@ public class TestExportProjectFunctionality extends BaseTest {
         editorPage.getEditorToolbarPanelComponent().clickExport();
         exportDialog.waitForDialogToAppear();
         exportDialog.selectRevision(secondRevision);
-        exportDialog.clickExport();
+        File secondRevisionArchive = exportDialog.clickExportAndDownload();
+        assertThat(secondRevisionArchive.getName())
+                .as("The archive of the second revision is named after the moment of that revision (EPBDS-16704)")
+                .contains(PROJECT_NAME)
+                .endsWith("-" + momentInFileName(secondRevision) + ".zip");
+        DownloadUtil.cleanupDownloadFile(secondRevisionArchive);
 
         editorPage.getEditorToolbarPanelComponent().clickExport();
         exportDialog.waitForDialogToAppear();
         exportDialog.selectRevision(revision);
-        exportDialog.clickExport();
+        File firstRevisionArchive = exportDialog.clickExportAndDownload();
+        assertThat(firstRevisionArchive.getName())
+                .as("The archive of the first revision is named after the moment of the first revision, not of the latest one (EPBDS-16704)")
+                .contains(PROJECT_NAME)
+                .endsWith("-" + momentInFileName(revision) + ".zip");
+        DownloadUtil.cleanupDownloadFile(firstRevisionArchive);
 
         repositoryPage = editorPage.getTabSwitcherComponent()
                 .selectTab(TabSwitcherComponent.TabName.REPOSITORY);
@@ -371,8 +397,6 @@ public class TestExportProjectFunctionality extends BaseTest {
                 .as("Should show In Editing after project edit")
                 .containsExactlyInAnyOrder("In Editing", revisionSampleProject);
 
-        // The templates the product ships carry the standard layout, so the workbook of a project made from
-        // one lies under rules/ rather than in the project's root.
         exportAndVerifyDownload(exportDialog, "edited Sample Project export",
                 "rules/Main.xlsx", "rules.xml");
 
