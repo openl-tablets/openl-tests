@@ -23,15 +23,18 @@ public class TestSpecialCharsInNumericCell extends BaseTest {
     private static final String SCORE_BEFORE = "0.7";
     private static final String SCORE_WRITTEN = "5.48";
     private static final String SCORE_KEPT = "1.23";
+    private static final String NOT_A_NUMBER = "NaN";
+    private static final String FORMULA_EDITOR = "Formula Editor";
     private static final int SCORE_ROW = 4;
     private static final int SCORE_COLUMN = 2;
     private static final long CELL_TIMEOUT_MS = 10000;
     private static final long CELL_POLLING_MS = 250;
 
     @Test
-    @TestCaseId("EPBDS-15348")
+    @TestCaseId({"EPBDS-15348", "EPBDS-16808"})
     @Description("BUG: Special characters in a table cell break editing; a decimal value cannot be entered until the page is refreshed. "
-            + "Guards the React cell editor that replaced the editor the bug was filed against, where the characters are refused silently")
+            + "Guards the React cell editor that replaced the editor the bug was filed against, where the characters are refused silently. "
+            + "EPBDS-16808 NaN can be entered into the same Double cell through the Formula Editor, the table is saved, and the cell still shows NaN after the page is reloaded")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void testSpecialCharsDoNotBlockDecimalInput() {
         String projectName = WorkflowService.loginCreateProjectFromTemplate(User.ADMIN, "Example 1 - Bank Rating");
@@ -57,6 +60,14 @@ public class TestSpecialCharsInNumericCell extends BaseTest {
 
         editorPage.getEditorTableActionsPanelComponent().clickSaveChanges();
         requireCellHolds(table, SCORE_KEPT);
+
+        editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
+        table.editCellIn(SCORE_ROW, SCORE_COLUMN, FORMULA_EDITOR, NOT_A_NUMBER);
+        requireCellHolds(table, NOT_A_NUMBER);
+
+        editorPage.getEditorTableActionsPanelComponent().clickSaveChanges();
+        editorPage.reloadPage();
+        requireCellHolds(editorPage.getCenterTable(), NOT_A_NUMBER);
     }
 
     private void writeAfterSpecialCharacters(TableComponent table, String value) {
