@@ -19,6 +19,7 @@ import helpers.service.LoginService;
 import helpers.service.UserService;
 import helpers.utils.StringUtil;
 import helpers.utils.TestDataUtil;
+import helpers.utils.WaitUtil;
 import org.testng.ITestResult;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
@@ -82,8 +83,9 @@ public class TestRepositoryTableActions extends BaseTest {
     private static final String VIEWER_USER_PASSWORD = "Test123!";
 
     @Test
-    @TestCaseId("EPBDS-12712")
-    @Description("Repository table action buttons: open/close/deploy row actions; viewer user access")
+    @TestCaseId({"EPBDS-12712", "EPBDS-16421"})
+    @Description("Repository table action buttons: open/close/deploy row actions; viewer user access. "
+            + "EPBDS-16421: a project created from an Excel file keeps the workbook under the rules folder and does not offer Migrate.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEPLOY_STUDIO_PARAMS)
     public void testTableActionButtons() {
         String projectName1 = "TestTableActionButtons_P1_" + System.currentTimeMillis();
@@ -148,6 +150,20 @@ public class TestRepositoryTableActions extends BaseTest {
         deployModal.clickCancel();
 
         repositoryPage.createProject(CreateNewProjectComponent.TabName.EXCEL_FILES, projectName2, MAIN_XLS);
+        ProjectDetailPage excelProject = repositoryPage.openProjectDetail(projectName2);
+        excelProject.selectFile(MAIN_XLS);
+        WaitUtil.waitForCondition(() -> ("rules/" + MAIN_XLS).equals(excelProject.getSelectedFileFromUrl()),
+                10000, 250, "Waiting for the workbook to be selected");
+        assertThat(excelProject.getSelectedFileFromUrl())
+                .as("The uploaded workbook must be put into the rules folder (EPBDS-16421)")
+                .isEqualTo("rules/" + MAIN_XLS);
+        assertThat(excelProject.openOverviewTab().isOverviewEditOffered())
+                .as("Precondition: the Overview of the Excel project must offer Edit")
+                .isTrue();
+        assertThat(excelProject.isOverviewMigrateOffered())
+                .as("A project created from an Excel file must not require migration (EPBDS-16421)")
+                .isFalse();
+        repositoryPage = repositoryPage.openProjectsList();
         assertThat(repositoryPage.getProjectStatusFromDetail(projectName2))
                 .as("Newly created Excel project status should be 'No Changes'")
                 .isEqualTo(STATUS_OPENED);

@@ -23,12 +23,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class TestProjectDeleteUnsavedEditUi extends BaseTest {
 
     @Test
-    @TestCaseId({"EPBDS-16229", "EPBDS-16432"})
+    @TestCaseId({"EPBDS-16229", "EPBDS-16432", "EPBDS-16232"})
     @Description("Deleting a project must succeed even when the name in its descriptor was changed and the "
             + "project was not saved: a project is named by its descriptor, so writing another name into "
             + "rules.xml renames the working copy while the repository still holds the old one. "
             + "Before the delete, the Revisions tab of the renamed project must list its history instead of "
-            + "answering Error 404 (EPBDS-16432).")
+            + "answering Error 404 (EPBDS-16432). "
+            + "Copying such a project under a new name must succeed and give a project named as entered (EPBDS-16232).")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void testDeleteProjectWithUnsavedRulesEditSucceeds() throws IOException {
         String projectName = WorkflowService.loginCreateProjectFromTemplate(User.ADMIN, "Sample Project");
@@ -50,6 +51,16 @@ public class TestProjectDeleteUnsavedEditUi extends BaseTest {
                 .as("The Revisions tab of a project renamed and not saved lists its history, not Error 404 (EPBDS-16432)")
                 .containsExactly("Project " + projectName + " is created.");
         repositoryPage = repositoryPage.openProjectsList();
+
+        String copyName = projectName + "Copy";
+        repositoryPage.copyProject(renamedName, copyName);
+        repositoryPage.reloadPage();
+        assertThat(repositoryPage.isProjectPresent(copyName))
+                .as("The copy of a project renamed and not saved is listed under the name entered for it (EPBDS-16232)")
+                .isTrue();
+        assertThat(repositoryPage.isProjectPresent(renamedName))
+                .as("The source project keeps the name its descriptor carries")
+                .isTrue();
 
         repositoryPage.deleteProject(renamedName)
                 .enterDeletionComment("Removed by automated regression test")

@@ -5,6 +5,7 @@ import configuration.annotations.TestCaseId;
 import configuration.annotations.AppContainerConfig;
 import configuration.appcontainer.AppContainerStartParameters;
 import domain.serviceclasses.constants.User;
+import domain.ui.webstudio.components.common.CreateNewProjectComponent;
 import domain.ui.webstudio.components.common.TabSwitcherComponent;
 import domain.ui.webstudio.pages.mainpages.EditorPage;
 import domain.ui.webstudio.pages.mainpages.ProjectDetailPage;
@@ -39,8 +40,9 @@ public class TestPermanentDeleteAfterRefreshUi extends BaseTest {
     }
 
     @Test
-    @TestCaseId("EPBDS-15385")
-    @Description("A project deleted through the React confirmation modal is permanently removed and does not reappear after a full browser page refresh.")
+    @TestCaseId({"EPBDS-15385", "EPBDS-16270"})
+    @Description("A project deleted through the React confirmation modal is permanently removed and does not reappear after a full browser page refresh. "
+            + "EPBDS-16270: a project can then be created again under the name of the deleted one.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void testPermanentlyDeletedProjectDoesNotReturnAfterRefresh() {
         String projectName = WorkflowService.loginCreateProjectFromTemplate(User.ADMIN, SAMPLE_TEMPLATE);
@@ -57,5 +59,11 @@ public class TestPermanentDeleteAfterRefreshUi extends BaseTest {
         assertThat(repositoryPage.isProjectPresent(projectName))
                 .as("Permanently deleted project '%s' must not reappear after a page refresh", projectName)
                 .isFalse();
+
+        repositoryPage.createProject(CreateNewProjectComponent.TabName.TEMPLATE, projectName, SAMPLE_TEMPLATE);
+
+        assertThat(repositoryPage.openProjectsList().openProjectDetail(projectName).isFilePresent("rules.xml"))
+                .as("The project created under the name of the deleted project '%s' must open with its files (EPBDS-16270)", projectName)
+                .isTrue();
     }
 }
