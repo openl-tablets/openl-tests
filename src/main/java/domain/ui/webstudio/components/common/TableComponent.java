@@ -20,13 +20,15 @@ public class TableComponent extends BaseComponent {
             + "[not(contains(@class,'ant-dropdown-hidden'))]";
     private static final String OPEN_CALENDAR = "//div[contains(concat(' ', normalize-space(@class), ' '), ' ant-picker-dropdown ')]"
             + "[not(contains(@class,'ant-picker-dropdown-hidden'))]";
-    private static final String RAISED_CELL_TEXTS = """
+    private static final String OUTLINED_CELL_TEXTS = """
             cells => cells.filter(cell => {
                 const style = getComputedStyle(cell);
                 const [red, green, blue] = (style.outlineColor.match(/\\d+/g) || []).map(Number);
-                return style.outlineStyle === 'solid' && red > 2 * green && red > 2 * blue;
+                return style.outlineStyle === 'solid' && %s;
             }).map(cell => cell.innerText.trim())
             """;
+    private static final String RAISED_CELL_TEXTS = OUTLINED_CELL_TEXTS.formatted("red > 2 * green && red > 2 * blue");
+    private static final String PICKED_CELL_TEXTS = OUTLINED_CELL_TEXTS.formatted("blue > 2 * red && blue > green");
 
     private WebElement allCells;
     private WebElement cellEditor;
@@ -104,6 +106,26 @@ public class TableComponent extends BaseComponent {
     @SuppressWarnings("unchecked")
     public List<String> getRaisedCellTexts() {
         return (List<String>) allCells.getLocator().evaluateAll(RAISED_CELL_TEXTS);
+    }
+
+    @SuppressWarnings("unchecked")
+    public List<String> getPickedCellTexts() {
+        return (List<String>) allCells.getLocator().evaluateAll(PICKED_CELL_TEXTS);
+    }
+
+    public void waitForPickedCell(String text) {
+        WaitUtil.waitForCondition(() -> List.of(text).equals(getPickedCellTexts()), DEFAULT_TIMEOUT_MS, 100,
+                "Waiting for the cell '" + text + "' to be picked");
+    }
+
+    public void pressKeyOnPage(String key) {
+        page.keyboard().press(key);
+    }
+
+    public boolean hasKeyboardFocus() {
+        return WaitUtil.waitForCondition(
+                () -> (Boolean) getRootLocator().getLocator().first().evaluate("table => document.activeElement === table"),
+                DEFAULT_TIMEOUT_MS, 100, "Waiting for the table to hold the keyboard focus");
     }
 
     public List<String> getColumn(int columnIndex) {

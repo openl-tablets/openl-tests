@@ -30,6 +30,9 @@ public class TestRulesEditorMergedRowsAndColumnsUi extends BaseTest {
 
     private static final String TUTORIAL_1 = "Tutorial 1 - Introduction to Decision Tables";
     private static final String TUTORIAL_1_MODULE = "Tutorial1 - Intro to Decision Tables";
+    private static final String TUTORIAL_3 = "Tutorial 3 - More Advanced Decision and Data Tables";
+    private static final String TUTORIAL_3_MODULE = "Tutorial3 - Advanced Decision and Data Tables";
+    private static final String ADDRESSES = "addresses";
     private static final String EXAMPLE_3 = "Example 3 - Auto Policy Calculation";
     private static final String EXAMPLE_3_MODULE = "AutoPolicyCalculation";
     private static final String LONG_GROUP_WORKBOOK = "LongMergedGroup.xlsx";
@@ -300,6 +303,84 @@ public class TestRulesEditorMergedRowsAndColumnsUi extends BaseTest {
         assertThat(editorPage.getCenterTable().getRow(lineRow).getValue())
                 .as("price must be saved as 12.75 after Insert Column, not as 1275")
                 .containsExactly("", "12.75", "2");
+    }
+
+    @Test
+    @TestCaseId({"EPBDS-16762", "EPBDS-16774"})
+    @Description("EPBDS-16762: in the Data table addresses of Tutorial 3, a column inserted before city and a row "
+            + "inserted after the last row, with a value only where they cross, are saved instead of being refused "
+            + "with 'A row or column cannot be entirely empty'. EPBDS-16774: after Remove Row and Remove Column the "
+            + "table keeps the keyboard focus and the cell that takes the place of the removed line is picked, so "
+            + "the next lines are removed without picking a cell again.")
+    @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
+    public void crossingLinesAreSavedAndRemovingLinesKeepsTheNextCellPicked() {
+        String projectName = WorkflowService.loginCreateProjectFromTemplate(User.ADMIN, TUTORIAL_3);
+        EditorPage editorPage = new EditorPage();
+        editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, TUTORIAL_3_MODULE);
+        reloadTable(editorPage, DATA, ADDRESSES);
+        editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
+        TableComponent table = editorPage.getCenterTable();
+        EditorTableActionsPanelComponent actions = editorPage.getEditorTableActionsPanelComponent();
+
+        int fieldsRow = table.getRowIndexHolding("street1", "street2", "city");
+        int lastRow = table.getRowsCount();
+        int fieldCells = table.getRow(fieldsRow).getCells().size();
+        table.clickCell(fieldsRow, 3);
+        actions.clickInsertColumnBefore();
+        table.clickCell(lastRow, 1);
+        actions.clickInsertRowAfter();
+        table.editCell(lastRow + 1, 3, "Apt 5");
+        actions.clickSaveChanges();
+
+        reloadTable(editorPage, DATA, ADDRESSES);
+        table = editorPage.getCenterTable();
+        assertThat(table.getRowsCount())
+                .as("EPBDS-16762: the row inserted after the last row must be saved")
+                .isEqualTo(lastRow + 1);
+        assertThat(table.getRow(fieldsRow).getCells())
+                .as("EPBDS-16762: the column inserted before city must be saved")
+                .hasSize(fieldCells + 1);
+        assertThat(table.getCellText(lastRow + 1, 3))
+                .as("EPBDS-16762: the value standing where the new row and the new column cross must be saved")
+                .isEqualTo("Apt 5");
+
+        editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
+        table = editorPage.getCenterTable();
+        table.clickCell(table.getRowIndexHolding("1600 Pennsylvania Avenue NW"), 1);
+        actions.clickRemoveRow();
+        table.waitForPickedCell("1085 Summit Dr");
+        assertThat(table.getPickedCellTexts())
+                .as("EPBDS-16774: after Remove Row the row that took the place of the removed one must be picked")
+                .containsExactly("1085 Summit Dr");
+        assertThat(table.hasKeyboardFocus())
+                .as("EPBDS-16774: after Remove Row the keyboard focus must stay in the table")
+                .isTrue();
+
+        for (int step = 0; step < 3; step++) {
+            table.pressKeyOnPage("ArrowRight");
+        }
+        table.waitForPickedCell("Beverly Hills");
+        assertThat(table.getPickedCellTexts())
+                .as("EPBDS-16774: the arrow keys must move the picked cell right after Remove Row")
+                .containsExactly("Beverly Hills");
+
+        actions.clickRemoveColumn();
+        table.waitForPickedCell("CA");
+        assertThat(table.getPickedCellTexts())
+                .as("EPBDS-16774: after Remove Column the column that took the place of the removed one must be picked")
+                .containsExactly("CA");
+        assertThat(table.hasKeyboardFocus())
+                .as("EPBDS-16774: after Remove Column the keyboard focus must stay in the table")
+                .isTrue();
+
+        actions.clickRemoveColumn();
+        table.waitForPickedCell("90210");
+        assertThat(table.getPickedCellTexts())
+                .as("EPBDS-16774: the next column must be removed without picking a cell again, and the next one picked")
+                .containsExactly("90210");
+        assertThat(table.getCellTexts())
+                .as("EPBDS-16774: the removed row and both removed columns must be gone")
+                .doesNotContain("Beverly Hills", "CA", "1600 Pennsylvania Avenue NW");
     }
 
     private void typeDecimal(TableComponent table, int row, int column, String shown, String typed, String what) {
