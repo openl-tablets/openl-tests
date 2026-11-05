@@ -20,6 +20,8 @@ public interface IRunMenu {
     IRunMenu writeFieldValue(String name, String value);
     boolean isFieldEditedAsTextOrList(String name);
     IRunMenu clearFieldValue(String name);
+    IRunMenu renameMapKey(String mapName, String key, String newKey);
+    List<String> getMapKeys(String mapName);
     String getFieldValue(String name);
     IRunMenu showJsonInput();
     IRunMenu showFormInput();

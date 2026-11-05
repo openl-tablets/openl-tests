@@ -215,6 +215,24 @@ public abstract class TableInputLauncherComponent extends BaseComponent {
                 "Waiting for " + path + " to be cleared");
     }
 
+    protected void renameMapEntry(String name, String key, String newKey) {
+        String map = pathOf(name);
+        keyInput(map, key).waitForVisible(DEFAULT_TIMEOUT_MS).fill(newKey);
+        page.keyboard().press("Enter");
+        keyInput(map, newKey).waitForVisible(DEFAULT_TIMEOUT_MS);
+    }
+
+    protected List<String> mapKeys(String name) {
+        String map = pathOf(name);
+        return createElementList("xpath=//input[starts-with(@data-testid,'key-" + map + "[')]", "mapKeys[" + map + "]")
+                .stream().map(WebElement::getCurrentInputValue).toList();
+    }
+
+    private WebElement keyInput(String map, String key) {
+        return new WebElement(page, "xpath=//input[@data-testid='key-" + map + "[" + key + "]']",
+                "mapKey[" + map + "[" + key + "]]");
+    }
+
     protected String fieldValueOf(String name) {
         return fieldValue(pathOf(name));
     }

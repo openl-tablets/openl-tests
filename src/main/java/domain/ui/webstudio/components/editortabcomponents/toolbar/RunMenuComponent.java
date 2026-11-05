@@ -112,6 +112,17 @@ public class RunMenuComponent extends TableInputLauncherComponent implements IRu
     }
 
     @Override
+    public IRunMenu renameMapKey(String mapName, String key, String newKey) {
+        renameMapEntry(mapName, key, newKey);
+        return this;
+    }
+
+    @Override
+    public List<String> getMapKeys(String mapName) {
+        return mapKeys(mapName);
+    }
+
+    @Override
     public String getFieldValue(String name) {
         return fieldValueOf(name);
     }

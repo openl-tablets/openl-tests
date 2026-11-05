@@ -16,6 +16,7 @@ import domain.ui.webstudio.components.editortabcomponents.toolbar.RunMenuCompone
 import domain.ui.webstudio.pages.mainpages.EditorPage;
 import domain.ui.webstudio.pages.mainpages.RepositoryPage;
 import helpers.service.WorkflowService;
+import helpers.utils.WaitUtil;
 import org.testng.annotations.Test;
 import tests.BaseTest;
 
@@ -35,6 +36,10 @@ public class TestRunFormInputUi extends BaseTest {
     private static final String RUN_FORM_WORKBOOK = "RunFormInput.xlsx";
     private static final String RUN_FORM_MODULE = "RunFormInput";
     private static final String SHOW = "Show";
+    private static final String SHOW_CUSTOMER = "ShowCustomer";
+    private static final String SHOW_MAP = "ShowMap";
+    private static final String VOCABULARY_ZIP = "RunFormVocabularyInOtherModule.zip";
+    private static final long MAP_ROWS_MS = 5000;
     private static final String RETURNS_NULL = "ReturnsNull";
     private static final String FAILS_AT_RUNTIME = "FailsAtRuntime";
     private static final String TRACE_KEEPS_RUN_INPUT = "The Trace form must keep the input entered in the Run form";
@@ -300,6 +305,60 @@ public class TestRunFormInputUi extends BaseTest {
         assertThat(failuresOption.getFailuresPerTestOptions())
                 .as("EPBDS-16715: Failures per test of the Test menu must offer All beside the counts")
                 .containsExactlyElementsOf(counts);
+    }
+
+    @Test
+    @TestCaseId({"EPBDS-16586", "EPBDS-16587"})
+    @Description("EPBDS-16586: a nullable datatype field added back in the Run form comes with the defaults its datatype "
+            + "declares: Customer c, cleared with the cross and created again, has home and work holding Address with the "
+            + "city Riga and the zip LV-1010. EPBDS-16587: renaming the keys of the entries of a Map parameter keeps the "
+            + "rows where they were added: the entries named 10 and then 2 stay in that order.")
+    @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
+    public void datatypeDefaultsComeBackWhenAddedAndMapEntriesKeepTheirOrderWhenRenamed() {
+        EditorPage editorPage = openWorkbookTable(METHOD, SHOW_CUSTOMER);
+        IRunMenu run = editorPage.getEditorToolbarPanelComponent().clickRun();
+        run.clearFieldValue("c");
+        run.clickCreateItem().unfoldParameter("c");
+        assertThat(List.of(run.getFieldValue("c.home"), run.getFieldValue("c.work")))
+                .as("EPBDS-16586: home and work of the Customer created again must hold the Address their datatype "
+                        + "declares as the default, not stay null")
+                .containsExactly("{2 fields}", "{2 fields}");
+        run.unfoldParameter("c.home").unfoldParameter("c.work");
+        assertThat(List.of(run.getFieldValue("c.home.city"), run.getFieldValue("c.home.zip"),
+                run.getFieldValue("c.work.city"), run.getFieldValue("c.work.zip")))
+                .as("EPBDS-16586: the Address of home and work must come with the city and the zip it declares")
+                .containsExactly("\"Riga\"", "\"LV-1010\"", "\"Riga\"", "\"LV-1010\"");
+
+        editorPage.getEditorLeftRulesTreeComponent().selectItemInFolder(METHOD, SHOW_MAP);
+        run = editorPage.getEditorToolbarPanelComponent().clickRun();
+        IRunMenu mapRun = run.clickAddElementToCollectionBtn("m").clickAddElementToCollectionBtn("m").unfoldParameter("m");
+        WaitUtil.waitForCondition(() -> mapRun.getMapKeys("m").size() == 2, MAP_ROWS_MS, 200,
+                "Waiting for both entries of m to be listed");
+        List<String> added = run.getMapKeys("m");
+        assertThat(added)
+                .as("The Run form must offer the entries of a Map parameter, two of them after two additions")
+                .hasSize(2);
+        run.renameMapKey("m", added.get(0), "10").renameMapKey("m", added.get(1), "2");
+        assertThat(run.getMapKeys("m"))
+                .as("EPBDS-16587: the entry named 10 must stay above the entry named 2 that was added after it, "
+                        + "not move below it because 2 reads as a smaller number")
+                .containsExactly("10", "2");
+    }
+
+    @Test
+    @TestCaseId("EPBDS-16605")
+    @Description("EPBDS-16605: a parameter of a vocabulary datatype declared in another module is chosen from a list of its "
+            + "values: Hello of the module Main takes MyList, declared in the module Vocabularies with the values a, b "
+            + "and c, and the Run form offers those three values for the parameter a, not a text box.")
+    @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
+    public void vocabularyDeclaredInAnotherModuleIsOfferedAsAList() {
+        String projectName = WorkflowService.loginCreateProjectFromZip(User.ADMIN, VOCABULARY_ZIP);
+        EditorPage editorPage = new EditorPage();
+        selectTable(editorPage, projectName, "Main", DECISION, "Hello");
+        IRunMenu run = editorPage.getEditorToolbarPanelComponent().clickRun();
+        assertThat(run.getFieldChoices("a"))
+                .as("EPBDS-16605: the values of the vocabulary of another module must be offered in a list")
+                .containsExactly("a", "b", "c");
     }
 
     private EditorPage openDriverPremiumTest() {
