@@ -27,6 +27,7 @@ public class ProjectHistoryTabComponent extends BaseComponent {
     private final WebElement openRevisionButton;
     private final WebElement emptyState;
     private final WebElement revisionComment;
+    private final WebElement commentLink;
 
     public ProjectHistoryTabComponent(Page page) {
         this(new WebElement(page, "xpath=//*[@data-testid='project-detail']", "projectDetail"));
@@ -42,6 +43,7 @@ public class ProjectHistoryTabComponent extends BaseComponent {
         openRevisionButton = createScopedElement("xpath=.//li[.//*" + COMMENT_PREDICATE + "[normalize-space()='%s']]"
                 + "//button[starts-with(@data-testid,'revision-open-')]", "openRevisionButton");
         revisionComment = createScopedElement("xpath=.//*" + COMMENT_PREDICATE + "[normalize-space()='%s']", "revisionComment");
+        commentLink = createScopedElement("xpath=.//*" + COMMENT_PREDICATE + "//a[normalize-space()='%s']", "commentLink");
         emptyState = createScopedElement("xpath=.//div[contains(@class,'ant-empty-description')]", "emptyState");
     }
 
@@ -102,6 +104,14 @@ public class ProjectHistoryTabComponent extends BaseComponent {
 
     public boolean isOpenOffered(String description) {
         return openRevisionButton.format(description).exists();
+    }
+
+    public boolean isCommentLinkOffered(String linkText) {
+        return commentLink.format(linkText).isVisible(DEFAULT_TIMEOUT_MS / 5);
+    }
+
+    public void clickCommentLink(String linkText) {
+        commentLink.format(linkText).click();
     }
 
     public String getEmptyStateText() {

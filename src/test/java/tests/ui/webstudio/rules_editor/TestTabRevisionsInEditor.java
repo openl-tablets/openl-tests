@@ -1,6 +1,7 @@
 package tests.ui.webstudio.rules_editor;
 
 import configuration.annotations.Description;
+import configuration.annotations.KnownIssue;
 import configuration.annotations.TestCaseId;
 import configuration.annotations.AppContainerConfig;
 import configuration.appcontainer.AppContainerStartParameters;
@@ -9,6 +10,7 @@ import domain.ui.webstudio.components.common.TabSwitcherComponent;
 import domain.ui.webstudio.components.editortabcomponents.EditorRevisionsTabComponent;
 import domain.ui.webstudio.components.editortabcomponents.leftmenu.EditorLeftRulesTreeComponent;
 import domain.ui.webstudio.pages.mainpages.EditorPage;
+import domain.ui.webstudio.pages.mainpages.ProjectDetailPage;
 import domain.ui.webstudio.pages.mainpages.RepositoryPage;
 import helpers.service.WorkflowService;
 import org.testng.annotations.Test;
@@ -20,9 +22,12 @@ import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableT
 public class TestTabRevisionsInEditor extends BaseTest {
 
     @Test
-    @TestCaseId("IPBQA-30123")
-    @Description("Verifies revisions tab in editor: initial revision after project creation, new revision after save, and opening old revision shows original cell value.")
+    @TestCaseId({"IPBQA-30123", "EPBDS-12242"})
+    @Description("Verifies revisions tab in editor: initial revision after project creation, new revision after save, and opening old revision shows original cell value. "
+            + "EPBDS-12242: the revision of a project copied as new says Copied from: <project>. with the source project as a link in the Revisions tab that opens that project. "
+            + "Fails on EPBDS-17171: the link was removed by EPBDS-16945.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
+    @KnownIssue(value = "EPBDS-17171", failsWith = "The source project in the Copied from comment should be a link")
     public void testTabRevisionsInEditor() {
         String projectName = WorkflowService.loginCreateProjectFromTemplate(User.ADMIN, "Sample Project");
         EditorPage editorPage = new EditorPage();
@@ -119,5 +124,20 @@ public class TestTabRevisionsInEditor extends BaseTest {
         assertThat(editorPage.getCenterTable().getCellText(6, 2))
                 .as("Cell value should be the original value before the edit when viewing old revision")
                 .isEqualTo("0");
+
+        repositoryPage = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.REPOSITORY);
+        String sourceId = repositoryPage.openProjectsList().openProjectDetail(projectName).getProjectId();
+        String copyName = projectName + "Copy";
+        repositoryPage.openProjectsList().copyProject(projectName, copyName);
+        ProjectDetailPage copy = repositoryPage.openProjectsList().openProjectDetail(copyName);
+        assertThat(copy.getRevisionDescriptions())
+                .as("The first revision of the copy should say where it was copied from")
+                .containsExactly("Copied from: " + projectName + ".");
+        assertThat(copy.isRevisionCommentLinkOffered(projectName))
+                .as("The source project in the Copied from comment should be a link (EPBDS-12242)")
+                .isTrue();
+        assertThat(copy.clickRevisionCommentLink(projectName).getProjectId())
+                .as("The link in the Copied from comment should open the source project (EPBDS-12242)")
+                .isEqualTo(sourceId);
     }
 }

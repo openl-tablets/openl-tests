@@ -1,5 +1,6 @@
 package tests.ui.webstudio.rules_editor;
 
+import configuration.annotations.Description;
 import configuration.annotations.TestCaseId;
 import configuration.annotations.AppContainerConfig;
 import configuration.appcontainer.AppContainerStartParameters;
@@ -20,8 +21,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestSearchOnProjectLevel extends BaseTest {
 
+    private static final int TICKET_TEXT_LENGTH = 33009;
+    private static final int SEARCH_TEXT_MAX_LENGTH = 1000;
+    private static final String TICKET_SENTENCE = "In show dull give need so held. One order all scale sense her gay style wrote. ";
+
     @Test
-    @TestCaseId("IPBQA-32590")
+    @TestCaseId({"IPBQA-32590", "EPBDS-14069"})
+    @Description("Simple search on project level. EPBDS-14069: a text of 33,009 characters put into the Text in cells "
+            + "field of the Extended search of Example 1 - Bank Rating is cut to 1,000 characters and the search "
+            + "runs, saying that nothing matched, with no error and no Oops screen.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void testSimpleSearchOnProjectLevel() {
         LoginService loginService = new LoginService(DriverPool.getPage());
@@ -98,6 +106,23 @@ public class TestSearchOnProjectLevel extends BaseTest {
         search.waitForSearchResult();
         assertThat(search.isTableFound("BalanceDynamicIndexCalculation")).isTrue();
         assertThat(search.isTableFound("BalanceQualityIndexCalculation")).isTrue();
+
+        String ticketText = TICKET_SENTENCE.repeat(TICKET_TEXT_LENGTH / TICKET_SENTENCE.length() + 1)
+                .substring(0, TICKET_TEXT_LENGTH);
+        search.closeSearch();
+        editorPage.getEditorLeftProjectModuleSelectorComponent().selectFirstModule(nameProjectExample1BankRating);
+        search.typeSearchAndEnter(ticketText);
+        assertThat(search.getTextInCellsLength())
+                .as("The Text in cells field takes no more than 1,000 characters of a text of %d (EPBDS-14069)",
+                        TICKET_TEXT_LENGTH)
+                .isEqualTo(SEARCH_TEXT_MAX_LENGTH);
+        assertThat(search.isOopsShown())
+                .as("A very long text in the Extended search must not end in the Oops! Something went wrong screen (EPBDS-14069)")
+                .isFalse();
+        assertThat(search.getFoundTablesCount()).isZero();
+        assertThat(search.getNoResultsMessage())
+                .as("The search of a very long text must run and say that nothing matched, not show an Oops screen")
+                .isNotEmpty();
 
         search.closeSearch();
         editorPage.getEditorToolbarPanelComponent().navigateToProjectsInBreadcrumbs();

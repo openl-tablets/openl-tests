@@ -67,10 +67,11 @@ public class SearchFilterComponent extends BaseComponent {
     public SearchFilterComponent typeSearchAndEnter(String text) {
         WaitUtil.retryOnException(() -> {
             openAdvancedSearch();
-            textInput.fill(text);
+            textInput.waitForVisible(DEFAULT_TIMEOUT_MS).getLocator().fill(text);
             searchBtn.click(SEARCH_CLICK_TIMEOUT_MS);
             return true;
-        }, DEFAULT_TIMEOUT_MS * 2, SETTLE_MS, "Searching for '" + text + "'");
+        }, DEFAULT_TIMEOUT_MS * 2, SETTLE_MS, "Searching for a text of " + text.length() + " characters starting '"
+                + text.substring(0, Math.min(text.length(), 40)) + "'");
         waitForSearchResult();
         return this;
     }
@@ -152,6 +153,16 @@ public class SearchFilterComponent extends BaseComponent {
         WaitUtil.requireCondition(() -> !searchBtn.getAttribute("class").contains("ant-btn-loading"),
                 DEFAULT_TIMEOUT_MS, SETTLE_MS, "Waiting for the search to report its results");
         return this;
+    }
+
+    public int getTextInCellsLength() {
+        return textInput.getCurrentInputValue().length();
+    }
+
+    public boolean isOopsShown() {
+        WebElement oops = new WebElement(page,
+                "xpath=//*[contains(normalize-space(text()),'Oops! Something went wrong')]", "oopsScreen");
+        return oops.isVisible(PROBE_MS);
     }
 
     public String getNoResultsMessage() {

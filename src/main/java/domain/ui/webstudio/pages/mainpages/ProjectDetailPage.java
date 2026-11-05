@@ -1,5 +1,6 @@
 package domain.ui.webstudio.pages.mainpages;
 
+import domain.ui.webstudio.components.common.MessageComponent;
 import com.microsoft.playwright.Page;
 import configuration.core.ui.WebElement;
 import domain.ui.webstudio.components.common.TabSwitcherComponent;
@@ -23,6 +24,7 @@ import lombok.Getter;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 public class ProjectDetailPage extends BasePage {
@@ -325,10 +327,7 @@ public class ProjectDetailPage extends BasePage {
 
     public ProjectDetailPage createBranch(String branchName, boolean switchAfter) {
         String sourceBranch = getCurrentBranch();
-        clickHeaderAction("Copy");
-        copyProjectDialogComponent.waitForDialogToAppear().setBranchName(branchName);
-        copyProjectDialogComponent.clickCopyButton();
-        fillCommitInfoIfShown();
+        copyIntoNewBranch(branchName);
         waitUntilSpinnerLoaded();
         WaitUtil.waitForCondition(() -> branchName.equals(getCurrentBranch()), DEFAULT_TIMEOUT_MS, 500,
                 "Waiting for the project to land on branch " + branchName);
@@ -336,6 +335,33 @@ public class ProjectDetailPage extends BasePage {
             switchBranch(sourceBranch);
         }
         return this;
+    }
+
+    public ProjectDetailPage copyIntoNewBranch(String branchName) {
+        clickHeaderAction("Copy");
+        copyProjectDialogComponent.waitForDialogToAppear().setBranchName(branchName);
+        copyProjectDialogComponent.clickCopyButton();
+        fillCommitInfoIfShown();
+        return this;
+    }
+
+    public MessageComponent.NoticeColors getNoticeColorsMentioning(String text) {
+        return WaitUtil.waitForResult(() -> readNoticeColorsMentioning(text), DEFAULT_TIMEOUT_MS, 100,
+                        "Waiting for a notification that mentions " + text)
+                .orElseThrow(() -> new AssertionError("No notification mentions " + text));
+    }
+
+    private Optional<MessageComponent.NoticeColors> readNoticeColorsMentioning(String text) {
+        try {
+            for (MessageComponent message : getMessages()) {
+                if (message.getFullText().contains(text)) {
+                    return Optional.of(message.getColors());
+                }
+            }
+        } catch (RuntimeException e) {
+            return Optional.empty();
+        }
+        return Optional.empty();
     }
 
     public String createBranchExpectingError(String branchName) {
@@ -534,6 +560,17 @@ public class ProjectDetailPage extends BasePage {
     public List<String> getRevisionDescriptions() {
         openHistoryTab();
         return history.getRevisionDescriptions();
+    }
+
+    public boolean isRevisionCommentLinkOffered(String linkText) {
+        openHistoryTab();
+        return history.isCommentLinkOffered(linkText);
+    }
+
+    public ProjectDetailPage clickRevisionCommentLink(String linkText) {
+        openHistoryTab();
+        history.clickCommentLink(linkText);
+        return this;
     }
 
     public List<String> getRevisionAuthors() {
