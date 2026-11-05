@@ -20,6 +20,12 @@ public interface ITraceWindow {
     int getSimpleCallsCount(String step);
     String getSimpleMoreCallsText(String step);
     ITraceWindow showMoreSimpleCalls(String step);
+    ITraceWindow selectSimpleRow(int position);
+    ITraceWindow selectLastSimpleRow();
+    boolean isSimpleRowFailed(int position);
+    String getSimpleRowText(int position);
+    ITraceWindow loadFirstDetailsValue();
+    ITraceWindow waitForDetailsToContain(String expectedText);
     ITraceWindow setBreakWhenRuleFires();
     ITraceWindow pickBreakOnRule(String ruleName);
     ITraceWindow addWatch(String expression);

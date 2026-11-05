@@ -81,6 +81,13 @@ public class TestResultValidationComponent extends BaseComponent {
         return drawn ? resultTable().getRows().size() : 0;
     }
 
+    public String getRunError() {
+        waitUntilResultsOpen();
+        Locator error = results(IN_RESULTS + "//*[@data-testid='execution-error']");
+        WaitUtil.requireCondition(() -> error.count() > 0, RESULTS_TIMEOUT_MS, 250, "Waiting for the run to report its error");
+        return error.first().innerText().trim();
+    }
+
     public TableComponent getResultTable() {
         waitForResults();
         TableComponent table = resultTable();

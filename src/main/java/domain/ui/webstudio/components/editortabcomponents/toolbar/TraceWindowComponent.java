@@ -15,6 +15,7 @@ public class TraceWindowComponent extends BasePage implements ITraceWindow {
     private static final Logger LOGGER = LogManager.getLogger(TraceWindowComponent.class);
 
     private static final int CALL_TREE_TIMEOUT_MS = DEFAULT_TIMEOUT_MS * 3;
+    private static final int DETAILS_TIMEOUT_MS = 5000;
     private static final String TREE_NODE = "//*[@data-testid='trace-tree']//div[starts-with(@data-testid,'tree-frame-') or starts-with(@data-testid,'tree-step-')]";
 
     private final List<WebElement> callTreeNodes;
@@ -167,6 +168,64 @@ public class TraceWindowComponent extends BasePage implements ITraceWindow {
         WaitUtil.requireCondition(() -> getSimpleCallsCount(step) > shown, CALL_TREE_TIMEOUT_MS, 250,
                 "Waiting for the further calls of the step " + step + " to be listed");
         return this;
+    }
+
+    @Override
+    public ITraceWindow selectSimpleRow(int position) {
+        simpleRows().nth(position).click();
+        return waitForDetailsOfSelectedRow();
+    }
+
+    @Override
+    public ITraceWindow selectLastSimpleRow() {
+        int[] rowsSeen = {-1};
+        WaitUtil.requireCondition(() -> {
+            int rows = simpleRows().count();
+            boolean settled = rows > 0 && rows == rowsSeen[0];
+            rowsSeen[0] = rows;
+            return settled;
+        }, CALL_TREE_TIMEOUT_MS, 1000, "Waiting for the call tree to stop growing");
+        Locator row = simpleRows().last();
+        row.scrollIntoViewIfNeeded();
+        row.click();
+        return waitForDetailsOfSelectedRow();
+    }
+
+    @Override
+    public boolean isSimpleRowFailed(int position) {
+        return "true".equals(simpleRows().nth(position).getAttribute("data-failed"));
+    }
+
+    @Override
+    public String getSimpleRowText(int position) {
+        return normalized(simpleRows().nth(position).innerText());
+    }
+
+    @Override
+    public ITraceWindow loadFirstDetailsValue() {
+        getPage().locator("xpath=//*[@data-testid='debug-details']//button[starts-with(@data-testid,'load-')]").first().click();
+        return this;
+    }
+
+    @Override
+    public ITraceWindow waitForDetailsToContain(String expectedText) {
+        WaitUtil.requireCondition(() -> normalized(getDetailsText()).contains(expectedText), CALL_TREE_TIMEOUT_MS, 250,
+                "Waiting for the details to show '" + expectedText + "'");
+        return this;
+    }
+
+    private ITraceWindow waitForDetailsOfSelectedRow() {
+        WaitUtil.requireCondition(() -> details.isVisible(1000), DETAILS_TIMEOUT_MS, 200, "Waiting for the details of the selected row");
+        return this;
+    }
+
+    private static String normalized(String text) {
+        return text.replaceAll("\\s+", " ").trim();
+    }
+
+    private Locator simpleRows() {
+        simpleTree.waitForVisible(CALL_TREE_TIMEOUT_MS);
+        return getPage().locator("xpath=//*[@data-testid='simple-tree']//*[starts-with(@data-testid,'simple-node-') or starts-with(@data-testid,'simple-step-')]");
     }
 
     private Locator simpleMoreCalls(String step) {
