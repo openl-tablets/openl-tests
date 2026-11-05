@@ -24,6 +24,8 @@ public class CopyTableDialogComponent extends BaseComponent {
     private WebElement nameTextBox;
     private WebElement moduleComboBox;
     private WebElement sheetComboBox;
+    private WebElement sheetInput;
+    private WebElement chosenPropertyTemplate;
     private WebElement copyButton;
     private WebElement propertyNameTemplate;
     private WebElement propertyValueTemplate;
@@ -47,6 +49,10 @@ public class CopyTableDialogComponent extends BaseComponent {
                 "xpath=//*[@data-testid='copy-table-name']//input | //input[@data-testid='copy-table-name']", "copyTableName");
         moduleComboBox = new WebElement(page, "xpath=//*[@data-testid='copy-table-module']", "copyTableModule");
         sheetComboBox = new WebElement(page, "xpath=//*[@data-testid='copy-table-sheet']", "copyTableSheet");
+        sheetInput = new WebElement(page, "xpath=//*[@data-testid='copy-table-sheet']//input", "copyTableSheetInput");
+        chosenPropertyTemplate = new WebElement(page,
+                "xpath=//*[@data-testid='copy-table-property-name-%s']//*[contains(@class,'ant-select-content')]",
+                "copyTableChosenPropertyName");
         copyButton = new WebElement(page,
                 "xpath=" + MODAL + "//div[contains(@class,'ant-modal-footer')]//button[.//span[normalize-space()='Copy']]",
                 "copyTableSubmit");
@@ -102,6 +108,35 @@ public class CopyTableDialogComponent extends BaseComponent {
         return this;
     }
 
+    public String getSheet() {
+        sheetInput.waitForVisible(DEFAULT_TIMEOUT_MS);
+        WaitUtil.waitForCondition(() -> !sheetInput.getCurrentInputValue().isBlank(), DEFAULT_TIMEOUT_MS, 200,
+                "Waiting for the copy dialog to offer a sheet");
+        return sheetInput.getCurrentInputValue();
+    }
+
+    public String getPropertyValue(String propertyLabel) {
+        waitForDialogToAppear();
+        String[] value = new String[1];
+        boolean found = WaitUtil.waitForCondition(() -> {
+            for (int row = 0; row < MAX_PROPERTY_ROWS; row++) {
+                WebElement chosen = chosenPropertyTemplate.format(String.valueOf(row));
+                if (!chosen.exists()) {
+                    return false;
+                }
+                if (propertyLabel.equalsIgnoreCase(chosen.getText().trim())) {
+                    value[0] = propertyValueTemplate.format(String.valueOf(row)).getCurrentInputValue();
+                    return true;
+                }
+            }
+            return false;
+        }, DEFAULT_TIMEOUT_MS, 300, "Waiting for the copy dialog to list the property '" + propertyLabel + "'");
+        if (!found) {
+            throw new IllegalStateException("The copy dialog lists no property named '" + propertyLabel + "'");
+        }
+        return value[0];
+    }
+
     public CopyTableDialogComponent setTextProperty(String propertyLabel, String value) {
         return setProperty(propertyLabel, value);
     }
@@ -146,8 +181,7 @@ public class CopyTableDialogComponent extends BaseComponent {
                     + " 'Countries' for the country dimension");
         }
         option.click(DEFAULT_TIMEOUT_MS / 2);
-        WebElement chosen = new WebElement(page,
-                "xpath=//*[@data-testid='copy-table-property-name-" + row + "']//*[contains(@class,'ant-select-content')]", "copyTableChosenProperty");
+        WebElement chosen = chosenPropertyTemplate.format(String.valueOf(row));
         if (!WaitUtil.waitForCondition(
                 () -> propertyLabel.equalsIgnoreCase(chosen.getText().trim()), DEFAULT_TIMEOUT_MS, 200,
                 "Waiting for the property row to hold '" + propertyLabel + "'")) {
