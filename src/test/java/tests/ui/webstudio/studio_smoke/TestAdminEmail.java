@@ -8,6 +8,7 @@ import configuration.driver.DriverPool;
 import domain.serviceclasses.constants.User;
 import domain.serviceclasses.models.UserData;
 import domain.ui.webstudio.components.admincomponents.EmailPageComponent;
+import domain.ui.webstudio.components.admincomponents.UsersPageComponent;
 import domain.ui.webstudio.pages.mainpages.AdminPage;
 import domain.ui.webstudio.pages.mainpages.EditorPage;
 import domain.ui.webstudio.pages.mainpages.LoginPage;
@@ -37,9 +38,11 @@ public class TestAdminEmail extends BaseTest {
     }
 
     @Test
-    @TestCaseId("IPBQA-32798")
+    @TestCaseId({"IPBQA-32798", "EPBDS-16602", "EPBDS-16617"})
     @Description("Admin UI 'Email' page - email verification configuration and persistence, "
-            + "backed by an ephemeral in-network SMTP mock (Mailpit) instead of an external mail provider.")
+            + "backed by an ephemeral in-network SMTP mock (Mailpit) instead of an external mail provider. "
+            + "EPBDS-16602: the unverified email icon in the Users list shows the readable tooltip 'Email not verified', not the raw key. "
+            + "EPBDS-16617: Resend Verification Email is enabled on the untouched Edit User form and sends a new email.")
     @AppContainerConfig(startParams = AppContainerStartParameters.STUDIO_MAIL_MOCK_PARAMS)
     public void testAdminEmail() {
         LoginService loginService = new LoginService(DriverPool.getPage());
@@ -93,14 +96,14 @@ public class TestAdminEmail extends BaseTest {
                 .as("Password should not be hidden after clicking eye icon")
                 .isTrue();
 
-        // Mailpit is the SMTP backend for the just-applied settings: creating a user with an email
-        // must deliver a verification message to it, proving the mock is actually reachable end-to-end.
         int messagesBefore = mailMock.getReceivedMessagesCount();
         UserData mailUser = new UserData("mailTestUser", "password123");
-        adminPage.navigateToUsersPage()
-                .clickAddUser()
+        UsersPageComponent usersPage = adminPage.navigateToUsersPage();
+        usersPage.clickAddUser()
                 .setUsername(mailUser.getLogin())
                 .setPassword(mailUser.getPassword())
+                .setFirstName("Ann")
+                .setLastName("Lee")
                 .saveUser();
 
         WaitUtil.waitForCondition(() -> mailMock.getReceivedMessagesCount() > messagesBefore, 15000, 500,
@@ -108,5 +111,22 @@ public class TestAdminEmail extends BaseTest {
         assertThat(mailMock.getReceivedMessagesCount())
                 .as("Mailpit should have received the verification email for the newly created user")
                 .isGreaterThan(messagesBefore);
+
+        assertThat(usersPage.getEmailNotVerifiedTooltip(mailUser.getLogin()))
+                .as("Tooltip of the unverified email icon should be the readable message, not the raw key")
+                .isEqualTo("Email not verified");
+
+        int messagesBeforeResend = mailMock.getReceivedMessagesCount();
+        usersPage.clickEditUser(mailUser.getLogin());
+        assertThat(usersPage.isResendVerificationEmailEnabled())
+                .as("Resend Verification Email should be enabled on the untouched Edit User form")
+                .isTrue();
+        usersPage.clickResendVerificationEmail();
+
+        WaitUtil.waitForCondition(() -> mailMock.getReceivedMessagesCount() > messagesBeforeResend, 15000, 500,
+                "Waiting for the resent verification email to be delivered to Mailpit");
+        assertThat(mailMock.getReceivedMessagesCount())
+                .as("Mailpit should have received the resent verification email")
+                .isGreaterThan(messagesBeforeResend);
     }
 }

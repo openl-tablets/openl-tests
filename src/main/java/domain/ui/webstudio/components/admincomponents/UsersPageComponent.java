@@ -43,6 +43,9 @@ public class UsersPageComponent extends BaseComponent {
     private WebElement projectRoleSelectorTemplate;
     private WebElement removeRoleBtn;
 
+    private WebElement resendVerificationEmailBtn;
+    private WebElement tooltip;
+
     private WebElement errorNotification;
     private WebElement errorDescription;
 
@@ -85,6 +88,9 @@ public class UsersPageComponent extends BaseComponent {
         projectRoleSelectorTemplate = new WebElement(page, "xpath=//input[@id='projects_%s_role']", "projectRoleSelectorTemplate");
         removeRoleBtn = new WebElement(page, "xpath=//button[./span[contains(@aria-label,'delete')] and ancestor::div[contains(@class,'ant-form-item')]]", "removeRoleBtn");
 
+        resendVerificationEmailBtn = new WebElement(page, "xpath=//div[contains(@class,'ant-drawer-open')]//button[./span[text()='Resend Verification Email']]", "resendVerificationEmailBtn");
+        tooltip = new WebElement(page, "xpath=//div[@role='tooltip'][contains(@class,'ant-tooltip-container')][not(ancestor::div[contains(@class,'ant-tooltip-hidden')])]", "tooltip");
+
         errorNotification = new WebElement(page, "xpath=//div[contains(@class,'ant-notification-notice-error')]", "errorNotification");
         errorDescription = new WebElement(page, "xpath=//div[contains(@class,'ant-notification-notice-error')]//div[contains(@class,'ant-notification-notice-description')]", "errorDescription");
     }
@@ -113,6 +119,22 @@ public class UsersPageComponent extends BaseComponent {
         return rowElement(getUserRow(username),
                 "//sup[contains(@class,'ant-badge-dot')][contains(@class,'ant-badge-color-green')]")
                 .getLocator().count() > 0;
+    }
+
+    public String getEmailNotVerifiedTooltip(String username) {
+        rowElement(getUserRow(username), "//td[" + COL_EMAIL + "]//*[@data-icon='exclamation-circle']").hover();
+        tooltip.waitForVisible(DEFAULT_TIMEOUT_MS);
+        return tooltip.getInnerText().trim();
+    }
+
+    public boolean isResendVerificationEmailEnabled() {
+        resendVerificationEmailBtn.waitForVisible(DEFAULT_TIMEOUT_MS);
+        return resendVerificationEmailBtn.isEnabled();
+    }
+
+    public UsersPageComponent clickResendVerificationEmail() {
+        resendVerificationEmailBtn.click();
+        return this;
     }
 
     public UsersPageComponent reloadPage() {
