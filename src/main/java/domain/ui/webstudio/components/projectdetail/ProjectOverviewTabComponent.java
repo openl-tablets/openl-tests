@@ -31,6 +31,12 @@ public class ProjectOverviewTabComponent extends BaseComponent {
     private final WebElement descriptorActionsMarker;
     private final WebElement matchedModuleToggles;
     private final WebElement matchedModuleRows;
+    private final WebElement cancelBtn;
+    private final WebElement openApiFileInput;
+    private final WebElement openApiPathSelect;
+    private final WebElement processorInput;
+    private final WebElement addVersionPatternBtn;
+    private final WebElement versionPatternField;
 
     public ProjectOverviewTabComponent(Page page) {
         this(new WebElement(page, "xpath=//*[@data-testid='overview-panel']", "overviewPanel"));
@@ -58,8 +64,6 @@ public class ProjectOverviewTabComponent extends BaseComponent {
         migrateConfirmOkBtn = new WebElement(page,
                 "xpath=//div[contains(@class,'ant-modal-confirm')]//div[contains(@class,'ant-modal-confirm-btns')]//button[contains(@class,'ant-btn-primary')]",
                 "migrateConfirmOkBtn");
-        // A legacy descriptor is offered both the writing and the move, so the first of the two is taken:
-        // either of them standing says the card has drawn what it knows about the descriptor.
         descriptorActionsMarker = createScopedElement(
                 "xpath=(.//*[@data-testid='overview-edit'] | .//*[@data-testid='overview-migrate'])[1]",
                 "descriptorActionsMarker");
@@ -68,6 +72,12 @@ public class ProjectOverviewTabComponent extends BaseComponent {
                         + "[not(starts-with(@data-testid,'module-matched-item-'))]",
                 "matchedModuleToggles");
         matchedModuleRows = createScopedElement("xpath=.//li[starts-with(@data-testid,'module-matched-item-')]", "matchedModuleRows");
+        cancelBtn = createScopedElement("xpath=.//*[@data-testid='overview-cancel']", "overviewCancelBtn");
+        openApiFileInput = createScopedElement("xpath=.//*[@data-testid='edit-openapi-upload']/ancestor::span[1]//input[@type='file']", "openApiFileInput");
+        openApiPathSelect = createScopedElement("xpath=.//*[@data-testid='edit-openapi-path']", "openApiPathSelect");
+        processorInput = createScopedElement("xpath=.//*[@data-testid='edit-processor']", "processorInput");
+        addVersionPatternBtn = createScopedElement("xpath=.//*[@data-testid='edit-version-pattern-add']", "addVersionPatternBtn");
+        versionPatternField = createScopedElement("xpath=.//input[@data-testid='edit-version-pattern-0']", "versionPatternField");
     }
 
     public String getCurrentBranch() {
@@ -136,11 +146,6 @@ public class ProjectOverviewTabComponent extends BaseComponent {
         return names;
     }
 
-    /**
-     * The modules the descriptor declares, as the card offers them for writing. A project that declares
-     * none is drawn read-only, the engine resolving its modules from the standard layout, so there are no
-     * rows to write into then.
-     */
     public void renameDeclaredModule(String moduleName, String newName) {
         openForWriting();
         WebElement field = declaredModuleField(moduleName);
@@ -153,17 +158,12 @@ public class ProjectOverviewTabComponent extends BaseComponent {
         keepWhatWasWritten();
     }
 
-    /**
-     * Writes a module into the descriptor where the card is expected to refuse it, and answers what it says.
-     * The card stays open on what it was given, so the refusal can be read off the notice it raises.
-     */
     public String addDeclaredModuleExpectingRefusal(String moduleName, String path) {
         writeANewModuleRow(moduleName, path);
         saveBtn.waitForVisible(DEFAULT_TIMEOUT_MS).click();
         return whyTheCardRefused();
     }
 
-    /** Lays a row down and writes the module into it, once the card has drawn the row it laid down. */
     private void writeANewModuleRow(String moduleName, String path) {
         openForWriting();
         int standing = declaredModuleFields().size();
@@ -185,7 +185,6 @@ public class ProjectOverviewTabComponent extends BaseComponent {
         keepWhatWasWritten();
     }
 
-    /** What the card says when it refuses to keep what was written into it, or nothing at all. */
     public String whyTheCardRefused() {
         WebElement refusal = new WebElement(page,
                 "xpath=(//div[contains(concat(' ',normalize-space(@class),' '),' ant-notification-notice-wrapper ')])"
@@ -193,7 +192,7 @@ public class ProjectOverviewTabComponent extends BaseComponent {
         return refusal.isVisible(DEFAULT_TIMEOUT_MS / 4) ? refusal.getInnerText().trim().replace("\n", " ") : "";
     }
 
-    private void openForWriting() {
+    public void openForWriting() {
         if (saveBtn.isVisible(DEFAULT_TIMEOUT_MS / 5)) {
             return;
         }
@@ -229,12 +228,57 @@ public class ProjectOverviewTabComponent extends BaseComponent {
         throw new AssertionError("The card declares no module named '" + moduleName + "'");
     }
 
-    /** What the card shows of a module's own method filter, which the descriptor declares beside it. */
     public String moduleMethodFilter(String modulePath) {
         descriptorActionsMarker.waitForVisible(DEFAULT_TIMEOUT_MS);
         WebElement filter = new WebElement(page,
                 "xpath=//*[@data-testid='module-filter-" + modulePath + "']", "moduleMethodFilter");
         return filter.isVisible(DEFAULT_TIMEOUT_MS) ? filter.getInnerText().trim().replace("\n", " ") : "";
+    }
+
+    public void cancelEditing() {
+        cancelBtn.waitForVisible(DEFAULT_TIMEOUT_MS).click();
+        editBtn.waitForVisible(DEFAULT_TIMEOUT_MS);
+    }
+
+    public boolean isEditing() {
+        return saveBtn.isVisible(PROBE_MS);
+    }
+
+    public boolean isEditEndedWithin(long timeoutMs) {
+        return WaitUtil.waitForCondition(() -> !saveBtn.isVisible(PROBE_MS), timeoutMs, PROBE_MS,
+                "Waiting to see whether the Overview edit ends by itself");
+    }
+
+    public void pickOpenApiFile(String filePath) {
+        openApiFileInput.setInputFiles(filePath);
+    }
+
+    public String getPickedOpenApiPath() {
+        return openApiPathSelect.waitForVisible(DEFAULT_TIMEOUT_MS).getText().trim();
+    }
+
+    public void setPropertiesProcessor(String processor) {
+        processorInput.waitForVisible(DEFAULT_TIMEOUT_MS).fill(processor);
+    }
+
+    public void setVersionPattern(String pattern) {
+        WaitUtil.requireCondition(() -> versionPatternField.isVisible(PROBE_MS) || addVersionPatternBtn.isVisible(PROBE_MS),
+                DEFAULT_TIMEOUT_MS, PROBE_MS, "Waiting for the version pattern row or the button adding it");
+        if (!versionPatternField.isVisible(PROBE_MS)) {
+            addVersionPatternBtn.click();
+        }
+        versionPatternField.waitForVisible(DEFAULT_TIMEOUT_MS).fill(pattern);
+    }
+
+    public String saveExpectingRefusal() {
+        String previous = whyTheCardRefused();
+        saveBtn.waitForVisible(DEFAULT_TIMEOUT_MS).click();
+        String[] latest = {""};
+        WaitUtil.waitForCondition(() -> {
+            latest[0] = whyTheCardRefused();
+            return !latest[0].isEmpty() && !latest[0].equals(previous);
+        }, DEFAULT_TIMEOUT_MS, PROBE_MS, "Waiting for the card to raise a new refusal");
+        return latest[0];
     }
 
     public void editAndSave() {
@@ -253,9 +297,6 @@ public class ProjectOverviewTabComponent extends BaseComponent {
     public void migrateAndWaitUntilEditable() {
         migrateBtn.waitForVisible(DEFAULT_TIMEOUT_MS).click();
         migrateConfirmOkBtn.waitForVisible(DEFAULT_TIMEOUT_MS).click();
-        // The question stands on the screen while the move is being made, and the card stops offering the
-        // move once it has been made, so both are waited out before the card is read again. The card offers
-        // to write the settings whether or not the move has been made, so that button says nothing about it.
         WaitUtil.requireCondition(() -> !migrateConfirmOkBtn.isVisible(PROBE_MS), MIGRATE_TIMEOUT_MS, 250,
                 "Waiting for the move of the descriptor to be made");
         WaitUtil.requireCondition(() -> !migrateBtn.isVisible(PROBE_MS), MIGRATE_TIMEOUT_MS, 250,
