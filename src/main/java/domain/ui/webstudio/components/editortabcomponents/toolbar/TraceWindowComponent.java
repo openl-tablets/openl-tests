@@ -17,6 +17,7 @@ public class TraceWindowComponent extends BasePage implements ITraceWindow {
     private static final int CALL_TREE_TIMEOUT_MS = DEFAULT_TIMEOUT_MS * 3;
     private static final int DETAILS_TIMEOUT_MS = 5000;
     private static final String TREE_NODE = "//*[@data-testid='trace-tree']//div[starts-with(@data-testid,'tree-frame-') or starts-with(@data-testid,'tree-step-')]";
+    private static final String SIMPLE_ROW = "//*[@data-testid='simple-tree']//*[starts-with(@data-testid,'simple-node-') or starts-with(@data-testid,'simple-step-')]";
 
     private final List<WebElement> callTreeNodes;
     private final WebElement callTreeNodeTemplate;
@@ -177,15 +178,11 @@ public class TraceWindowComponent extends BasePage implements ITraceWindow {
     }
 
     @Override
-    public ITraceWindow selectLastSimpleRow() {
-        int[] rowsSeen = {-1};
-        WaitUtil.requireCondition(() -> {
-            int rows = simpleRows().count();
-            boolean settled = rows > 0 && rows == rowsSeen[0];
-            rowsSeen[0] = rows;
-            return settled;
-        }, CALL_TREE_TIMEOUT_MS, 1000, "Waiting for the call tree to stop growing");
-        Locator row = simpleRows().last();
+    public ITraceWindow selectMiddleSimpleRow() {
+        WaitUtil.requireCondition(this::isSimpleTreeFullyLoaded, CALL_TREE_TIMEOUT_MS, 250,
+                "Waiting for the call tree to be loaded down to its last call");
+        Locator rows = simpleRows();
+        Locator row = rows.nth(rows.count() / 2);
         row.scrollIntoViewIfNeeded();
         row.click();
         return waitForDetailsOfSelectedRow();
@@ -225,7 +222,12 @@ public class TraceWindowComponent extends BasePage implements ITraceWindow {
 
     private Locator simpleRows() {
         simpleTree.waitForVisible(CALL_TREE_TIMEOUT_MS);
-        return getPage().locator("xpath=//*[@data-testid='simple-tree']//*[starts-with(@data-testid,'simple-node-') or starts-with(@data-testid,'simple-step-')]");
+        return getPage().locator("xpath=" + SIMPLE_ROW);
+    }
+
+    private boolean isSimpleTreeFullyLoaded() {
+        return simpleRows().count() > 0 && getPage().locator("xpath=//*[@data-testid='simple-tree']//*[starts-with(@data-testid,'simple-loading-')]"
+                + " | (" + SIMPLE_ROW + ")[last()]/following-sibling::*").count() == 0;
     }
 
     private Locator simpleMoreCalls(String step) {

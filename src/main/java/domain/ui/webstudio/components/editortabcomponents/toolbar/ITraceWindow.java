@@ -21,7 +21,7 @@ public interface ITraceWindow {
     String getSimpleMoreCallsText(String step);
     ITraceWindow showMoreSimpleCalls(String step);
     ITraceWindow selectSimpleRow(int position);
-    ITraceWindow selectLastSimpleRow();
+    ITraceWindow selectMiddleSimpleRow();
     boolean isSimpleRowFailed(int position);
     String getSimpleRowText(int position);
     ITraceWindow loadFirstDetailsValue();

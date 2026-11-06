@@ -32,6 +32,7 @@ public class ProjectDetailPage extends BasePage {
     private static final Logger LOGGER = LogManager.getLogger(ProjectDetailPage.class);
 
     private static final int HEADER_ACTION_PROBE_MS = DEFAULT_TIMEOUT_MS / 5;
+    private static final int NOTICE_POLL_MS = 100;
     private static final int TAB_SWITCH_ATTEMPTS = 3;
     private static final int COMPARE_WINDOW_WIDTH = 1280;
     private static final int COMPARE_WINDOW_HEIGHT = 800;
@@ -364,17 +365,25 @@ public class ProjectDetailPage extends BasePage {
         return this;
     }
 
-    public MessageComponent.NoticeColors getNoticeColorsMentioning(String text) {
-        return WaitUtil.waitForResult(() -> readNoticeColorsMentioning(text), DEFAULT_TIMEOUT_MS, 100,
-                        "Waiting for a notification that mentions " + text)
-                .orElseThrow(() -> new AssertionError("No notification mentions " + text));
+    public MessageComponent.NoticeColors copyIntoNewBranchReadingNotice(String branchName, String noticeText) {
+        clickHeaderAction("Copy");
+        copyProjectDialogComponent.waitForDialogToAppear().setBranchName(branchName);
+        copyProjectDialogComponent.clickCopyButton();
+        return WaitUtil.waitForResult(() -> {
+                    if (configureCommitInfoShade.isVisible(NOTICE_POLL_MS)) {
+                        configureCommitInfoComponent.fillCommitInfoWithRandomData();
+                    }
+                    return readNoticeColorsMentioning(noticeText);
+                }, DEFAULT_TIMEOUT_MS, 100, "Waiting for a notification that mentions " + noticeText)
+                .orElseThrow(() -> new AssertionError("No notification mentions " + noticeText));
     }
 
     private Optional<MessageComponent.NoticeColors> readNoticeColorsMentioning(String text) {
         try {
             for (MessageComponent message : getMessages()) {
                 if (message.getFullText().contains(text)) {
-                    return Optional.of(message.getColors());
+                    MessageComponent.NoticeColors colors = message.getColors();
+                    return colors.background().isBlank() ? Optional.empty() : Optional.of(colors);
                 }
             }
         } catch (RuntimeException e) {

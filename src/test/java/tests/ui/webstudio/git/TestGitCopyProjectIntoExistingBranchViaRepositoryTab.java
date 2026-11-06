@@ -54,8 +54,8 @@ public class TestGitCopyProjectIntoExistingBranchViaRepositoryTab extends BaseTe
         repositoryPage.createProject(CreateNewProjectComponent.TabName.TEMPLATE, PROJECT_NAME, "Sample Project");
         repositoryPage.createProject(CreateNewProjectComponent.TabName.TEMPLATE, SECOND_PROJECT_NAME, "Sample Project");
 
-        ProjectDetailPage projectDetail = repositoryPage.openProjectDetail(PROJECT_NAME).copyIntoNewBranch(BRANCH_NAME);
-        assertNoticeIsDark(projectDetail.getNoticeColorsMentioning(BRANCH_NAME));
+        ProjectDetailPage projectDetail = repositoryPage.openProjectDetail(PROJECT_NAME);
+        assertNoticeIsDark(projectDetail.copyIntoNewBranchReadingNotice(BRANCH_NAME, BRANCH_NAME));
         projectDetail.waitUntilSpinnerLoaded();
 
         String error = repositoryPage.openProjectsList()

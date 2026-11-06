@@ -138,12 +138,12 @@ public class TestTraceBusinessModeUi extends BaseTest {
         ITraceWindow recursion = editorPage.getEditorToolbarPanelComponent().clickTrace()
                 .setParameterField("n", "1")
                 .clickTraceInsideMenuBusiness();
-        recursion.selectLastSimpleRow().waitForDetailsToContain("StackOverflowError");
+        recursion.selectMiddleSimpleRow().waitForDetailsToContain("StackOverflowError");
         assertThat(recursion.getSimpleTreeText())
                 .as("The business trace of an endless recursion must show the executed calls down to the failed one")
                 .contains("Recurse(Integer n) = ERROR");
         assertThat(recursion.getDetailsText())
-                .as("The deepest call must report StackOverflowError, the same error Run shows")
+                .as("A failed call inside the recursion must report StackOverflowError, the same error Run shows")
                 .contains("StackOverflowError");
         recursion.close();
     }
