@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>OpenL Tests [latest]</title>
+<style>
+:root{--bg:#f3f5f9;--surface:#ffffff;--surface-2:#f8fafc;--line:#e3e8ef;--line-strong:#d0d7e2;--text:#0f172a;--muted:#64748b;--accent:#2563eb;--accent-soft:#e8f0fe;--shadow:0 1px 2px rgba(15,23,42,.06),0 1px 3px rgba(15,23,42,.04);--radius:14px;--mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.5;color:var(--text);background:var(--bg);-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
+.page{max-width:1440px;margin:0 auto;padding:32px 28px 64px}
+header.top{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:20px}
+h1{margin:0;font-size:26px;font-weight:700;letter-spacing:-.02em}
+.meta{display:flex;flex-wrap:wrap;gap:8px;align-items:center;color:var(--muted);font-size:13px}
+.meta .chip{background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px 10px;color:var(--text)}
+.meta .chip.moving,.tag-moving{border:1px solid #f5b37a;background:#fff1e5;color:#9a3412;font-weight:600}
+.tag-moving{display:inline-block;padding:1px 8px;border-radius:999px;font-size:11px}
+.cards{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;margin:0 0 20px}
+.card{position:relative;overflow:hidden;min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 14px 14px 18px;box-shadow:var(--shadow);color:var(--muted);font-size:clamp(10px,.85vw,12px);font-weight:600;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap;text-overflow:ellipsis}
+.card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--card-color,var(--line-strong))}
+.card b{display:block;margin-top:4px;font-size:clamp(20px,2vw,28px);line-height:1.1;font-weight:700;letter-spacing:-.02em;color:var(--card-color,var(--text))}
+.controls{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:0 0 14px;padding:12px 14px;background:rgba(255,255,255,.88);backdrop-filter:blur(8px);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.controls label{display:inline-flex;align-items:center;gap:8px;color:var(--muted);font-size:13px}
+.controls select,.controls input{height:36px;padding:0 12px;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface);color:var(--text);font:inherit;font-size:13px}
+.controls input{flex:1 1 260px;min-width:200px}
+.controls select:focus,.controls input:focus{outline:2px solid var(--accent-soft);border-color:var(--accent)}
+.controls button{height:36px;padding:0 14px;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface);color:var(--text);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.controls button:hover{border-color:var(--accent);color:var(--accent)}
+.table-wrap{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow-x:auto}
+.table-wrap table.tests{min-width:760px}
+table.tests{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0}
+table.tests col.c-status{width:19%} table.tests col.c-group{width:10%} table.tests col.c-duration{width:88px} table.tests col.c-artifacts{width:13%} table.tests col.c-details{width:112px}
+table.tests>thead th{padding:12px 14px;text-align:left;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:var(--surface-2);border-bottom:1px solid var(--line)}
+table.tests>tbody>tr>td{padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:top;overflow-wrap:anywhere;min-width:0}
+tr.row:hover td{background:var(--surface-2)}
+.badge{display:inline-flex;flex-wrap:wrap;align-items:center;gap:4px 7px;font-weight:600;padding:3px 10px 3px 8px;border-radius:999px;font-size:12px;line-height:1.4}
+.badge::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor;flex:none}
+.badge a{color:inherit;text-decoration:underline;text-decoration-color:rgba(0,0,0,.25)}
+strong{font-weight:600}
+small,.hint,figcaption{color:var(--muted);font-size:12px}
+small.err{display:inline-block;margin-top:2px;color:#b42318;font-family:var(--mono);font-size:11px;overflow-wrap:anywhere}
+.artifacts small{display:inline-block;margin:0 6px 4px 0;padding:1px 8px;border:1px solid var(--line);border-radius:999px;background:var(--surface-2);color:var(--muted);font-size:11px}
+button.toggle{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px 0 12px;border:1px solid var(--line-strong);border-radius:999px;background:var(--surface);color:var(--text);font:inherit;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
+button.toggle::after{content:"";width:6px;height:6px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg) translateY(-1px);transition:transform .15s ease}
+button.toggle:hover{border-color:var(--accent);color:var(--accent)}
+button.toggle.open{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)} button.toggle.open::after{transform:rotate(-135deg) translateY(-1px)}
+table.tests>tbody>tr.details-row>td{padding:16px 18px 20px;background:var(--surface-2)}
+.tabs{display:inline-flex;flex-wrap:wrap;gap:2px;margin-bottom:12px;padding:4px;background:#e9edf3;border-radius:12px}
+.tab{padding:6px 14px;border:0;border-radius:9px;background:transparent;color:#475569;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.tab:hover{color:var(--text)} .tab.active{background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
+.run{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px 18px;margin:0 0 20px;box-shadow:var(--shadow)}
+.run table.kv th{width:210px}
+table.kv{border-collapse:collapse;width:100%} table.kv th{width:180px;text-align:left;padding:6px 16px 6px 0;color:var(--muted);font-weight:500;vertical-align:top;font-size:13px} table.kv td{padding:6px 0;border-bottom:1px solid var(--line)} table.kv tr:last-child td{border-bottom:0}
+pre{margin:0;white-space:pre-wrap;word-break:break-word;background:var(--surface-2);border:1px solid var(--line);padding:12px 14px;border-radius:10px;max-height:520px;overflow:auto;font-family:var(--mono);font-size:12px;line-height:1.5}
+pre.error{background:#fff1f0;border-color:#fecdca;color:#912018} pre.log{background:#0b1220;border-color:#1e293b;color:#dbe4f0} pre.small{max-height:200px}
+.error-type{margin:0 0 8px;font-weight:600;color:#b42318;font-family:var(--mono);font-size:12px}
+details summary{cursor:pointer;margin:12px 0 8px;font-weight:600;color:var(--muted)}
+.hint{margin:0 0 10px}
+.attachments{display:flex;flex-wrap:wrap;gap:16px} figure{margin:0;max-width:420px} figure img,figure video{display:block;max-width:420px;border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow)} figcaption{margin-top:6px}
+.button{display:inline-flex;align-items:center;height:36px;padding:0 16px;background:var(--accent);color:#fff;border-radius:10px;font-weight:600;text-decoration:none;box-shadow:var(--shadow)} .button:hover{text-decoration:none;filter:brightness(1.05)}
+code{padding:1px 6px;border-radius:6px;background:#eef2f6;font-family:var(--mono);font-size:12px}
+@media (max-width:900px){.page{padding:20px 14px 48px} h1{font-size:22px} .controls{position:static} .cards{gap:8px} .card{padding:10px 10px 10px 14px}}
+</style></head><body>
+<div class="page">
+<header class="top"><h1>OpenL Tests [latest]</h1>
+<div class="meta"><span class="chip moving">Build latest — moving tag, see the images below</span><span class="chip">13 tests</span><span class="chip">27 min 47 s of test time</span><a href="https://github.com/openl-tablets/openl-tests/actions/runs/42018436587">workflow run</a> · <a href="debug/index.json">debug/index.json</a> · <a href="debug/README.md">how to debug with an AI assistant</a></div></header>
+<section class='run'><table class='kv'><tr><th>Workflow</th><td><a href='https://github.com/openl-tablets/openl-tests/actions/runs/42018436587'>OpenL Tests</a></td></tr><tr><th>Run</th><td>2026-11-05 11:24:21 UTC → 2026-11-05 11:34:48 UTC · 10 min 27 s wall time · selective run</td></tr><tr><th>Image <code>ghcr.io/openl-tablets/webstudio:latest</code> <span class='tag-moving'>moving tag</span></th><td>13 test(s), version not observed: Failed to parse the JSON document<br><small>resolved at run start to <code>sha256:be653d75fd08</code>, openl-tablets <a href='https://github.com/openl-tablets/openl-tablets/commit/ec07fcd81cc4ec58c550142bd93db72beb1d31b2' target='_blank'>ec07fcd81c</a>, image built 2026-11-05T00:40:01Z</small></td></tr><tr><th>Image <code>ghcr.io/openl-tablets/ws:latest-all</code> <span class='tag-moving'>moving tag</span></th><td><span class='hint'>not used by any test in this run</span><br><small>resolved at run start to <code>sha256:d08c3599fe89</code>, openl-tablets <a href='https://github.com/openl-tablets/openl-tablets/commit/ec07fcd81cc4ec58c550142bd93db72beb1d31b2' target='_blank'>ec07fcd81c</a>, image built 2026-11-05T00:40:01Z</small></td></tr><tr><th>Tests</th><td>main @ <a href='https://github.com/openl-tablets/openl-tests/commit/00e504c22782e2c1be37a5703078a561f76f7f04' target='_blank'>00e504c22782</a></td></tr><tr><th>Stack</th><td>Playwright 1.64.0 · Java 21</td></tr></table></section>
+<div class="cards"><div class="card" style="--card-color:#15803d">Passed<b>12</b></div><div class="card" style="--card-color:#dc2626">Failed<b>0</b></div><div class="card" style="--card-color:#ca8a04">Skipped<b>0</b></div><div class="card" style="--card-color:#ea580c">Known issues<b>1</b></div><div class="card" style="--card-color:#2563eb">Fixed?<b>0</b></div><div class="card">Shards<b>6</b></div></div>
+<div class="controls"><label>Status <select id="status"><option value="">all</option><option value="failed">failed</option><option value="skipped">skipped</option><option value="known">known issue</option><option value="fixed">fixed?</option><option value="passed">passed</option></select></label>
+<label>Group <select id="suite"><option value="">all</option><option value='repository'>repository</option></select></label><input id="search" placeholder="filter by class, test name or error" size="40"><button id="expand-failed">expand all failed</button></div>
+<div class="table-wrap"><table class="tests"><colgroup><col class="c-status"><col class="c-group"><col class="c-test"><col class="c-duration"><col class="c-artifacts"><col class="c-details"></colgroup><thead><tr><th>Status</th><th>Group / shard</th><th>Test</th><th>Duration</th><th>Artifacts</th><th></th></tr></thead><tbody><tr class='row known' data-status='known' data-suite='repository' data-error='[The deployment should stand among the deployments] 
+Expecting ListN:
+  []
+to contain:
+  [&quot;Deploy-076958&quot;]
+but could not find the following element(s):
+  [&quot;Deploy-076958&quot;]
+'><td><span class='badge' style='color:#bc4c00;background:#fff1e5'>KNOWN ISSUE · <a href='https://jira.eisgroup.com/browse/EPBDS-16641' target='_blank'>EPBDS-16641</a></span></td><td>repository<br><small>shard-03</small></td><td><strong>TestDeployProjectWithoutDescriptorUi</strong><br>testDeployWorksForAProjectWithoutDescriptor<br><small>EPBDS-16641</small><br><small class='err'>[The deployment should stand among the deployments]</small></td><td>1 min 01 s</td><td class='artifacts'><small>steps</small><small>trace</small><small>app log</small><small>screenshot</small></td><td><button class='toggle' data-target='d0'>details</button></td></tr><tr class='details-row known' id='d0' hidden><td colspan='6'><div class='tabs'><button class='tab active' data-tab='t0-0'>Overview</button><button class='tab' data-tab='t0-1'>Failure</button><button class='tab' data-tab='t0-2'>Steps (545)</button><button class='tab' data-tab='t0-3'>Application log</button><button class='tab' data-tab='t0-4'>Trace</button><button class='tab' data-tab='t0-5'>Media</button></div><div class='panel' id='t0-0'><table class='kv'><tr><th>Group / shard</th><td>repository / shard-03</td></tr><tr><th>Class</th><td><code>tests.ui.webstudio.repository.TestDeployProjectWithoutDescriptorUi</code> · <a href='https://github.com/openl-tablets/openl-tests/blob/00e504c22782e2c1be37a5703078a561f76f7f04/src/test/java/tests/ui/webstudio/repository/TestDeployProjectWithoutDescriptorUi.java' target='_blank'>source</a></td></tr><tr><th>Method</th><td><code>testDeployWorksForAProjectWithoutDescriptor</code></td></tr><tr><th>Test case</th><td>EPBDS-16641</td></tr><tr><th>Known issue</th><td><a href='https://jira.eisgroup.com/browse/EPBDS-16641' target='_blank'>EPBDS-16641</a> — the test still fails as expected</td></tr><tr><th>Description</th><td>A project whose rules.xml was deleted is deployed and stands among the deployments. Fails on EPBDS-16641: nothing is deployed.</td></tr><tr><th>Started / finished</th><td>2026-11-05T11:26:54.248Z → 2026-11-05T11:27:55.132Z (1 min 01 s)</td></tr><tr><th>Application build</th><td>latest</td></tr><tr><th>Tests revision</th><td>main @ 00e504c22782</td></tr><tr><th>Execution info</th><td><pre class='small'>Execution Mode: PLAYWRIGHT_DOCKER
+
+Execution Mode: PLAYWRIGHT_DOCKER
+Playwright Docker Architecture:
+  Network: 8dd27db5571e2ff12d7031bbeabafe86c907fda53e0eaed6772ba1a8c6b4d2da
+  Playwright Container: 139ef0027bc64e6dddd1542dde86102b52b6a106eac137a685337ca813e3a0aa
+  Browser: chromium
+  Current Page: http://appcontainer-072334:8080/deployments
+  App Container: 64e5e36d1cf271f656af4bfa33bcca8debecb414af086f941e0477777057e486
+  Container Network URL: http:///friendly_albattani:8080
+Configuration:
+Host Resource Path: src/test/resources</pre></td></tr><tr><th>AI debug bundle</th><td><a href='debug/index.json' target='_blank'>debug/index.json</a> lists the bundle file of this test — everything below in one JSON file, see <a href='debug/README.md' target='_blank'>debug/README.md</a></td></tr></table></div><div class='panel' id='t0-1' hidden><p class='error-type'>java.lang.AssertionError</p><pre class='error'>[The deployment should stand among the deployments] 
+Expecting ListN:
+  []
+to contain:
+  [&quot;Deploy-076958&quot;]
+but could not find the following element(s):
+  [&quot;Deploy-076958&quot;]</pre><details open><summary>Stack trace</summary><pre>java.lang.AssertionError: [The deployment should stand among the deployments] 
+Expecting ListN:
+  []
+to contain:
+  [&quot;Deploy-076958&quot;]
+but could not find the following element(s):
+  [&quot;Deploy-076958&quot;]
+
+	at tests.ui.webstudio.repository.TestDeployProjectWithoutDescriptorUi.testDeployWorksForAProjectWithoutDescriptor(TestDeployProjectWithoutDescriptorUi.java:75)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.testng.internal.invokers.MethodInvocationHelper.invokeMethod(MethodInvocationHelper.java:141)
+	at org.testng.internal.invokers.TestInvoker.invokeMethod(TestInvoker.java:687)
+	at org.testng.internal.invokers.TestInvoker.invokeTestMethod(TestInvoker.java:230)
+	at org.testng.internal.invokers.MethodRunner.runInSequence(MethodRunner.java:63)
+	at org.testng.internal.invokers.TestInvoker$MethodInvocationAgent.invoke(TestInvoker.java:995)
+	at org.testng.internal.invokers.TestInvoker.invokeTestMethods(TestInvoker.java:203)
+	at org.testng.internal.invokers.TestMethodWorker.invokeTestMethods(TestMethodWorker.java:154)
+	at org.testng.internal.invokers.TestMethodWorker.run(TestMethodWorker.java:134)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.testng.TestRunner.privateRun(TestRunner.java:741)
+	at org.testng.TestRunner.run(TestRunner.java:616)
+	at org.testng.SuiteRunner.runTest(SuiteRunner.java:421)
+	at org.testng.SuiteRunner.runSequentially(SuiteRunner.java:413)
+	at org.testng.SuiteRunner.privateRun(SuiteRunner.java:373)
+	at org.testng.SuiteRunner.run(SuiteRunner.java:312)
+	at org.testng.SuiteRunnerWorker.runSuite(SuiteRunnerWorker.java:52)
+	at org.testng.SuiteRunnerWorker.run(SuiteRunnerWorker.java:95)
+	at org.testng.TestNG.runSuitesSequentially(TestNG.java:1274)
+	at org.testng.TestNG.runSuitesLocally(TestNG.java:1208)
+	at org.testng.TestNG.runSuites(TestNG.java:1112)
+	at org.testng.TestNG.run(TestNG.java:1079)
+	at org.apache.maven.surefire.testng.TestNGExecutor.run(TestNGExecutor.java:308)
+	at org.apache.maven.surefire.testng.TestNGXmlTestSuite.execute(TestNGXmlTestSuite.java:71)
+	at org.apache.maven.surefire.testng.TestNGProvider.invoke(TestNGProvider.java:113)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+</pre></details></div><div class='panel' id='t0-2' hidden><p class='hint'>Framework log of this test: container start, every page action, waits, REST calls and assertions. Showing the last 250 of 545 lines · <a href='attachments/shard-03/tests.ui.webstudio.repository.TestDeployProjectWithoutDescriptorUi/testDeployWorksForAProjectWithoutDescriptor/test-steps.log' target='_blank'>full log</a></p><pre class='log'>2026-11-05 11:27:18.368 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-05 11:27:18.631 [main] [INFO] WebElement - Getting current input value from newProjectBranch: &#x27;&#x27;
+2026-11-05 11:27:18.632 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-05 11:27:18.902 [main] [INFO] WebElement - Getting current input value from newProjectBranch: &#x27;&#x27;
+2026-11-05 11:27:18.902 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-05 11:27:19.159 [main] [INFO] WebElement - Getting current input value from newProjectBranch: &#x27;&#x27;
+2026-11-05 11:27:19.159 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-05 11:27:19.417 [main] [INFO] WebElement - Getting current input value from newProjectBranch: &#x27;&#x27;
+2026-11-05 11:27:19.417 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-05 11:27:19.674 [main] [INFO] WebElement - Getting current input value from newProjectBranch: &#x27;&#x27;
+2026-11-05 11:27:19.674 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-05 11:27:19.931 [main] [INFO] WebElement - Getting current input value from newProjectBranch: &#x27;&#x27;
+2026-11-05 11:27:19.931 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-05 11:27:20.188 [main] [INFO] WebElement - Getting current input value from newProjectBranch: &#x27;&#x27;
+2026-11-05 11:27:20.188 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-05 11:27:20.445 [main] [INFO] WebElement - Getting current input value from newProjectBranch: &#x27;&#x27;
+2026-11-05 11:27:20.445 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-05 11:27:20.702 [main] [INFO] WebElement - Getting current input value from newProjectBranch: &#x27;&#x27;
+2026-11-05 11:27:20.702 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-05 11:27:20.958 [main] [INFO] WebElement - Getting current input value from newProjectBranch: &#x27;&#x27;
+2026-11-05 11:27:20.959 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-05 11:27:21.216 [main] [INFO] WebElement - Getting current input value from newProjectBranch: &#x27;&#x27;
+2026-11-05 11:27:21.216 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-05 11:27:21.474 [main] [INFO] WebElement - Getting current input value from newProjectBranch: &#x27;&#x27;
+2026-11-05 11:27:21.474 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-05 11:27:21.731 [main] [INFO] WebElement - Getting current input value from newProjectBranch: &#x27;&#x27;
+2026-11-05 11:27:21.732 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-05 11:27:21.988 [main] [INFO] WebElement - Getting current input value from newProjectBranch: &#x27;&#x27;
+2026-11-05 11:27:21.989 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-05 11:27:22.245 [main] [INFO] WebElement - Getting current input value from newProjectBranch: &#x27;&#x27;
+2026-11-05 11:27:22.246 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-05 11:27:22.502 [main] [INFO] WebElement - Getting current input value from newProjectBranch: &#x27;&#x27;
+2026-11-05 11:27:22.503 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-05 11:27:22.759 [main] [INFO] WebElement - Getting current input value from newProjectBranch: &#x27;&#x27;
+2026-11-05 11:27:22.760 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-05 11:27:23.017 [main] [INFO] WebElement - Getting current input value from newProjectBranch: &#x27;&#x27;
+2026-11-05 11:27:23.017 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-05 11:27:23.274 [main] [INFO] WebElement - Getting current input value from newProjectBranch: &#x27;&#x27;
+2026-11-05 11:27:23.274 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-05 11:27:23.531 [main] [INFO] WebElement - Getting current input value from newProjectBranch: &#x27;&#x27;
+2026-11-05 11:27:23.531 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-05 11:27:23.788 [main] [INFO] WebElement - Getting current input value from newProjectBranch: &#x27;&#x27;
+2026-11-05 11:27:23.788 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-05 11:27:24.061 [main] [INFO] WebElement - Getting current input value from newProjectBranch: &#x27;&#x27;
+2026-11-05 11:27:24.061 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-05 11:27:24.318 [main] [INFO] WebElement - Getting current input value from newProjectBranch: &#x27;&#x27;
+2026-11-05 11:27:24.318 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-05 11:27:24.575 [main] [INFO] WebElement - Getting current input value from newProjectBranch: &#x27;&#x27;
+2026-11-05 11:27:24.575 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-05 11:27:24.832 [main] [INFO] WebElement - Getting current input value from newProjectBranch: &#x27;&#x27;
+2026-11-05 11:27:24.832 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-05 11:27:25.089 [main] [INFO] WebElement - Getting current input value from newProjectBranch: &#x27;&#x27;
+2026-11-05 11:27:25.090 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-05 11:27:25.347 [main] [INFO] WebElement - Getting current input value from newProjectBranch: &#x27;&#x27;
+2026-11-05 11:27:25.347 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-05 11:27:25.597 [main] [WARN] WaitUtil - Condition not met after 20000ms timeout: Waiting for the wizard to fill in the branch
+2026-11-05 11:27:25.597 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:27:25.604 [main] [INFO] WaitUtil - Condition met after 7ms: Waiting for the loading overlay to disappear
+2026-11-05 11:27:25.604 [main] [INFO] WebElement - Waiting for newProjectSubmit to be visible (timeout: 250ms)
+2026-11-05 11:27:25.609 [main] [INFO] WebElement - Clicking newProjectSubmit 
+2026-11-05 11:27:25.666 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 250ms): Waiting for the wizard to close on what it was given
+2026-11-05 11:27:25.666 [main] [INFO] WebElement - Waiting for newProjectSubmit to be visible (timeout: 4000ms)
+2026-11-05 11:27:25.685 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to close on what it was given
+2026-11-05 11:27:25.936 [main] [INFO] WebElement - Waiting for newProjectSubmit to be visible (timeout: 4000ms)
+2026-11-05 11:27:25.948 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to close on what it was given
+2026-11-05 11:27:26.198 [main] [INFO] WebElement - Waiting for newProjectSubmit to be visible (timeout: 4000ms)
+2026-11-05 11:27:26.212 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to close on what it was given
+2026-11-05 11:27:26.462 [main] [INFO] WebElement - Waiting for newProjectSubmit to be visible (timeout: 4000ms)
+2026-11-05 11:27:26.493 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to close on what it was given
+2026-11-05 11:27:26.743 [main] [INFO] WebElement - Waiting for newProjectSubmit to be visible (timeout: 4000ms)
+2026-11-05 11:27:30.786 [main] [INFO] WaitUtil - Condition met after 5120ms: Waiting for the wizard to close on what it was given
+2026-11-05 11:27:30.787 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-05 11:27:30.795 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:27:30.800 [main] [INFO] WaitUtil - Condition met after 5ms: Waiting for the loading overlay to disappear
+2026-11-05 11:27:30.800 [main] [INFO] WebElement - Waiting for modalShade to be visible (timeout: 3000ms)
+2026-11-05 11:27:33.807 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-05 11:27:33.813 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:27:33.818 [main] [INFO] WaitUtil - Condition met after 5ms: Waiting for the loading overlay to disappear
+2026-11-05 11:27:33.990 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-05 11:27:34.040 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:27:34.046 [main] [INFO] WaitUtil - Condition met after 6ms: Waiting for the loading overlay to disappear
+2026-11-05 11:27:34.046 [main] [INFO] WaitUtil - Waiting for condition (timeout: 90000ms, polling: 500ms): Waiting for &#x27;project-170554&#x27; to be listed among the projects
+2026-11-05 11:27:34.047 [main] [INFO] WebElement - Waiting for projectRow to be visible (timeout: 1000ms)
+2026-11-05 11:27:34.523 [main] [INFO] WaitUtil - Condition met after 476ms: Waiting for &#x27;project-170554&#x27; to be listed among the projects
+2026-11-05 11:27:34.523 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 250ms): Waiting for project row actions
+2026-11-05 11:27:34.534 [main] [INFO] WaitUtil - Condition met after 11ms: Waiting for project row actions
+2026-11-05 11:27:34.560 [main] [INFO] WebElement - Waiting for projectRowMoreBtn to be visible (timeout: 4000ms)
+2026-11-05 11:27:34.566 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:27:34.571 [main] [INFO] WaitUtil - Condition met after 4ms: Waiting for the loading overlay to disappear
+2026-11-05 11:27:34.571 [main] [INFO] WebElement - Waiting for projectRowMoreBtn to be visible (timeout: 250ms)
+2026-11-05 11:27:34.576 [main] [INFO] WebElement - Clicking projectRowMoreBtn 
+2026-11-05 11:27:34.640 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 250ms): Waiting for the row overflow menu
+2026-11-05 11:27:34.649 [main] [INFO] WaitUtil - Condition met after 9ms: Waiting for the row overflow menu
+2026-11-05 11:27:34.703 [main] [INFO] CorePage - domain.ui.webstudio.pages.mainpages.EditorPage was opened.
+2026-11-05 11:27:34.704 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 500ms): Going to &#x27;Projects&#x27;
+2026-11-05 11:27:34.704 [main] [INFO] WebElement - Waiting for projectsList to be visible (timeout: 1500ms)
+2026-11-05 11:27:34.717 [main] [INFO] WaitUtil - Condition met after 13ms: Going to &#x27;Projects&#x27;
+2026-11-05 11:27:34.718 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-05 11:27:34.725 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:27:34.730 [main] [INFO] WaitUtil - Condition met after 5ms: Waiting for the loading overlay to disappear
+2026-11-05 11:27:34.730 [main] [INFO] CorePage - domain.ui.webstudio.pages.mainpages.RepositoryPage was opened.
+2026-11-05 11:27:34.869 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-05 11:27:34.931 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:27:34.935 [main] [INFO] WaitUtil - Condition met after 4ms: Waiting for the loading overlay to disappear
+2026-11-05 11:27:34.935 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 250ms): Waiting for the list of projects to be drawn
+2026-11-05 11:27:34.939 [main] [INFO] WaitUtil - Condition met after 4ms: Waiting for the list of projects to be drawn
+2026-11-05 11:27:34.939 [main] [INFO] WebElement - Waiting for projectNameInRow to be visible (timeout: 90000ms)
+2026-11-05 11:27:35.364 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:27:35.371 [main] [INFO] WaitUtil - Condition met after 6ms: Waiting for the loading overlay to disappear
+2026-11-05 11:27:35.372 [main] [INFO] WebElement - Waiting for projectNameInRow to be visible (timeout: 250ms)
+2026-11-05 11:27:35.379 [main] [INFO] WebElement - Clicking projectNameInRow 
+2026-11-05 11:27:35.420 [main] [INFO] CorePage - domain.ui.webstudio.pages.mainpages.ProjectDetailPage was opened.
+2026-11-05 11:27:35.422 [main] [INFO] WebElement - Waiting for detailRoot to be visible (timeout: 20000ms)
+2026-11-05 11:27:36.250 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:27:36.261 [main] [INFO] WaitUtil - Condition met after 10ms: Waiting for the loading overlay to disappear
+2026-11-05 11:27:36.261 [main] [INFO] WebElement - Waiting for filesTab to be visible (timeout: 250ms)
+2026-11-05 11:27:36.271 [main] [INFO] WebElement - Clicking filesTab 
+2026-11-05 11:27:36.332 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-05 11:27:36.357 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:27:36.384 [main] [INFO] WaitUtil - Condition met after 27ms: Waiting for the loading overlay to disappear
+2026-11-05 11:27:36.384 [main] [INFO] WebElement - Waiting for filesSearchField to be visible (timeout: 10000ms)
+2026-11-05 11:27:36.741 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:27:36.754 [main] [INFO] WaitUtil - Condition met after 12ms: Waiting for the loading overlay to disappear
+2026-11-05 11:27:36.754 [main] [INFO] WebElement - Waiting for fileTreeNode to be visible (timeout: 250ms)
+2026-11-05 11:27:36.774 [main] [INFO] WebElement - Clicking fileTreeNode 
+2026-11-05 11:27:36.849 [main] [INFO] WebElement - Waiting for fileActionsBtn to be visible (timeout: 20000ms)
+2026-11-05 11:27:37.071 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:27:37.093 [main] [INFO] WaitUtil - Condition met after 22ms: Waiting for the loading overlay to disappear
+2026-11-05 11:27:37.093 [main] [INFO] WebElement - Waiting for fileActionsBtn to be visible (timeout: 250ms)
+2026-11-05 11:27:37.105 [main] [INFO] WebElement - Clicking fileActionsBtn 
+2026-11-05 11:27:37.189 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:27:37.204 [main] [INFO] WaitUtil - Condition met after 14ms: Waiting for the loading overlay to disappear
+2026-11-05 11:27:37.204 [main] [INFO] WebElement - Waiting for fileActionsMenuItem to be visible (timeout: 250ms)
+2026-11-05 11:27:37.222 [main] [INFO] WebElement - Clicking fileActionsMenuItem 
+2026-11-05 11:27:37.536 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:27:37.555 [main] [INFO] WaitUtil - Condition met after 19ms: Waiting for the loading overlay to disappear
+2026-11-05 11:27:37.557 [main] [INFO] WebElement - Waiting for fileDeleteSubmitBtn to be visible (timeout: 250ms)
+2026-11-05 11:27:37.569 [main] [INFO] WebElement - Clicking fileDeleteSubmitBtn 
+2026-11-05 11:27:37.988 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-05 11:27:38.169 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:27:38.418 [main] [INFO] WaitUtil - Condition met after 249ms: Waiting for the loading overlay to disappear
+2026-11-05 11:27:38.419 [main] [INFO] WebElement - Waiting for fileTreeNode to be hidden
+2026-11-05 11:27:38.856 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-05 11:27:38.894 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:27:38.898 [main] [INFO] WaitUtil - Condition met after 4ms: Waiting for the loading overlay to disappear
+2026-11-05 11:27:38.898 [main] [INFO] WebElement - Waiting for projectRowAction to be visible (timeout: 4000ms)
+2026-11-05 11:27:42.918 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:27:42.923 [main] [INFO] WaitUtil - Condition met after 5ms: Waiting for the loading overlay to disappear
+2026-11-05 11:27:42.924 [main] [INFO] WebElement - Waiting for projectRowMoreBtn to be visible (timeout: 250ms)
+2026-11-05 11:27:42.931 [main] [INFO] WebElement - Clicking projectRowMoreBtn 
+2026-11-05 11:27:42.972 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:27:42.981 [main] [INFO] WaitUtil - Condition met after 9ms: Waiting for the loading overlay to disappear
+2026-11-05 11:27:42.981 [main] [INFO] WebElement - Waiting for overflowMenuItem to be visible (timeout: 10000ms)
+2026-11-05 11:27:43.019 [main] [INFO] WebElement - Clicking with increased timeout overflowMenuItem 
+2026-11-05 11:27:43.221 [main] [INFO] WebElement - Waiting for saveProjectComment to be visible
+2026-11-05 11:27:43.238 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:27:43.250 [main] [INFO] WaitUtil - Condition met after 11ms: Waiting for the loading overlay to disappear
+2026-11-05 11:27:43.250 [main] [INFO] WebElement - Waiting for saveProjectComment to be visible (timeout: 250ms)
+2026-11-05 11:27:43.284 [main] [INFO] WebElement - Filling saveProjectComment with text: &#x27;Descriptor deleted&#x27;
+2026-11-05 11:27:43.332 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:27:43.348 [main] [INFO] WaitUtil - Condition met after 16ms: Waiting for the loading overlay to disappear
+2026-11-05 11:27:43.348 [main] [INFO] WebElement - Waiting for saveProjectSubmit to be visible (timeout: 250ms)
+2026-11-05 11:27:43.365 [main] [INFO] WebElement - Clicking saveProjectSubmit 
+2026-11-05 11:27:43.673 [main] [INFO] WebElement - Waiting for saveProjectSubmit to be hidden
+2026-11-05 11:27:44.729 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-05 11:27:44.736 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:27:44.741 [main] [INFO] WaitUtil - Condition met after 5ms: Waiting for the loading overlay to disappear
+2026-11-05 11:27:44.741 [main] [INFO] CorePage - domain.ui.webstudio.pages.mainpages.RepositoryPage was opened.
+2026-11-05 11:27:44.914 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-05 11:27:44.978 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:27:44.985 [main] [INFO] WaitUtil - Condition met after 7ms: Waiting for the loading overlay to disappear
+2026-11-05 11:27:44.985 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 250ms): Waiting for project row actions
+2026-11-05 11:27:44.991 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for project row actions
+2026-11-05 11:27:45.401 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for project row actions
+2026-11-05 11:27:45.660 [main] [INFO] WaitUtil - Condition met after 675ms: Waiting for project row actions
+2026-11-05 11:27:45.682 [main] [INFO] WebElement - Waiting for projectRowMoreBtn to be visible (timeout: 4000ms)
+2026-11-05 11:27:45.688 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:27:45.692 [main] [INFO] WaitUtil - Condition met after 4ms: Waiting for the loading overlay to disappear
+2026-11-05 11:27:45.692 [main] [INFO] WebElement - Waiting for projectRowMoreBtn to be visible (timeout: 250ms)
+2026-11-05 11:27:45.697 [main] [INFO] WebElement - Clicking projectRowMoreBtn 
+2026-11-05 11:27:45.735 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 250ms): Waiting for the row overflow menu
+2026-11-05 11:27:45.747 [main] [INFO] WaitUtil - Condition met after 11ms: Waiting for the row overflow menu
+2026-11-05 11:27:45.842 [main] [INFO] WebElement - Waiting for projectRowAction to be visible (timeout: 4000ms)
+2026-11-05 11:27:49.849 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:27:49.854 [main] [INFO] WaitUtil - Condition met after 5ms: Waiting for the loading overlay to disappear
+2026-11-05 11:27:49.854 [main] [INFO] WebElement - Waiting for projectRowMoreBtn to be visible (timeout: 250ms)
+2026-11-05 11:27:49.860 [main] [INFO] WebElement - Clicking projectRowMoreBtn 
+2026-11-05 11:27:49.896 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:27:49.904 [main] [INFO] WaitUtil - Condition met after 8ms: Waiting for the loading overlay to disappear
+2026-11-05 11:27:49.904 [main] [INFO] WebElement - Waiting for overflowMenuItem to be visible (timeout: 10000ms)
+2026-11-05 11:27:49.989 [main] [INFO] WebElement - Clicking with increased timeout overflowMenuItem 
+2026-11-05 11:27:50.349 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 500ms): Waiting for deploy modal to appear
+2026-11-05 11:27:50.349 [main] [INFO] WebElement - Waiting for deployModal to be visible (timeout: 2000ms)
+2026-11-05 11:27:50.422 [main] [INFO] WaitUtil - Condition met after 73ms: Waiting for deploy modal to appear
+2026-11-05 11:27:50.422 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 500ms): Waiting for deploy modal to appear
+2026-11-05 11:27:50.422 [main] [INFO] WebElement - Waiting for deployModal to be visible (timeout: 2000ms)
+2026-11-05 11:27:50.449 [main] [INFO] WaitUtil - Condition met after 27ms: Waiting for deploy modal to appear
+2026-11-05 11:27:50.449 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:27:50.463 [main] [INFO] WaitUtil - Condition met after 14ms: Waiting for the loading overlay to disappear
+2026-11-05 11:27:50.463 [main] [INFO] WebElement - Waiting for repositorySelect to be visible (timeout: 250ms)
+2026-11-05 11:27:50.477 [main] [INFO] WebElement - Clicking repositorySelect 
+2026-11-05 11:27:50.782 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:27:50.796 [main] [INFO] WaitUtil - Condition met after 14ms: Waiting for the loading overlay to disappear
+2026-11-05 11:27:50.796 [main] [INFO] WebElement - Waiting for firstDropdownOption to be visible (timeout: 250ms)
+2026-11-05 11:27:50.842 [main] [INFO] WebElement - Clicking firstDropdownOption 
+2026-11-05 11:27:51.109 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:27:51.129 [main] [INFO] WaitUtil - Condition met after 20ms: Waiting for the loading overlay to disappear
+2026-11-05 11:27:51.129 [main] [INFO] WebElement - Waiting for deploymentNameSelect to be visible (timeout: 250ms)
+2026-11-05 11:27:51.163 [main] [INFO] WebElement - Clicking deploymentNameSelect 
+2026-11-05 11:27:51.284 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:27:51.298 [main] [INFO] WaitUtil - Condition met after 14ms: Waiting for the loading overlay to disappear
+2026-11-05 11:27:51.298 [main] [INFO] WebElement - Waiting for deploymentNameSearchInput to be visible (timeout: 250ms)
+2026-11-05 11:27:51.316 [main] [INFO] WebElement - Filling Sequentially deploymentNameSearchInput with text: &#x27;Deploy-076958&#x27;
+2026-11-05 11:27:51.509 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:27:51.518 [main] [INFO] WaitUtil - Condition met after 9ms: Waiting for the loading overlay to disappear
+2026-11-05 11:27:51.519 [main] [INFO] WebElement - Waiting for deploymentNameSearchInput to be visible (timeout: 250ms)
+2026-11-05 11:27:51.528 [main] [INFO] WebElement - Pressing Tab on deploymentNameSearchInput
+2026-11-05 11:27:51.557 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:27:51.569 [main] [INFO] WaitUtil - Condition met after 12ms: Waiting for the loading overlay to disappear
+2026-11-05 11:27:51.569 [main] [INFO] WebElement - Waiting for commentTextarea to be visible (timeout: 250ms)
+2026-11-05 11:27:51.580 [main] [INFO] WebElement - Filling Sequentially commentTextarea with text: &#x27;Deploy of a project without a descriptor&#x27;
+2026-11-05 11:27:51.862 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:27:51.871 [main] [INFO] WaitUtil - Condition met after 9ms: Waiting for the loading overlay to disappear
+2026-11-05 11:27:51.872 [main] [INFO] WebElement - Waiting for deployButton to be visible (timeout: 250ms)
+2026-11-05 11:27:51.881 [main] [INFO] WebElement - Clicking deployButton 
+2026-11-05 11:27:51.981 [main] [INFO] CorePage - domain.ui.webstudio.pages.mainpages.DeploymentsHomePage was opened.
+2026-11-05 11:27:52.213 [main] [INFO] WebElement - Waiting for deploymentsHome to be visible (timeout: 20000ms)
+2026-11-05 11:27:52.460 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-05 11:27:52.544 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:27:52.570 [main] [INFO] WaitUtil - Condition met after 26ms: Waiting for the loading overlay to disappear
+2026-11-05 11:27:52.570 [main] [INFO] WebElement - Waiting for deploymentsHome to be visible (timeout: 20000ms)
+2026-11-05 11:27:52.585 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-05 11:27:52.591 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:27:52.596 [main] [INFO] WaitUtil - Condition met after 5ms: Waiting for the loading overlay to disappear
+2026-11-05 11:27:52.597 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 300ms): Waiting for the deployments list to leave its loading state
+2026-11-05 11:27:52.597 [main] [INFO] WebElement - Waiting for deploymentsTable to be visible (timeout: 1000ms)
+2026-11-05 11:27:53.602 [main] [INFO] WebElement - Waiting for deploymentsEmpty to be visible (timeout: 500ms)
+2026-11-05 11:27:53.607 [main] [INFO] WaitUtil - Condition met after 1010ms: Waiting for the deployments list to leave its loading state
+2026-11-05 11:27:53.607 [main] [INFO] WebElement - Waiting for deploymentsError to be visible (timeout: 500ms)
+2026-11-05 11:27:54.109 [main] [INFO] WebElement - Waiting for deploymentsTable to be visible (timeout: 1000ms)
+2026-11-05 11:27:55.547 [main] [INFO] PlaywrightTracing - Playwright trace saved for test testDeployWorksForAProjectWithoutDescriptor: 622512 bytes
+2026-11-05 11:27:55.553 [main] [INFO] DebugArtifactUtil - Playwright trace recorded for test: testDeployWorksForAProjectWithoutDescriptor (size: 622512 bytes)
+2026-11-05 11:27:55.612 [main] [INFO] DebugArtifactUtil - Screenshot recorded: testDeployWorksForAProjectWithoutDescriptor_20261105_112755.png
+2026-11-05 11:27:55.614 [main] [INFO] DebugArtifactUtil - Execution info recorded: execution-info-6937582529753571187.txt
+2026-11-05 11:27:55.615 [main] [INFO] DebugArtifactUtil - Retrieving video bytes for test: testDeployWorksForAProjectWithoutDescriptor
+2026-11-05 11:27:56.171 [main] [INFO] DebugArtifactUtil - Successfully retrieved 4913151 bytes of video data for test: testDeployWorksForAProjectWithoutDescriptor
+2026-11-05 11:27:56.179 [main] [INFO] DebugArtifactUtil - Video recorded for test: testDeployWorksForAProjectWithoutDescriptor (size: 4913151 bytes)
+2026-11-05 11:27:56.194 [main] [INFO] LogsUtil - Logs saved to host: /home/runner/work/openl-tests/openl-tests/target/logs/app-log-887222.txt
+2026-11-05 11:27:56.195 [main] [INFO] DockerDriverPool - Closing Playwright Docker for thread: main
+2026-11-05 11:27:56.582 [main] [INFO] WaitUtil - Sleeping for 2000ms: Waiting for Docker daemon to complete resource cleanup</pre></div><div class='panel' id='t0-3' hidden><p class='hint'>Application container log (OpenL Studio / Rule Services). Showing 21 lines with WARN, ERROR or exceptions out of 147 · <a href='attachments/shard-03/tests.ui.webstudio.repository.TestDeployProjectWithoutDescriptorUi/testDeployWorksForAProjectWithoutDescriptor/1793878076195-app-log-887222.txt' target='_blank'>full log</a></p><pre class='log'>WARN  : Use the &quot;forwarded&quot; module instead.
+{&quot;@timestamp&quot;:&quot;2026-11-05T11:26:29.804Z&quot;,&quot;ecs.version&quot;:&quot;1.2.0&quot;,&quot;log.level&quot;:&quot;WARN&quot;,&quot;message&quot;:&quot;Does not exist: /opt/openl/app/environments&quot;,&quot;process.thread.name&quot;:&quot;main&quot;,&quot;log.logger&quot;:&quot;org.eclipse.jetty.deploy.DeploymentScanner&quot;,&quot;service.version&quot;:&quot;0&quot;,&quot;service.environment&quot;:&quot;production&quot;,&quot;service.name&quot;:&quot;OpenL&quot;,&quot;host.name&quot;:&quot;64e5e36d1cf2&quot;}
+{&quot;@timestamp&quot;:&quot;2026-11-05T11:26:34.918Z&quot;,&quot;ecs.version&quot;:&quot;1.2.0&quot;,&quot;log.level&quot;:&quot;ERROR&quot;,&quot;message&quot;:&quot;Migration of locks failed.&quot;,&quot;process.thread.name&quot;:&quot;main&quot;,&quot;log.logger&quot;:&quot;org.openl.rules.webstudio.Migrator&quot;,&quot;error.type&quot;:&quot;java.nio.file.NoSuchFileException&quot;,&quot;error.message&quot;:&quot;/opt/openl/shared/user-workspace&quot;,&quot;error.stack_trace&quot;:&quot;java.nio.file.NoSuchFileException: /opt/openl/shared/user-workspace\n\tat java.base/sun.nio.fs.UnixException.translateToIOException(Unknown Source)\n\tat java.base/sun.nio.fs.UnixException.rethrowAsIOException(Unknown Source)\n\tat java.base/sun.nio.fs.UnixException.rethrowAsIOException(Unknown Source)\n\tat java.base/sun.nio.fs.UnixFileAttributeViews$Basic.readAttributes(Unknown Source)\n\tat java.base/sun.nio.fs.UnixFileSystemProvider.readAttributes(Unknown Source)\n\tat java.base/sun.nio.fs.LinuxFileSystemProvider.readAttributes(Unknown Source)\n\tat java.base/java.nio.file.Files.readAttributes(Unknown Source)\n\tat java.base/java.nio.file.FileTreeWalker.getAttributes(Unknown Source)\n\tat java.base/java.nio.file.FileTreeWalker.visit(Unknown Source)\n\tat java.base/java.nio.file.FileTreeWalker.walk(Unknown Source)\n\tat java.base/java.nio.file.Files.walkFileTree(Unknown Source)\n\tat org.openl.rules.webstudio.Migrator.migrateNonFlatProjectSettings(Migrator.java:640)\n\tat org.openl.rules.webstudio.Migrator.migrateTo524(Migrator.java:551)\n\tat org.openl.rules.webstudio.Migrator.migrate(Migrator.java:86)\n\tat org.openl.rules.webstudio.web.servlet.SpringInitializer.contextInitialized(SpringInitializer.java:137)\n\tat org.eclipse.jetty.ee10.servlet.ServletContextHandler.callContextInitialized(ServletContextHandler.java:1622)\n\tat org.eclipse.jetty.ee10.servlet.ServletContextHandler.contextInitialized(ServletContextHandler.java:501)\n\tat org.eclipse.jetty.ee10.servlet.ServletHandler.initialize(ServletHandler.java:677)\n\tat org.eclipse.jetty.ee10.servlet.ServletContextHandler.startContext(ServletContextHandler.java:1356)\n\tat org.eclipse.jetty.ee10.webapp.WebAppContext.startWebapp(WebAppContext.java:1435)\n\tat org.eclipse.jetty.ee10.webapp.WebAppContext.startContext(WebAppContext.java:1394)\n\tat org.eclipse.jetty.ee10.servlet.ServletContextHandler.lambda$doStart$0(ServletContextHandler.java:1074)\n\tat org.eclipse.jetty.server.handler.ContextHandler$ScopedContext.call(ContextHandler.java:1665)\n\tat org.eclipse.jetty.ee10.servlet.ServletContextHandler.doStart(ServletContextHandler.java:1071)\n\tat org.eclipse.jetty.ee10.webapp.WebAppContext.doStart(WebAppContext.java:523)\n\tat org.eclipse.jetty.util.component.AbstractLifeCycle.start(AbstractLifeCycle.java:92)\n\tat org.eclipse.jetty.deploy.StandardDeployer.deploy(StandardDeployer.java:118)\n\tat org.eclipse.jetty.deploy.DeploymentScanner.performActions(DeploymentScanner.java:885)\n\tat org.eclipse.jetty.deploy.DeploymentScanner.pathsChanged(DeploymentScanner.java:612)\n\tat org.eclipse.jetty.util.Scanner.reportDifferences(Scanner.java:918)\n\tat org.eclipse.jetty.util.Scanner.scan(Scanner.java:817)\n\tat org.eclipse.jetty.util.Scanner.startScanning(Scanner.java:706)\n\tat org.eclipse.jetty.util.Scanner.doStart(Scanner.java:678)\n\tat org.eclipse.jetty.util.component.AbstractLifeCycle.start(AbstractLifeCycle.java:92)\n\tat org.eclipse.jetty.util.component.ContainerLifeCycle.start(ContainerLifeCycle.java:170)\n\tat org.eclipse.jetty.util.component.ContainerLifeCycle.doStart(ContainerLifeCycle.java:121)\n\tat org.eclipse.jetty.deploy.DeploymentScanner.doStart(DeploymentScanner.java:759)\n\tat org.eclipse.jetty.util.component.AbstractLifeCycle.start(AbstractLifeCycle.java:92)\n\tat org.eclipse.jetty.util.component.ContainerLifeCycle.start(ContainerLifeCycle.java:170)\n\tat org.eclipse.jetty.server.Server.start(Server.java:689)\n\tat org.eclipse.jetty.util.component.ContainerLifeCycle.doStart(ContainerLifeCycle.java:121)\n\tat org.eclipse.jetty.server.Handler$Abstract.doStart(Handler.java:545)\n\tat org.eclipse.jetty.server.Server.doStart(Server.java:630)\n\tat org.eclipse.jetty.util.component.AbstractLifeCycle.start(AbstractLifeCycle.java:92)\n\tat org.eclipse.jetty.xml.XmlConfiguration.main(XmlConfiguration.java:2134)\n\tat java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source)\n\tat java.base/java.lang.reflect.Method.invoke(Unknown Source)\n\tat org.eclipse.jetty.start.Main.invokeMain(Main.java:312)\n\tat org.eclipse.jetty.start.Main.start(Main.java:603)\n\tat org.eclipse.jetty.start.Main.main(Main.java:82)\n&quot;,&quot;service.version&quot;:&quot;0&quot;,&quot;service.environment&quot;:&quot;production&quot;,&quot;service.name&quot;:&quot;OpenL&quot;,&quot;host.name&quot;:&quot;64e5e36d1cf2&quot;}
+{&quot;@timestamp&quot;:&quot;2026-11-05T11:26:36.467Z&quot;,&quot;ecs.version&quot;:&quot;1.2.0&quot;,&quot;log.level&quot;:&quot;WARN&quot;,&quot;message&quot;:&quot;Bean &#x27;projectLockInterceptor&#x27; of type [org.openl.studio.projects.lock.ProjectLockInterceptor$$SpringCGLIB$$0] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [projectLockPostProcessor]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.&quot;,&quot;process.thread.name&quot;:&quot;main&quot;,&quot;log.logger&quot;:&quot;org.springframework.context.support.PostProcessorRegistrationDelegate$BeanPostProcessorChecker&quot;,&quot;service.version&quot;:&quot;0&quot;,&quot;service.environment&quot;:&quot;production&quot;,&quot;service.name&quot;:&quot;OpenL&quot;,&quot;host.name&quot;:&quot;64e5e36d1cf2&quot;}
+{&quot;@timestamp&quot;:&quot;2026-11-05T11:26:36.494Z&quot;,&quot;ecs.version&quot;:&quot;1.2.0&quot;,&quot;log.level&quot;:&quot;WARN&quot;,&quot;message&quot;:&quot;Bean &#x27;commitInfoInterceptor&#x27; of type [org.openl.studio.security.CommitInfoInterceptor] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [commitInfoPostProcessor]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.&quot;,&quot;process.thread.name&quot;:&quot;main&quot;,&quot;log.logger&quot;:&quot;org.springframework.context.support.PostProcessorRegistrationDelegate$BeanPostProcessorChecker&quot;,&quot;service.version&quot;:&quot;0&quot;,&quot;service.environment&quot;:&quot;production&quot;,&quot;service.name&quot;:&quot;OpenL&quot;,&quot;host.name&quot;:&quot;64e5e36d1cf2&quot;}
+{&quot;@timestamp&quot;:&quot;2026-11-05T11:26:43.660Z&quot;,&quot;ecs.version&quot;:&quot;1.2.0&quot;,&quot;log.level&quot;:&quot;WARN&quot;,&quot;message&quot;:&quot;Unable to proxy interface-implementing method [public final java.lang.String org.openl.config.ReadOnlyPropertiesHolder.getProperty(java.lang.String)] because it is marked as final, consider using interface-based JDK proxies instead.&quot;,&quot;process.thread.name&quot;:&quot;main&quot;,&quot;log.logger&quot;:&quot;org.springframework.aop.framework.CglibAopProxy&quot;,&quot;service.version&quot;:&quot;0&quot;,&quot;service.environment&quot;:&quot;production&quot;,&quot;service.name&quot;:&quot;OpenL&quot;,&quot;host.name&quot;:&quot;64e5e36d1cf2&quot;}
+{&quot;@timestamp&quot;:&quot;2026-11-05T11:26:43.660Z&quot;,&quot;ecs.version&quot;:&quot;1.2.0&quot;,&quot;log.level&quot;:&quot;WARN&quot;,&quot;message&quot;:&quot;Unable to proxy interface-implementing method [public final void org.openl.config.ReadOnlyPropertiesHolder.setProperty(java.lang.String,java.lang.Object)] because it is marked as final, consider using interface-based JDK proxies instead.&quot;,&quot;process.thread.name&quot;:&quot;main&quot;,&quot;log.logger&quot;:&quot;org.springframework.aop.framework.CglibAopProxy&quot;,&quot;service.version&quot;:&quot;0&quot;,&quot;service.environment&quot;:&quot;production&quot;,&quot;service.name&quot;:&quot;OpenL&quot;,&quot;host.name&quot;:&quot;64e5e36d1cf2&quot;}
+{&quot;@timestamp&quot;:&quot;2026-11-05T11:26:44.512Z&quot;,&quot;ecs.version&quot;:&quot;1.2.0&quot;,&quot;log.level&quot;:&quot;WARN&quot;,&quot;message&quot;:&quot;Global AuthenticationManager configured with an AuthenticationProvider bean. UserDetailsService beans will not be used by Spring Security for automatically configuring username/password login. Consider removing the AuthenticationProvider bean. Alternatively, consider using the UserDetailsService in a manually instantiated DaoAuthenticationProvider. If the current configuration is intentional, to turn off this warning, increase the logging level of &#x27;org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer&#x27; to ERROR&quot;,&quot;process.thread.name&quot;:&quot;main&quot;,&quot;log.logger&quot;:&quot;org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer&quot;,&quot;service.version&quot;:&quot;0&quot;,&quot;service.environment&quot;:&quot;production&quot;,&quot;service.name&quot;:&quot;OpenL&quot;,&quot;host.name&quot;:&quot;64e5e36d1cf2&quot;}
+{&quot;@timestamp&quot;:&quot;2026-11-05T11:27:26.039Z&quot;,&quot;ecs.version&quot;:&quot;1.2.0&quot;,&quot;log.level&quot;:&quot;WARN&quot;,&quot;message&quot;:&quot;Mapping for external folder &#x27;DESIGN/rules/project-170554/rules.xml&#x27; is not found. Use it as is.&quot;,&quot;process.thread.name&quot;:&quot;qtp674019271-40&quot;,&quot;log.logger&quot;:&quot;org.openl.rules.workspace.dtr.impl.MappedRepository&quot;,&quot;service.version&quot;:&quot;0&quot;,&quot;service.environment&quot;:&quot;production&quot;,&quot;service.name&quot;:&quot;OpenL&quot;,&quot;host.name&quot;:&quot;64e5e36d1cf2&quot;}
+{&quot;@timestamp&quot;:&quot;2026-11-05T11:27:26.040Z&quot;,&quot;ecs.version&quot;:&quot;1.2.0&quot;,&quot;log.level&quot;:&quot;WARN&quot;,&quot;message&quot;:&quot;Mapping for external folder &#x27;DESIGN/rules/project-170554/rules.xml&#x27; is not found. Use it as is.&quot;,&quot;process.thread.name&quot;:&quot;qtp674019271-40&quot;,&quot;log.logger&quot;:&quot;org.openl.rules.workspace.dtr.impl.MappedRepository&quot;,&quot;service.version&quot;:&quot;0&quot;,&quot;service.environment&quot;:&quot;production&quot;,&quot;service.name&quot;:&quot;OpenL&quot;,&quot;host.name&quot;:&quot;64e5e36d1cf2&quot;}
+{&quot;@timestamp&quot;:&quot;2026-11-05T11:27:26.042Z&quot;,&quot;ecs.version&quot;:&quot;1.2.0&quot;,&quot;log.level&quot;:&quot;WARN&quot;,&quot;message&quot;:&quot;Mapping for external folder &#x27;DESIGN/rules/project-170554/rules/Main.xlsx&#x27; is not found. Use it as is.&quot;,&quot;process.thread.name&quot;:&quot;qtp674019271-40&quot;,&quot;log.logger&quot;:&quot;org.openl.rules.workspace.dtr.impl.MappedRepository&quot;,&quot;service.version&quot;:&quot;0&quot;,&quot;service.environment&quot;:&quot;production&quot;,&quot;service.name&quot;:&quot;OpenL&quot;,&quot;host.name&quot;:&quot;64e5e36d1cf2&quot;}
+{&quot;@timestamp&quot;:&quot;2026-11-05T11:27:26.043Z&quot;,&quot;ecs.version&quot;:&quot;1.2.0&quot;,&quot;log.level&quot;:&quot;WARN&quot;,&quot;message&quot;:&quot;Mapping for external folder &#x27;DESIGN/rules/project-170554/rules/Main.xlsx&#x27; is not found. Use it as is.&quot;,&quot;process.thread.name&quot;:&quot;qtp674019271-40&quot;,&quot;log.logger&quot;:&quot;org.openl.rules.workspace.dtr.impl.MappedRepository&quot;,&quot;service.version&quot;:&quot;0&quot;,&quot;service.environment&quot;:&quot;production&quot;,&quot;service.name&quot;:&quot;OpenL&quot;,&quot;host.name&quot;:&quot;64e5e36d1cf2&quot;}
+{&quot;@timestamp&quot;:&quot;2026-11-05T11:27:27.349Z&quot;,&quot;ecs.version&quot;:&quot;1.2.0&quot;,&quot;log.level&quot;:&quot;INFO&quot;,&quot;message&quot;:&quot;SQL error: ERROR: relation \&quot;openl_repository\&quot; does not exist\n  Position: 64&quot;,&quot;process.thread.name&quot;:&quot;qtp674019271-34&quot;,&quot;log.logger&quot;:&quot;org.openl.rules.repository.db.DBRepository&quot;,&quot;service.version&quot;:&quot;0&quot;,&quot;service.environment&quot;:&quot;production&quot;,&quot;service.name&quot;:&quot;OpenL&quot;,&quot;host.name&quot;:&quot;64e5e36d1cf2&quot;}
+{&quot;@timestamp&quot;:&quot;2026-11-05T11:27:43.816Z&quot;,&quot;ecs.version&quot;:&quot;1.2.0&quot;,&quot;log.level&quot;:&quot;WARN&quot;,&quot;message&quot;:&quot;Mapping for external folder &#x27;project-170554&#x27; is not found. Use it as is.&quot;,&quot;process.thread.name&quot;:&quot;qtp674019271-32&quot;,&quot;log.logger&quot;:&quot;org.openl.rules.workspace.dtr.impl.MappedRepository&quot;,&quot;service.version&quot;:&quot;0&quot;,&quot;service.environment&quot;:&quot;production&quot;,&quot;service.name&quot;:&quot;OpenL&quot;,&quot;host.name&quot;:&quot;64e5e36d1cf2&quot;}
+{&quot;@timestamp&quot;:&quot;2026-11-05T11:27:43.819Z&quot;,&quot;ecs.version&quot;:&quot;1.2.0&quot;,&quot;log.level&quot;:&quot;WARN&quot;,&quot;message&quot;:&quot;Mapping for internal folder &#x27;project-170554&#x27; is not found. Use it as is.&quot;,&quot;process.thread.name&quot;:&quot;qtp674019271-32&quot;,&quot;log.logger&quot;:&quot;org.openl.rules.workspace.dtr.impl.MappedRepository&quot;,&quot;service.version&quot;:&quot;0&quot;,&quot;service.environment&quot;:&quot;production&quot;,&quot;service.name&quot;:&quot;OpenL&quot;,&quot;host.name&quot;:&quot;64e5e36d1cf2&quot;}
+{&quot;@timestamp&quot;:&quot;2026-11-05T11:27:45.234Z&quot;,&quot;ecs.version&quot;:&quot;1.2.0&quot;,&quot;log.level&quot;:&quot;WARN&quot;,&quot;message&quot;:&quot;Mapping for external folder &#x27;project-170554&#x27; is not found. Use it as is.&quot;,&quot;process.thread.name&quot;:&quot;qtp674019271-31&quot;,&quot;log.logger&quot;:&quot;org.openl.rules.workspace.dtr.impl.MappedRepository&quot;,&quot;service.version&quot;:&quot;0&quot;,&quot;service.environment&quot;:&quot;production&quot;,&quot;service.name&quot;:&quot;OpenL&quot;,&quot;host.name&quot;:&quot;64e5e36d1cf2&quot;}
+{&quot;@timestamp&quot;:&quot;2026-11-05T11:27:45.240Z&quot;,&quot;ecs.version&quot;:&quot;1.2.0&quot;,&quot;log.level&quot;:&quot;WARN&quot;,&quot;message&quot;:&quot;Mapping for internal folder &#x27;project-170554&#x27; is not found. Use it as is.&quot;,&quot;process.thread.name&quot;:&quot;qtp674019271-31&quot;,&quot;log.logger&quot;:&quot;org.openl.rules.workspace.dtr.impl.MappedRepository&quot;,&quot;service.version&quot;:&quot;0&quot;,&quot;service.environment&quot;:&quot;production&quot;,&quot;service.name&quot;:&quot;OpenL&quot;,&quot;host.name&quot;:&quot;64e5e36d1cf2&quot;}
+{&quot;@timestamp&quot;:&quot;2026-11-05T11:27:51.945Z&quot;,&quot;ecs.version&quot;:&quot;1.2.0&quot;,&quot;log.level&quot;:&quot;WARN&quot;,&quot;message&quot;:&quot;Mapping for external folder &#x27;project-170554&#x27; is not found. Use it as is.&quot;,&quot;process.thread.name&quot;:&quot;qtp674019271-31&quot;,&quot;log.logger&quot;:&quot;org.openl.rules.workspace.dtr.impl.MappedRepository&quot;,&quot;service.version&quot;:&quot;0&quot;,&quot;service.environment&quot;:&quot;production&quot;,&quot;service.name&quot;:&quot;OpenL&quot;,&quot;host.name&quot;:&quot;64e5e36d1cf2&quot;}
+{&quot;@timestamp&quot;:&quot;2026-11-05T11:27:51.949Z&quot;,&quot;ecs.version&quot;:&quot;1.2.0&quot;,&quot;log.level&quot;:&quot;WARN&quot;,&quot;message&quot;:&quot;Mapping for internal folder &#x27;project-170554&#x27; is not found. Use it as is.&quot;,&quot;process.thread.name&quot;:&quot;qtp674019271-31&quot;,&quot;log.logger&quot;:&quot;org.openl.rules.workspace.dtr.impl.MappedRepository&quot;,&quot;service.version&quot;:&quot;0&quot;,&quot;service.environment&quot;:&quot;production&quot;,&quot;service.name&quot;:&quot;OpenL&quot;,&quot;host.name&quot;:&quot;64e5e36d1cf2&quot;}
+{&quot;@timestamp&quot;:&quot;2026-11-05T11:27:52.007Z&quot;,&quot;ecs.version&quot;:&quot;1.2.0&quot;,&quot;log.level&quot;:&quot;ERROR&quot;,&quot;message&quot;:&quot;Project loading from repository was failed! Project with name &#x27;project-170554&#x27; in deploy configuration &#x27;Deploy-076958&#x27; has been skipped.&quot;,&quot;process.thread.name&quot;:&quot;qtp674019271-31&quot;,&quot;log.logger&quot;:&quot;org.openl.rules.webstudio.web.repository.DeploymentManager&quot;,&quot;error.type&quot;:&quot;java.nio.file.AccessDeniedException&quot;,&quot;error.message&quot;:&quot;Access denied&quot;,&quot;error.stack_trace&quot;:&quot;java.nio.file.AccessDeniedException: Access denied\n\tat org.openl.rules.webstudio.security.SecureDesignTimeRepositoryImpl.getProjectByPath(SecureDesignTimeRepositoryImpl.java:134)\n\tat org.openl.rules.webstudio.web.repository.DeploymentManager.readApiVersion(DeploymentManager.java:284)\n\tat org.openl.rules.webstudio.web.repository.DeploymentManager.getApiVersion(DeploymentManager.java:256)\n\tat org.openl.rules.webstudio.web.repository.DeploymentManager.deploy(DeploymentManager.java:71)\n\tat org.openl.studio.deployment.service.DeploymentServiceImpl.deploy(DeploymentServiceImpl.java:182)\n\tat org.openl.studio.deployment.rest.controller.DeploymentsController.deploy(DeploymentsController.java:111)\n\tat java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source)\n\tat java.base/java.lang.reflect.Method.invoke(Unknown Source)\n\tat org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:360)\n\tat org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMethodInvocation.java:196)\n\tat org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:163)\n\tat org.openl.studio.security.CommitInfoInterceptor.invoke(CommitInfoInterceptor.java:42)\n\tat org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:184)\n\tat org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:728)\n\tat org.openl.studio.deployment.rest.controller.DeploymentsController$$SpringCGLIB$$0.deploy(&lt;generated&gt;)\n\tat java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source)\n\tat java.base/java.lang.reflect.Method.invoke(Unknown Source)\n\tat org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:258)\n\tat org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:191)\n\tat org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:118)\n\tat org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:991)\n\tat org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:896)\n\tat org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:87)\n\tat org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1089)\n\tat org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:979)\n\tat org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014)\n\tat org.springframework.web.servlet.FrameworkServlet.doPost(FrameworkServlet.java:914)\n\tat jakarta.servlet.http.HttpServlet.service(HttpServlet.java:547)\n\tat org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885)\n\tat jakarta.servlet.http.HttpServlet.service(HttpServlet.java:614)\n\tat org.eclipse.jetty.ee10.servlet.ServletHolder$NotAsync.service(ServletHolder.java:1388)\n\tat org.eclipse.jetty.ee10.servlet.ServletHolder.handle(ServletHolder.java:754)\n\tat org.eclipse.jetty.ee10.servlet.ServletHandler$ChainEnd.doFilter(ServletHandler.java:1642)\n\tat org.openl.studio.projects.messaging.ChangeOriginFilter.doFilterInternal(ChangeOriginFilter.java:49)\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\n\tat org.eclipse.jetty.ee10.servlet.FilterHolder.doFilter(FilterHolder.java:205)\n\tat org.eclipse.jetty.ee10.servlet.ServletHandler$Chain.doFilter(ServletHandler.java:1601)\n\tat org.springframework.security.web.FilterChainProxy.lambda$doFilterInternal$3(FilterChainProxy.java:231)\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:370)\n\tat org.springframework.security.web.access.intercept.AuthorizationFilter.doFilter(AuthorizationFilter.java:101)\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:379)\n\tat org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:125)\n\tat org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:119)\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:379)\n\tat org.springframework.security.web.authentication.AnonymousAuthenticationFilter.doFilter(AnonymousAuthenticationFilter.java:100)\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:379)\n\tat org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter.doFilter(SecurityContextHolderAwareRequestFilter.java:179)\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:379)\n\tat org.springframework.security.web.authentication.www.BasicAuthenticationFilter.doFilterInternal(BasicAuthenticationFilter.java:181)\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:379)\n\tat org.openl.studio.security.pat.filter.PatAuthenticationFilter.doFilterInternal(PatAuthenticationFilter.java:93)\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:379)\n\tat org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:107)\n\tat org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:93)\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:379)\n\tat org.springframework.security.web.header.HeaderWriterFilter.doHeadersAfter(HeaderWriterFilter.java:90)\n\tat org.springframework.security.web.header.HeaderWriterFilter.doFilterInternal(HeaderWriterFilter.java:75)\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:379)\n\tat org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:82)\n\tat org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:69)\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:379)\n\tat org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter.doFilterInternal(WebAsyncManagerIntegrationFilter.java:62)\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:379)\n\tat org.springframework.security.web.session.DisableEncodeUrlFilter.doFilterInternal(DisableEncodeUrlFilter.java:42)\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:379)\n\tat org.springframework.security.web.FilterChainProxy.doFilterInternal(FilterChainProxy.java:233)\n\tat org.springframework.security.web.FilterChainProxy.doFilter(FilterChainProxy.java:191)\n\tat org.openl.studio.security.SecurityFilter.doFilter(SecurityFilter.java:41)\n\tat org.eclipse.jetty.ee10.servlet.FilterHolder.doFilter(FilterHolder.java:205)\n\tat org.eclipse.jetty.ee10.servlet.ServletHandler$Chain.doFilter(ServletHandler.java:1601)\n\tat org.openl.rules.webstudio.web.servlet.CrossSiteRequestFilter.doFilter(CrossSiteRequestFilter.java:92)\n\tat org.eclipse.jetty.ee10.servlet.FilterHolder.doFilter(FilterHolder.java:205)\n\tat org.eclipse.jetty.ee10.servlet.ServletHandler$Chain.doFilter(ServletHandler.java:1601)\n\tat de.qaware.xff.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:101)\n\tat org.eclipse.jetty.ee10.servlet.FilterHolder.doFilter(FilterHolder.java:205)\n\tat org.eclipse.jetty.ee10.servlet.ServletHandler$Chain.doFilter(ServletHandler.java:1601)\n\tat org.openl.rules.webstudio.web.servlet.CorsFilter.doFilter(CorsFilter.java:36)\n\tat org.eclipse.jetty.ee10.servlet.FilterHolder.doFilter(FilterHolder.java:205)\n\tat org.eclipse.jetty.ee10.servlet.ServletHandler$Chain.doFilter(ServletHandler.java:1601)\n\tat org.eclipse.jetty.ee10.websocket.servlet.WebSocketUpgradeFilter.doFilter(WebSocketUpgradeFilter.java:199)\n\tat org.eclipse.jetty.ee10.servlet.FilterHolder.doFilter(FilterHolder.java:205)\n\tat org.eclipse.jetty.ee10.servlet.ServletHandler$Chain.doFilter(ServletHandler.java:1601)\n\tat org.eclipse.jetty.ee10.servlet.ServletHandler$MappedServlet.handle(ServletHandler.java:1556)\n\tat org.eclipse.jetty.ee10.servlet.ServletChannel.dispatch(ServletChannel.java:871)\n\tat org.eclipse.jetty.ee10.servlet.ServletChannel.handle(ServletChannel.java:449)\n\tat org.eclipse.jetty.ee10.servlet.ServletHandler.handle(ServletHandler.java:469)\n\tat org.eclipse.jetty.security.SecurityHandler.handle(SecurityHandler.java:548)\n\tat org.eclipse.jetty.ee10.servlet.SessionHandler.handle(SessionHandler.java:719)\n\tat org.eclipse.jetty.server.handler.ContextHandler.handle(ContextHandler.java:1253)\n\tat org.eclipse.jetty.server.handler.ContextHandlerCollection.handle(ContextHandlerCollection.java:148)\n\tat org.eclipse.jetty.server.Server.handle(Server.java:197)\n\tat org.eclipse.jetty.server.internal.HttpChannelState$HandlerInvoker.run(HttpChannelState.java:804)\n\tat org.eclipse.jetty.server.internal.HttpConnection.onFillable(HttpConnection.java:420)\n\tat org.eclipse.jetty.server.internal.HttpConnection$FillableCallback.succeeded(HttpConnection.java:1789)\n\tat org.eclipse.jetty.io.FillInterest.fillable(FillInterest.java:105)\n\tat org.eclipse.jetty.io.SelectableChannelEndPoint$1.run(SelectableChannelEndPoint.java:54)\n\tat org.eclipse.jetty.util.thread.strategy.AdaptiveExecutionStrategy.runTask(AdaptiveExecutionStrategy.java:492)\n\tat org.eclipse.jetty.util.thread.strategy.AdaptiveExecutionStrategy.epcRunTask(AdaptiveExecutionStrategy.java:428)\n\tat org.eclipse.jetty.util.thread.strategy.AdaptiveExecutionStrategy.consumeTask(AdaptiveExecutionStrategy.java:401)\n\tat org.eclipse.jetty.util.thread.strategy.AdaptiveExecutionStrategy.tryProduce(AdaptiveExecutionStrategy.java:255)\n\tat org.eclipse.jetty.util.thread.strategy.AdaptiveExecutionStrategy.run(AdaptiveExecutionStrategy.java:204)\n\tat org.eclipse.jetty.util.thread.ReservedThreadExecutor$ReservedThread.run(ReservedThreadExecutor.java:317)\n\tat org.eclipse.jetty.util.thread.QueuedThreadPool.runJob(QueuedThreadPool.java:1009)\n\tat org.eclipse.jetty.util.thread.QueuedThreadPool$Runner.doRunJob(QueuedThreadPool.java:1240)\n\tat org.eclipse.jetty.util.thread.QueuedThreadPool$Runner.run(QueuedThreadPool.java:1194)\n\tat java.base/java.lang.Thread.run(Unknown Source)\n&quot;,&quot;service.version&quot;:&quot;0&quot;,&quot;service.environment&quot;:&quot;production&quot;,&quot;service.name&quot;:&quot;OpenL&quot;,&quot;host.name&quot;:&quot;64e5e36d1cf2&quot;}
+{&quot;@timestamp&quot;:&quot;2026-11-05T11:27:52.047Z&quot;,&quot;ecs.version&quot;:&quot;1.2.0&quot;,&quot;log.level&quot;:&quot;ERROR&quot;,&quot;message&quot;:&quot;Failed to deploy: Access denied&quot;,&quot;process.thread.name&quot;:&quot;qtp674019271-31&quot;,&quot;log.logger&quot;:&quot;org.openl.studio.common.ApiExceptionControllerAdvice&quot;,&quot;error.type&quot;:&quot;org.openl.rules.webstudio.web.repository.DeploymentException&quot;,&quot;error.message&quot;:&quot;Failed to deploy: Access denied&quot;,&quot;error.stack_trace&quot;:&quot;org.openl.rules.webstudio.web.repository.DeploymentException: Failed to deploy: Access denied\n\tat org.openl.rules.webstudio.web.repository.DeploymentManager.deploy(DeploymentManager.java:110)\n\tat org.openl.studio.deployment.service.DeploymentServiceImpl.deploy(DeploymentServiceImpl.java:182)\n\tat org.openl.studio.deployment.rest.controller.DeploymentsController.deploy(DeploymentsController.java:111)\n\tat java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source)\n\tat java.base/java.lang.reflect.Method.invoke(Unknown Source)\n\tat org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:360)\n\tat org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMethodInvocation.java:196)\n\tat org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:163)\n\tat org.openl.studio.security.CommitInfoInterceptor.invoke(CommitInfoInterceptor.java:42)\n\tat org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:184)\n\tat org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:728)\n\tat org.openl.studio.deployment.rest.controller.DeploymentsController$$SpringCGLIB$$0.deploy(&lt;generated&gt;)\n\tat java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source)\n\tat java.base/java.lang.reflect.Method.invoke(Unknown Source)\n\tat org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:258)\n\tat org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:191)\n\tat org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:118)\n\tat org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:991)\n\tat org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:896)\n\tat org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:87)\n\tat org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1089)\n\tat org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:979)\n\tat org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014)\n\tat org.springframework.web.servlet.FrameworkServlet.doPost(FrameworkServlet.java:914)\n\tat jakarta.servlet.http.HttpServlet.service(HttpServlet.java:547)\n\tat org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885)\n\tat jakarta.servlet.http.HttpServlet.service(HttpServlet.java:614)\n\tat org.eclipse.jetty.ee10.servlet.ServletHolder$NotAsync.service(ServletHolder.java:1388)\n\tat org.eclipse.jetty.ee10.servlet.ServletHolder.handle(ServletHolder.java:754)\n\tat org.eclipse.jetty.ee10.servlet.ServletHandler$ChainEnd.doFilter(ServletHandler.java:1642)\n\tat org.openl.studio.projects.messaging.ChangeOriginFilter.doFilterInternal(ChangeOriginFilter.java:49)\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\n\tat org.eclipse.jetty.ee10.servlet.FilterHolder.doFilter(FilterHolder.java:205)\n\tat org.eclipse.jetty.ee10.servlet.ServletHandler$Chain.doFilter(ServletHandler.java:1601)\n\tat org.springframework.security.web.FilterChainProxy.lambda$doFilterInternal$3(FilterChainProxy.java:231)\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:370)\n\tat org.springframework.security.web.access.intercept.AuthorizationFilter.doFilter(AuthorizationFilter.java:101)\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:379)\n\tat org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:125)\n\tat org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:119)\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:379)\n\tat org.springframework.security.web.authentication.AnonymousAuthenticationFilter.doFilter(AnonymousAuthenticationFilter.java:100)\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:379)\n\tat org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter.doFilter(SecurityContextHolderAwareRequestFilter.java:179)\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:379)\n\tat org.springframework.security.web.authentication.www.BasicAuthenticationFilter.doFilterInternal(BasicAuthenticationFilter.java:181)\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:379)\n\tat org.openl.studio.security.pat.filter.PatAuthenticationFilter.doFilterInternal(PatAuthenticationFilter.java:93)\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:379)\n\tat org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:107)\n\tat org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:93)\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:379)\n\tat org.springframework.security.web.header.HeaderWriterFilter.doHeadersAfter(HeaderWriterFilter.java:90)\n\tat org.springframework.security.web.header.HeaderWriterFilter.doFilterInternal(HeaderWriterFilter.java:75)\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:379)\n\tat org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:82)\n\tat org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:69)\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:379)\n\tat org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter.doFilterInternal(WebAsyncManagerIntegrationFilter.java:62)\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:379)\n\tat org.springframework.security.web.session.DisableEncodeUrlFilter.doFilterInternal(DisableEncodeUrlFilter.java:42)\n\tat org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)\n\tat org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:379)\n\tat org.springframework.security.web.FilterChainProxy.doFilterInternal(FilterChainProxy.java:233)\n\tat org.springframework.security.web.FilterChainProxy.doFilter(FilterChainProxy.java:191)\n\tat org.openl.studio.security.SecurityFilter.doFilter(SecurityFilter.java:41)\n\tat org.eclipse.jetty.ee10.servlet.FilterHolder.doFilter(FilterHolder.java:205)\n\tat org.eclipse.jetty.ee10.servlet.ServletHandler$Chain.doFilter(ServletHandler.java:1601)\n\tat org.openl.rules.webstudio.web.servlet.CrossSiteRequestFilter.doFilter(CrossSiteRequestFilter.java:92)\n\tat org.eclipse.jetty.ee10.servlet.FilterHolder.doFilter(FilterHolder.java:205)\n\tat org.eclipse.jetty.ee10.servlet.ServletHandler$Chain.doFilter(ServletHandler.java:1601)\n\tat de.qaware.xff.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:101)\n\tat org.eclipse.jetty.ee10.servlet.FilterHolder.doFilter(FilterHolder.java:205)\n\tat org.eclipse.jetty.ee10.servlet.ServletHandler$Chain.doFilter(ServletHandler.java:1601)\n\tat org.openl.rules.webstudio.web.servlet.CorsFilter.doFilter(CorsFilter.java:36)\n\tat org.eclipse.jetty.ee10.servlet.FilterHolder.doFilter(FilterHolder.java:205)\n\tat org.eclipse.jetty.ee10.servlet.ServletHandler$Chain.doFilter(ServletHandler.java:1601)\n\tat org.eclipse.jetty.ee10.websocket.servlet.WebSocketUpgradeFilter.doFilter(WebSocketUpgradeFilter.java:199)\n\tat org.eclipse.jetty.ee10.servlet.FilterHolder.doFilter(FilterHolder.java:205)\n\tat org.eclipse.jetty.ee10.servlet.ServletHandler$Chain.doFilter(ServletHandler.java:1601)\n\tat org.eclipse.jetty.ee10.servlet.ServletHandler$MappedServlet.handle(ServletHandler.java:1556)\n\tat org.eclipse.jetty.ee10.servlet.ServletChannel.dispatch(ServletChannel.java:871)\n\tat org.eclipse.jetty.ee10.servlet.ServletChannel.handle(ServletChannel.java:449)\n\tat org.eclipse.jetty.ee10.servlet.ServletHandler.handle(ServletHandler.java:469)\n\tat org.eclipse.jetty.security.SecurityHandler.handle(SecurityHandler.java:548)\n\tat org.eclipse.jetty.ee10.servlet.SessionHandler.handle(SessionHandler.java:719)\n\tat org.eclipse.jetty.server.handler.ContextHandler.handle(ContextHandler.java:1253)\n\tat org.eclipse.jetty.server.handler.ContextHandlerCollection.handle(ContextHandlerCollection.java:148)\n\tat org.eclipse.jetty.server.Server.handle(Server.java:197)\n\tat org.eclipse.jetty.server.internal.HttpChannelState$HandlerInvoker.run(HttpChannelState.java:804)\n\tat org.eclipse.jetty.server.internal.HttpConnection.onFillable(HttpConnection.java:420)\n\tat org.eclipse.jetty.server.internal.HttpConnection$FillableCallback.succeeded(HttpConnection.java:1789)\n\tat org.eclipse.jetty.io.FillInterest.fillable(FillInterest.java:105)\n\tat org.eclipse.jetty.io.SelectableChannelEndPoint$1.run(SelectableChannelEndPoint.java:54)\n\tat org.eclipse.jetty.util.thread.strategy.AdaptiveExecutionStrategy.runTask(AdaptiveExecutionStrategy.java:492)\n\tat org.eclipse.jetty.util.thread.strategy.AdaptiveExecutionStrategy.epcRunTask(AdaptiveExecutionStrategy.java:428)\n\tat org.eclipse.jetty.util.thread.strategy.AdaptiveExecutionStrategy.consumeTask(AdaptiveExecutionStrategy.java:401)\n\tat org.eclipse.jetty.util.thread.strategy.AdaptiveExecutionStrategy.tryProduce(AdaptiveExecutionStrategy.java:255)\n\tat org.eclipse.jetty.util.thread.strategy.AdaptiveExecutionStrategy.run(AdaptiveExecutionStrategy.java:204)\n\tat org.eclipse.jetty.util.thread.ReservedThreadExecutor$ReservedThread.run(ReservedThreadExecutor.java:317)\n\tat org.eclipse.jetty.util.thread.QueuedThreadPool.runJob(QueuedThreadPool.java:1009)\n\tat org.eclipse.jetty.util.thread.QueuedThreadPool$Runner.doRunJob(QueuedThreadPool.java:1240)\n\tat org.eclipse.jetty.util.thread.QueuedThreadPool$Runner.run(QueuedThreadPool.java:1194)\n\tat java.base/java.lang.Thread.run(Unknown Source)\nCaused by: java.nio.file.AccessDeniedException: Access denied\n\tat org.openl.rules.webstudio.security.SecureDesignTimeRepositoryImpl.getProjectByPath(SecureDesignTimeRepositoryImpl.java:134)\n\tat org.openl.rules.webstudio.web.repository.DeploymentManager.deployProject(DeploymentManager.java:144)\n\tat org.openl.rules.webstudio.web.repository.DeploymentManager.deploy(DeploymentManager.java:105)\n\t... 107 more\n&quot;,&quot;service.version&quot;:&quot;0&quot;,&quot;service.environment&quot;:&quot;production&quot;,&quot;service.name&quot;:&quot;OpenL&quot;,&quot;host.name&quot;:&quot;64e5e36d1cf2&quot;}</pre></div><div class='panel' id='t0-4' hidden><p><a class='button' href='attachments/shard-03/tests.ui.webstudio.repository.TestDeployProjectWithoutDescriptorUi/testDeployWorksForAProjectWithoutDescriptor/1793878075547-trace.zip' download>Download trace.zip (607 KB)</a></p><p class='hint'>Playwright trace with DOM snapshots before and after every action, network and console. Open it with <code>npx playwright show-trace trace.zip (or drop the file onto https://trace.playwright.dev)</code>.</p></div><div class='panel' id='t0-5' hidden><div class='attachments'><figure><a href='attachments/shard-03/tests.ui.webstudio.repository.TestDeployProjectWithoutDescriptorUi/testDeployWorksForAProjectWithoutDescriptor/1793878075611-testDeployWorksForAProjectWithoutDescriptor_20261105_112755.png' target='_blank'><img src='attachments/shard-03/tests.ui.webstudio.repository.TestDeployProjectWithoutDescriptorUi/testDeployWorksForAProjectWithoutDescriptor/1793878075611-testDeployWorksForAProjectWithoutDescriptor_20261105_112755.png' alt='Test Failure Screenshot' loading='lazy'></a><figcaption>Test Failure Screenshot</figcaption></figure></div></div></td></tr><tr class='row passed' data-status='passed' data-suite='repository' data-error=''><td><span class='badge' style='color:#1a7f37;background:#dafbe1'>PASSED</span></td><td>repository<br><small>shard-01</small></td><td><strong>TestDeploymentsTabUi</strong><br>testDeploymentsTabJourney<br><small>IPBQA-33010</small></td><td>1 min 22 s</td><td class='artifacts'><small>steps</small></td><td><button class='toggle' data-target='d1'>details</button></td></tr><tr class='details-row passed' id='d1' hidden><td colspan='6'><div class='tabs'><button class='tab active' data-tab='t1-0'>Overview</button><button class='tab' data-tab='t1-1'>Steps (799)</button></div><div class='panel' id='t1-0'><table class='kv'><tr><th>Group / shard</th><td>repository / shard-01</td></tr><tr><th>Class</th><td><code>tests.ui.webstudio.repository.TestDeploymentsTabUi</code> · <a href='https://github.com/openl-tablets/openl-tests/blob/00e504c22782e2c1be37a5703078a561f76f7f04/src/test/java/tests/ui/webstudio/repository/TestDeploymentsTabUi.java' target='_blank'>source</a></td></tr><tr><th>Method</th><td><code>testDeploymentsTabJourney</code></td></tr><tr><th>Test case</th><td>IPBQA-33010</td></tr><tr><th>Known issue</th><td>—</td></tr><tr><th>Description</th><td>EPBDS-16307 with the EPBDS-16403 guard: the Deployments tab starts empty, shows a deployed project, isolates repositories, opens a deployment by its URL-safe id, survives a deep-link reload, and a redeploy selected from the dropdown updates the same configuration through POST /web/deployments/{id} instead of creating a second one.</td></tr><tr><th>Started / finished</th><td>2026-11-05T11:24:59.281Z → 2026-11-05T11:26:20.852Z (1 min 22 s)</td></tr><tr><th>Application build</th><td>latest</td></tr><tr><th>Tests revision</th><td>main @ 00e504c22782</td></tr></table></div><div class='panel' id='t1-1' hidden><p class='hint'>Framework log of this test: container start, every page action, waits, REST calls and assertions. Showing the last 50 of 799 lines · <a href='attachments/shard-01/tests.ui.webstudio.repository.TestDeploymentsTabUi/testDeploymentsTabJourney/test-steps.log' target='_blank'>full log</a></p><pre class='log'>2026-11-05 11:26:17.421 [main] [INFO] WaitUtil - Condition met after 16ms: Waiting for the loading overlay to disappear
+2026-11-05 11:26:17.421 [main] [INFO] WebElement - Waiting for commentTextarea to be visible (timeout: 250ms)
+2026-11-05 11:26:17.438 [main] [INFO] WebElement - Filling Sequentially commentTextarea with text: &#x27;Redeploy after change&#x27;
+2026-11-05 11:26:17.599 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:26:17.613 [main] [INFO] WaitUtil - Condition met after 14ms: Waiting for the loading overlay to disappear
+2026-11-05 11:26:17.613 [main] [INFO] WebElement - Waiting for deployButton to be visible (timeout: 250ms)
+2026-11-05 11:26:17.628 [main] [INFO] WebElement - Clicking deployButton 
+2026-11-05 11:26:17.858 [main] [INFO] CorePage - Messages currently open: 1
+2026-11-05 11:26:17.868 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:26:17.882 [main] [INFO] WaitUtil - Condition met after 14ms: Waiting for the loading overlay to disappear
+2026-11-05 11:26:17.883 [main] [INFO] WebElement - Waiting for Close Message Button to be visible (timeout: 500ms)
+2026-11-05 11:26:17.900 [main] [INFO] WebElement - Clicking with increased timeout Close Message Button 
+2026-11-05 11:26:18.179 [main] [INFO] WaitUtil - Sleeping for 100ms: Waiting between message close attempts
+2026-11-05 11:26:18.286 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:26:18.295 [main] [INFO] WaitUtil - Condition met after 9ms: Waiting for the loading overlay to disappear
+2026-11-05 11:26:18.295 [main] [INFO] WebElement - Waiting for Close Message Button to be visible (timeout: 500ms)
+2026-11-05 11:26:18.311 [main] [INFO] WebElement - Clicking with increased timeout Close Message Button 
+2026-11-05 11:26:18.821 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:26:18.826 [main] [INFO] WaitUtil - Condition met after 5ms: Waiting for the loading overlay to disappear
+2026-11-05 11:26:19.331 [main] [INFO] WaitUtil - Sleeping for 100ms: Waiting between message close attempts
+2026-11-05 11:26:19.437 [main] [INFO] WaitUtil - Sleeping for 100ms: Waiting between message close attempts
+2026-11-05 11:26:19.537 [main] [INFO] CorePage - domain.ui.webstudio.pages.mainpages.DeploymentsHomePage was opened.
+2026-11-05 11:26:19.694 [main] [INFO] WebElement - Waiting for deploymentsHome to be visible (timeout: 20000ms)
+2026-11-05 11:26:19.906 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-05 11:26:19.953 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:26:20.032 [main] [INFO] WaitUtil - Condition met after 79ms: Waiting for the loading overlay to disappear
+2026-11-05 11:26:20.032 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 300ms): Waiting for the deployments list to leave its loading state
+2026-11-05 11:26:20.032 [main] [INFO] WebElement - Waiting for deploymentsTable to be visible (timeout: 1000ms)
+2026-11-05 11:26:20.059 [main] [INFO] WaitUtil - Condition met after 27ms: Waiting for the deployments list to leave its loading state
+2026-11-05 11:26:20.059 [main] [INFO] WebElement - Waiting for deploymentsError to be visible (timeout: 500ms)
+2026-11-05 11:26:20.566 [main] [INFO] WebElement - Waiting for deploymentsTable to be visible (timeout: 1000ms)
+2026-11-05 11:26:20.589 [main] [INFO] WebElement - Waiting for deploymentOpen to be visible (timeout: 20000ms)
+2026-11-05 11:26:20.594 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:26:20.597 [main] [INFO] WaitUtil - Condition met after 3ms: Waiting for the loading overlay to disappear
+2026-11-05 11:26:20.597 [main] [INFO] WebElement - Waiting for deploymentOpen to be visible (timeout: 250ms)
+2026-11-05 11:26:20.602 [main] [INFO] WebElement - Clicking deploymentOpen 
+2026-11-05 11:26:20.631 [main] [INFO] CorePage - domain.ui.webstudio.pages.mainpages.DeploymentWorkspacePage was opened.
+2026-11-05 11:26:20.631 [main] [INFO] WebElement - Waiting for deploymentWorkspace to be visible (timeout: 20000ms)
+2026-11-05 11:26:20.815 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-05 11:26:20.819 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:26:20.822 [main] [INFO] WaitUtil - Condition met after 3ms: Waiting for the loading overlay to disappear
+2026-11-05 11:26:20.822 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 1000ms): Waiting for the design revision of &#x27;Тестовый проект Deploy&#x27; to be resolved
+2026-11-05 11:26:20.822 [main] [INFO] WebElement - Waiting for deploymentProjectsTable to be visible (timeout: 20000ms)
+2026-11-05 11:26:20.827 [main] [INFO] WebElement - Waiting for deploymentProjectRow to be visible (timeout: 20000ms)
+2026-11-05 11:26:20.839 [main] [INFO] WaitUtil - Condition met after 17ms: Waiting for the design revision of &#x27;Тестовый проект Deploy&#x27; to be resolved
+2026-11-05 11:26:20.839 [main] [INFO] WebElement - Waiting for deploymentProjectsTable to be visible (timeout: 20000ms)
+2026-11-05 11:26:20.843 [main] [INFO] WebElement - Waiting for deploymentProjectRow to be visible (timeout: 20000ms)
+2026-11-05 11:26:20.866 [main] [INFO] DockerDriverPool - Closing Playwright Docker for thread: main
+2026-11-05 11:26:21.497 [main] [INFO] WaitUtil - Sleeping for 2000ms: Waiting for Docker daemon to complete resource cleanup
+2026-11-05 11:26:23.500 [main] [INFO] DeployInfrastructureService - Stopping PostgreSQL container...</pre></div></td></tr><tr class='row passed' data-status='passed' data-suite='repository' data-error=''><td><span class='badge' style='color:#1a7f37;background:#dafbe1'>PASSED</span></td><td>repository<br><small>shard-02</small></td><td><strong>TestNewDeployPopup</strong><br>testDeployedTemplatesServeTheirOpenApi<br><small>EPBDS-13928</small></td><td>6 min 24 s</td><td class='artifacts'><small>steps</small></td><td><button class='toggle' data-target='d2'>details</button></td></tr><tr class='details-row passed' id='d2' hidden><td colspan='6'><div class='tabs'><button class='tab active' data-tab='t2-0'>Overview</button><button class='tab' data-tab='t2-1'>Steps (2934)</button></div><div class='panel' id='t2-0'><table class='kv'><tr><th>Group / shard</th><td>repository / shard-02</td></tr><tr><th>Class</th><td><code>tests.ui.webstudio.repository.TestNewDeployPopup</code> · <a href='https://github.com/openl-tablets/openl-tests/blob/00e504c22782e2c1be37a5703078a561f76f7f04/src/test/java/tests/ui/webstudio/repository/TestNewDeployPopup.java' target='_blank'>source</a></td></tr><tr><th>Method</th><td><code>testDeployedTemplatesServeTheirOpenApi</code></td></tr><tr><th>Test case</th><td>EPBDS-13928</td></tr><tr><th>Known issue</th><td>—</td></tr><tr><th>Description</th><td>Every built-in template with rules, deployed from Studio, is served by Rule Services and answers its OpenAPI in JSON and in YAML</td></tr><tr><th>Started / finished</th><td>2026-11-05T11:24:30.885Z → 2026-11-05T11:30:55.247Z (6 min 24 s)</td></tr><tr><th>Application build</th><td>latest</td></tr><tr><th>Tests revision</th><td>main @ 00e504c22782</td></tr></table></div><div class='panel' id='t2-1' hidden><p class='hint'>Framework log of this test: container start, every page action, waits, REST calls and assertions. Showing the last 50 of 2934 lines · <a href='attachments/shard-02/tests.ui.webstudio.repository.TestNewDeployPopup/testDeployedTemplatesServeTheirOpenApi/test-steps.log' target='_blank'>full log</a></p><pre class='log'>2026-11-05 11:30:45.945 [main] [INFO] WebElement - Waiting for deployModal to be visible (timeout: 2000ms)
+2026-11-05 11:30:45.953 [main] [INFO] WaitUtil - Condition met after 8ms: Waiting for deploy modal to appear
+2026-11-05 11:30:45.953 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:30:45.962 [main] [INFO] WaitUtil - Condition met after 9ms: Waiting for the loading overlay to disappear
+2026-11-05 11:30:45.962 [main] [INFO] WebElement - Waiting for repositorySelect to be visible (timeout: 250ms)
+2026-11-05 11:30:45.972 [main] [INFO] WebElement - Clicking repositorySelect 
+2026-11-05 11:30:46.364 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:30:46.371 [main] [INFO] WaitUtil - Condition met after 7ms: Waiting for the loading overlay to disappear
+2026-11-05 11:30:46.371 [main] [INFO] WebElement - Waiting for firstDropdownOption to be visible (timeout: 250ms)
+2026-11-05 11:30:46.378 [main] [INFO] WebElement - Clicking firstDropdownOption 
+2026-11-05 11:30:46.783 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:30:46.801 [main] [INFO] WaitUtil - Condition met after 18ms: Waiting for the loading overlay to disappear
+2026-11-05 11:30:46.801 [main] [INFO] WebElement - Waiting for deploymentNameSelect to be visible (timeout: 250ms)
+2026-11-05 11:30:46.815 [main] [INFO] WebElement - Clicking deploymentNameSelect 
+2026-11-05 11:30:46.884 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:30:46.897 [main] [INFO] WaitUtil - Condition met after 13ms: Waiting for the loading overlay to disappear
+2026-11-05 11:30:46.897 [main] [INFO] WebElement - Waiting for deploymentNameSearchInput to be visible (timeout: 250ms)
+2026-11-05 11:30:46.916 [main] [INFO] WebElement - Filling Sequentially deploymentNameSearchInput with text: &#x27;Tutorial 6 - Introduction to Smart Rules and Smart Lookup Tables&#x27;
+2026-11-05 11:30:47.393 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:30:47.400 [main] [INFO] WaitUtil - Condition met after 6ms: Waiting for the loading overlay to disappear
+2026-11-05 11:30:47.401 [main] [INFO] WebElement - Waiting for deploymentNameSearchInput to be visible (timeout: 250ms)
+2026-11-05 11:30:47.406 [main] [INFO] WebElement - Pressing Tab on deploymentNameSearchInput
+2026-11-05 11:30:47.433 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:30:47.452 [main] [INFO] WaitUtil - Condition met after 19ms: Waiting for the loading overlay to disappear
+2026-11-05 11:30:47.452 [main] [INFO] WebElement - Waiting for commentTextarea to be visible (timeout: 250ms)
+2026-11-05 11:30:47.464 [main] [INFO] WebElement - Filling Sequentially commentTextarea with text: &#x27;Deploy Tutorial 6 - Introduction to Smart Rules and Smart Lookup Tables&#x27;
+2026-11-05 11:30:47.785 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:30:47.798 [main] [INFO] WaitUtil - Condition met after 13ms: Waiting for the loading overlay to disappear
+2026-11-05 11:30:47.798 [main] [INFO] WebElement - Waiting for deployButton to be visible (timeout: 250ms)
+2026-11-05 11:30:47.804 [main] [INFO] WebElement - Clicking deployButton 
+2026-11-05 11:30:47.843 [main] [INFO] WebElement - Waiting for successNotification to be visible (timeout: 20000ms)
+2026-11-05 11:30:48.049 [main] [INFO] CorePage - Messages currently open: 1
+2026-11-05 11:30:48.066 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:30:48.077 [main] [INFO] WaitUtil - Condition met after 11ms: Waiting for the loading overlay to disappear
+2026-11-05 11:30:48.077 [main] [INFO] WebElement - Waiting for Close Message Button to be visible (timeout: 500ms)
+2026-11-05 11:30:48.085 [main] [INFO] WebElement - Clicking with increased timeout Close Message Button 
+2026-11-05 11:30:48.342 [main] [INFO] WaitUtil - Sleeping for 100ms: Waiting between message close attempts
+2026-11-05 11:30:48.449 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:30:48.455 [main] [INFO] WaitUtil - Condition met after 6ms: Waiting for the loading overlay to disappear
+2026-11-05 11:30:48.455 [main] [INFO] WebElement - Waiting for Close Message Button to be visible (timeout: 500ms)
+2026-11-05 11:30:48.461 [main] [INFO] WebElement - Clicking with increased timeout Close Message Button 
+2026-11-05 11:30:48.965 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:30:48.969 [main] [INFO] WaitUtil - Condition met after 4ms: Waiting for the loading overlay to disappear
+2026-11-05 11:30:49.473 [main] [INFO] WaitUtil - Sleeping for 100ms: Waiting between message close attempts
+2026-11-05 11:30:49.578 [main] [INFO] WaitUtil - Sleeping for 100ms: Waiting between message close attempts
+2026-11-05 11:30:49.679 [main] [INFO] WaitUtil - Waiting for condition (timeout: 90000ms, polling: 3000ms): Waiting for Rule Services to serve every deployed template
+2026-11-05 11:30:49.765 [main] [INFO] WaitUtil - Sleeping for 3000ms: Polling for condition (attempt): Waiting for Rule Services to serve every deployed template
+2026-11-05 11:30:52.783 [main] [INFO] WaitUtil - Condition met after 3103ms: Waiting for Rule Services to serve every deployed template
+2026-11-05 11:30:55.268 [main] [INFO] DockerDriverPool - Closing Playwright Docker for thread: main
+2026-11-05 11:30:55.923 [main] [INFO] WaitUtil - Sleeping for 2000ms: Waiting for Docker daemon to complete resource cleanup</pre></div></td></tr><tr class='row passed' data-status='passed' data-suite='repository' data-error=''><td><span class='badge' style='color:#1a7f37;background:#dafbe1'>PASSED</span></td><td>repository<br><small>shard-02</small></td><td><strong>TestNewDeployPopup</strong><br>testNewDeployPopup<br><small>IPBQA-30049</small></td><td>3 min 27 s</td><td class='artifacts'><small>steps</small></td><td><button class='toggle' data-target='d3'>details</button></td></tr><tr class='details-row passed' id='d3' hidden><td colspan='6'><div class='tabs'><button class='tab active' data-tab='t3-0'>Overview</button><button class='tab' data-tab='t3-1'>Steps (1829)</button></div><div class='panel' id='t3-0'><table class='kv'><tr><th>Group / shard</th><td>repository / shard-02</td></tr><tr><th>Class</th><td><code>tests.ui.webstudio.repository.TestNewDeployPopup</code> · <a href='https://github.com/openl-tablets/openl-tests/blob/00e504c22782e2c1be37a5703078a561f76f7f04/src/test/java/tests/ui/webstudio/repository/TestNewDeployPopup.java' target='_blank'>source</a></td></tr><tr><th>Method</th><td><code>testNewDeployPopup</code></td></tr><tr><th>Test case</th><td>IPBQA-30049</td></tr><tr><th>Known issue</th><td>—</td></tr><tr><th>Description</th><td>Deploy lifecycle: deploy to production PostgreSQL, edit, redeploy, deploy dependent projects, verify via WS REST</td></tr><tr><th>Started / finished</th><td>2026-11-05T11:31:21.486Z → 2026-11-05T11:34:48.756Z (3 min 27 s)</td></tr><tr><th>Application build</th><td>latest</td></tr><tr><th>Tests revision</th><td>main @ 00e504c22782</td></tr></table></div><div class='panel' id='t3-1' hidden><p class='hint'>Framework log of this test: container start, every page action, waits, REST calls and assertions. Showing the last 50 of 1829 lines · <a href='attachments/shard-02/tests.ui.webstudio.repository.TestNewDeployPopup/testNewDeployPopup/test-steps.log' target='_blank'>full log</a></p><pre class='log'>2026-11-05 11:34:45.358 [main] [INFO] WaitUtil - Condition met after 4ms: Waiting for deploy modal to appear
+2026-11-05 11:34:45.358 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:34:45.364 [main] [INFO] WaitUtil - Condition met after 6ms: Waiting for the loading overlay to disappear
+2026-11-05 11:34:45.364 [main] [INFO] WebElement - Waiting for repositorySelect to be visible (timeout: 250ms)
+2026-11-05 11:34:45.370 [main] [INFO] WebElement - Clicking repositorySelect 
+2026-11-05 11:34:45.787 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:34:45.803 [main] [INFO] WaitUtil - Condition met after 16ms: Waiting for the loading overlay to disappear
+2026-11-05 11:34:45.803 [main] [INFO] WebElement - Waiting for firstDropdownOption to be visible (timeout: 250ms)
+2026-11-05 11:34:45.836 [main] [INFO] WebElement - Clicking firstDropdownOption 
+2026-11-05 11:34:46.106 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:34:46.124 [main] [INFO] WaitUtil - Condition met after 18ms: Waiting for the loading overlay to disappear
+2026-11-05 11:34:46.124 [main] [INFO] WebElement - Waiting for deploymentNameSelect to be visible (timeout: 250ms)
+2026-11-05 11:34:46.149 [main] [INFO] WebElement - Clicking deploymentNameSelect 
+2026-11-05 11:34:46.210 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:34:46.216 [main] [INFO] WaitUtil - Condition met after 6ms: Waiting for the loading overlay to disappear
+2026-11-05 11:34:46.216 [main] [INFO] WebElement - Waiting for deploymentNameSearchInput to be visible (timeout: 250ms)
+2026-11-05 11:34:46.222 [main] [INFO] WebElement - Filling Sequentially deploymentNameSearchInput with text: &#x27;Tutorial 2 - Introduction to Data Tables&#x27;
+2026-11-05 11:34:46.488 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:34:46.522 [main] [INFO] WaitUtil - Condition met after 34ms: Waiting for the loading overlay to disappear
+2026-11-05 11:34:46.522 [main] [INFO] WebElement - Waiting for deploymentNameSearchInput to be visible (timeout: 250ms)
+2026-11-05 11:34:46.545 [main] [INFO] WebElement - Pressing Tab on deploymentNameSearchInput
+2026-11-05 11:34:46.569 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:34:46.577 [main] [INFO] WaitUtil - Condition met after 8ms: Waiting for the loading overlay to disappear
+2026-11-05 11:34:46.577 [main] [INFO] WebElement - Waiting for commentTextarea to be visible (timeout: 250ms)
+2026-11-05 11:34:46.583 [main] [INFO] WebElement - Filling Sequentially commentTextarea with text: &#x27;Deploy Tutorial 2&#x27;
+2026-11-05 11:34:46.646 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:34:46.653 [main] [INFO] WaitUtil - Condition met after 6ms: Waiting for the loading overlay to disappear
+2026-11-05 11:34:46.653 [main] [INFO] WebElement - Waiting for deployButton to be visible (timeout: 250ms)
+2026-11-05 11:34:46.658 [main] [INFO] WebElement - Clicking deployButton 
+2026-11-05 11:34:46.740 [main] [INFO] WebElement - Waiting for successNotification to be visible (timeout: 20000ms)
+2026-11-05 11:34:46.941 [main] [INFO] CorePage - Messages currently open: 1
+2026-11-05 11:34:46.948 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:34:46.953 [main] [INFO] WaitUtil - Condition met after 5ms: Waiting for the loading overlay to disappear
+2026-11-05 11:34:46.953 [main] [INFO] WebElement - Waiting for Close Message Button to be visible (timeout: 500ms)
+2026-11-05 11:34:46.961 [main] [INFO] WebElement - Clicking with increased timeout Close Message Button 
+2026-11-05 11:34:47.235 [main] [INFO] WaitUtil - Sleeping for 100ms: Waiting between message close attempts
+2026-11-05 11:34:47.343 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:34:47.348 [main] [INFO] WaitUtil - Condition met after 5ms: Waiting for the loading overlay to disappear
+2026-11-05 11:34:47.349 [main] [INFO] WebElement - Waiting for Close Message Button to be visible (timeout: 500ms)
+2026-11-05 11:34:47.364 [main] [INFO] WebElement - Clicking with increased timeout Close Message Button 
+2026-11-05 11:34:47.870 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:34:47.875 [main] [INFO] WaitUtil - Condition met after 4ms: Waiting for the loading overlay to disappear
+2026-11-05 11:34:48.379 [main] [INFO] WaitUtil - Sleeping for 100ms: Waiting between message close attempts
+2026-11-05 11:34:48.484 [main] [INFO] WaitUtil - Sleeping for 100ms: Waiting between message close attempts
+2026-11-05 11:34:48.585 [main] [INFO] BaseTest - Step 7: Tutorial 2 deployed
+2026-11-05 11:34:48.585 [main] [INFO] WaitUtil - Waiting for condition (timeout: 30000ms, polling: 3000ms): Waiting for all services to appear in WS
+2026-11-05 11:34:48.751 [main] [INFO] WaitUtil - Condition met after 166ms: Waiting for all services to appear in WS
+2026-11-05 11:34:48.756 [main] [INFO] BaseTest - Step 8: WebService verification completed — all services found in WS admin UI
+2026-11-05 11:34:48.764 [main] [INFO] DockerDriverPool - Closing Playwright Docker for thread: main
+2026-11-05 11:34:49.209 [main] [INFO] WaitUtil - Sleeping for 2000ms: Waiting for Docker daemon to complete resource cleanup</pre></div></td></tr><tr class='row passed' data-status='passed' data-suite='repository' data-error=''><td><span class='badge' style='color:#1a7f37;background:#dafbe1'>PASSED</span></td><td>repository<br><small>shard-03</small></td><td><strong>TestDeploymentsListUi</strong><br>testDeploymentsListSearchAndPaging<br><small>IPBQA-33012</small></td><td>1 min 38 s</td><td class='artifacts'><small>steps</small></td><td><button class='toggle' data-target='d4'>details</button></td></tr><tr class='details-row passed' id='d4' hidden><td colspan='6'><div class='tabs'><button class='tab active' data-tab='t4-0'>Overview</button><button class='tab' data-tab='t4-1'>Steps (821)</button></div><div class='panel' id='t4-0'><table class='kv'><tr><th>Group / shard</th><td>repository / shard-03</td></tr><tr><th>Class</th><td><code>tests.ui.webstudio.repository.TestDeploymentsListUi</code> · <a href='https://github.com/openl-tablets/openl-tests/blob/00e504c22782e2c1be37a5703078a561f76f7f04/src/test/java/tests/ui/webstudio/repository/TestDeploymentsListUi.java' target='_blank'>source</a></td></tr><tr><th>Method</th><td><code>testDeploymentsListSearchAndPaging</code></td></tr><tr><th>Test case</th><td>IPBQA-33012</td></tr><tr><th>Known issue</th><td>—</td></tr><tr><th>Description</th><td>EPBDS-16307: the Deployments list filters by its search box, states when nothing matches, restores on Clear search, keeps reporting the repository total, pages through ?size, and a search made from a later page shows the match instead of an empty page.</td></tr><tr><th>Started / finished</th><td>2026-11-05T11:24:38.621Z → 2026-11-05T11:26:16.629Z (1 min 38 s)</td></tr><tr><th>Application build</th><td>latest</td></tr><tr><th>Tests revision</th><td>main @ 00e504c22782</td></tr></table></div><div class='panel' id='t4-1' hidden><p class='hint'>Framework log of this test: container start, every page action, waits, REST calls and assertions. Showing the last 50 of 821 lines · <a href='attachments/shard-03/tests.ui.webstudio.repository.TestDeploymentsListUi/testDeploymentsListSearchAndPaging/test-steps.log' target='_blank'>full log</a></p><pre class='log'>2026-11-05 11:26:09.043 [main] [INFO] WebElement - Waiting for deploymentsNoMatch to be visible (timeout: 20000ms)
+2026-11-05 11:26:09.047 [main] [INFO] WebElement - Waiting for deploymentsNoMatch to be visible (timeout: 250ms)
+2026-11-05 11:26:09.055 [main] [INFO] WebElement - Getting text from deploymentsNoMatch: &#x27;No dataNo deployments match your searchClear search&#x27;
+2026-11-05 11:26:09.055 [main] [INFO] WebElement - Waiting for clearSearchBtn to be visible (timeout: 20000ms)
+2026-11-05 11:26:09.059 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:26:09.062 [main] [INFO] WaitUtil - Condition met after 3ms: Waiting for the loading overlay to disappear
+2026-11-05 11:26:09.062 [main] [INFO] WebElement - Waiting for clearSearchBtn to be visible (timeout: 250ms)
+2026-11-05 11:26:09.066 [main] [INFO] WebElement - Clicking clearSearchBtn 
+2026-11-05 11:26:09.087 [main] [INFO] WaitUtil - Sleeping for 600ms: Letting the deployments list restore after clearing the search
+2026-11-05 11:26:09.687 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 300ms): Waiting for the deployments list to leave its loading state
+2026-11-05 11:26:09.687 [main] [INFO] WebElement - Waiting for deploymentsTable to be visible (timeout: 1000ms)
+2026-11-05 11:26:09.693 [main] [INFO] WaitUtil - Condition met after 6ms: Waiting for the deployments list to leave its loading state
+2026-11-05 11:26:09.693 [main] [INFO] WebElement - Waiting for deploymentsError to be visible (timeout: 500ms)
+2026-11-05 11:26:10.196 [main] [INFO] WebElement - Waiting for deploymentsTable to be visible (timeout: 1000ms)
+2026-11-05 11:26:10.206 [main] [INFO] CorePage - domain.ui.webstudio.pages.mainpages.DeploymentsHomePage was opened.
+2026-11-05 11:26:10.356 [main] [INFO] WebElement - Waiting for deploymentsHome to be visible (timeout: 20000ms)
+2026-11-05 11:26:10.641 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-05 11:26:10.750 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:26:10.805 [main] [INFO] WaitUtil - Condition met after 54ms: Waiting for the loading overlay to disappear
+2026-11-05 11:26:10.806 [main] [INFO] WebElement - Waiting for deploymentsPagination to be visible (timeout: 10000ms)
+2026-11-05 11:26:10.814 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 300ms): Waiting for the deployments list to leave its loading state
+2026-11-05 11:26:10.814 [main] [INFO] WebElement - Waiting for deploymentsTable to be visible (timeout: 1000ms)
+2026-11-05 11:26:10.822 [main] [INFO] WaitUtil - Condition met after 8ms: Waiting for the deployments list to leave its loading state
+2026-11-05 11:26:10.822 [main] [INFO] WebElement - Waiting for deploymentsError to be visible (timeout: 500ms)
+2026-11-05 11:26:11.325 [main] [INFO] WebElement - Waiting for deploymentsTable to be visible (timeout: 1000ms)
+2026-11-05 11:26:11.350 [main] [INFO] CorePage - domain.ui.webstudio.pages.mainpages.DeploymentsHomePage was opened.
+2026-11-05 11:26:11.503 [main] [INFO] WebElement - Waiting for deploymentsHome to be visible (timeout: 20000ms)
+2026-11-05 11:26:11.769 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-05 11:26:11.878 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:26:11.932 [main] [INFO] WaitUtil - Condition met after 54ms: Waiting for the loading overlay to disappear
+2026-11-05 11:26:11.932 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 300ms): Waiting for the deployments list to leave its loading state
+2026-11-05 11:26:11.932 [main] [INFO] WebElement - Waiting for deploymentsTable to be visible (timeout: 1000ms)
+2026-11-05 11:26:11.941 [main] [INFO] WaitUtil - Condition met after 9ms: Waiting for the deployments list to leave its loading state
+2026-11-05 11:26:11.941 [main] [INFO] WebElement - Waiting for deploymentsError to be visible (timeout: 500ms)
+2026-11-05 11:26:12.446 [main] [INFO] WebElement - Waiting for deploymentsTable to be visible (timeout: 1000ms)
+2026-11-05 11:26:12.469 [main] [INFO] WebElement - Waiting for deploymentsSearch to be visible (timeout: 20000ms)
+2026-11-05 11:26:12.473 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:26:12.477 [main] [INFO] WaitUtil - Condition met after 3ms: Waiting for the loading overlay to disappear
+2026-11-05 11:26:12.477 [main] [INFO] WebElement - Waiting for deploymentsSearch to be visible (timeout: 250ms)
+2026-11-05 11:26:12.484 [main] [INFO] WebElement - Filling deploymentsSearch with text: &#x27;AlphaDeployment&#x27;
+2026-11-05 11:26:12.504 [main] [INFO] WaitUtil - Sleeping for 600ms: Letting the client-side deployments filter apply
+2026-11-05 11:26:13.105 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 300ms): Waiting for the deployments list to leave its loading state
+2026-11-05 11:26:13.105 [main] [INFO] WebElement - Waiting for deploymentsTable to be visible (timeout: 1000ms)
+2026-11-05 11:26:13.112 [main] [INFO] WaitUtil - Condition met after 7ms: Waiting for the deployments list to leave its loading state
+2026-11-05 11:26:13.112 [main] [INFO] WebElement - Waiting for deploymentsError to be visible (timeout: 500ms)
+2026-11-05 11:26:13.615 [main] [INFO] WebElement - Waiting for deploymentsTable to be visible (timeout: 1000ms)
+2026-11-05 11:26:13.625 [main] [INFO] WebElement - Waiting for deploymentsPagination to be visible (timeout: 3000ms)
+2026-11-05 11:26:16.642 [main] [INFO] DockerDriverPool - Closing Playwright Docker for thread: main
+2026-11-05 11:26:17.121 [main] [INFO] WaitUtil - Sleeping for 2000ms: Waiting for Docker daemon to complete resource cleanup
+2026-11-05 11:26:19.124 [main] [INFO] DeployInfrastructureService - Stopping PostgreSQL container...</pre></div></td></tr><tr class='row passed' data-status='passed' data-suite='repository' data-error=''><td><span class='badge' style='color:#1a7f37;background:#dafbe1'>PASSED</span></td><td>repository<br><small>shard-04</small></td><td><strong>TestDeployProjectMessagesAndValidationUi</strong><br>testDeploySuccessMessageNamesTheProject<br><small>EPBDS-16273</small></td><td>43 s</td><td class='artifacts'><small>steps</small></td><td><button class='toggle' data-target='d5'>details</button></td></tr><tr class='details-row passed' id='d5' hidden><td colspan='6'><div class='tabs'><button class='tab active' data-tab='t5-0'>Overview</button><button class='tab' data-tab='t5-1'>Steps (433)</button></div><div class='panel' id='t5-0'><table class='kv'><tr><th>Group / shard</th><td>repository / shard-04</td></tr><tr><th>Class</th><td><code>tests.ui.webstudio.repository.TestDeployProjectMessagesAndValidationUi</code> · <a href='https://github.com/openl-tablets/openl-tests/blob/00e504c22782e2c1be37a5703078a561f76f7f04/src/test/java/tests/ui/webstudio/repository/TestDeployProjectMessagesAndValidationUi.java' target='_blank'>source</a></td></tr><tr><th>Method</th><td><code>testDeploySuccessMessageNamesTheProject</code></td></tr><tr><th>Test case</th><td>EPBDS-16273</td></tr><tr><th>Known issue</th><td>—</td></tr><tr><th>Description</th><td>A successful deploy must report that the project was deployed and must not name the removed &quot;Deploy Configuration&quot; feature.</td></tr><tr><th>Started / finished</th><td>2026-11-05T11:24:21.321Z → 2026-11-05T11:25:04.595Z (43 s)</td></tr><tr><th>Application build</th><td>latest</td></tr><tr><th>Tests revision</th><td>main @ 00e504c22782</td></tr></table></div><div class='panel' id='t5-1' hidden><p class='hint'>Framework log of this test: container start, every page action, waits, REST calls and assertions. Showing the last 50 of 433 lines · <a href='attachments/shard-04/tests.ui.webstudio.repository.TestDeployProjectMessagesAndValidationUi/testDeploySuccessMessageNamesTheProject/test-steps.log' target='_blank'>full log</a></p><pre class='log'>2026-11-05 11:24:58.903 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:24:58.906 [main] [INFO] WaitUtil - Condition met after 3ms: Waiting for the loading overlay to disappear
+2026-11-05 11:24:58.907 [main] [INFO] WebElement - Waiting for projectRowAction to be visible (timeout: 4000ms)
+2026-11-05 11:25:02.917 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:25:02.922 [main] [INFO] WaitUtil - Condition met after 4ms: Waiting for the loading overlay to disappear
+2026-11-05 11:25:02.922 [main] [INFO] WebElement - Waiting for projectRowMoreBtn to be visible (timeout: 250ms)
+2026-11-05 11:25:02.927 [main] [INFO] WebElement - Clicking projectRowMoreBtn 
+2026-11-05 11:25:02.966 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:25:02.973 [main] [INFO] WaitUtil - Condition met after 7ms: Waiting for the loading overlay to disappear
+2026-11-05 11:25:02.973 [main] [INFO] WebElement - Waiting for overflowMenuItem to be visible (timeout: 10000ms)
+2026-11-05 11:25:02.978 [main] [INFO] WebElement - Clicking with increased timeout overflowMenuItem 
+2026-11-05 11:25:03.127 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 500ms): Waiting for deploy modal to appear
+2026-11-05 11:25:03.127 [main] [INFO] WebElement - Waiting for deployModal to be visible (timeout: 2000ms)
+2026-11-05 11:25:03.145 [main] [INFO] WaitUtil - Condition met after 18ms: Waiting for deploy modal to appear
+2026-11-05 11:25:03.145 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 500ms): Waiting for deploy modal to appear
+2026-11-05 11:25:03.145 [main] [INFO] WebElement - Waiting for deployModal to be visible (timeout: 2000ms)
+2026-11-05 11:25:03.166 [main] [INFO] WaitUtil - Condition met after 20ms: Waiting for deploy modal to appear
+2026-11-05 11:25:03.166 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:25:03.175 [main] [INFO] WaitUtil - Condition met after 9ms: Waiting for the loading overlay to disappear
+2026-11-05 11:25:03.176 [main] [INFO] WebElement - Waiting for repositorySelect to be visible (timeout: 250ms)
+2026-11-05 11:25:03.183 [main] [INFO] WebElement - Clicking repositorySelect 
+2026-11-05 11:25:03.560 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:25:03.565 [main] [INFO] WaitUtil - Condition met after 5ms: Waiting for the loading overlay to disappear
+2026-11-05 11:25:03.565 [main] [INFO] WebElement - Waiting for firstDropdownOption to be visible (timeout: 250ms)
+2026-11-05 11:25:03.579 [main] [INFO] WebElement - Clicking firstDropdownOption 
+2026-11-05 11:25:03.863 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:25:03.877 [main] [INFO] WaitUtil - Condition met after 14ms: Waiting for the loading overlay to disappear
+2026-11-05 11:25:03.877 [main] [INFO] WebElement - Waiting for deploymentNameSelect to be visible (timeout: 250ms)
+2026-11-05 11:25:03.890 [main] [INFO] WebElement - Clicking deploymentNameSelect 
+2026-11-05 11:25:03.953 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:25:03.962 [main] [INFO] WaitUtil - Condition met after 9ms: Waiting for the loading overlay to disappear
+2026-11-05 11:25:03.963 [main] [INFO] WebElement - Waiting for deploymentNameSearchInput to be visible (timeout: 250ms)
+2026-11-05 11:25:03.978 [main] [INFO] WebElement - Filling Sequentially deploymentNameSearchInput with text: &#x27;Deploy-726360&#x27;
+2026-11-05 11:25:04.078 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:25:04.087 [main] [INFO] WaitUtil - Condition met after 9ms: Waiting for the loading overlay to disappear
+2026-11-05 11:25:04.087 [main] [INFO] WebElement - Waiting for deploymentNameSearchInput to be visible (timeout: 250ms)
+2026-11-05 11:25:04.093 [main] [INFO] WebElement - Pressing Tab on deploymentNameSearchInput
+2026-11-05 11:25:04.109 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:25:04.125 [main] [INFO] WaitUtil - Condition met after 16ms: Waiting for the loading overlay to disappear
+2026-11-05 11:25:04.125 [main] [INFO] WebElement - Waiting for commentTextarea to be visible (timeout: 250ms)
+2026-11-05 11:25:04.136 [main] [INFO] WebElement - Filling Sequentially commentTextarea with text: &#x27;Deploy for message check&#x27;
+2026-11-05 11:25:04.234 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:25:04.241 [main] [INFO] WaitUtil - Condition met after 6ms: Waiting for the loading overlay to disappear
+2026-11-05 11:25:04.241 [main] [INFO] WebElement - Waiting for deployButton to be visible (timeout: 250ms)
+2026-11-05 11:25:04.246 [main] [INFO] WebElement - Clicking deployButton 
+2026-11-05 11:25:04.343 [main] [INFO] WebElement - Waiting for successNotification to be visible (timeout: 20000ms)
+2026-11-05 11:25:04.550 [main] [INFO] WebElement - Waiting for successNotification to be visible (timeout: 250ms)
+2026-11-05 11:25:04.567 [main] [INFO] WebElement - Getting text from successNotification: &#x27;Project deployedProject &quot;DeployMsg-399456&quot; has been deployed.&#x27;
+2026-11-05 11:25:04.618 [main] [INFO] DockerDriverPool - Closing Playwright Docker for thread: main
+2026-11-05 11:25:04.993 [main] [INFO] WaitUtil - Sleeping for 2000ms: Waiting for Docker daemon to complete resource cleanup</pre></div></td></tr><tr class='row passed' data-status='passed' data-suite='repository' data-error=''><td><span class='badge' style='color:#1a7f37;background:#dafbe1'>PASSED</span></td><td>repository<br><small>shard-04</small></td><td><strong>TestDeployProjectMessagesAndValidationUi</strong><br>testDeploymentNameRejectsForbiddenCharacters<br><small>EPBDS-16271</small></td><td>43 s</td><td class='artifacts'><small>steps</small></td><td><button class='toggle' data-target='d6'>details</button></td></tr><tr class='details-row passed' id='d6' hidden><td colspan='6'><div class='tabs'><button class='tab active' data-tab='t6-0'>Overview</button><button class='tab' data-tab='t6-1'>Steps (438)</button></div><div class='panel' id='t6-0'><table class='kv'><tr><th>Group / shard</th><td>repository / shard-04</td></tr><tr><th>Class</th><td><code>tests.ui.webstudio.repository.TestDeployProjectMessagesAndValidationUi</code> · <a href='https://github.com/openl-tablets/openl-tests/blob/00e504c22782e2c1be37a5703078a561f76f7f04/src/test/java/tests/ui/webstudio/repository/TestDeployProjectMessagesAndValidationUi.java' target='_blank'>source</a></td></tr><tr><th>Method</th><td><code>testDeploymentNameRejectsForbiddenCharacters</code></td></tr><tr><th>Test case</th><td>EPBDS-16271</td></tr><tr><th>Known issue</th><td>—</td></tr><tr><th>Description</th><td>The Deployment Name field must reject forbidden characters, as the REST deploy API does.</td></tr><tr><th>Started / finished</th><td>2026-11-05T11:25:25.622Z → 2026-11-05T11:26:08.953Z (43 s)</td></tr><tr><th>Application build</th><td>latest</td></tr><tr><th>Tests revision</th><td>main @ 00e504c22782</td></tr></table></div><div class='panel' id='t6-1' hidden><p class='hint'>Framework log of this test: container start, every page action, waits, REST calls and assertions. Showing the last 50 of 438 lines · <a href='attachments/shard-04/tests.ui.webstudio.repository.TestDeployProjectMessagesAndValidationUi/testDeploymentNameRejectsForbiddenCharacters/test-steps.log' target='_blank'>full log</a></p><pre class='log'>2026-11-05 11:26:03.241 [main] [INFO] WaitUtil - Condition met after 4ms: Waiting for the loading overlay to disappear
+2026-11-05 11:26:03.241 [main] [INFO] WebElement - Waiting for projectRowAction to be visible (timeout: 4000ms)
+2026-11-05 11:26:07.250 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:26:07.254 [main] [INFO] WaitUtil - Condition met after 3ms: Waiting for the loading overlay to disappear
+2026-11-05 11:26:07.254 [main] [INFO] WebElement - Waiting for projectRowMoreBtn to be visible (timeout: 250ms)
+2026-11-05 11:26:07.259 [main] [INFO] WebElement - Clicking projectRowMoreBtn 
+2026-11-05 11:26:07.294 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:26:07.299 [main] [INFO] WaitUtil - Condition met after 4ms: Waiting for the loading overlay to disappear
+2026-11-05 11:26:07.299 [main] [INFO] WebElement - Waiting for overflowMenuItem to be visible (timeout: 10000ms)
+2026-11-05 11:26:07.305 [main] [INFO] WebElement - Clicking with increased timeout overflowMenuItem 
+2026-11-05 11:26:07.443 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 500ms): Waiting for deploy modal to appear
+2026-11-05 11:26:07.443 [main] [INFO] WebElement - Waiting for deployModal to be visible (timeout: 2000ms)
+2026-11-05 11:26:07.459 [main] [INFO] WaitUtil - Condition met after 16ms: Waiting for deploy modal to appear
+2026-11-05 11:26:07.459 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 500ms): Waiting for deploy modal to appear
+2026-11-05 11:26:07.459 [main] [INFO] WebElement - Waiting for deployModal to be visible (timeout: 2000ms)
+2026-11-05 11:26:07.467 [main] [INFO] WaitUtil - Condition met after 8ms: Waiting for deploy modal to appear
+2026-11-05 11:26:07.467 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:26:07.474 [main] [INFO] WaitUtil - Condition met after 7ms: Waiting for the loading overlay to disappear
+2026-11-05 11:26:07.474 [main] [INFO] WebElement - Waiting for repositorySelect to be visible (timeout: 250ms)
+2026-11-05 11:26:07.483 [main] [INFO] WebElement - Clicking repositorySelect 
+2026-11-05 11:26:07.874 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:26:07.879 [main] [INFO] WaitUtil - Condition met after 5ms: Waiting for the loading overlay to disappear
+2026-11-05 11:26:07.879 [main] [INFO] WebElement - Waiting for firstDropdownOption to be visible (timeout: 250ms)
+2026-11-05 11:26:07.885 [main] [INFO] WebElement - Clicking firstDropdownOption 
+2026-11-05 11:26:08.257 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:26:08.273 [main] [INFO] WaitUtil - Condition met after 16ms: Waiting for the loading overlay to disappear
+2026-11-05 11:26:08.273 [main] [INFO] WebElement - Waiting for deploymentNameSelect to be visible (timeout: 250ms)
+2026-11-05 11:26:08.293 [main] [INFO] WebElement - Clicking deploymentNameSelect 
+2026-11-05 11:26:08.350 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:26:08.356 [main] [INFO] WaitUtil - Condition met after 6ms: Waiting for the loading overlay to disappear
+2026-11-05 11:26:08.356 [main] [INFO] WebElement - Waiting for deploymentNameSearchInput to be visible (timeout: 250ms)
+2026-11-05 11:26:08.363 [main] [INFO] WebElement - Filling Sequentially deploymentNameSearchInput with text: &#x27;bad:name?*&#x27;
+2026-11-05 11:26:08.425 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:26:08.434 [main] [INFO] WaitUtil - Condition met after 8ms: Waiting for the loading overlay to disappear
+2026-11-05 11:26:08.434 [main] [INFO] WebElement - Waiting for deploymentNameSearchInput to be visible (timeout: 250ms)
+2026-11-05 11:26:08.441 [main] [INFO] WebElement - Pressing Tab on deploymentNameSearchInput
+2026-11-05 11:26:08.457 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:26:08.468 [main] [INFO] WaitUtil - Condition met after 10ms: Waiting for the loading overlay to disappear
+2026-11-05 11:26:08.468 [main] [INFO] WebElement - Waiting for commentTextarea to be visible (timeout: 250ms)
+2026-11-05 11:26:08.475 [main] [INFO] WebElement - Filling Sequentially commentTextarea with text: &#x27;Deploy with a forbidden deployment name&#x27;
+2026-11-05 11:26:08.638 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:26:08.643 [main] [INFO] WaitUtil - Condition met after 5ms: Waiting for the loading overlay to disappear
+2026-11-05 11:26:08.643 [main] [INFO] WebElement - Waiting for deployButton to be visible (timeout: 250ms)
+2026-11-05 11:26:08.652 [main] [INFO] WebElement - Clicking deployButton 
+2026-11-05 11:26:08.741 [main] [INFO] WebElement - Waiting for deploymentNameError to be visible (timeout: 20000ms)
+2026-11-05 11:26:08.936 [main] [INFO] WebElement - Waiting for deploymentNameError to be visible (timeout: 20000ms)
+2026-11-05 11:26:08.941 [main] [INFO] WebElement - Waiting for deploymentNameError to be visible (timeout: 250ms)
+2026-11-05 11:26:08.953 [main] [INFO] WebElement - Getting text from deploymentNameError: &#x27;The specified name is not a valid project name. Name cannot contain forbidden characters (\, /, :, ;, &lt;, &gt;, ?, *, %, &#x27;, [, ], |, &quot;), start with space, end with space or dot.&#x27;
+2026-11-05 11:26:08.962 [main] [INFO] DockerDriverPool - Closing Playwright Docker for thread: main
+2026-11-05 11:26:09.330 [main] [INFO] WaitUtil - Sleeping for 2000ms: Waiting for Docker daemon to complete resource cleanup</pre></div></td></tr><tr class='row passed' data-status='passed' data-suite='repository' data-error=''><td><span class='badge' style='color:#1a7f37;background:#dafbe1'>PASSED</span></td><td>repository<br><small>shard-04</small></td><td><strong>TestRepositoryTableActions</strong><br>testRepositoryTabProperties<br><small>IPBQA-29847</small></td><td>1 min 53 s</td><td class='artifacts'><small>steps</small></td><td><button class='toggle' data-target='d7'>details</button></td></tr><tr class='details-row passed' id='d7' hidden><td colspan='6'><div class='tabs'><button class='tab active' data-tab='t7-0'>Overview</button><button class='tab' data-tab='t7-1'>Steps (844)</button></div><div class='panel' id='t7-0'><table class='kv'><tr><th>Group / shard</th><td>repository / shard-04</td></tr><tr><th>Class</th><td><code>tests.ui.webstudio.repository.TestRepositoryTableActions</code> · <a href='https://github.com/openl-tablets/openl-tests/blob/00e504c22782e2c1be37a5703078a561f76f7f04/src/test/java/tests/ui/webstudio/repository/TestRepositoryTableActions.java' target='_blank'>source</a></td></tr><tr><th>Method</th><td><code>testRepositoryTabProperties</code></td></tr><tr><th>Test case</th><td>IPBQA-29847</td></tr><tr><th>Known issue</th><td>—</td></tr><tr><th>Description</th><td>Repository project properties: the Modified author equals each committing user&#x27;s profile display name, the date stays valid and the Revision is present across multi-user modifications</td></tr><tr><th>Started / finished</th><td>2026-11-05T11:26:36.270Z → 2026-11-05T11:28:28.899Z (1 min 53 s)</td></tr><tr><th>Application build</th><td>latest</td></tr><tr><th>Tests revision</th><td>main @ 00e504c22782</td></tr></table></div><div class='panel' id='t7-1' hidden><p class='hint'>Framework log of this test: container start, every page action, waits, REST calls and assertions. Showing the last 50 of 844 lines · <a href='attachments/shard-04/tests.ui.webstudio.repository.TestRepositoryTableActions/testRepositoryTabProperties/test-steps.log' target='_blank'>full log</a></p><pre class='log'>2026-11-05 11:28:25.789 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:28:25.796 [main] [INFO] WaitUtil - Condition met after 7ms: Waiting for the loading overlay to disappear
+2026-11-05 11:28:25.796 [main] [INFO] WebElement - Waiting for deployButton to be visible (timeout: 250ms)
+2026-11-05 11:28:25.804 [main] [INFO] WebElement - Clicking deployButton 
+2026-11-05 11:28:25.872 [main] [INFO] WebElement - Waiting for successNotification to be visible (timeout: 20000ms)
+2026-11-05 11:28:26.077 [main] [INFO] CorePage - Messages currently open: 1
+2026-11-05 11:28:26.082 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:28:26.088 [main] [INFO] WaitUtil - Condition met after 6ms: Waiting for the loading overlay to disappear
+2026-11-05 11:28:26.088 [main] [INFO] WebElement - Waiting for Close Message Button to be visible (timeout: 500ms)
+2026-11-05 11:28:26.095 [main] [INFO] WebElement - Clicking with increased timeout Close Message Button 
+2026-11-05 11:28:26.345 [main] [INFO] WaitUtil - Sleeping for 100ms: Waiting between message close attempts
+2026-11-05 11:28:26.451 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:28:26.456 [main] [INFO] WaitUtil - Condition met after 5ms: Waiting for the loading overlay to disappear
+2026-11-05 11:28:26.456 [main] [INFO] WebElement - Waiting for Close Message Button to be visible (timeout: 500ms)
+2026-11-05 11:28:26.463 [main] [INFO] WebElement - Clicking with increased timeout Close Message Button 
+2026-11-05 11:28:26.967 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:28:26.970 [main] [INFO] WaitUtil - Condition met after 3ms: Waiting for the loading overlay to disappear
+2026-11-05 11:28:27.473 [main] [INFO] WaitUtil - Sleeping for 100ms: Waiting between message close attempts
+2026-11-05 11:28:27.578 [main] [INFO] WaitUtil - Sleeping for 100ms: Waiting between message close attempts
+2026-11-05 11:28:27.770 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-05 11:28:27.811 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:28:27.816 [main] [INFO] WaitUtil - Condition met after 5ms: Waiting for the loading overlay to disappear
+2026-11-05 11:28:27.816 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 250ms): Waiting for the list of projects to be drawn
+2026-11-05 11:28:27.819 [main] [INFO] WaitUtil - Condition met after 3ms: Waiting for the list of projects to be drawn
+2026-11-05 11:28:27.819 [main] [INFO] WebElement - Waiting for projectNameInRow to be visible (timeout: 90000ms)
+2026-11-05 11:28:28.135 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:28:28.139 [main] [INFO] WaitUtil - Condition met after 4ms: Waiting for the loading overlay to disappear
+2026-11-05 11:28:28.139 [main] [INFO] WebElement - Waiting for projectNameInRow to be visible (timeout: 250ms)
+2026-11-05 11:28:28.143 [main] [INFO] WebElement - Clicking projectNameInRow 
+2026-11-05 11:28:28.178 [main] [INFO] CorePage - domain.ui.webstudio.pages.mainpages.ProjectDetailPage was opened.
+2026-11-05 11:28:28.178 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:28:28.182 [main] [INFO] WaitUtil - Condition met after 4ms: Waiting for the loading overlay to disappear
+2026-11-05 11:28:28.182 [main] [INFO] WebElement - Waiting for overviewTab to be visible (timeout: 250ms)
+2026-11-05 11:28:28.435 [main] [INFO] WebElement - Clicking overviewTab 
+2026-11-05 11:28:28.769 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-05 11:28:28.775 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:28:28.781 [main] [INFO] WaitUtil - Condition met after 6ms: Waiting for the loading overlay to disappear
+2026-11-05 11:28:28.781 [main] [INFO] WebElement - Waiting for overviewRight to be visible (timeout: 250ms)
+2026-11-05 11:28:28.794 [main] [INFO] WebElement - Getting text from overviewRight: &#x27;StatusViewing RevisionRepositoryDesignPathTestRepositoryTabProperties_1793877996271BranchmasterDefaultRevision ID6e22d7ModifiedArcelia Swift11/05/2026 6:27:10 AMCommentProject TestRepositoryTabProperties_1793877996271 is created.TagsNot tagged&#x27;
+2026-11-05 11:28:28.794 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:28:28.801 [main] [INFO] WaitUtil - Condition met after 7ms: Waiting for the loading overlay to disappear
+2026-11-05 11:28:28.801 [main] [INFO] WebElement - Waiting for overviewTab to be visible (timeout: 250ms)
+2026-11-05 11:28:28.807 [main] [INFO] WebElement - Clicking overviewTab 
+2026-11-05 11:28:28.848 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-05 11:28:28.876 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:28:28.884 [main] [INFO] WaitUtil - Condition met after 8ms: Waiting for the loading overlay to disappear
+2026-11-05 11:28:28.884 [main] [INFO] WebElement - Waiting for overviewRight to be visible (timeout: 250ms)
+2026-11-05 11:28:28.899 [main] [INFO] WebElement - Getting text from overviewRight: &#x27;StatusViewing RevisionRepositoryDesignPathTestRepositoryTabProperties_1793877996271BranchmasterDefaultRevision ID6e22d7ModifiedArcelia Swift11/05/2026 6:27:10 AMCommentProject TestRepositoryTabProperties_1793877996271 is created.TagsNot tagged&#x27;
+2026-11-05 11:28:28.914 [main] [INFO] DockerDriverPool - Closing Playwright Docker for thread: main
+2026-11-05 11:28:29.296 [main] [INFO] WaitUtil - Sleeping for 2000ms: Waiting for Docker daemon to complete resource cleanup</pre></div></td></tr><tr class='row passed' data-status='passed' data-suite='repository' data-error=''><td><span class='badge' style='color:#1a7f37;background:#dafbe1'>PASSED</span></td><td>repository<br><small>shard-04</small></td><td><strong>TestRepositoryTableActions</strong><br>testTableActionButtons<br><small>EPBDS-12712</small></td><td>2 min 34 s</td><td class='artifacts'><small>steps</small></td><td><button class='toggle' data-target='d8'>details</button></td></tr><tr class='details-row passed' id='d8' hidden><td colspan='6'><div class='tabs'><button class='tab active' data-tab='t8-0'>Overview</button><button class='tab' data-tab='t8-1'>Steps (1288)</button></div><div class='panel' id='t8-0'><table class='kv'><tr><th>Group / shard</th><td>repository / shard-04</td></tr><tr><th>Class</th><td><code>tests.ui.webstudio.repository.TestRepositoryTableActions</code> · <a href='https://github.com/openl-tablets/openl-tests/blob/00e504c22782e2c1be37a5703078a561f76f7f04/src/test/java/tests/ui/webstudio/repository/TestRepositoryTableActions.java' target='_blank'>source</a></td></tr><tr><th>Method</th><td><code>testTableActionButtons</code></td></tr><tr><th>Test case</th><td>EPBDS-12712</td></tr><tr><th>Known issue</th><td>—</td></tr><tr><th>Description</th><td>Repository table action buttons: open/close/deploy row actions; viewer user access</td></tr><tr><th>Started / finished</th><td>2026-11-05T11:28:50.184Z → 2026-11-05T11:31:24.330Z (2 min 34 s)</td></tr><tr><th>Application build</th><td>latest</td></tr><tr><th>Tests revision</th><td>main @ 00e504c22782</td></tr></table></div><div class='panel' id='t8-1' hidden><p class='hint'>Framework log of this test: container start, every page action, waits, REST calls and assertions. Showing the last 50 of 1288 lines · <a href='attachments/shard-04/tests.ui.webstudio.repository.TestRepositoryTableActions/testTableActionButtons/test-steps.log' target='_blank'>full log</a></p><pre class='log'>2026-11-05 11:31:19.385 [main] [INFO] WebElement - Clicking overviewTab 
+2026-11-05 11:31:19.695 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-05 11:31:19.701 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:31:19.708 [main] [INFO] WaitUtil - Condition met after 7ms: Waiting for the loading overlay to disappear
+2026-11-05 11:31:19.708 [main] [INFO] WebElement - Waiting for overviewRight to be visible (timeout: 250ms)
+2026-11-05 11:31:19.718 [main] [INFO] WebElement - Getting text from overviewRight: &#x27;StatusNo ChangesRepositoryDesignPathTestTableActionButtons_P3_1793878130184BranchmasterDefaultRevision ID00e5fcModifiedIgnacia Glover11/05/2026 6:30:46 AMCommentProject TestTableActionButtons_P3_1793878130184 is created.&#x27;
+2026-11-05 11:31:19.834 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-05 11:31:19.867 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:31:19.870 [main] [INFO] WaitUtil - Condition met after 3ms: Waiting for the loading overlay to disappear
+2026-11-05 11:31:19.870 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 250ms): Waiting for project row actions
+2026-11-05 11:31:19.873 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for project row actions
+2026-11-05 11:31:20.231 [main] [INFO] WaitUtil - Condition met after 361ms: Waiting for project row actions
+2026-11-05 11:31:20.245 [main] [INFO] WebElement - Waiting for projectRowMoreBtn to be visible (timeout: 4000ms)
+2026-11-05 11:31:20.250 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:31:20.254 [main] [INFO] WaitUtil - Condition met after 4ms: Waiting for the loading overlay to disappear
+2026-11-05 11:31:20.254 [main] [INFO] WebElement - Waiting for projectRowMoreBtn to be visible (timeout: 250ms)
+2026-11-05 11:31:20.258 [main] [INFO] WebElement - Clicking projectRowMoreBtn 
+2026-11-05 11:31:20.287 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 250ms): Waiting for the row overflow menu
+2026-11-05 11:31:20.294 [main] [INFO] WaitUtil - Condition met after 7ms: Waiting for the row overflow menu
+2026-11-05 11:31:20.324 [main] [INFO] WebElement - Waiting for projectRowAction to be visible (timeout: 4000ms)
+2026-11-05 11:31:20.330 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:31:20.338 [main] [INFO] WaitUtil - Condition met after 8ms: Waiting for the loading overlay to disappear
+2026-11-05 11:31:20.339 [main] [INFO] WebElement - Waiting for projectRowAction to be visible (timeout: 10000ms)
+2026-11-05 11:31:20.345 [main] [INFO] WebElement - Clicking with increased timeout projectRowAction 
+2026-11-05 11:31:20.501 [main] [INFO] WebElement - Waiting for discardCloseConfirmBtn to be visible (timeout: 3000ms)
+2026-11-05 11:31:23.558 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-05 11:31:23.561 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:31:23.564 [main] [INFO] WaitUtil - Condition met after 3ms: Waiting for the loading overlay to disappear
+2026-11-05 11:31:23.564 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 250ms): Waiting for the list of projects to be drawn
+2026-11-05 11:31:23.566 [main] [INFO] WaitUtil - Condition met after 2ms: Waiting for the list of projects to be drawn
+2026-11-05 11:31:23.566 [main] [INFO] WebElement - Waiting for projectNameInRow to be visible (timeout: 90000ms)
+2026-11-05 11:31:23.570 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:31:23.573 [main] [INFO] WaitUtil - Condition met after 3ms: Waiting for the loading overlay to disappear
+2026-11-05 11:31:23.573 [main] [INFO] WebElement - Waiting for projectNameInRow to be visible (timeout: 250ms)
+2026-11-05 11:31:23.576 [main] [INFO] WebElement - Clicking projectNameInRow 
+2026-11-05 11:31:23.587 [main] [INFO] CorePage - domain.ui.webstudio.pages.mainpages.ProjectDetailPage was opened.
+2026-11-05 11:31:23.587 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:31:23.590 [main] [INFO] WaitUtil - Condition met after 3ms: Waiting for the loading overlay to disappear
+2026-11-05 11:31:23.590 [main] [INFO] WebElement - Waiting for overviewTab to be visible (timeout: 250ms)
+2026-11-05 11:31:23.843 [main] [INFO] WebElement - Clicking overviewTab 
+2026-11-05 11:31:24.171 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-05 11:31:24.177 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:31:24.183 [main] [INFO] WaitUtil - Condition met after 6ms: Waiting for the loading overlay to disappear
+2026-11-05 11:31:24.183 [main] [INFO] WebElement - Waiting for overviewRight to be visible (timeout: 250ms)
+2026-11-05 11:31:24.195 [main] [INFO] WebElement - Getting text from overviewRight: &#x27;StatusClosedRepositoryDesignPathTestTableActionButtons_P3_1793878130184BranchmasterDefaultRevision ID00e5fcModifiedIgnacia Glover11/05/2026 6:30:46 AMCommentProject TestTableActionButtons_P3_1793878130184 is created.&#x27;
+2026-11-05 11:31:24.309 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-05 11:31:24.328 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:31:24.330 [main] [INFO] WaitUtil - Condition met after 2ms: Waiting for the loading overlay to disappear
+2026-11-05 11:31:24.338 [main] [INFO] DockerDriverPool - Closing Playwright Docker for thread: main
+2026-11-05 11:31:24.854 [main] [INFO] WaitUtil - Sleeping for 2000ms: Waiting for Docker daemon to complete resource cleanup</pre></div></td></tr><tr class='row passed' data-status='passed' data-suite='repository' data-error=''><td><span class='badge' style='color:#1a7f37;background:#dafbe1'>PASSED</span></td><td>repository<br><small>shard-05</small></td><td><strong>TestDeploymentReplacesContentUi</strong><br>testDeployingAnotherProjectReplacesDeploymentContent<br><small>IPBQA-33014</small></td><td>1 min 38 s</td><td class='artifacts'><small>steps</small></td><td><button class='toggle' data-target='d9'>details</button></td></tr><tr class='details-row passed' id='d9' hidden><td colspan='6'><div class='tabs'><button class='tab active' data-tab='t9-0'>Overview</button><button class='tab' data-tab='t9-1'>Steps (761)</button></div><div class='panel' id='t9-0'><table class='kv'><tr><th>Group / shard</th><td>repository / shard-05</td></tr><tr><th>Class</th><td><code>tests.ui.webstudio.repository.TestDeploymentReplacesContentUi</code> · <a href='https://github.com/openl-tablets/openl-tests/blob/00e504c22782e2c1be37a5703078a561f76f7f04/src/test/java/tests/ui/webstudio/repository/TestDeploymentReplacesContentUi.java' target='_blank'>source</a></td></tr><tr><th>Method</th><td><code>testDeployingAnotherProjectReplacesDeploymentContent</code></td></tr><tr><th>Test case</th><td>IPBQA-33014</td></tr><tr><th>Known issue</th><td>—</td></tr><tr><th>Description</th><td>EPBDS-16307 Deploying another project into an existing deployment REPLACES its content: the deployment holds the newly deployed project alone and the previously deployed one is gone. This is destructive behaviour, so the test pins it against a silent change.</td></tr><tr><th>Started / finished</th><td>2026-11-05T11:24:33.489Z → 2026-11-05T11:26:11.696Z (1 min 38 s)</td></tr><tr><th>Application build</th><td>latest</td></tr><tr><th>Tests revision</th><td>main @ 00e504c22782</td></tr></table></div><div class='panel' id='t9-1' hidden><p class='hint'>Framework log of this test: container start, every page action, waits, REST calls and assertions. Showing the last 50 of 761 lines · <a href='attachments/shard-05/tests.ui.webstudio.repository.TestDeploymentReplacesContentUi/testDeployingAnotherProjectReplacesDeploymentContent/test-steps.log' target='_blank'>full log</a></p><pre class='log'>2026-11-05 11:25:58.215 [main] [INFO] WebElement - Waiting for dropdownOption to be visible (timeout: 20000ms)
+2026-11-05 11:25:58.231 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:25:58.255 [main] [INFO] WaitUtil - Condition met after 24ms: Waiting for the loading overlay to disappear
+2026-11-05 11:25:58.256 [main] [INFO] WebElement - Waiting for dropdownOption to be visible (timeout: 250ms)
+2026-11-05 11:25:58.281 [main] [INFO] WebElement - Clicking dropdownOption 
+2026-11-05 11:25:58.590 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:25:58.597 [main] [INFO] WaitUtil - Condition met after 6ms: Waiting for the loading overlay to disappear
+2026-11-05 11:25:58.597 [main] [INFO] WebElement - Waiting for commentTextarea to be visible (timeout: 250ms)
+2026-11-05 11:25:58.613 [main] [INFO] WebElement - Filling Sequentially commentTextarea with text: &#x27;Second project into the same deployment&#x27;
+2026-11-05 11:25:58.942 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:25:58.955 [main] [INFO] WaitUtil - Condition met after 13ms: Waiting for the loading overlay to disappear
+2026-11-05 11:25:58.955 [main] [INFO] WebElement - Waiting for deployButton to be visible (timeout: 250ms)
+2026-11-05 11:25:58.967 [main] [INFO] WebElement - Clicking deployButton 
+2026-11-05 11:25:59.099 [main] [INFO] CorePage - Messages currently open: 0
+2026-11-05 11:25:59.128 [main] [INFO] WaitUtil - Sleeping for 100ms: Waiting between message close attempts
+2026-11-05 11:25:59.286 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:25:59.303 [main] [INFO] WaitUtil - Condition met after 17ms: Waiting for the loading overlay to disappear
+2026-11-05 11:25:59.303 [main] [INFO] WebElement - Waiting for Close Message Button to be visible (timeout: 500ms)
+2026-11-05 11:25:59.326 [main] [INFO] WebElement - Clicking with increased timeout Close Message Button 
+2026-11-05 11:25:59.591 [main] [INFO] WaitUtil - Sleeping for 100ms: Waiting between message close attempts
+2026-11-05 11:25:59.701 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:25:59.709 [main] [INFO] WaitUtil - Condition met after 7ms: Waiting for the loading overlay to disappear
+2026-11-05 11:25:59.709 [main] [INFO] WebElement - Waiting for Close Message Button to be visible (timeout: 500ms)
+2026-11-05 11:25:59.718 [main] [INFO] WebElement - Clicking with increased timeout Close Message Button 
+2026-11-05 11:26:00.226 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:26:00.235 [main] [INFO] WaitUtil - Condition met after 8ms: Waiting for the loading overlay to disappear
+2026-11-05 11:26:00.741 [main] [INFO] WaitUtil - Sleeping for 100ms: Waiting between message close attempts
+2026-11-05 11:26:00.841 [main] [INFO] CorePage - domain.ui.webstudio.pages.mainpages.DeploymentsHomePage was opened.
+2026-11-05 11:26:00.990 [main] [INFO] WebElement - Waiting for deploymentsHome to be visible (timeout: 20000ms)
+2026-11-05 11:26:01.254 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-05 11:26:01.349 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:26:01.383 [main] [INFO] WaitUtil - Condition met after 34ms: Waiting for the loading overlay to disappear
+2026-11-05 11:26:01.383 [main] [INFO] WebElement - Waiting for deploymentOpen to be visible (timeout: 20000ms)
+2026-11-05 11:26:01.395 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:26:01.401 [main] [INFO] WaitUtil - Condition met after 6ms: Waiting for the loading overlay to disappear
+2026-11-05 11:26:01.401 [main] [INFO] WebElement - Waiting for deploymentOpen to be visible (timeout: 250ms)
+2026-11-05 11:26:01.412 [main] [INFO] WebElement - Clicking deploymentOpen 
+2026-11-05 11:26:01.459 [main] [INFO] CorePage - domain.ui.webstudio.pages.mainpages.DeploymentWorkspacePage was opened.
+2026-11-05 11:26:01.459 [main] [INFO] WebElement - Waiting for deploymentWorkspace to be visible (timeout: 20000ms)
+2026-11-05 11:26:01.654 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-05 11:26:01.659 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:26:01.664 [main] [INFO] WaitUtil - Condition met after 4ms: Waiting for the loading overlay to disappear
+2026-11-05 11:26:01.664 [main] [INFO] WebElement - Waiting for deploymentProjectsTable to be visible (timeout: 20000ms)
+2026-11-05 11:26:01.675 [main] [INFO] WebElement - Waiting for deploymentProjectsTable to be visible (timeout: 20000ms)
+2026-11-05 11:26:01.681 [main] [INFO] WebElement - Waiting for deploymentProjectRow to be visible (timeout: 10000ms)
+2026-11-05 11:26:01.685 [main] [INFO] WebElement - Waiting for deploymentProjectsTable to be visible (timeout: 20000ms)
+2026-11-05 11:26:01.691 [main] [INFO] WebElement - Waiting for deploymentProjectRow to be visible (timeout: 10000ms)
+2026-11-05 11:26:11.711 [main] [INFO] DockerDriverPool - Closing Playwright Docker for thread: main
+2026-11-05 11:26:12.633 [main] [INFO] WaitUtil - Sleeping for 2000ms: Waiting for Docker daemon to complete resource cleanup
+2026-11-05 11:26:14.635 [main] [INFO] DeployInfrastructureService - Stopping PostgreSQL container...</pre></div></td></tr><tr class='row passed' data-status='passed' data-suite='repository' data-error=''><td><span class='badge' style='color:#1a7f37;background:#dafbe1'>PASSED</span></td><td>repository<br><small>shard-05</small></td><td><strong>TestMultipleDesignRepositoriesWithPostgres</strong><br>testMultipleDesignRepositoriesWithPostgres<br><small>IPBQA-30859</small></td><td>2 min 26 s</td><td class='artifacts'><small>steps</small></td><td><button class='toggle' data-target='d10'>details</button></td></tr><tr class='details-row passed' id='d10' hidden><td colspan='6'><div class='tabs'><button class='tab active' data-tab='t10-0'>Overview</button><button class='tab' data-tab='t10-1'>Steps (1132)</button></div><div class='panel' id='t10-0'><table class='kv'><tr><th>Group / shard</th><td>repository / shard-05</td></tr><tr><th>Class</th><td><code>tests.ui.webstudio.repository.TestMultipleDesignRepositoriesWithPostgres</code> · <a href='https://github.com/openl-tablets/openl-tests/blob/00e504c22782e2c1be37a5703078a561f76f7f04/src/test/java/tests/ui/webstudio/repository/TestMultipleDesignRepositoriesWithPostgres.java' target='_blank'>source</a></td></tr><tr><th>Method</th><td><code>testMultipleDesignRepositoriesWithPostgres</code></td></tr><tr><th>Test case</th><td>IPBQA-30859</td></tr><tr><th>Known issue</th><td>—</td></tr><tr><th>Description</th><td>Multiple Design Repositories: create/copy across Git repos with JDBC security DB</td></tr><tr><th>Started / finished</th><td>2026-11-05T11:26:47.521Z → 2026-11-05T11:29:13.682Z (2 min 26 s)</td></tr><tr><th>Application build</th><td>latest</td></tr><tr><th>Tests revision</th><td>main @ 00e504c22782</td></tr></table></div><div class='panel' id='t10-1' hidden><p class='hint'>Framework log of this test: container start, every page action, waits, REST calls and assertions. Showing the last 50 of 1132 lines · <a href='attachments/shard-05/tests.ui.webstudio.repository.TestMultipleDesignRepositoriesWithPostgres/testMultipleDesignRepositoriesWithPostgres/test-steps.log' target='_blank'>full log</a></p><pre class='log'>2026-11-05 11:29:02.094 [main] [INFO] WaitUtil - Condition met after 6ms: Waiting for the loading overlay to disappear
+2026-11-05 11:29:02.094 [main] [INFO] WebElement - Waiting for projectRowActionByState to be visible (timeout: 4000ms)
+2026-11-05 11:29:06.114 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:29:06.124 [main] [INFO] WaitUtil - Condition met after 10ms: Waiting for the loading overlay to disappear
+2026-11-05 11:29:06.124 [main] [INFO] WebElement - Waiting for projectRowMoreBtnByState to be visible (timeout: 250ms)
+2026-11-05 11:29:06.132 [main] [INFO] WebElement - Clicking projectRowMoreBtnByState 
+2026-11-05 11:29:06.189 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:29:06.201 [main] [INFO] WaitUtil - Condition met after 12ms: Waiting for the loading overlay to disappear
+2026-11-05 11:29:06.201 [main] [INFO] WebElement - Waiting for overflowMenuItem to be visible (timeout: 250ms)
+2026-11-05 11:29:06.236 [main] [INFO] WebElement - Clicking overflowMenuItem 
+2026-11-05 11:29:06.371 [main] [INFO] WebElement - Waiting for projectDeleteCommentInput to be visible
+2026-11-05 11:29:06.398 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:29:06.411 [main] [INFO] WaitUtil - Condition met after 12ms: Waiting for the loading overlay to disappear
+2026-11-05 11:29:06.411 [main] [INFO] WebElement - Waiting for projectDeleteCommentInput to be visible (timeout: 250ms)
+2026-11-05 11:29:06.427 [main] [INFO] WebElement - Filling projectDeleteCommentInput with text: &#x27;Removed by automated regression test&#x27;
+2026-11-05 11:29:06.472 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:29:06.490 [main] [INFO] WaitUtil - Condition met after 18ms: Waiting for the loading overlay to disappear
+2026-11-05 11:29:06.490 [main] [INFO] WebElement - Waiting for projectDeleteAcknowledgeCheckbox to be visible (timeout: 250ms)
+2026-11-05 11:29:06.830 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:29:06.850 [main] [INFO] WaitUtil - Condition met after 20ms: Waiting for the loading overlay to disappear
+2026-11-05 11:29:06.850 [main] [INFO] WebElement - Waiting for projectDeleteConfirmBtn to be visible (timeout: 250ms)
+2026-11-05 11:29:06.875 [main] [INFO] WebElement - Clicking projectDeleteConfirmBtn 
+2026-11-05 11:29:06.987 [main] [INFO] WebElement - Waiting for projectDeleteConfirmBtn to be hidden
+2026-11-05 11:29:08.167 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-05 11:29:08.208 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:29:08.212 [main] [INFO] WaitUtil - Condition met after 4ms: Waiting for the loading overlay to disappear
+2026-11-05 11:29:08.212 [main] [INFO] WebElement - Waiting for projectRowAction to be visible (timeout: 4000ms)
+2026-11-05 11:29:12.231 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:29:12.239 [main] [INFO] WaitUtil - Condition met after 7ms: Waiting for the loading overlay to disappear
+2026-11-05 11:29:12.239 [main] [INFO] WebElement - Waiting for projectRowMoreBtn to be visible (timeout: 250ms)
+2026-11-05 11:29:12.248 [main] [INFO] WebElement - Clicking projectRowMoreBtn 
+2026-11-05 11:29:12.305 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:29:12.314 [main] [INFO] WaitUtil - Condition met after 9ms: Waiting for the loading overlay to disappear
+2026-11-05 11:29:12.314 [main] [INFO] WebElement - Waiting for overflowMenuItem to be visible (timeout: 10000ms)
+2026-11-05 11:29:12.351 [main] [INFO] WebElement - Clicking with increased timeout overflowMenuItem 
+2026-11-05 11:29:12.476 [main] [INFO] WebElement - Waiting for projectDeleteCommentInput to be visible
+2026-11-05 11:29:12.498 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:29:12.507 [main] [INFO] WaitUtil - Condition met after 9ms: Waiting for the loading overlay to disappear
+2026-11-05 11:29:12.508 [main] [INFO] WebElement - Waiting for projectDeleteCommentInput to be visible (timeout: 250ms)
+2026-11-05 11:29:12.521 [main] [INFO] WebElement - Filling projectDeleteCommentInput with text: &#x27;Removed by automated regression test&#x27;
+2026-11-05 11:29:12.557 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:29:12.571 [main] [INFO] WaitUtil - Condition met after 13ms: Waiting for the loading overlay to disappear
+2026-11-05 11:29:12.571 [main] [INFO] WebElement - Waiting for projectDeleteAcknowledgeCheckbox to be visible (timeout: 250ms)
+2026-11-05 11:29:12.985 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:29:13.004 [main] [INFO] WaitUtil - Condition met after 19ms: Waiting for the loading overlay to disappear
+2026-11-05 11:29:13.004 [main] [INFO] WebElement - Waiting for projectDeleteConfirmBtn to be visible (timeout: 250ms)
+2026-11-05 11:29:13.018 [main] [INFO] WebElement - Clicking projectDeleteConfirmBtn 
+2026-11-05 11:29:13.098 [main] [INFO] WebElement - Waiting for projectDeleteConfirmBtn to be hidden
+2026-11-05 11:29:13.697 [main] [INFO] DockerDriverPool - Closing Playwright Docker for thread: main
+2026-11-05 11:29:14.151 [main] [INFO] WaitUtil - Sleeping for 2000ms: Waiting for Docker daemon to complete resource cleanup</pre></div></td></tr><tr class='row passed' data-status='passed' data-suite='repository' data-error=''><td><span class='badge' style='color:#1a7f37;background:#dafbe1'>PASSED</span></td><td>repository<br><small>shard-06</small></td><td><strong>TestDeploymentRepositoryIsolationUi</strong><br>testSameDeploymentNameStaysIsolatedPerRepository<br><small>IPBQA-33011</small></td><td>57 s</td><td class='artifacts'><small>steps</small></td><td><button class='toggle' data-target='d11'>details</button></td></tr><tr class='details-row passed' id='d11' hidden><td colspan='6'><div class='tabs'><button class='tab active' data-tab='t11-0'>Overview</button><button class='tab' data-tab='t11-1'>Steps (570)</button></div><div class='panel' id='t11-0'><table class='kv'><tr><th>Group / shard</th><td>repository / shard-06</td></tr><tr><th>Class</th><td><code>tests.ui.webstudio.repository.TestDeploymentRepositoryIsolationUi</code> · <a href='https://github.com/openl-tablets/openl-tests/blob/00e504c22782e2c1be37a5703078a561f76f7f04/src/test/java/tests/ui/webstudio/repository/TestDeploymentRepositoryIsolationUi.java' target='_blank'>source</a></td></tr><tr><th>Method</th><td><code>testSameDeploymentNameStaysIsolatedPerRepository</code></td></tr><tr><th>Test case</th><td>IPBQA-33011</td></tr><tr><th>Known issue</th><td>—</td></tr><tr><th>Description</th><td>Two deployment repositories holding a deployment of the very same name must stay isolated: each list shows its own single row, the rail switch is reflected in the URL, and the URL-safe id of each deployment decodes to its own repository, not to the other one (EPBDS-16403).</td></tr><tr><th>Started / finished</th><td>2026-11-05T11:24:25.400Z → 2026-11-05T11:25:22.426Z (57 s)</td></tr><tr><th>Application build</th><td>latest</td></tr><tr><th>Tests revision</th><td>main @ 00e504c22782</td></tr></table></div><div class='panel' id='t11-1' hidden><p class='hint'>Framework log of this test: container start, every page action, waits, REST calls and assertions. Showing the last 50 of 570 lines · <a href='attachments/shard-06/tests.ui.webstudio.repository.TestDeploymentRepositoryIsolationUi/testSameDeploymentNameStaysIsolatedPerRepository/test-steps.log' target='_blank'>full log</a></p><pre class='log'>2026-11-05 11:25:20.355 [main] [INFO] WebElement - Waiting for deploymentsError to be visible (timeout: 500ms)
+2026-11-05 11:25:20.861 [main] [INFO] WebElement - Waiting for deploymentsTable to be visible (timeout: 1000ms)
+2026-11-05 11:25:20.887 [main] [INFO] WebElement - Waiting for deploymentOpen to be visible (timeout: 20000ms)
+2026-11-05 11:25:20.892 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:25:20.894 [main] [INFO] WaitUtil - Condition met after 2ms: Waiting for the loading overlay to disappear
+2026-11-05 11:25:20.895 [main] [INFO] WebElement - Waiting for deploymentOpen to be visible (timeout: 250ms)
+2026-11-05 11:25:20.898 [main] [INFO] WebElement - Clicking deploymentOpen 
+2026-11-05 11:25:20.926 [main] [INFO] CorePage - domain.ui.webstudio.pages.mainpages.DeploymentWorkspacePage was opened.
+2026-11-05 11:25:20.927 [main] [INFO] WebElement - Waiting for deploymentWorkspace to be visible (timeout: 20000ms)
+2026-11-05 11:25:21.118 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-05 11:25:21.122 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:25:21.125 [main] [INFO] WaitUtil - Condition met after 3ms: Waiting for the loading overlay to disappear
+2026-11-05 11:25:21.126 [main] [INFO] WebElement - Waiting for deploymentProjectsTable to be visible (timeout: 20000ms)
+2026-11-05 11:25:21.130 [main] [INFO] WebElement - Waiting for deploymentProjectRow to be visible (timeout: 10000ms)
+2026-11-05 11:25:21.134 [main] [INFO] CorePage - domain.ui.webstudio.pages.mainpages.DeploymentsHomePage was opened.
+2026-11-05 11:25:21.219 [main] [INFO] WebElement - Waiting for deploymentsHome to be visible (timeout: 20000ms)
+2026-11-05 11:25:21.426 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-05 11:25:21.530 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:25:21.550 [main] [INFO] WaitUtil - Condition met after 20ms: Waiting for the loading overlay to disappear
+2026-11-05 11:25:21.550 [main] [INFO] WebElement - Waiting for deploymentRepositoryRailItem to be visible (timeout: 20000ms)
+2026-11-05 11:25:21.559 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:25:21.564 [main] [INFO] WaitUtil - Condition met after 4ms: Waiting for the loading overlay to disappear
+2026-11-05 11:25:21.564 [main] [INFO] WebElement - Waiting for deploymentRepositoryRailItem to be visible (timeout: 250ms)
+2026-11-05 11:25:21.569 [main] [INFO] WebElement - Clicking deploymentRepositoryRailItem 
+2026-11-05 11:25:21.608 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-05 11:25:21.612 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:25:21.615 [main] [INFO] WaitUtil - Condition met after 3ms: Waiting for the loading overlay to disappear
+2026-11-05 11:25:21.616 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 300ms): Waiting for the deployments list to leave its loading state
+2026-11-05 11:25:21.616 [main] [INFO] WebElement - Waiting for deploymentsTable to be visible (timeout: 1000ms)
+2026-11-05 11:25:21.651 [main] [INFO] WaitUtil - Condition met after 35ms: Waiting for the deployments list to leave its loading state
+2026-11-05 11:25:21.651 [main] [INFO] WebElement - Waiting for deploymentsError to be visible (timeout: 500ms)
+2026-11-05 11:25:22.160 [main] [INFO] WebElement - Waiting for deploymentsTable to be visible (timeout: 1000ms)
+2026-11-05 11:25:22.178 [main] [INFO] WebElement - Waiting for deploymentOpen to be visible (timeout: 20000ms)
+2026-11-05 11:25:22.183 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:25:22.185 [main] [INFO] WaitUtil - Condition met after 2ms: Waiting for the loading overlay to disappear
+2026-11-05 11:25:22.185 [main] [INFO] WebElement - Waiting for deploymentOpen to be visible (timeout: 250ms)
+2026-11-05 11:25:22.188 [main] [INFO] WebElement - Clicking deploymentOpen 
+2026-11-05 11:25:22.205 [main] [INFO] CorePage - domain.ui.webstudio.pages.mainpages.DeploymentWorkspacePage was opened.
+2026-11-05 11:25:22.205 [main] [INFO] WebElement - Waiting for deploymentWorkspace to be visible (timeout: 20000ms)
+2026-11-05 11:25:22.398 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-05 11:25:22.404 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:25:22.407 [main] [INFO] WaitUtil - Condition met after 3ms: Waiting for the loading overlay to disappear
+2026-11-05 11:25:22.407 [main] [INFO] WebElement - Waiting for deploymentTitle to be visible (timeout: 20000ms)
+2026-11-05 11:25:22.411 [main] [INFO] WebElement - Waiting for deploymentTitle to be visible (timeout: 250ms)
+2026-11-05 11:25:22.419 [main] [INFO] WebElement - Getting text from deploymentTitle: &#x27;SharedAcrossRepositories&#x27;
+2026-11-05 11:25:22.419 [main] [INFO] WebElement - Waiting for deploymentProjectsTable to be visible (timeout: 20000ms)
+2026-11-05 11:25:22.423 [main] [INFO] WebElement - Waiting for deploymentProjectRow to be visible (timeout: 10000ms)
+2026-11-05 11:25:22.438 [main] [INFO] DockerDriverPool - Closing Playwright Docker for thread: main
+2026-11-05 11:25:22.840 [main] [INFO] WaitUtil - Sleeping for 2000ms: Waiting for Docker daemon to complete resource cleanup
+2026-11-05 11:25:24.843 [main] [INFO] DeployInfrastructureService - Stopping PostgreSQL container...</pre></div></td></tr><tr class='row passed' data-status='passed' data-suite='repository' data-error=''><td><span class='badge' style='color:#1a7f37;background:#dafbe1'>PASSED</span></td><td>repository<br><small>shard-06</small></td><td><strong>TestRepositoryBrowsingFilterStatus</strong><br>testRepositoryBrowsingFilterStatus<br><small>IPBQA-30010</small></td><td>3 min 00 s</td><td class='artifacts'><small>steps</small></td><td><button class='toggle' data-target='d12'>details</button></td></tr><tr class='details-row passed' id='d12' hidden><td colspan='6'><div class='tabs'><button class='tab active' data-tab='t12-0'>Overview</button><button class='tab' data-tab='t12-1'>Steps (1392)</button></div><div class='panel' id='t12-0'><table class='kv'><tr><th>Group / shard</th><td>repository / shard-06</td></tr><tr><th>Class</th><td><code>tests.ui.webstudio.repository.TestRepositoryBrowsingFilterStatus</code> · <a href='https://github.com/openl-tablets/openl-tests/blob/00e504c22782e2c1be37a5703078a561f76f7f04/src/test/java/tests/ui/webstudio/repository/TestRepositoryBrowsingFilterStatus.java' target='_blank'>source</a></td></tr><tr><th>Method</th><td><code>testRepositoryBrowsingFilterStatus</code></td></tr><tr><th>Test case</th><td>IPBQA-30010</td></tr><tr><th>Known issue</th><td>—</td></tr><tr><th>Description</th><td>Repository - Browsing, filter by name, status lifecycle, folder creation, multi-user workspace isolation</td></tr><tr><th>Started / finished</th><td>2026-11-05T11:25:52.757Z → 2026-11-05T11:28:52.800Z (3 min 00 s)</td></tr><tr><th>Application build</th><td>latest</td></tr><tr><th>Tests revision</th><td>main @ 00e504c22782</td></tr></table></div><div class='panel' id='t12-1' hidden><p class='hint'>Framework log of this test: container start, every page action, waits, REST calls and assertions. Showing the last 50 of 1392 lines · <a href='attachments/shard-06/tests.ui.webstudio.repository.TestRepositoryBrowsingFilterStatus/testRepositoryBrowsingFilterStatus/test-steps.log' target='_blank'>full log</a></p><pre class='log'>2026-11-05 11:28:45.750 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:28:45.762 [main] [INFO] WaitUtil - Condition met after 12ms: Waiting for the loading overlay to disappear
+2026-11-05 11:28:45.762 [main] [INFO] WebElement - Waiting for folderSubmitBtn to be visible (timeout: 250ms)
+2026-11-05 11:28:45.773 [main] [INFO] WebElement - Clicking folderSubmitBtn 
+2026-11-05 11:28:46.247 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-05 11:28:46.257 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:28:46.268 [main] [INFO] WaitUtil - Condition met after 11ms: Waiting for the loading overlay to disappear
+2026-11-05 11:28:46.268 [main] [INFO] WebElement - Waiting for detailRoot to be visible (timeout: 20000ms)
+2026-11-05 11:28:46.281 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:28:46.290 [main] [INFO] WaitUtil - Condition met after 9ms: Waiting for the loading overlay to disappear
+2026-11-05 11:28:46.290 [main] [INFO] WebElement - Waiting for filesTab to be visible (timeout: 250ms)
+2026-11-05 11:28:46.298 [main] [INFO] WebElement - Clicking filesTab 
+2026-11-05 11:28:46.536 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-05 11:28:46.545 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:28:46.554 [main] [INFO] WaitUtil - Condition met after 9ms: Waiting for the loading overlay to disappear
+2026-11-05 11:28:46.554 [main] [INFO] WebElement - Waiting for filesSearchField to be visible (timeout: 10000ms)
+2026-11-05 11:28:46.563 [main] [INFO] WebElement - Waiting for fileTreeNode to be visible (timeout: 20000ms)
+2026-11-05 11:28:46.653 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-05 11:28:46.681 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:28:46.687 [main] [INFO] WaitUtil - Condition met after 6ms: Waiting for the loading overlay to disappear
+2026-11-05 11:28:46.687 [main] [INFO] WebElement - Waiting for projectRowAction to be visible (timeout: 4000ms)
+2026-11-05 11:28:50.700 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:28:50.705 [main] [INFO] WaitUtil - Condition met after 5ms: Waiting for the loading overlay to disappear
+2026-11-05 11:28:50.705 [main] [INFO] WebElement - Waiting for projectRowMoreBtn to be visible (timeout: 250ms)
+2026-11-05 11:28:50.710 [main] [INFO] WebElement - Clicking projectRowMoreBtn 
+2026-11-05 11:28:50.746 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:28:50.753 [main] [INFO] WaitUtil - Condition met after 7ms: Waiting for the loading overlay to disappear
+2026-11-05 11:28:50.754 [main] [INFO] WebElement - Waiting for overflowMenuItem to be visible (timeout: 10000ms)
+2026-11-05 11:28:50.765 [main] [INFO] WebElement - Clicking with increased timeout overflowMenuItem 
+2026-11-05 11:28:50.873 [main] [INFO] WebElement - Waiting for projectDeleteCommentInput to be visible
+2026-11-05 11:28:50.888 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:28:50.905 [main] [INFO] WaitUtil - Condition met after 17ms: Waiting for the loading overlay to disappear
+2026-11-05 11:28:50.905 [main] [INFO] WebElement - Waiting for projectDeleteCommentInput to be visible (timeout: 250ms)
+2026-11-05 11:28:50.922 [main] [INFO] WebElement - Filling projectDeleteCommentInput with text: &#x27;Removed by automated regression test&#x27;
+2026-11-05 11:28:50.964 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:28:50.975 [main] [INFO] WaitUtil - Condition met after 11ms: Waiting for the loading overlay to disappear
+2026-11-05 11:28:50.975 [main] [INFO] WebElement - Waiting for projectDeleteAcknowledgeCheckbox to be visible (timeout: 250ms)
+2026-11-05 11:28:51.368 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:28:51.372 [main] [INFO] WaitUtil - Condition met after 4ms: Waiting for the loading overlay to disappear
+2026-11-05 11:28:51.372 [main] [INFO] WebElement - Waiting for projectDeleteConfirmBtn to be visible (timeout: 250ms)
+2026-11-05 11:28:51.385 [main] [INFO] WebElement - Clicking projectDeleteConfirmBtn 
+2026-11-05 11:28:51.453 [main] [INFO] WebElement - Waiting for projectDeleteConfirmBtn to be hidden
+2026-11-05 11:28:52.406 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-05 11:28:52.434 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 11:28:52.437 [main] [INFO] WaitUtil - Condition met after 3ms: Waiting for the loading overlay to disappear
+2026-11-05 11:28:52.437 [main] [INFO] WaitUtil - Waiting for condition (timeout: 5000ms, polling: 250ms): Waiting for projects to load
+2026-11-05 11:28:52.440 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for projects to load
+2026-11-05 11:28:52.786 [main] [INFO] WaitUtil - Condition met after 349ms: Waiting for projects to load
+2026-11-05 11:28:52.813 [main] [INFO] DockerDriverPool - Closing Playwright Docker for thread: main
+2026-11-05 11:28:53.270 [main] [INFO] WaitUtil - Sleeping for 2000ms: Waiting for Docker daemon to complete resource cleanup</pre></div></td></tr></tbody></table></div>
+</div>
+<script>
+const rows=[...document.querySelectorAll('tr.row')];
+function apply(){const s=document.getElementById('status').value,u=document.getElementById('suite').value,q=document.getElementById('search').value.toLowerCase();
+rows.forEach(r=>{const ok=(!s||r.dataset.status===s)&&(!u||r.dataset.suite===u)&&(!q||(r.textContent+' '+(r.dataset.error||'')).toLowerCase().includes(q));r.hidden=!ok;const d=r.nextElementSibling;if(d&&d.classList.contains('details-row')&&!ok){d.hidden=true;r.querySelector('button.toggle')?.classList.remove('open');}});}
+['status','suite'].forEach(id=>document.getElementById(id).addEventListener('change',apply));document.getElementById('search').addEventListener('input',apply);
+document.querySelectorAll('button.toggle').forEach(b=>b.addEventListener('click',()=>{const d=document.getElementById(b.dataset.target);d.hidden=!d.hidden;b.classList.toggle('open',!d.hidden);}));
+document.getElementById('expand-failed').addEventListener('click',()=>{document.querySelectorAll('tr.details-row.failed').forEach(d=>{d.hidden=false;const b=d.previousElementSibling.querySelector('button.toggle');if(b)b.classList.add('open');});});
+document.querySelectorAll('button.tab').forEach(b=>b.addEventListener('click',()=>{const panel=document.getElementById(b.dataset.tab);const box=b.closest('td');box.querySelectorAll('.panel').forEach(p=>p.hidden=true);box.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));panel.hidden=false;b.classList.add('active');}));
+</script></body></html>

@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>OpenL Tests [latest]</title>
+<style>
+:root{--bg:#f3f5f9;--surface:#ffffff;--surface-2:#f8fafc;--line:#e3e8ef;--line-strong:#d0d7e2;--text:#0f172a;--muted:#64748b;--accent:#2563eb;--accent-soft:#e8f0fe;--shadow:0 1px 2px rgba(15,23,42,.06),0 1px 3px rgba(15,23,42,.04);--radius:14px;--mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.5;color:var(--text);background:var(--bg);-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
+.page{max-width:1440px;margin:0 auto;padding:32px 28px 64px}
+header.top{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:20px}
+h1{margin:0;font-size:26px;font-weight:700;letter-spacing:-.02em}
+.meta{display:flex;flex-wrap:wrap;gap:8px;align-items:center;color:var(--muted);font-size:13px}
+.meta .chip{background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px 10px;color:var(--text)}
+.meta .chip.moving,.tag-moving{border:1px solid #f5b37a;background:#fff1e5;color:#9a3412;font-weight:600}
+.tag-moving{display:inline-block;padding:1px 8px;border-radius:999px;font-size:11px}
+.cards{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;margin:0 0 20px}
+.card{position:relative;overflow:hidden;min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 14px 14px 18px;box-shadow:var(--shadow);color:var(--muted);font-size:clamp(10px,.85vw,12px);font-weight:600;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap;text-overflow:ellipsis}
+.card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--card-color,var(--line-strong))}
+.card b{display:block;margin-top:4px;font-size:clamp(20px,2vw,28px);line-height:1.1;font-weight:700;letter-spacing:-.02em;color:var(--card-color,var(--text))}
+.controls{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:0 0 14px;padding:12px 14px;background:rgba(255,255,255,.88);backdrop-filter:blur(8px);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.controls label{display:inline-flex;align-items:center;gap:8px;color:var(--muted);font-size:13px}
+.controls select,.controls input{height:36px;padding:0 12px;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface);color:var(--text);font:inherit;font-size:13px}
+.controls input{flex:1 1 260px;min-width:200px}
+.controls select:focus,.controls input:focus{outline:2px solid var(--accent-soft);border-color:var(--accent)}
+.controls button{height:36px;padding:0 14px;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface);color:var(--text);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.controls button:hover{border-color:var(--accent);color:var(--accent)}
+.table-wrap{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow-x:auto}
+.table-wrap table.tests{min-width:760px}
+table.tests{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0}
+table.tests col.c-status{width:19%} table.tests col.c-group{width:10%} table.tests col.c-duration{width:88px} table.tests col.c-artifacts{width:13%} table.tests col.c-details{width:112px}
+table.tests>thead th{padding:12px 14px;text-align:left;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:var(--surface-2);border-bottom:1px solid var(--line)}
+table.tests>tbody>tr>td{padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:top;overflow-wrap:anywhere;min-width:0}
+tr.row:hover td{background:var(--surface-2)}
+.badge{display:inline-flex;flex-wrap:wrap;align-items:center;gap:4px 7px;font-weight:600;padding:3px 10px 3px 8px;border-radius:999px;font-size:12px;line-height:1.4}
+.badge::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor;flex:none}
+.badge a{color:inherit;text-decoration:underline;text-decoration-color:rgba(0,0,0,.25)}
+strong{font-weight:600}
+small,.hint,figcaption{color:var(--muted);font-size:12px}
+small.err{display:inline-block;margin-top:2px;color:#b42318;font-family:var(--mono);font-size:11px;overflow-wrap:anywhere}
+.artifacts small{display:inline-block;margin:0 6px 4px 0;padding:1px 8px;border:1px solid var(--line);border-radius:999px;background:var(--surface-2);color:var(--muted);font-size:11px}
+button.toggle{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px 0 12px;border:1px solid var(--line-strong);border-radius:999px;background:var(--surface);color:var(--text);font:inherit;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
+button.toggle::after{content:"";width:6px;height:6px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg) translateY(-1px);transition:transform .15s ease}
+button.toggle:hover{border-color:var(--accent);color:var(--accent)}
+button.toggle.open{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)} button.toggle.open::after{transform:rotate(-135deg) translateY(-1px)}
+table.tests>tbody>tr.details-row>td{padding:16px 18px 20px;background:var(--surface-2)}
+.tabs{display:inline-flex;flex-wrap:wrap;gap:2px;margin-bottom:12px;padding:4px;background:#e9edf3;border-radius:12px}
+.tab{padding:6px 14px;border:0;border-radius:9px;background:transparent;color:#475569;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.tab:hover{color:var(--text)} .tab.active{background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
+.run{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px 18px;margin:0 0 20px;box-shadow:var(--shadow)}
+.run table.kv th{width:210px}
+table.kv{border-collapse:collapse;width:100%} table.kv th{width:180px;text-align:left;padding:6px 16px 6px 0;color:var(--muted);font-weight:500;vertical-align:top;font-size:13px} table.kv td{padding:6px 0;border-bottom:1px solid var(--line)} table.kv tr:last-child td{border-bottom:0}
+pre{margin:0;white-space:pre-wrap;word-break:break-word;background:var(--surface-2);border:1px solid var(--line);padding:12px 14px;border-radius:10px;max-height:520px;overflow:auto;font-family:var(--mono);font-size:12px;line-height:1.5}
+pre.error{background:#fff1f0;border-color:#fecdca;color:#912018} pre.log{background:#0b1220;border-color:#1e293b;color:#dbe4f0} pre.small{max-height:200px}
+.error-type{margin:0 0 8px;font-weight:600;color:#b42318;font-family:var(--mono);font-size:12px}
+details summary{cursor:pointer;margin:12px 0 8px;font-weight:600;color:var(--muted)}
+.hint{margin:0 0 10px}
+.attachments{display:flex;flex-wrap:wrap;gap:16px} figure{margin:0;max-width:420px} figure img,figure video{display:block;max-width:420px;border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow)} figcaption{margin-top:6px}
+.button{display:inline-flex;align-items:center;height:36px;padding:0 16px;background:var(--accent);color:#fff;border-radius:10px;font-weight:600;text-decoration:none;box-shadow:var(--shadow)} .button:hover{text-decoration:none;filter:brightness(1.05)}
+code{padding:1px 6px;border-radius:6px;background:#eef2f6;font-family:var(--mono);font-size:12px}
+@media (max-width:900px){.page{padding:20px 14px 48px} h1{font-size:22px} .controls{position:static} .cards{gap:8px} .card{padding:10px 10px 10px 14px}}
+</style></head><body>
+<div class="page">
+<header class="top"><h1>OpenL Tests [latest]</h1>
+<div class="meta"><span class="chip moving">Build latest — moving tag, see the images below</span><span class="chip">2 tests</span><span class="chip">3 min 55 s of test time</span><a href="https://github.com/openl-tablets/openl-tests/actions/runs/42052999965">workflow run</a> · <a href="debug/index.json">debug/index.json</a> · <a href="debug/README.md">how to debug with an AI assistant</a></div></header>
+<section class='run'><table class='kv'><tr><th>Workflow</th><td><a href='https://github.com/openl-tablets/openl-tests/actions/runs/42052999965'>OpenL Tests</a></td></tr><tr><th>Run</th><td>2026-11-05 15:16:39 UTC → 2026-11-05 15:21:02 UTC · 4 min 22 s wall time · selective run</td></tr><tr><th>Image <code>ghcr.io/openl-tablets/webstudio:latest</code> <span class='tag-moving'>moving tag</span></th><td>2 test(s), version not observed: Failed to parse the JSON document<br><small>resolved at run start to <code>sha256:8ccd582a62f9</code>, openl-tablets <a href='https://github.com/openl-tablets/openl-tablets/commit/62199c9e0ee1330473e2fe5013bbdc01fd3b547a' target='_blank'>62199c9e0e</a>, image built 2026-11-05T13:29:36Z</small></td></tr><tr><th>Image <code>ghcr.io/openl-tablets/ws:latest-all</code> <span class='tag-moving'>moving tag</span></th><td><span class='hint'>not used by any test in this run</span><br><small>resolved at run start to <code>sha256:83b0d8c83649</code>, openl-tablets <a href='https://github.com/openl-tablets/openl-tablets/commit/62199c9e0ee1330473e2fe5013bbdc01fd3b547a' target='_blank'>62199c9e0e</a>, image built 2026-11-05T13:29:36Z</small></td></tr><tr><th>Tests</th><td>main @ <a href='https://github.com/openl-tablets/openl-tests/commit/d17f56b6a152d5a3781729c0badf4bc2f5a12235' target='_blank'>d17f56b6a152</a></td></tr><tr><th>Stack</th><td>Playwright 1.64.0 · Java 21</td></tr></table></section>
+<div class="cards"><div class="card" style="--card-color:#15803d">Passed<b>1</b></div><div class="card" style="--card-color:#dc2626">Failed<b>0</b></div><div class="card" style="--card-color:#ca8a04">Skipped<b>0</b></div><div class="card" style="--card-color:#ea580c">Known issues<b>1</b></div><div class="card" style="--card-color:#2563eb">Fixed?<b>0</b></div><div class="card">Shards<b>1</b></div></div>
+<div class="controls"><label>Status <select id="status"><option value="">all</option><option value="failed">failed</option><option value="skipped">skipped</option><option value="known">known issue</option><option value="fixed">fixed?</option><option value="passed">passed</option></select></label>
+<label>Group <select id="suite"><option value="">all</option><option value='rules_editor'>rules_editor</option></select></label><input id="search" placeholder="filter by class, test name or error" size="40"><button id="expand-failed">expand all failed</button></div>
+<div class="table-wrap"><table class="tests"><colgroup><col class="c-status"><col class="c-group"><col class="c-test"><col class="c-duration"><col class="c-artifacts"><col class="c-details"></colgroup><thead><tr><th>Status</th><th>Group / shard</th><th>Test</th><th>Duration</th><th>Artifacts</th><th></th></tr></thead><tbody><tr class='row known' data-status='known' data-suite='rules_editor' data-error='Condition not met after 20000ms timeout: Waiting for the list of the cell to be folded open'><td><span class='badge' style='color:#bc4c00;background:#fff1e5'>KNOWN ISSUE · <a href='https://jira.eisgroup.com/browse/EPBDS-17140' target='_blank'>EPBDS-17140</a></span></td><td>rules_editor<br><small>shard-01</small></td><td><strong>TestEditingCommaSeparatedArrayValues</strong><br>testEditingCommaSeparatedArrayValues<br><small>IPBQA-25824</small><br><small class='err'>Condition not met after 20000ms timeout: Waiting for the list of the cell to be folded open</small></td><td>2 min 56 s</td><td class='artifacts'><small>steps</small><small>trace</small><small>app log</small><small>screenshot</small></td><td><button class='toggle' data-target='d0'>details</button></td></tr><tr class='details-row known' id='d0' hidden><td colspan='6'><div class='tabs'><button class='tab active' data-tab='t0-0'>Overview</button><button class='tab' data-tab='t0-1'>Failure</button><button class='tab' data-tab='t0-2'>Steps (1707)</button><button class='tab' data-tab='t0-3'>Application log</button><button class='tab' data-tab='t0-4'>Trace</button><button class='tab' data-tab='t0-5'>Media</button></div><div class='panel' id='t0-0'><table class='kv'><tr><th>Group / shard</th><td>rules_editor / shard-01</td></tr><tr><th>Class</th><td><code>tests.ui.webstudio.rules_editor.TestEditingCommaSeparatedArrayValues</code> · <a href='https://github.com/openl-tablets/openl-tests/blob/d17f56b6a152d5a3781729c0badf4bc2f5a12235/src/test/java/tests/ui/webstudio/rules_editor/TestEditingCommaSeparatedArrayValues.java' target='_blank'>source</a></td></tr><tr><th>Method</th><td><code>testEditingCommaSeparatedArrayValues</code></td></tr><tr><th>Test case</th><td>IPBQA-25824</td></tr><tr><th>Known issue</th><td><a href='https://jira.eisgroup.com/browse/EPBDS-17140' target='_blank'>EPBDS-17140</a> — the test still fails as expected</td></tr><tr><th>Description</th><td>Editing comma-separated array values via the multiselect popup: chosen/non-chosen values, Select All / Deselect All, save and re-open, switch to Formula Editor and back, multiple table types (Decision/Spreadsheet/TBasic/Method). Fails on EPBDS-17140: in Chromium on Linux the region cell of MethodTable opens a plain text area instead of the list of values.</td></tr><tr><th>Started / finished</th><td>2026-11-05T15:16:39.592Z → 2026-11-05T15:19:35.687Z (2 min 56 s)</td></tr><tr><th>Application build</th><td>latest</td></tr><tr><th>Tests revision</th><td>main @ d17f56b6a152</td></tr><tr><th>Execution info</th><td><pre class='small'>Execution Mode: PLAYWRIGHT_DOCKER
+
+Execution Mode: PLAYWRIGHT_DOCKER
+Playwright Docker Architecture:
+  Network: 10e86c8ea2af0547a01e8d987216a308a267c002b5cd02def253ae5d7da0b44a
+  Playwright Container: 0aac72c931de2f34089a31a955d844a0e41de76a082953e25685f4bcc2aa04d1
+  Browser: chromium
+  Current Page: http://appcontainer-016739:8080/projects/DH7CSK2D6GS3M/modules/projEditCommaSeparatedArr?table=52WJYJ6W50QZ47HY
+  App Container: f9991faedf4bd850d326f1db62504db40f739d8236548b03576882b98f24f990
+  Container Network URL: http:///suspicious_wu:8080
+Configuration:
+Host Resource Path: src/test/resources</pre></td></tr><tr><th>AI debug bundle</th><td><a href='debug/index.json' target='_blank'>debug/index.json</a> lists the bundle file of this test — everything below in one JSON file, see <a href='debug/README.md' target='_blank'>debug/README.md</a></td></tr></table></div><div class='panel' id='t0-1' hidden><p class='error-type'>java.lang.RuntimeException</p><pre class='error'>Condition not met after 20000ms timeout: Waiting for the list of the cell to be folded open</pre><details open><summary>Stack trace</summary><pre>java.lang.RuntimeException: Condition not met after 20000ms timeout: Waiting for the list of the cell to be folded open
+	at helpers.utils.WaitUtil.requireCondition(WaitUtil.java:65)
+	at domain.ui.webstudio.components.common.MultiselectArrayEditorComponent.openList(MultiselectArrayEditorComponent.java:70)
+	at domain.ui.webstudio.components.common.MultiselectArrayEditorComponent.verifyChosenValues(MultiselectArrayEditorComponent.java:111)
+	at tests.ui.webstudio.rules_editor.TestEditingCommaSeparatedArrayValues.chooseTableAndVerifyCell(TestEditingCommaSeparatedArrayValues.java:161)
+	at tests.ui.webstudio.rules_editor.TestEditingCommaSeparatedArrayValues.testEditingCommaSeparatedArrayValues(TestEditingCommaSeparatedArrayValues.java:144)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.testng.internal.invokers.MethodInvocationHelper.invokeMethod(MethodInvocationHelper.java:141)
+	at org.testng.internal.invokers.TestInvoker.invokeMethod(TestInvoker.java:687)
+	at org.testng.internal.invokers.TestInvoker.invokeTestMethod(TestInvoker.java:230)
+	at org.testng.internal.invokers.MethodRunner.runInSequence(MethodRunner.java:63)
+	at org.testng.internal.invokers.TestInvoker$MethodInvocationAgent.invoke(TestInvoker.java:995)
+	at org.testng.internal.invokers.TestInvoker.invokeTestMethods(TestInvoker.java:203)
+	at org.testng.internal.invokers.TestMethodWorker.invokeTestMethods(TestMethodWorker.java:154)
+	at org.testng.internal.invokers.TestMethodWorker.run(TestMethodWorker.java:134)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at org.testng.TestRunner.privateRun(TestRunner.java:741)
+	at org.testng.TestRunner.run(TestRunner.java:616)
+	at org.testng.SuiteRunner.runTest(SuiteRunner.java:421)
+	at org.testng.SuiteRunner.runSequentially(SuiteRunner.java:413)
+	at org.testng.SuiteRunner.privateRun(SuiteRunner.java:373)
+	at org.testng.SuiteRunner.run(SuiteRunner.java:312)
+	at org.testng.SuiteRunnerWorker.runSuite(SuiteRunnerWorker.java:52)
+	at org.testng.SuiteRunnerWorker.run(SuiteRunnerWorker.java:95)
+	at org.testng.TestNG.runSuitesSequentially(TestNG.java:1274)
+	at org.testng.TestNG.runSuitesLocally(TestNG.java:1208)
+	at org.testng.TestNG.runSuites(TestNG.java:1112)
+	at org.testng.TestNG.run(TestNG.java:1079)
+	at org.apache.maven.surefire.testng.TestNGExecutor.run(TestNGExecutor.java:308)
+	at org.apache.maven.surefire.testng.TestNGXmlTestSuite.execute(TestNGXmlTestSuite.java:71)
+	at org.apache.maven.surefire.testng.TestNGProvider.invoke(TestNGProvider.java:113)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+</pre></details></div><div class='panel' id='t0-2' hidden><p class='hint'>Framework log of this test: container start, every page action, waits, REST calls and assertions. Showing the last 250 of 1707 lines · <a href='attachments/shard-01/tests.ui.webstudio.rules_editor.TestEditingCommaSeparatedArrayValues/testEditingCommaSeparatedArrayValues/test-steps.log' target='_blank'>full log</a></p><pre class='log'>2026-11-05 15:18:59.565 [main] [INFO] WaitUtil - Condition met after 14ms: Waiting for the loading overlay to disappear
+2026-11-05 15:18:59.565 [main] [INFO] WebElement - Waiting for cells_0 to be visible (timeout: 250ms)
+2026-11-05 15:18:59.575 [main] [INFO] WebElement - Clicking cells_0 
+2026-11-05 15:18:59.614 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 100ms): Waiting for cell [2,3] to be drawn
+2026-11-05 15:18:59.661 [main] [INFO] WaitUtil - Waiting for list not to be empty (timeout: 250ms, polling: 50ms): Waiting for table row cells to load
+2026-11-05 15:18:59.692 [main] [INFO] WaitUtil - List became non-empty after 31ms: Waiting for table row cells to load
+2026-11-05 15:18:59.745 [main] [INFO] WaitUtil - Condition met after 131ms: Waiting for cell [2,3] to be drawn
+2026-11-05 15:18:59.745 [main] [INFO] WebElement - Waiting for cells_2 to be visible (timeout: 250ms)
+2026-11-05 15:18:59.777 [main] [INFO] WebElement - Getting inner text from cells_2: &#x27;RUB,SAR,PHP&#x27;
+2026-11-05 15:18:59.779 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 15:18:59.795 [main] [INFO] WaitUtil - Condition met after 16ms: Waiting for the loading overlay to disappear
+2026-11-05 15:18:59.795 [main] [INFO] WebElement - Waiting for saveChangesBtn to be visible (timeout: 250ms)
+2026-11-05 15:18:59.810 [main] [INFO] WebElement - Clicking saveChangesBtn 
+2026-11-05 15:18:59.960 [main] [INFO] WaitUtil - Sleeping for 250ms: Waiting for table panel action to complete and UI to update
+2026-11-05 15:19:00.210 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-05 15:19:00.401 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 15:19:00.626 [main] [INFO] WaitUtil - Condition met after 224ms: Waiting for the loading overlay to disappear
+2026-11-05 15:19:00.628 [main] [INFO] WaitUtil - Waiting for condition (timeout: 10000ms, polling: 200ms): Waiting for the table to be written
+2026-11-05 15:19:00.768 [main] [INFO] WaitUtil - Condition met after 140ms: Waiting for the table to be written
+2026-11-05 15:19:00.768 [main] [INFO] WaitUtil - Waiting for condition (timeout: 10000ms, polling: 250ms): Waiting for the table changes to be kept
+2026-11-05 15:19:00.779 [main] [INFO] WebElement - Waiting for saveChangesBtn to be visible (timeout: 1000ms)
+2026-11-05 15:19:01.791 [main] [INFO] WaitUtil - Condition met after 1023ms: Waiting for the table changes to be kept
+2026-11-05 15:19:01.791 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 100ms): Waiting for cell [2,3] to be drawn
+2026-11-05 15:19:01.820 [main] [INFO] WaitUtil - Waiting for list not to be empty (timeout: 250ms, polling: 50ms): Waiting for table row cells to load
+2026-11-05 15:19:01.834 [main] [INFO] WaitUtil - List became non-empty after 13ms: Waiting for table row cells to load
+2026-11-05 15:19:01.860 [main] [INFO] WaitUtil - Condition met after 69ms: Waiting for cell [2,3] to be drawn
+2026-11-05 15:19:01.860 [main] [INFO] WebElement - Waiting for cells_2 to be visible (timeout: 250ms)
+2026-11-05 15:19:01.876 [main] [INFO] WebElement - Getting inner text from cells_2: &#x27;RUB,SAR,PHP&#x27;
+2026-11-05 15:19:01.876 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-05 15:19:01.884 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 15:19:01.891 [main] [INFO] WaitUtil - Condition met after 7ms: Waiting for the loading overlay to disappear
+2026-11-05 15:19:01.898 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 200ms): Expanding folder &#x27;TBasic&#x27; in the tables tree
+2026-11-05 15:19:01.898 [main] [INFO] WaitUtil - Waiting for condition (timeout: 90000ms, polling: 200ms): Waiting for the module tables tree to be drawn
+2026-11-05 15:19:01.898 [main] [INFO] WebElement - Waiting for tablesTree to be visible (timeout: 200ms)
+2026-11-05 15:19:01.906 [main] [INFO] WaitUtil - Condition met after 8ms: Waiting for the module tables tree to be drawn
+2026-11-05 15:19:02.199 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 15:19:02.207 [main] [INFO] WaitUtil - Condition met after 8ms: Waiting for the loading overlay to disappear
+2026-11-05 15:19:02.207 [main] [INFO] WebElement - Waiting for treeNode[_r_rr_-grp-kind-TBasic] &gt; xpath=./span[contains(@class,&#x27;ant-tree-switcher&#x27;)] to be visible (timeout: 3000ms)
+2026-11-05 15:19:02.215 [main] [INFO] WebElement - Clicking with increased timeout treeNode[_r_rr_-grp-kind-TBasic] &gt; xpath=./span[contains(@class,&#x27;ant-tree-switcher&#x27;)] 
+2026-11-05 15:19:02.274 [main] [INFO] WaitUtil - Waiting for condition (timeout: 10000ms, polling: 200ms): Waiting for folder &#x27;TBasic&#x27; to open
+2026-11-05 15:19:02.274 [main] [INFO] WaitUtil - Waiting for condition (timeout: 90000ms, polling: 200ms): Waiting for the module tables tree to be drawn
+2026-11-05 15:19:02.274 [main] [INFO] WebElement - Waiting for tablesTree to be visible (timeout: 200ms)
+2026-11-05 15:19:02.288 [main] [INFO] WaitUtil - Condition met after 14ms: Waiting for the module tables tree to be drawn
+2026-11-05 15:19:02.560 [main] [INFO] WaitUtil - Condition met after 286ms: Waiting for folder &#x27;TBasic&#x27; to open
+2026-11-05 15:19:02.560 [main] [INFO] WaitUtil - Condition met after 662ms: Expanding folder &#x27;TBasic&#x27; in the tables tree
+2026-11-05 15:19:02.560 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-05 15:19:02.571 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 15:19:02.582 [main] [INFO] WaitUtil - Condition met after 11ms: Waiting for the loading overlay to disappear
+2026-11-05 15:19:02.582 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-05 15:19:02.596 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 15:19:02.607 [main] [INFO] WaitUtil - Condition met after 11ms: Waiting for the loading overlay to disappear
+2026-11-05 15:19:02.614 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 200ms): Expanding folder &#x27;TBasic&#x27; in the tables tree
+2026-11-05 15:19:02.614 [main] [INFO] WaitUtil - Waiting for condition (timeout: 90000ms, polling: 200ms): Waiting for the module tables tree to be drawn
+2026-11-05 15:19:02.614 [main] [INFO] WebElement - Waiting for tablesTree to be visible (timeout: 200ms)
+2026-11-05 15:19:02.621 [main] [INFO] WaitUtil - Condition met after 7ms: Waiting for the module tables tree to be drawn
+2026-11-05 15:19:02.891 [main] [INFO] WaitUtil - Condition met after 277ms: Expanding folder &#x27;TBasic&#x27; in the tables tree
+2026-11-05 15:19:02.891 [main] [INFO] WaitUtil - Waiting for result (timeout: 20000ms, polling: 200ms): Searching for &#x27;TBasicTable&#x27; in folder &#x27;TBasic&#x27;
+2026-11-05 15:19:02.891 [main] [INFO] WaitUtil - Waiting for condition (timeout: 90000ms, polling: 200ms): Waiting for the module tables tree to be drawn
+2026-11-05 15:19:02.891 [main] [INFO] WebElement - Waiting for tablesTree to be visible (timeout: 200ms)
+2026-11-05 15:19:02.902 [main] [INFO] WaitUtil - Condition met after 11ms: Waiting for the module tables tree to be drawn
+2026-11-05 15:19:03.172 [main] [INFO] WaitUtil - Result found after 281ms: Searching for &#x27;TBasicTable&#x27; in folder &#x27;TBasic&#x27;
+2026-11-05 15:19:03.180 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 200ms): Selecting &#x27;TBasicTable&#x27; in the tables tree
+2026-11-05 15:19:03.180 [main] [INFO] WaitUtil - Waiting for condition (timeout: 90000ms, polling: 200ms): Waiting for the module tables tree to be drawn
+2026-11-05 15:19:03.180 [main] [INFO] WebElement - Waiting for tablesTree to be visible (timeout: 200ms)
+2026-11-05 15:19:03.187 [main] [INFO] WaitUtil - Condition met after 7ms: Waiting for the module tables tree to be drawn
+2026-11-05 15:19:03.464 [main] [INFO] WebElement - Waiting for treeNode[_r_rr_-TEYE5YV32GE4C9P1] &gt; xpath=./span[contains(@class,&#x27;ant-tree-node-content-wrapper&#x27;)] to be visible (timeout: 1000ms)
+2026-11-05 15:19:03.484 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 15:19:03.493 [main] [INFO] WaitUtil - Condition met after 9ms: Waiting for the loading overlay to disappear
+2026-11-05 15:19:03.493 [main] [INFO] WebElement - Waiting for treeNode[_r_rr_-TEYE5YV32GE4C9P1] &gt; xpath=./span[contains(@class,&#x27;ant-tree-node-content-wrapper&#x27;)] to be visible (timeout: 3000ms)
+2026-11-05 15:19:03.506 [main] [INFO] WebElement - Clicking with increased timeout treeNode[_r_rr_-TEYE5YV32GE4C9P1] &gt; xpath=./span[contains(@class,&#x27;ant-tree-node-content-wrapper&#x27;)] 
+2026-11-05 15:19:03.591 [main] [INFO] WaitUtil - Condition met after 411ms: Selecting &#x27;TBasicTable&#x27; in the tables tree
+2026-11-05 15:19:03.634 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-05 15:19:03.664 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 15:19:03.787 [main] [INFO] WaitUtil - Condition met after 123ms: Waiting for the loading overlay to disappear
+2026-11-05 15:19:03.787 [main] [INFO] WebElement - Waiting for tableProblemsBody to be visible (timeout: 1000ms)
+2026-11-05 15:19:03.936 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 15:19:03.957 [main] [INFO] WaitUtil - Condition met after 20ms: Waiting for the loading overlay to disappear
+2026-11-05 15:19:03.957 [main] [INFO] WebElement - Waiting for tableProblemsToggle to be visible (timeout: 250ms)
+2026-11-05 15:19:04.008 [main] [INFO] WebElement - Clicking tableProblemsToggle 
+2026-11-05 15:19:04.079 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-05 15:19:04.090 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 15:19:04.100 [main] [INFO] WaitUtil - Condition met after 10ms: Waiting for the loading overlay to disappear
+2026-11-05 15:19:04.100 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 100ms): Waiting for cell [2,3] to be drawn
+2026-11-05 15:19:04.128 [main] [INFO] WaitUtil - Waiting for list not to be empty (timeout: 250ms, polling: 50ms): Waiting for table row cells to load
+2026-11-05 15:19:04.142 [main] [INFO] WaitUtil - List became non-empty after 14ms: Waiting for table row cells to load
+2026-11-05 15:19:04.169 [main] [INFO] WaitUtil - Condition met after 69ms: Waiting for cell [2,3] to be drawn
+2026-11-05 15:19:04.169 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 15:19:04.175 [main] [INFO] WaitUtil - Condition met after 6ms: Waiting for the loading overlay to disappear
+2026-11-05 15:19:04.175 [main] [INFO] WebElement - Waiting for cells_2 to be visible (timeout: 250ms)
+2026-11-05 15:19:04.183 [main] [INFO] WebElement - Double clicking cells_2 
+2026-11-05 15:19:04.374 [main] [INFO] WebElement - Waiting for multiselectActionBtn to be visible (timeout: 2000ms)
+2026-11-05 15:19:06.396 [main] [INFO] WebElement - Waiting for cellMultiselect to be visible (timeout: 20000ms)
+2026-11-05 15:19:06.408 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 15:19:06.419 [main] [INFO] WaitUtil - Condition met after 10ms: Waiting for the loading overlay to disappear
+2026-11-05 15:19:06.420 [main] [INFO] WebElement - Waiting for cellMultiselect to be visible (timeout: 250ms)
+2026-11-05 15:19:06.432 [main] [INFO] WebElement - Clicking cellMultiselect 
+2026-11-05 15:19:06.503 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 250ms): Waiting for the list of the cell to be folded open
+2026-11-05 15:19:06.503 [main] [INFO] WebElement - Waiting for multiselectActionBtn to be visible (timeout: 2000ms)
+2026-11-05 15:19:06.537 [main] [INFO] WaitUtil - Condition met after 34ms: Waiting for the list of the cell to be folded open
+2026-11-05 15:19:06.538 [main] [INFO] WebElement - Waiting for multiselectActionBtn to be visible (timeout: 2000ms)
+2026-11-05 15:19:06.548 [main] [INFO] WebElement - Waiting for multiselectOption to be visible (timeout: 500ms)
+2026-11-05 15:19:06.576 [main] [INFO] WebElement - Getting attribute &#x27;class&#x27; from multiselectOption: &#x27;ant-select-item ant-select-item-option ant-select-item-option-active ant-select-item-option-selected&#x27;
+2026-11-05 15:19:06.577 [main] [INFO] WebElement - Waiting for multiselectActionBtn to be visible (timeout: 2000ms)
+2026-11-05 15:19:06.595 [main] [INFO] WebElement - Waiting for multiselectOption to be visible (timeout: 500ms)
+2026-11-05 15:19:06.636 [main] [INFO] WebElement - Getting attribute &#x27;class&#x27; from multiselectOption: &#x27;ant-select-item ant-select-item-option ant-select-item-option-selected&#x27;
+2026-11-05 15:19:06.636 [main] [INFO] WebElement - Waiting for multiselectActionBtn to be visible (timeout: 2000ms)
+2026-11-05 15:19:06.655 [main] [INFO] WebElement - Waiting for multiselectOption to be visible (timeout: 500ms)
+2026-11-05 15:19:06.693 [main] [INFO] WebElement - Getting attribute &#x27;class&#x27; from multiselectOption: &#x27;ant-select-item ant-select-item-option&#x27;
+2026-11-05 15:19:06.694 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 15:19:06.708 [main] [INFO] WaitUtil - Condition met after 14ms: Waiting for the loading overlay to disappear
+2026-11-05 15:19:06.708 [main] [INFO] WebElement - Waiting for multiselectOption to be visible (timeout: 250ms)
+2026-11-05 15:19:06.725 [main] [INFO] WebElement - Clicking multiselectOption 
+2026-11-05 15:19:06.809 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-05 15:19:06.827 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 15:19:06.842 [main] [INFO] WaitUtil - Condition met after 15ms: Waiting for the loading overlay to disappear
+2026-11-05 15:19:06.842 [main] [INFO] WaitUtil - Waiting for condition (timeout: 5000ms, polling: 250ms): Waiting for center table to become visible
+2026-11-05 15:19:06.842 [main] [INFO] WebElement - Waiting for centerTable to be visible (timeout: 250ms)
+2026-11-05 15:19:06.859 [main] [INFO] WaitUtil - Condition met after 17ms: Waiting for center table to become visible
+2026-11-05 15:19:06.859 [main] [INFO] WaitUtil - Sleeping for 500ms: Waiting for center table to fully load
+2026-11-05 15:19:07.359 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 15:19:07.370 [main] [INFO] WaitUtil - Condition met after 11ms: Waiting for the loading overlay to disappear
+2026-11-05 15:19:07.370 [main] [INFO] WebElement - Waiting for multiselectActionBtn to be visible (timeout: 10000ms)
+2026-11-05 15:19:07.383 [main] [INFO] WebElement - Clicking with increased timeout multiselectActionBtn 
+2026-11-05 15:19:07.481 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 100ms): Waiting for cell [1,1] to be drawn
+2026-11-05 15:19:07.549 [main] [INFO] WaitUtil - Waiting for list not to be empty (timeout: 250ms, polling: 50ms): Waiting for table row cells to load
+2026-11-05 15:19:07.576 [main] [INFO] WaitUtil - List became non-empty after 27ms: Waiting for table row cells to load
+2026-11-05 15:19:07.636 [main] [INFO] WaitUtil - Condition met after 155ms: Waiting for cell [1,1] to be drawn
+2026-11-05 15:19:07.636 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 15:19:07.647 [main] [INFO] WaitUtil - Condition met after 11ms: Waiting for the loading overlay to disappear
+2026-11-05 15:19:07.647 [main] [INFO] WebElement - Waiting for cells_0 to be visible (timeout: 250ms)
+2026-11-05 15:19:07.658 [main] [INFO] WebElement - Clicking cells_0 
+2026-11-05 15:19:07.719 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 100ms): Waiting for cell [2,3] to be drawn
+2026-11-05 15:19:07.771 [main] [INFO] WaitUtil - Waiting for list not to be empty (timeout: 250ms, polling: 50ms): Waiting for table row cells to load
+2026-11-05 15:19:07.795 [main] [INFO] WaitUtil - List became non-empty after 24ms: Waiting for table row cells to load
+2026-11-05 15:19:07.848 [main] [INFO] WaitUtil - Condition met after 128ms: Waiting for cell [2,3] to be drawn
+2026-11-05 15:19:07.848 [main] [INFO] WebElement - Waiting for cells_2 to be visible (timeout: 250ms)
+2026-11-05 15:19:07.874 [main] [INFO] WebElement - Getting inner text from cells_2: &#x27;AL,UT,CO&#x27;
+2026-11-05 15:19:07.876 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 15:19:07.896 [main] [INFO] WaitUtil - Condition met after 20ms: Waiting for the loading overlay to disappear
+2026-11-05 15:19:07.896 [main] [INFO] WebElement - Waiting for saveChangesBtn to be visible (timeout: 250ms)
+2026-11-05 15:19:07.916 [main] [INFO] WebElement - Clicking saveChangesBtn 
+2026-11-05 15:19:08.036 [main] [INFO] WaitUtil - Sleeping for 250ms: Waiting for table panel action to complete and UI to update
+2026-11-05 15:19:08.286 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-05 15:19:08.499 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 15:19:08.737 [main] [INFO] WaitUtil - Condition met after 238ms: Waiting for the loading overlay to disappear
+2026-11-05 15:19:08.740 [main] [INFO] WaitUtil - Waiting for condition (timeout: 10000ms, polling: 200ms): Waiting for the table to be written
+2026-11-05 15:19:08.900 [main] [INFO] WaitUtil - Condition met after 160ms: Waiting for the table to be written
+2026-11-05 15:19:08.901 [main] [INFO] WaitUtil - Waiting for condition (timeout: 10000ms, polling: 250ms): Waiting for the table changes to be kept
+2026-11-05 15:19:08.916 [main] [INFO] WebElement - Waiting for saveChangesBtn to be visible (timeout: 1000ms)
+2026-11-05 15:19:09.928 [main] [INFO] WaitUtil - Condition met after 1027ms: Waiting for the table changes to be kept
+2026-11-05 15:19:09.928 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 100ms): Waiting for cell [2,3] to be drawn
+2026-11-05 15:19:09.959 [main] [INFO] WaitUtil - Waiting for list not to be empty (timeout: 250ms, polling: 50ms): Waiting for table row cells to load
+2026-11-05 15:19:09.976 [main] [INFO] WaitUtil - List became non-empty after 17ms: Waiting for table row cells to load
+2026-11-05 15:19:10.008 [main] [INFO] WaitUtil - Condition met after 80ms: Waiting for cell [2,3] to be drawn
+2026-11-05 15:19:10.008 [main] [INFO] WebElement - Waiting for cells_2 to be visible (timeout: 250ms)
+2026-11-05 15:19:10.025 [main] [INFO] WebElement - Getting inner text from cells_2: &#x27;AL,UT,CO&#x27;
+2026-11-05 15:19:10.025 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-05 15:19:10.033 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 15:19:10.041 [main] [INFO] WaitUtil - Condition met after 8ms: Waiting for the loading overlay to disappear
+2026-11-05 15:19:10.049 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 200ms): Expanding folder &#x27;Method&#x27; in the tables tree
+2026-11-05 15:19:10.049 [main] [INFO] WaitUtil - Waiting for condition (timeout: 90000ms, polling: 200ms): Waiting for the module tables tree to be drawn
+2026-11-05 15:19:10.049 [main] [INFO] WebElement - Waiting for tablesTree to be visible (timeout: 200ms)
+2026-11-05 15:19:10.057 [main] [INFO] WaitUtil - Condition met after 8ms: Waiting for the module tables tree to be drawn
+2026-11-05 15:19:10.349 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 15:19:10.357 [main] [INFO] WaitUtil - Condition met after 8ms: Waiting for the loading overlay to disappear
+2026-11-05 15:19:10.357 [main] [INFO] WebElement - Waiting for treeNode[_r_vi_-grp-kind-Method] &gt; xpath=./span[contains(@class,&#x27;ant-tree-switcher&#x27;)] to be visible (timeout: 3000ms)
+2026-11-05 15:19:10.366 [main] [INFO] WebElement - Clicking with increased timeout treeNode[_r_vi_-grp-kind-Method] &gt; xpath=./span[contains(@class,&#x27;ant-tree-switcher&#x27;)] 
+2026-11-05 15:19:10.429 [main] [INFO] WaitUtil - Waiting for condition (timeout: 10000ms, polling: 200ms): Waiting for folder &#x27;Method&#x27; to open
+2026-11-05 15:19:10.429 [main] [INFO] WaitUtil - Waiting for condition (timeout: 90000ms, polling: 200ms): Waiting for the module tables tree to be drawn
+2026-11-05 15:19:10.429 [main] [INFO] WebElement - Waiting for tablesTree to be visible (timeout: 200ms)
+2026-11-05 15:19:10.448 [main] [INFO] WaitUtil - Condition met after 19ms: Waiting for the module tables tree to be drawn
+2026-11-05 15:19:10.730 [main] [INFO] WaitUtil - Condition met after 301ms: Waiting for folder &#x27;Method&#x27; to open
+2026-11-05 15:19:10.730 [main] [INFO] WaitUtil - Condition met after 681ms: Expanding folder &#x27;Method&#x27; in the tables tree
+2026-11-05 15:19:10.730 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-05 15:19:10.746 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 15:19:10.760 [main] [INFO] WaitUtil - Condition met after 14ms: Waiting for the loading overlay to disappear
+2026-11-05 15:19:10.760 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-05 15:19:10.775 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 15:19:10.785 [main] [INFO] WaitUtil - Condition met after 10ms: Waiting for the loading overlay to disappear
+2026-11-05 15:19:10.793 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 200ms): Expanding folder &#x27;Method&#x27; in the tables tree
+2026-11-05 15:19:10.793 [main] [INFO] WaitUtil - Waiting for condition (timeout: 90000ms, polling: 200ms): Waiting for the module tables tree to be drawn
+2026-11-05 15:19:10.793 [main] [INFO] WebElement - Waiting for tablesTree to be visible (timeout: 200ms)
+2026-11-05 15:19:10.802 [main] [INFO] WaitUtil - Condition met after 9ms: Waiting for the module tables tree to be drawn
+2026-11-05 15:19:11.073 [main] [INFO] WaitUtil - Condition met after 280ms: Expanding folder &#x27;Method&#x27; in the tables tree
+2026-11-05 15:19:11.073 [main] [INFO] WaitUtil - Waiting for result (timeout: 20000ms, polling: 200ms): Searching for &#x27;MethodTable&#x27; in folder &#x27;Method&#x27;
+2026-11-05 15:19:11.073 [main] [INFO] WaitUtil - Waiting for condition (timeout: 90000ms, polling: 200ms): Waiting for the module tables tree to be drawn
+2026-11-05 15:19:11.073 [main] [INFO] WebElement - Waiting for tablesTree to be visible (timeout: 200ms)
+2026-11-05 15:19:11.083 [main] [INFO] WaitUtil - Condition met after 10ms: Waiting for the module tables tree to be drawn
+2026-11-05 15:19:11.353 [main] [INFO] WaitUtil - Result found after 280ms: Searching for &#x27;MethodTable&#x27; in folder &#x27;Method&#x27;
+2026-11-05 15:19:11.362 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 200ms): Selecting &#x27;MethodTable&#x27; in the tables tree
+2026-11-05 15:19:11.362 [main] [INFO] WaitUtil - Waiting for condition (timeout: 90000ms, polling: 200ms): Waiting for the module tables tree to be drawn
+2026-11-05 15:19:11.362 [main] [INFO] WebElement - Waiting for tablesTree to be visible (timeout: 200ms)
+2026-11-05 15:19:11.371 [main] [INFO] WaitUtil - Condition met after 9ms: Waiting for the module tables tree to be drawn
+2026-11-05 15:19:11.651 [main] [INFO] WebElement - Waiting for treeNode[_r_vi_-52WJYJ6W50QZ47HY] &gt; xpath=./span[contains(@class,&#x27;ant-tree-node-content-wrapper&#x27;)] to be visible (timeout: 1000ms)
+2026-11-05 15:19:11.685 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 15:19:11.696 [main] [INFO] WaitUtil - Condition met after 11ms: Waiting for the loading overlay to disappear
+2026-11-05 15:19:11.696 [main] [INFO] WebElement - Waiting for treeNode[_r_vi_-52WJYJ6W50QZ47HY] &gt; xpath=./span[contains(@class,&#x27;ant-tree-node-content-wrapper&#x27;)] to be visible (timeout: 3000ms)
+2026-11-05 15:19:11.711 [main] [INFO] WebElement - Clicking with increased timeout treeNode[_r_vi_-52WJYJ6W50QZ47HY] &gt; xpath=./span[contains(@class,&#x27;ant-tree-node-content-wrapper&#x27;)] 
+2026-11-05 15:19:11.790 [main] [INFO] WaitUtil - Condition met after 428ms: Selecting &#x27;MethodTable&#x27; in the tables tree
+2026-11-05 15:19:11.835 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-05 15:19:11.863 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 15:19:11.888 [main] [INFO] WaitUtil - Condition met after 25ms: Waiting for the loading overlay to disappear
+2026-11-05 15:19:11.888 [main] [INFO] WebElement - Waiting for tableProblemsBody to be visible (timeout: 1000ms)
+2026-11-05 15:19:12.973 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-05 15:19:12.985 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 15:19:12.997 [main] [INFO] WaitUtil - Condition met after 12ms: Waiting for the loading overlay to disappear
+2026-11-05 15:19:12.997 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 100ms): Waiting for cell [2,3] to be drawn
+2026-11-05 15:19:13.059 [main] [INFO] WaitUtil - Waiting for list not to be empty (timeout: 250ms, polling: 50ms): Waiting for table row cells to load
+2026-11-05 15:19:13.074 [main] [INFO] WaitUtil - List became non-empty after 15ms: Waiting for table row cells to load
+2026-11-05 15:19:13.100 [main] [INFO] WaitUtil - Condition met after 103ms: Waiting for cell [2,3] to be drawn
+2026-11-05 15:19:13.100 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 15:19:13.107 [main] [INFO] WaitUtil - Condition met after 7ms: Waiting for the loading overlay to disappear
+2026-11-05 15:19:13.107 [main] [INFO] WebElement - Waiting for cells_2 to be visible (timeout: 250ms)
+2026-11-05 15:19:13.115 [main] [INFO] WebElement - Double clicking cells_2 
+2026-11-05 15:19:13.248 [main] [INFO] WebElement - Waiting for multiselectActionBtn to be visible (timeout: 2000ms)
+2026-11-05 15:19:15.268 [main] [INFO] WebElement - Waiting for cellMultiselect to be visible (timeout: 20000ms)
+2026-11-05 15:19:15.279 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 15:19:15.286 [main] [INFO] WaitUtil - Condition met after 7ms: Waiting for the loading overlay to disappear
+2026-11-05 15:19:15.286 [main] [INFO] WebElement - Waiting for cellMultiselect to be visible (timeout: 250ms)
+2026-11-05 15:19:15.296 [main] [INFO] WebElement - Clicking cellMultiselect 
+2026-11-05 15:19:15.334 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 250ms): Waiting for the list of the cell to be folded open
+2026-11-05 15:19:15.335 [main] [INFO] WebElement - Waiting for multiselectActionBtn to be visible (timeout: 2000ms)
+2026-11-05 15:19:17.344 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the list of the cell to be folded open
+2026-11-05 15:19:17.594 [main] [INFO] WebElement - Waiting for multiselectActionBtn to be visible (timeout: 2000ms)
+2026-11-05 15:19:19.603 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the list of the cell to be folded open
+2026-11-05 15:19:19.853 [main] [INFO] WebElement - Waiting for multiselectActionBtn to be visible (timeout: 2000ms)
+2026-11-05 15:19:21.862 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the list of the cell to be folded open
+2026-11-05 15:19:22.112 [main] [INFO] WebElement - Waiting for multiselectActionBtn to be visible (timeout: 2000ms)
+2026-11-05 15:19:24.128 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the list of the cell to be folded open
+2026-11-05 15:19:24.378 [main] [INFO] WebElement - Waiting for multiselectActionBtn to be visible (timeout: 2000ms)
+2026-11-05 15:19:26.389 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the list of the cell to be folded open
+2026-11-05 15:19:26.639 [main] [INFO] WebElement - Waiting for multiselectActionBtn to be visible (timeout: 2000ms)
+2026-11-05 15:19:28.650 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the list of the cell to be folded open
+2026-11-05 15:19:28.900 [main] [INFO] WebElement - Waiting for multiselectActionBtn to be visible (timeout: 2000ms)
+2026-11-05 15:19:30.908 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the list of the cell to be folded open
+2026-11-05 15:19:31.158 [main] [INFO] WebElement - Waiting for multiselectActionBtn to be visible (timeout: 2000ms)
+2026-11-05 15:19:33.168 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the list of the cell to be folded open
+2026-11-05 15:19:33.418 [main] [INFO] WebElement - Waiting for multiselectActionBtn to be visible (timeout: 2000ms)
+2026-11-05 15:19:35.427 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the list of the cell to be folded open
+2026-11-05 15:19:35.678 [main] [WARN] WaitUtil - Condition not met after 20000ms timeout: Waiting for the list of the cell to be folded open
+2026-11-05 15:19:36.260 [main] [INFO] PlaywrightTracing - Playwright trace saved for test testEditingCommaSeparatedArrayValues: 1044572 bytes
+2026-11-05 15:19:36.265 [main] [INFO] DebugArtifactUtil - Playwright trace recorded for test: testEditingCommaSeparatedArrayValues (size: 1044572 bytes)
+2026-11-05 15:19:36.327 [main] [INFO] DebugArtifactUtil - Screenshot recorded: testEditingCommaSeparatedArrayValues_20261105_151936.png
+2026-11-05 15:19:36.329 [main] [INFO] DebugArtifactUtil - Execution info recorded: execution-info-5158672338147367740.txt
+2026-11-05 15:19:36.329 [main] [INFO] DebugArtifactUtil - Retrieving video bytes for test: testEditingCommaSeparatedArrayValues
+2026-11-05 15:19:37.753 [main] [INFO] DebugArtifactUtil - Successfully retrieved 18459736 bytes of video data for test: testEditingCommaSeparatedArrayValues
+2026-11-05 15:19:37.774 [main] [INFO] DebugArtifactUtil - Video recorded for test: testEditingCommaSeparatedArrayValues (size: 18459736 bytes)
+2026-11-05 15:19:37.794 [main] [INFO] LogsUtil - Logs saved to host: /home/runner/work/openl-tests/openl-tests/target/logs/app-log-287385.txt
+2026-11-05 15:19:37.795 [main] [INFO] DockerDriverPool - Closing Playwright Docker for thread: main
+2026-11-05 15:19:38.130 [main] [INFO] WaitUtil - Sleeping for 2000ms: Waiting for Docker daemon to complete resource cleanup</pre></div><div class='panel' id='t0-3' hidden><p class='hint'>Application container log (OpenL Studio / Rule Services). Showing 11 lines with WARN, ERROR or exceptions out of 121 · <a href='attachments/shard-01/tests.ui.webstudio.rules_editor.TestEditingCommaSeparatedArrayValues/testEditingCommaSeparatedArrayValues/1793891977795-app-log-287385.txt' target='_blank'>full log</a></p><pre class='log'>WARN  : Use the &quot;forwarded&quot; module instead.
+{&quot;@timestamp&quot;:&quot;2026-11-05T15:15:59.239Z&quot;,&quot;ecs.version&quot;:&quot;1.2.0&quot;,&quot;log.level&quot;:&quot;WARN&quot;,&quot;message&quot;:&quot;Does not exist: /opt/openl/app/environments&quot;,&quot;process.thread.name&quot;:&quot;main&quot;,&quot;log.logger&quot;:&quot;org.eclipse.jetty.deploy.DeploymentScanner&quot;,&quot;service.version&quot;:&quot;0&quot;,&quot;service.environment&quot;:&quot;production&quot;,&quot;service.name&quot;:&quot;OpenL&quot;,&quot;host.name&quot;:&quot;f9991faedf4b&quot;}
+{&quot;@timestamp&quot;:&quot;2026-11-05T15:16:05.777Z&quot;,&quot;ecs.version&quot;:&quot;1.2.0&quot;,&quot;log.level&quot;:&quot;WARN&quot;,&quot;message&quot;:&quot;Bean &#x27;projectLockInterceptor&#x27; of type [org.openl.studio.projects.lock.ProjectLockInterceptor$$SpringCGLIB$$0] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [projectLockPostProcessor]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.&quot;,&quot;process.thread.name&quot;:&quot;main&quot;,&quot;log.logger&quot;:&quot;org.springframework.context.support.PostProcessorRegistrationDelegate$BeanPostProcessorChecker&quot;,&quot;service.version&quot;:&quot;0&quot;,&quot;service.environment&quot;:&quot;production&quot;,&quot;service.name&quot;:&quot;OpenL&quot;,&quot;host.name&quot;:&quot;f9991faedf4b&quot;}
+{&quot;@timestamp&quot;:&quot;2026-11-05T15:16:05.812Z&quot;,&quot;ecs.version&quot;:&quot;1.2.0&quot;,&quot;log.level&quot;:&quot;WARN&quot;,&quot;message&quot;:&quot;Bean &#x27;commitInfoInterceptor&#x27; of type [org.openl.studio.security.CommitInfoInterceptor] is not eligible for getting processed by all BeanPostProcessors (for example: not eligible for auto-proxying). Is this bean getting eagerly injected/applied to a currently created BeanPostProcessor [commitInfoPostProcessor]? Check the corresponding BeanPostProcessor declaration and its dependencies/advisors. If this bean does not have to be post-processed, declare it with ROLE_INFRASTRUCTURE.&quot;,&quot;process.thread.name&quot;:&quot;main&quot;,&quot;log.logger&quot;:&quot;org.springframework.context.support.PostProcessorRegistrationDelegate$BeanPostProcessorChecker&quot;,&quot;service.version&quot;:&quot;0&quot;,&quot;service.environment&quot;:&quot;production&quot;,&quot;service.name&quot;:&quot;OpenL&quot;,&quot;host.name&quot;:&quot;f9991faedf4b&quot;}
+{&quot;@timestamp&quot;:&quot;2026-11-05T15:16:13.157Z&quot;,&quot;ecs.version&quot;:&quot;1.2.0&quot;,&quot;log.level&quot;:&quot;WARN&quot;,&quot;message&quot;:&quot;Unable to proxy interface-implementing method [public final java.lang.String org.openl.config.ReadOnlyPropertiesHolder.getProperty(java.lang.String)] because it is marked as final, consider using interface-based JDK proxies instead.&quot;,&quot;process.thread.name&quot;:&quot;main&quot;,&quot;log.logger&quot;:&quot;org.springframework.aop.framework.CglibAopProxy&quot;,&quot;service.version&quot;:&quot;0&quot;,&quot;service.environment&quot;:&quot;production&quot;,&quot;service.name&quot;:&quot;OpenL&quot;,&quot;host.name&quot;:&quot;f9991faedf4b&quot;}
+{&quot;@timestamp&quot;:&quot;2026-11-05T15:16:13.157Z&quot;,&quot;ecs.version&quot;:&quot;1.2.0&quot;,&quot;log.level&quot;:&quot;WARN&quot;,&quot;message&quot;:&quot;Unable to proxy interface-implementing method [public final void org.openl.config.ReadOnlyPropertiesHolder.setProperty(java.lang.String,java.lang.Object)] because it is marked as final, consider using interface-based JDK proxies instead.&quot;,&quot;process.thread.name&quot;:&quot;main&quot;,&quot;log.logger&quot;:&quot;org.springframework.aop.framework.CglibAopProxy&quot;,&quot;service.version&quot;:&quot;0&quot;,&quot;service.environment&quot;:&quot;production&quot;,&quot;service.name&quot;:&quot;OpenL&quot;,&quot;host.name&quot;:&quot;f9991faedf4b&quot;}
+{&quot;@timestamp&quot;:&quot;2026-11-05T15:16:13.951Z&quot;,&quot;ecs.version&quot;:&quot;1.2.0&quot;,&quot;log.level&quot;:&quot;WARN&quot;,&quot;message&quot;:&quot;Global AuthenticationManager configured with an AuthenticationProvider bean. UserDetailsService beans will not be used by Spring Security for automatically configuring username/password login. Consider removing the AuthenticationProvider bean. Alternatively, consider using the UserDetailsService in a manually instantiated DaoAuthenticationProvider. If the current configuration is intentional, to turn off this warning, increase the logging level of &#x27;org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer&#x27; to ERROR&quot;,&quot;process.thread.name&quot;:&quot;main&quot;,&quot;log.logger&quot;:&quot;org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer&quot;,&quot;service.version&quot;:&quot;0&quot;,&quot;service.environment&quot;:&quot;production&quot;,&quot;service.name&quot;:&quot;OpenL&quot;,&quot;host.name&quot;:&quot;f9991faedf4b&quot;}
+{&quot;@timestamp&quot;:&quot;2026-11-05T15:17:11.527Z&quot;,&quot;ecs.version&quot;:&quot;1.2.0&quot;,&quot;log.level&quot;:&quot;WARN&quot;,&quot;message&quot;:&quot;Mapping for external folder &#x27;DESIGN/rules/project-371806/rules/projEditCommaSeparatedArr.xlsx&#x27; is not found. Use it as is.&quot;,&quot;process.thread.name&quot;:&quot;qtp674019271-32&quot;,&quot;log.logger&quot;:&quot;org.openl.rules.workspace.dtr.impl.MappedRepository&quot;,&quot;service.version&quot;:&quot;0&quot;,&quot;service.environment&quot;:&quot;production&quot;,&quot;service.name&quot;:&quot;OpenL&quot;,&quot;host.name&quot;:&quot;f9991faedf4b&quot;}
+{&quot;@timestamp&quot;:&quot;2026-11-05T15:17:11.531Z&quot;,&quot;ecs.version&quot;:&quot;1.2.0&quot;,&quot;log.level&quot;:&quot;WARN&quot;,&quot;message&quot;:&quot;Mapping for external folder &#x27;DESIGN/rules/project-371806/rules/projEditCommaSeparatedArr.xlsx&#x27; is not found. Use it as is.&quot;,&quot;process.thread.name&quot;:&quot;qtp674019271-32&quot;,&quot;log.logger&quot;:&quot;org.openl.rules.workspace.dtr.impl.MappedRepository&quot;,&quot;service.version&quot;:&quot;0&quot;,&quot;service.environment&quot;:&quot;production&quot;,&quot;service.name&quot;:&quot;OpenL&quot;,&quot;host.name&quot;:&quot;f9991faedf4b&quot;}
+{&quot;@timestamp&quot;:&quot;2026-11-05T15:17:11.532Z&quot;,&quot;ecs.version&quot;:&quot;1.2.0&quot;,&quot;log.level&quot;:&quot;WARN&quot;,&quot;message&quot;:&quot;Mapping for external folder &#x27;DESIGN/rules/project-371806/rules.xml&#x27; is not found. Use it as is.&quot;,&quot;process.thread.name&quot;:&quot;qtp674019271-32&quot;,&quot;log.logger&quot;:&quot;org.openl.rules.workspace.dtr.impl.MappedRepository&quot;,&quot;service.version&quot;:&quot;0&quot;,&quot;service.environment&quot;:&quot;production&quot;,&quot;service.name&quot;:&quot;OpenL&quot;,&quot;host.name&quot;:&quot;f9991faedf4b&quot;}
+{&quot;@timestamp&quot;:&quot;2026-11-05T15:17:11.532Z&quot;,&quot;ecs.version&quot;:&quot;1.2.0&quot;,&quot;log.level&quot;:&quot;WARN&quot;,&quot;message&quot;:&quot;Mapping for external folder &#x27;DESIGN/rules/project-371806/rules.xml&#x27; is not found. Use it as is.&quot;,&quot;process.thread.name&quot;:&quot;qtp674019271-32&quot;,&quot;log.logger&quot;:&quot;org.openl.rules.workspace.dtr.impl.MappedRepository&quot;,&quot;service.version&quot;:&quot;0&quot;,&quot;service.environment&quot;:&quot;production&quot;,&quot;service.name&quot;:&quot;OpenL&quot;,&quot;host.name&quot;:&quot;f9991faedf4b&quot;}</pre></div><div class='panel' id='t0-4' hidden><p><a class='button' href='attachments/shard-01/tests.ui.webstudio.rules_editor.TestEditingCommaSeparatedArrayValues/testEditingCommaSeparatedArrayValues/1793891976261-trace.zip' download>Download trace.zip (1020 KB)</a></p><p class='hint'>Playwright trace with DOM snapshots before and after every action, network and console. Open it with <code>npx playwright show-trace trace.zip (or drop the file onto https://trace.playwright.dev)</code>.</p></div><div class='panel' id='t0-5' hidden><div class='attachments'><figure><a href='attachments/shard-01/tests.ui.webstudio.rules_editor.TestEditingCommaSeparatedArrayValues/testEditingCommaSeparatedArrayValues/1793891976327-testEditingCommaSeparatedArrayValues_20261105_151936.png' target='_blank'><img src='attachments/shard-01/tests.ui.webstudio.rules_editor.TestEditingCommaSeparatedArrayValues/testEditingCommaSeparatedArrayValues/1793891976327-testEditingCommaSeparatedArrayValues_20261105_151936.png' alt='Test Failure Screenshot' loading='lazy'></a><figcaption>Test Failure Screenshot</figcaption></figure></div></div></td></tr><tr class='row passed' data-status='passed' data-suite='rules_editor' data-error=''><td><span class='badge' style='color:#1a7f37;background:#dafbe1'>PASSED</span></td><td>rules_editor<br><small>shard-01</small></td><td><strong>TestEditingCommaSeparatedArrayValues</strong><br>testVerifyNoInfiniteLoading<br><small>EPBDS-13232</small></td><td>59 s</td><td class='artifacts'><small>steps</small></td><td><button class='toggle' data-target='d1'>details</button></td></tr><tr class='details-row passed' id='d1' hidden><td colspan='6'><div class='tabs'><button class='tab active' data-tab='t1-0'>Overview</button><button class='tab' data-tab='t1-1'>Steps (600)</button></div><div class='panel' id='t1-0'><table class='kv'><tr><th>Group / shard</th><td>rules_editor / shard-01</td></tr><tr><th>Class</th><td><code>tests.ui.webstudio.rules_editor.TestEditingCommaSeparatedArrayValues</code> · <a href='https://github.com/openl-tablets/openl-tests/blob/d17f56b6a152d5a3781729c0badf4bc2f5a12235/src/test/java/tests/ui/webstudio/rules_editor/TestEditingCommaSeparatedArrayValues.java' target='_blank'>source</a></td></tr><tr><th>Method</th><td><code>testVerifyNoInfiniteLoading</code></td></tr><tr><th>Test case</th><td>EPBDS-13232</td></tr><tr><th>Known issue</th><td>—</td></tr><tr><th>Description</th><td>Editing a comma-separated array with an empty element (&#x27;1,,2,3&#x27;) shows a server failure message but does not break the project</td></tr><tr><th>Started / finished</th><td>2026-11-05T15:20:03.861Z → 2026-11-05T15:21:02.441Z (59 s)</td></tr><tr><th>Application build</th><td>latest</td></tr><tr><th>Tests revision</th><td>main @ d17f56b6a152</td></tr></table></div><div class='panel' id='t1-1' hidden><p class='hint'>Framework log of this test: container start, every page action, waits, REST calls and assertions. Showing the last 50 of 600 lines · <a href='attachments/shard-01/tests.ui.webstudio.rules_editor.TestEditingCommaSeparatedArrayValues/testVerifyNoInfiniteLoading/test-steps.log' target='_blank'>full log</a></p><pre class='log'>2026-11-05 15:20:54.596 [main] [INFO] WebElement - Waiting for cellEditor to be visible (timeout: 250ms)
+2026-11-05 15:20:54.605 [main] [INFO] WebElement - Pressing Enter on cellEditor
+2026-11-05 15:20:54.675 [main] [INFO] WaitUtil - Condition met after 234ms: Writing &#x27;1,,2,3&#x27; into the editor of cell [4,2]
+2026-11-05 15:20:54.675 [main] [INFO] WaitUtil - Sleeping for 250ms: Waiting for cell edit to be applied
+2026-11-05 15:20:54.928 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 15:20:54.956 [main] [INFO] WaitUtil - Condition met after 28ms: Waiting for the loading overlay to disappear
+2026-11-05 15:20:54.956 [main] [INFO] WebElement - Waiting for saveChangesBtn to be visible (timeout: 250ms)
+2026-11-05 15:20:54.982 [main] [INFO] WebElement - Clicking saveChangesBtn 
+2026-11-05 15:20:55.759 [main] [INFO] WaitUtil - Sleeping for 250ms: Waiting for table panel action to complete and UI to update
+2026-11-05 15:20:56.010 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-05 15:20:56.252 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 15:20:56.390 [main] [INFO] WaitUtil - Condition met after 138ms: Waiting for the loading overlay to disappear
+2026-11-05 15:20:56.392 [main] [INFO] WaitUtil - Waiting for condition (timeout: 10000ms, polling: 200ms): Waiting for the table to be written
+2026-11-05 15:20:56.405 [main] [INFO] WaitUtil - Condition met after 13ms: Waiting for the table to be written
+2026-11-05 15:20:56.405 [main] [INFO] WaitUtil - Waiting for condition (timeout: 10000ms, polling: 250ms): Waiting for the table changes to be kept
+2026-11-05 15:20:56.414 [main] [INFO] WebElement - Waiting for saveChangesBtn to be visible (timeout: 1000ms)
+2026-11-05 15:20:57.422 [main] [INFO] WaitUtil - Condition met after 1017ms: Waiting for the table changes to be kept
+2026-11-05 15:20:57.422 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 15:20:57.430 [main] [INFO] WaitUtil - Condition met after 7ms: Waiting for the loading overlay to disappear
+2026-11-05 15:20:57.437 [main] [INFO] WaitUtil - Sleeping for 250ms: Watching for an error shown to the user
+2026-11-05 15:20:57.695 [main] [INFO] WaitUtil - Sleeping for 250ms: Watching for an error shown to the user
+2026-11-05 15:20:57.955 [main] [INFO] WaitUtil - Sleeping for 250ms: Watching for an error shown to the user
+2026-11-05 15:20:58.215 [main] [INFO] WaitUtil - Sleeping for 250ms: Watching for an error shown to the user
+2026-11-05 15:20:58.475 [main] [INFO] WaitUtil - Sleeping for 250ms: Watching for an error shown to the user
+2026-11-05 15:20:58.734 [main] [INFO] WaitUtil - Sleeping for 250ms: Watching for an error shown to the user
+2026-11-05 15:20:58.993 [main] [INFO] WaitUtil - Sleeping for 250ms: Watching for an error shown to the user
+2026-11-05 15:20:59.252 [main] [INFO] WaitUtil - Sleeping for 250ms: Watching for an error shown to the user
+2026-11-05 15:20:59.512 [main] [INFO] WaitUtil - Sleeping for 250ms: Watching for an error shown to the user
+2026-11-05 15:20:59.771 [main] [INFO] WaitUtil - Sleeping for 250ms: Watching for an error shown to the user
+2026-11-05 15:21:00.030 [main] [INFO] WaitUtil - Sleeping for 250ms: Watching for an error shown to the user
+2026-11-05 15:21:00.290 [main] [INFO] WaitUtil - Sleeping for 250ms: Watching for an error shown to the user
+2026-11-05 15:21:00.540 [main] [INFO] CorePage - Errors shown to the user: []
+2026-11-05 15:21:00.606 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 500ms): Going to &#x27;Projects&#x27;
+2026-11-05 15:21:00.606 [main] [INFO] WebElement - Waiting for projectsList to be visible (timeout: 1500ms)
+2026-11-05 15:21:02.132 [main] [INFO] WebElement - Waiting for selectedTabLabel to be visible (timeout: 1500ms)
+2026-11-05 15:21:02.140 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 15:21:02.147 [main] [INFO] WaitUtil - Condition met after 7ms: Waiting for the loading overlay to disappear
+2026-11-05 15:21:02.147 [main] [INFO] WebElement - Waiting for selectedTabLabel to be visible (timeout: 3000ms)
+2026-11-05 15:21:02.155 [main] [INFO] WebElement - Clicking with increased timeout selectedTabLabel 
+2026-11-05 15:21:02.189 [main] [INFO] WebElement - Waiting for projectsList to be visible (timeout: 1500ms)
+2026-11-05 15:21:02.306 [main] [INFO] WaitUtil - Condition met after 1700ms: Going to &#x27;Projects&#x27;
+2026-11-05 15:21:02.306 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-05 15:21:02.411 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-05 15:21:02.423 [main] [INFO] WaitUtil - Condition met after 12ms: Waiting for the loading overlay to disappear
+2026-11-05 15:21:02.423 [main] [INFO] CorePage - domain.ui.webstudio.pages.mainpages.RepositoryPage was opened.
+2026-11-05 15:21:02.423 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 250ms): Waiting for the list of projects to be drawn
+2026-11-05 15:21:02.432 [main] [INFO] WaitUtil - Condition met after 9ms: Waiting for the list of projects to be drawn
+2026-11-05 15:21:02.432 [main] [INFO] WebElement - Waiting for projectRow to be visible (timeout: 20000ms)
+2026-11-05 15:21:02.450 [main] [INFO] DockerDriverPool - Closing Playwright Docker for thread: main
+2026-11-05 15:21:02.946 [main] [INFO] WaitUtil - Sleeping for 2000ms: Waiting for Docker daemon to complete resource cleanup</pre></div></td></tr></tbody></table></div>
+</div>
+<script>
+const rows=[...document.querySelectorAll('tr.row')];
+function apply(){const s=document.getElementById('status').value,u=document.getElementById('suite').value,q=document.getElementById('search').value.toLowerCase();
+rows.forEach(r=>{const ok=(!s||r.dataset.status===s)&&(!u||r.dataset.suite===u)&&(!q||(r.textContent+' '+(r.dataset.error||'')).toLowerCase().includes(q));r.hidden=!ok;const d=r.nextElementSibling;if(d&&d.classList.contains('details-row')&&!ok){d.hidden=true;r.querySelector('button.toggle')?.classList.remove('open');}});}
+['status','suite'].forEach(id=>document.getElementById(id).addEventListener('change',apply));document.getElementById('search').addEventListener('input',apply);
+document.querySelectorAll('button.toggle').forEach(b=>b.addEventListener('click',()=>{const d=document.getElementById(b.dataset.target);d.hidden=!d.hidden;b.classList.toggle('open',!d.hidden);}));
+document.getElementById('expand-failed').addEventListener('click',()=>{document.querySelectorAll('tr.details-row.failed').forEach(d=>{d.hidden=false;const b=d.previousElementSibling.querySelector('button.toggle');if(b)b.classList.add('open');});});
+document.querySelectorAll('button.tab').forEach(b=>b.addEventListener('click',()=>{const panel=document.getElementById(b.dataset.tab);const box=b.closest('td');box.querySelectorAll('.panel').forEach(p=>p.hidden=true);box.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));panel.hidden=false;b.classList.add('active');}));
+</script></body></html>

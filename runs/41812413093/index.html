@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>OpenL Tests [latest]</title>
+<style>
+:root{--bg:#f3f5f9;--surface:#ffffff;--surface-2:#f8fafc;--line:#e3e8ef;--line-strong:#d0d7e2;--text:#0f172a;--muted:#64748b;--accent:#2563eb;--accent-soft:#e8f0fe;--shadow:0 1px 2px rgba(15,23,42,.06),0 1px 3px rgba(15,23,42,.04);--radius:14px;--mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.5;color:var(--text);background:var(--bg);-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
+.page{max-width:1440px;margin:0 auto;padding:32px 28px 64px}
+header.top{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:20px}
+h1{margin:0;font-size:26px;font-weight:700;letter-spacing:-.02em}
+.meta{display:flex;flex-wrap:wrap;gap:8px;align-items:center;color:var(--muted);font-size:13px}
+.meta .chip{background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px 10px;color:var(--text)}
+.meta .chip.moving,.tag-moving{border:1px solid #f5b37a;background:#fff1e5;color:#9a3412;font-weight:600}
+.tag-moving{display:inline-block;padding:1px 8px;border-radius:999px;font-size:11px}
+.cards{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;margin:0 0 20px}
+.card{position:relative;overflow:hidden;min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 14px 14px 18px;box-shadow:var(--shadow);color:var(--muted);font-size:clamp(10px,.85vw,12px);font-weight:600;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap;text-overflow:ellipsis}
+.card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--card-color,var(--line-strong))}
+.card b{display:block;margin-top:4px;font-size:clamp(20px,2vw,28px);line-height:1.1;font-weight:700;letter-spacing:-.02em;color:var(--card-color,var(--text))}
+.controls{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:0 0 14px;padding:12px 14px;background:rgba(255,255,255,.88);backdrop-filter:blur(8px);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.controls label{display:inline-flex;align-items:center;gap:8px;color:var(--muted);font-size:13px}
+.controls select,.controls input{height:36px;padding:0 12px;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface);color:var(--text);font:inherit;font-size:13px}
+.controls input{flex:1 1 260px;min-width:200px}
+.controls select:focus,.controls input:focus{outline:2px solid var(--accent-soft);border-color:var(--accent)}
+.controls button{height:36px;padding:0 14px;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface);color:var(--text);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.controls button:hover{border-color:var(--accent);color:var(--accent)}
+.table-wrap{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow-x:auto}
+.table-wrap table.tests{min-width:760px}
+table.tests{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0}
+table.tests col.c-status{width:19%} table.tests col.c-group{width:10%} table.tests col.c-duration{width:88px} table.tests col.c-artifacts{width:13%} table.tests col.c-details{width:112px}
+table.tests>thead th{padding:12px 14px;text-align:left;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:var(--surface-2);border-bottom:1px solid var(--line)}
+table.tests>tbody>tr>td{padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:top;overflow-wrap:anywhere;min-width:0}
+tr.row:hover td{background:var(--surface-2)}
+.badge{display:inline-flex;flex-wrap:wrap;align-items:center;gap:4px 7px;font-weight:600;padding:3px 10px 3px 8px;border-radius:999px;font-size:12px;line-height:1.4}
+.badge::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor;flex:none}
+.badge a{color:inherit;text-decoration:underline;text-decoration-color:rgba(0,0,0,.25)}
+strong{font-weight:600}
+small,.hint,figcaption{color:var(--muted);font-size:12px}
+small.err{display:inline-block;margin-top:2px;color:#b42318;font-family:var(--mono);font-size:11px;overflow-wrap:anywhere}
+.artifacts small{display:inline-block;margin:0 6px 4px 0;padding:1px 8px;border:1px solid var(--line);border-radius:999px;background:var(--surface-2);color:var(--muted);font-size:11px}
+button.toggle{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px 0 12px;border:1px solid var(--line-strong);border-radius:999px;background:var(--surface);color:var(--text);font:inherit;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
+button.toggle::after{content:"";width:6px;height:6px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg) translateY(-1px);transition:transform .15s ease}
+button.toggle:hover{border-color:var(--accent);color:var(--accent)}
+button.toggle.open{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)} button.toggle.open::after{transform:rotate(-135deg) translateY(-1px)}
+table.tests>tbody>tr.details-row>td{padding:16px 18px 20px;background:var(--surface-2)}
+.tabs{display:inline-flex;flex-wrap:wrap;gap:2px;margin-bottom:12px;padding:4px;background:#e9edf3;border-radius:12px}
+.tab{padding:6px 14px;border:0;border-radius:9px;background:transparent;color:#475569;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.tab:hover{color:var(--text)} .tab.active{background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
+.run{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px 18px;margin:0 0 20px;box-shadow:var(--shadow)}
+.run table.kv th{width:210px}
+table.kv{border-collapse:collapse;width:100%} table.kv th{width:180px;text-align:left;padding:6px 16px 6px 0;color:var(--muted);font-weight:500;vertical-align:top;font-size:13px} table.kv td{padding:6px 0;border-bottom:1px solid var(--line)} table.kv tr:last-child td{border-bottom:0}
+pre{margin:0;white-space:pre-wrap;word-break:break-word;background:var(--surface-2);border:1px solid var(--line);padding:12px 14px;border-radius:10px;max-height:520px;overflow:auto;font-family:var(--mono);font-size:12px;line-height:1.5}
+pre.error{background:#fff1f0;border-color:#fecdca;color:#912018} pre.log{background:#0b1220;border-color:#1e293b;color:#dbe4f0} pre.small{max-height:200px}
+.error-type{margin:0 0 8px;font-weight:600;color:#b42318;font-family:var(--mono);font-size:12px}
+details summary{cursor:pointer;margin:12px 0 8px;font-weight:600;color:var(--muted)}
+.hint{margin:0 0 10px}
+.attachments{display:flex;flex-wrap:wrap;gap:16px} figure{margin:0;max-width:420px} figure img,figure video{display:block;max-width:420px;border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow)} figcaption{margin-top:6px}
+.button{display:inline-flex;align-items:center;height:36px;padding:0 16px;background:var(--accent);color:#fff;border-radius:10px;font-weight:600;text-decoration:none;box-shadow:var(--shadow)} .button:hover{text-decoration:none;filter:brightness(1.05)}
+code{padding:1px 6px;border-radius:6px;background:#eef2f6;font-family:var(--mono);font-size:12px}
+@media (max-width:900px){.page{padding:20px 14px 48px} h1{font-size:22px} .controls{position:static} .cards{gap:8px} .card{padding:10px 10px 10px 14px}}
+</style></head><body>
+<div class="page">
+<header class="top"><h1>OpenL Tests [latest]</h1>
+<div class="meta"><span class="chip moving">Build latest — moving tag, see the images below</span><span class="chip">11 tests</span><span class="chip">7 min 21 s of test time</span><a href="https://github.com/openl-tablets/openl-tests/actions/runs/41812413093">workflow run</a> · <a href="debug/index.json">debug/index.json</a> · <a href="debug/README.md">how to debug with an AI assistant</a></div></header>
+<section class='run'><table class='kv'><tr><th>Workflow</th><td><a href='https://github.com/openl-tablets/openl-tests/actions/runs/41812413093'>OpenL Tests</a></td></tr><tr><th>Run</th><td>2026-11-04 10:12:11 UTC → 2026-11-04 10:14:05 UTC · 1 min 53 s wall time · selective run</td></tr><tr><th>Image <code>ghcr.io/openl-tablets/webstudio:latest</code> <span class='tag-moving'>moving tag</span></th><td>11 test(s), version not observed: Failed to parse the JSON document; keycloak: Temporary failure in name resolution<br><small>resolved at run start to <code>sha256:6a716e5af3d7</code>, openl-tablets <a href='https://github.com/openl-tablets/openl-tablets/commit/b82862b8020ca354c663302fa4b8f56de743ba9d' target='_blank'>b82862b802</a>, image built 2026-11-04T00:19:52Z</small></td></tr><tr><th>Image <code>ghcr.io/openl-tablets/ws:latest-all</code> <span class='tag-moving'>moving tag</span></th><td><span class='hint'>not used by any test in this run</span><br><small>resolved at run start to <code>sha256:c8f6df037070</code>, openl-tablets <a href='https://github.com/openl-tablets/openl-tablets/commit/b82862b8020ca354c663302fa4b8f56de743ba9d' target='_blank'>b82862b802</a>, image built 2026-11-04T00:19:52Z</small></td></tr><tr><th>Tests</th><td>EPBDS-16896 @ <a href='https://github.com/openl-tablets/openl-tests/commit/feaf0991f63b7fb9fae34a71c0185f29d681430f' target='_blank'>feaf0991f63b</a></td></tr><tr><th>Stack</th><td>Playwright 1.64.0 · Java 21</td></tr></table></section>
+<div class="cards"><div class="card" style="--card-color:#15803d">Passed<b>11</b></div><div class="card" style="--card-color:#dc2626">Failed<b>0</b></div><div class="card" style="--card-color:#ca8a04">Skipped<b>0</b></div><div class="card" style="--card-color:#ea580c">Known issues<b>0</b></div><div class="card" style="--card-color:#2563eb">Fixed?<b>0</b></div><div class="card">Shards<b>10</b></div></div>
+<div class="controls"><label>Status <select id="status"><option value="">all</option><option value="failed">failed</option><option value="skipped">skipped</option><option value="known">known issue</option><option value="fixed">fixed?</option><option value="passed">passed</option></select></label>
+<label>Group <select id="suite"><option value="">all</option><option value='git'>git</option><option value='sso'>sso</option><option value='studio_smoke'>studio_smoke</option></select></label><input id="search" placeholder="filter by class, test name or error" size="40"><button id="expand-failed">expand all failed</button></div>
+<div class="table-wrap"><table class="tests"><colgroup><col class="c-status"><col class="c-group"><col class="c-test"><col class="c-duration"><col class="c-artifacts"><col class="c-details"></colgroup><thead><tr><th>Status</th><th>Group / shard</th><th>Test</th><th>Duration</th><th>Artifacts</th><th></th></tr></thead><tbody><tr class='row passed' data-status='passed' data-suite='git' data-error=''><td><span class='badge' style='color:#1a7f37;background:#dafbe1'>PASSED</span></td><td>git<br><small>shard-01</small></td><td><strong>TestProtectedBranchBypassBothProtectedUi</strong><br>testBothProtectedBranchesShowBothCopy<br><small>EPBDS-15960</small></td><td>34 s</td><td class='artifacts'><small>steps</small></td><td><button class='toggle' data-target='d0'>details</button></td></tr><tr class='details-row passed' id='d0' hidden><td colspan='6'><div class='tabs'><button class='tab active' data-tab='t0-0'>Overview</button><button class='tab' data-tab='t0-1'>Steps (247)</button></div><div class='panel' id='t0-0'><table class='kv'><tr><th>Group / shard</th><td>git / shard-01</td></tr><tr><th>Class</th><td><code>tests.ui.webstudio.git.TestProtectedBranchBypassBothProtectedUi</code> · <a href='https://github.com/openl-tablets/openl-tests/blob/feaf0991f63b7fb9fae34a71c0185f29d681430f/src/test/java/tests/ui/webstudio/git/TestProtectedBranchBypassBothProtectedUi.java' target='_blank'>source</a></td></tr><tr><th>Method</th><td><code>testBothProtectedBranchesShowBothCopy</code></td></tr><tr><th>Test case</th><td>EPBDS-15960</td></tr><tr><th>Known issue</th><td>—</td></tr><tr><th>Description</th><td>H.6: merging between two protected branches shows the &#x27;both branches are protected&#x27; bypass warning naming both the send target and the receive source.</td></tr><tr><th>Started / finished</th><td>2026-11-04T10:12:20.963Z → 2026-11-04T10:12:54.501Z (34 s)</td></tr><tr><th>Application build</th><td>latest</td></tr><tr><th>Tests revision</th><td>EPBDS-16896 @ feaf0991f63b</td></tr></table></div><div class='panel' id='t0-1' hidden><p class='hint'>Framework log of this test: container start, every page action, waits, REST calls and assertions. Showing the last 50 of 247 lines · <a href='attachments/shard-01/tests.ui.webstudio.git.TestProtectedBranchBypassBothProtectedUi/testBothProtectedBranchesShowBothCopy/test-steps.log' target='_blank'>full log</a></p><pre class='log'>2026-11-04 10:12:51.921 [main] [INFO] WebElement - Waiting for projectNameInRow to be visible (timeout: 90000ms)
+2026-11-04 10:12:51.927 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-04 10:12:51.932 [main] [INFO] WaitUtil - Condition met after 4ms: Waiting for the loading overlay to disappear
+2026-11-04 10:12:51.932 [main] [INFO] WebElement - Waiting for projectNameInRow to be visible (timeout: 250ms)
+2026-11-04 10:12:51.937 [main] [INFO] WebElement - Clicking projectNameInRow 
+2026-11-04 10:12:51.969 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 250ms): Waiting for the card of project &#x27;BypassBothProtectedUiProject&#x27; to open
+2026-11-04 10:12:51.970 [main] [INFO] WebElement - Waiting for projectDetail to be visible (timeout: 1000ms)
+2026-11-04 10:12:52.642 [main] [INFO] WebElement - Waiting for projectCardName to be visible (timeout: 1000ms)
+2026-11-04 10:12:52.795 [main] [INFO] WebElement - Waiting for projectCardName to be visible (timeout: 250ms)
+2026-11-04 10:12:52.849 [main] [INFO] WebElement - Getting text from projectCardName: &#x27;BypassBothProtectedUiProject&#x27;
+2026-11-04 10:12:52.850 [main] [INFO] WaitUtil - Condition met after 880ms: Waiting for the card of project &#x27;BypassBothProtectedUiProject&#x27; to open
+2026-11-04 10:12:52.850 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-04 10:12:52.862 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-04 10:12:52.875 [main] [INFO] WaitUtil - Condition met after 13ms: Waiting for the loading overlay to disappear
+2026-11-04 10:12:52.935 [main] [INFO] WebElement - Waiting for moduleOpenLinks_0 to be visible (timeout: 1000ms)
+2026-11-04 10:12:52.947 [main] [INFO] WaitUtil - Waiting for condition (timeout: 15000ms, polling: 1000ms): Click Sync until the merge dialog appears
+2026-11-04 10:12:52.947 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-04 10:12:52.962 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-04 10:12:52.974 [main] [INFO] WaitUtil - Condition met after 11ms: Waiting for the loading overlay to disappear
+2026-11-04 10:12:52.975 [main] [INFO] WebElement - Waiting for syncBtn to be visible (timeout: 10000ms)
+2026-11-04 10:12:52.986 [main] [INFO] WebElement - Waiting for syncBtn to be visible (timeout: 20000ms)
+2026-11-04 10:12:52.999 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-04 10:12:53.013 [main] [INFO] WaitUtil - Condition met after 13ms: Waiting for the loading overlay to disappear
+2026-11-04 10:12:53.013 [main] [INFO] WebElement - Waiting for syncBtn to be visible (timeout: 250ms)
+2026-11-04 10:12:53.025 [main] [INFO] WebElement - Clicking syncBtn 
+2026-11-04 10:12:53.339 [main] [INFO] WaitUtil - Sleeping for 500ms: Waiting for Sync dialog to open
+2026-11-04 10:12:53.840 [main] [INFO] WebElement - Waiting for dialogHeader to be visible (timeout: 1000ms)
+2026-11-04 10:12:53.852 [main] [INFO] WaitUtil - Condition met after 905ms: Click Sync until the merge dialog appears
+2026-11-04 10:12:53.852 [main] [INFO] SyncChangesDialogComponent - Selecting branch: release-EPBDS-15818
+2026-11-04 10:12:53.852 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-04 10:12:53.861 [main] [INFO] WaitUtil - Condition met after 9ms: Waiting for the loading overlay to disappear
+2026-11-04 10:12:53.861 [main] [INFO] WebElement - Waiting for branchSelector to be visible (timeout: 250ms)
+2026-11-04 10:12:53.871 [main] [INFO] WebElement - Clicking branchSelector 
+2026-11-04 10:12:53.960 [main] [INFO] WaitUtil - Waiting for condition (timeout: 2000ms, polling: 100ms): Waiting for selector options to appear
+2026-11-04 10:12:53.997 [main] [INFO] WaitUtil - Condition met after 37ms: Waiting for selector options to appear
+2026-11-04 10:12:54.017 [main] [INFO] WebElement - Waiting for branchSelector_0 to be visible (timeout: 250ms)
+2026-11-04 10:12:54.043 [main] [INFO] WebElement - Getting text from branchSelector_0: &#x27;masterDefault&#x27;
+2026-11-04 10:12:54.043 [main] [INFO] WebElement - Waiting for branchSelector_1 to be visible (timeout: 250ms)
+2026-11-04 10:12:54.068 [main] [INFO] WebElement - Getting text from branchSelector_1: &#x27;release-EPBDS-15818&#x27;
+2026-11-04 10:12:54.068 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-04 10:12:54.077 [main] [INFO] WaitUtil - Condition met after 9ms: Waiting for the loading overlay to disappear
+2026-11-04 10:12:54.078 [main] [INFO] WebElement - Waiting for branchSelector_1 to be visible (timeout: 250ms)
+2026-11-04 10:12:54.091 [main] [INFO] WebElement - Clicking branchSelector_1 
+2026-11-04 10:12:54.449 [main] [INFO] WaitUtil - Waiting for condition (timeout: 5000ms, polling: 200ms): Waiting for bypass warning alert
+2026-11-04 10:12:54.450 [main] [INFO] WebElement - Waiting for bypassWarningAlert to be visible (timeout: 250ms)
+2026-11-04 10:12:54.467 [main] [INFO] WaitUtil - Condition met after 18ms: Waiting for bypass warning alert
+2026-11-04 10:12:54.468 [main] [INFO] WebElement - Waiting for bypassWarningAlert to be visible (timeout: 250ms)
+2026-11-04 10:12:54.497 [main] [INFO] WebElement - Getting text from bypassWarningAlert: &#x27;Bypass branch protection?Both branches are protected: sending into &quot;release-EPBDS-15818&quot; and receiving into &quot;EPBDS-15818_dev&quot;. Confirming will merge anyway. This action cannot be undone.&#x27;
+2026-11-04 10:12:54.519 [main] [INFO] DockerDriverPool - Closing Playwright Docker for thread: main
+2026-11-04 10:12:56.303 [main] [INFO] WaitUtil - Sleeping for 2000ms: Waiting for Docker daemon to complete resource cleanup</pre></div></td></tr><tr class='row passed' data-status='passed' data-suite='git' data-error=''><td><span class='badge' style='color:#1a7f37;background:#dafbe1'>PASSED</span></td><td>git<br><small>shard-02</small></td><td><strong>TestProtectedBranchBypassCancelMergeUi</strong><br>testCancelOnBypassConfirmAbortsTheMerge<br><small>EPBDS-15960</small></td><td>34 s</td><td class='artifacts'><small>steps</small></td><td><button class='toggle' data-target='d1'>details</button></td></tr><tr class='details-row passed' id='d1' hidden><td colspan='6'><div class='tabs'><button class='tab active' data-tab='t1-0'>Overview</button><button class='tab' data-tab='t1-1'>Steps (276)</button></div><div class='panel' id='t1-0'><table class='kv'><tr><th>Group / shard</th><td>git / shard-02</td></tr><tr><th>Class</th><td><code>tests.ui.webstudio.git.TestProtectedBranchBypassCancelMergeUi</code> · <a href='https://github.com/openl-tablets/openl-tests/blob/feaf0991f63b7fb9fae34a71c0185f29d681430f/src/test/java/tests/ui/webstudio/git/TestProtectedBranchBypassCancelMergeUi.java' target='_blank'>source</a></td></tr><tr><th>Method</th><td><code>testCancelOnBypassConfirmAbortsTheMerge</code></td></tr><tr><th>Test case</th><td>EPBDS-15960</td></tr><tr><th>Known issue</th><td>—</td></tr><tr><th>Description</th><td>H.3: Cancel on the bypass confirmation modal aborts the merge — the modal closes, no Merge Summary appears, and the Sync dialog is still showing the bypass warning so the user can retry or close it manually.</td></tr><tr><th>Started / finished</th><td>2026-11-04T10:12:17.868Z → 2026-11-04T10:12:51.459Z (34 s)</td></tr><tr><th>Application build</th><td>latest</td></tr><tr><th>Tests revision</th><td>EPBDS-16896 @ feaf0991f63b</td></tr></table></div><div class='panel' id='t1-1' hidden><p class='hint'>Framework log of this test: container start, every page action, waits, REST calls and assertions. Showing the last 50 of 276 lines · <a href='attachments/shard-02/tests.ui.webstudio.git.TestProtectedBranchBypassCancelMergeUi/testCancelOnBypassConfirmAbortsTheMerge/test-steps.log' target='_blank'>full log</a></p><pre class='log'>2026-11-04 10:12:47.906 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-04 10:12:47.914 [main] [INFO] WaitUtil - Condition met after 7ms: Waiting for the loading overlay to disappear
+2026-11-04 10:12:47.914 [main] [INFO] WebElement - Waiting for branchSelector to be visible (timeout: 250ms)
+2026-11-04 10:12:47.945 [main] [INFO] WebElement - Clicking branchSelector 
+2026-11-04 10:12:48.018 [main] [INFO] WaitUtil - Waiting for condition (timeout: 2000ms, polling: 100ms): Waiting for selector options to appear
+2026-11-04 10:12:48.038 [main] [INFO] WaitUtil - Condition met after 19ms: Waiting for selector options to appear
+2026-11-04 10:12:48.050 [main] [INFO] WebElement - Waiting for branchSelector_0 to be visible (timeout: 250ms)
+2026-11-04 10:12:48.065 [main] [INFO] WebElement - Getting text from branchSelector_0: &#x27;masterDefault&#x27;
+2026-11-04 10:12:48.066 [main] [INFO] WebElement - Waiting for branchSelector_1 to be visible (timeout: 250ms)
+2026-11-04 10:12:48.078 [main] [INFO] WebElement - Getting text from branchSelector_1: &#x27;release-EPBDS-15818&#x27;
+2026-11-04 10:12:48.079 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-04 10:12:48.084 [main] [INFO] WaitUtil - Condition met after 5ms: Waiting for the loading overlay to disappear
+2026-11-04 10:12:48.084 [main] [INFO] WebElement - Waiting for branchSelector_1 to be visible (timeout: 250ms)
+2026-11-04 10:12:48.092 [main] [INFO] WebElement - Clicking branchSelector_1 
+2026-11-04 10:12:48.389 [main] [INFO] SyncChangesDialogComponent - Clicking &#x27;Send your updates&#x27; button
+2026-11-04 10:12:48.390 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-04 10:12:48.426 [main] [INFO] WaitUtil - Condition met after 36ms: Waiting for the loading overlay to disappear
+2026-11-04 10:12:48.426 [main] [INFO] WebElement - Waiting for exportYourChangesBtn to be visible (timeout: 250ms)
+2026-11-04 10:12:48.439 [main] [INFO] WebElement - Clicking exportYourChangesBtn 
+2026-11-04 10:12:48.583 [main] [INFO] WebElement - Waiting for bypassConfirmBtn to be visible
+2026-11-04 10:12:48.595 [main] [INFO] BypassConfirmDialogComponent - Clicking &#x27;Cancel&#x27; on bypass confirmation dialog
+2026-11-04 10:12:48.596 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-04 10:12:48.604 [main] [INFO] WaitUtil - Condition met after 8ms: Waiting for the loading overlay to disappear
+2026-11-04 10:12:48.605 [main] [INFO] WebElement - Waiting for bypassCancelBtn to be visible (timeout: 250ms)
+2026-11-04 10:12:48.614 [main] [INFO] WebElement - Clicking bypassCancelBtn 
+2026-11-04 10:12:48.674 [main] [INFO] WebElement - Waiting for bypassConfirmBtn to be hidden
+2026-11-04 10:12:48.989 [main] [INFO] WaitUtil - Waiting for condition (timeout: 2000ms, polling: 250ms): Making sure the Merge Summary does not appear
+2026-11-04 10:12:48.999 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Making sure the Merge Summary does not appear
+2026-11-04 10:12:49.259 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Making sure the Merge Summary does not appear
+2026-11-04 10:12:49.527 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Making sure the Merge Summary does not appear
+2026-11-04 10:12:49.784 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Making sure the Merge Summary does not appear
+2026-11-04 10:12:50.047 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Making sure the Merge Summary does not appear
+2026-11-04 10:12:50.305 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Making sure the Merge Summary does not appear
+2026-11-04 10:12:50.563 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Making sure the Merge Summary does not appear
+2026-11-04 10:12:50.820 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Making sure the Merge Summary does not appear
+2026-11-04 10:12:51.070 [main] [WARN] WaitUtil - Condition not met after 2000ms timeout: Making sure the Merge Summary does not appear
+2026-11-04 10:12:51.071 [main] [INFO] WebElement - Waiting for dialogHeader to be visible (timeout: 1000ms)
+2026-11-04 10:12:51.078 [main] [INFO] WaitUtil - Waiting for condition (timeout: 5000ms, polling: 200ms): Waiting for bypass warning alert
+2026-11-04 10:12:51.078 [main] [INFO] WebElement - Waiting for bypassWarningAlert to be visible (timeout: 250ms)
+2026-11-04 10:12:51.083 [main] [INFO] WaitUtil - Condition met after 5ms: Waiting for bypass warning alert
+2026-11-04 10:12:51.083 [main] [INFO] SyncChangesDialogComponent - Clicking &#x27;Send your updates&#x27; button
+2026-11-04 10:12:51.084 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-04 10:12:51.087 [main] [INFO] WaitUtil - Condition met after 3ms: Waiting for the loading overlay to disappear
+2026-11-04 10:12:51.087 [main] [INFO] WebElement - Waiting for exportYourChangesBtn to be visible (timeout: 250ms)
+2026-11-04 10:12:51.094 [main] [INFO] WebElement - Clicking exportYourChangesBtn 
+2026-11-04 10:12:51.172 [main] [INFO] WebElement - Waiting for bypassConfirmBtn to be visible
+2026-11-04 10:12:51.184 [main] [INFO] WebElement - Waiting for bypassConfirmTitle to be visible (timeout: 250ms)
+2026-11-04 10:12:51.457 [main] [INFO] WebElement - Getting text from bypassConfirmTitle: &#x27;Bypass branch protection?&#x27;
+2026-11-04 10:12:51.473 [main] [INFO] DockerDriverPool - Closing Playwright Docker for thread: main
+2026-11-04 10:12:55.786 [main] [INFO] WaitUtil - Sleeping for 2000ms: Waiting for Docker daemon to complete resource cleanup</pre></div></td></tr><tr class='row passed' data-status='passed' data-suite='git' data-error=''><td><span class='badge' style='color:#1a7f37;background:#dafbe1'>PASSED</span></td><td>git<br><small>shard-03</small></td><td><strong>TestProtectedBranchBypassContributorBlockedUi</strong><br>testContributorSeesErrorInsteadOfBypassConfirm<br><small>EPBDS-15960</small></td><td>37 s</td><td class='artifacts'><small>steps</small></td><td><button class='toggle' data-target='d2'>details</button></td></tr><tr class='details-row passed' id='d2' hidden><td colspan='6'><div class='tabs'><button class='tab active' data-tab='t2-0'>Overview</button><button class='tab' data-tab='t2-1'>Steps (272)</button></div><div class='panel' id='t2-0'><table class='kv'><tr><th>Group / shard</th><td>git / shard-03</td></tr><tr><th>Class</th><td><code>tests.ui.webstudio.git.TestProtectedBranchBypassContributorBlockedUi</code> · <a href='https://github.com/openl-tablets/openl-tests/blob/feaf0991f63b7fb9fae34a71c0185f29d681430f/src/test/java/tests/ui/webstudio/git/TestProtectedBranchBypassContributorBlockedUi.java' target='_blank'>source</a></td></tr><tr><th>Method</th><td><code>testContributorSeesErrorInsteadOfBypassConfirm</code></td></tr><tr><th>Test case</th><td>EPBDS-15960</td></tr><tr><th>Known issue</th><td>—</td></tr><tr><th>Description</th><td>H.4: A Contributor (not bypass-eligible) attempting to merge into a protected branch is told the branch is protected in the Sync dialog and NOT the &#x27;Bypass branch protection?&#x27; confirmation modal.</td></tr><tr><th>Started / finished</th><td>2026-11-04T10:12:11.903Z → 2026-11-04T10:12:48.909Z (37 s)</td></tr><tr><th>Application build</th><td>latest</td></tr><tr><th>Tests revision</th><td>EPBDS-16896 @ feaf0991f63b</td></tr></table></div><div class='panel' id='t2-1' hidden><p class='hint'>Framework log of this test: container start, every page action, waits, REST calls and assertions. Showing the last 50 of 272 lines · <a href='attachments/shard-03/tests.ui.webstudio.git.TestProtectedBranchBypassContributorBlockedUi/testContributorSeesErrorInsteadOfBypassConfirm/test-steps.log' target='_blank'>full log</a></p><pre class='log'>2026-11-04 10:12:41.281 [main] [INFO] WaitUtil - Sleeping for 500ms: Waiting for Sync dialog to open
+2026-11-04 10:12:41.781 [main] [INFO] WebElement - Waiting for dialogHeader to be visible (timeout: 1000ms)
+2026-11-04 10:12:41.794 [main] [INFO] WaitUtil - Condition met after 765ms: Click Sync until the merge dialog appears
+2026-11-04 10:12:41.795 [main] [INFO] SyncChangesDialogComponent - Selecting branch: release-EPBDS-15818
+2026-11-04 10:12:41.795 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-04 10:12:41.802 [main] [INFO] WaitUtil - Condition met after 7ms: Waiting for the loading overlay to disappear
+2026-11-04 10:12:41.802 [main] [INFO] WebElement - Waiting for branchSelector to be visible (timeout: 250ms)
+2026-11-04 10:12:41.857 [main] [INFO] WebElement - Clicking branchSelector 
+2026-11-04 10:12:41.946 [main] [INFO] WaitUtil - Waiting for condition (timeout: 2000ms, polling: 100ms): Waiting for selector options to appear
+2026-11-04 10:12:41.971 [main] [INFO] WaitUtil - Condition met after 25ms: Waiting for selector options to appear
+2026-11-04 10:12:41.987 [main] [INFO] WebElement - Waiting for branchSelector_0 to be visible (timeout: 250ms)
+2026-11-04 10:12:42.004 [main] [INFO] WebElement - Getting text from branchSelector_0: &#x27;masterDefault&#x27;
+2026-11-04 10:12:42.004 [main] [INFO] WebElement - Waiting for branchSelector_1 to be visible (timeout: 250ms)
+2026-11-04 10:12:42.028 [main] [INFO] WebElement - Getting text from branchSelector_1: &#x27;release-EPBDS-15818&#x27;
+2026-11-04 10:12:42.028 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-04 10:12:42.034 [main] [INFO] WaitUtil - Condition met after 6ms: Waiting for the loading overlay to disappear
+2026-11-04 10:12:42.035 [main] [INFO] WebElement - Waiting for branchSelector_1 to be visible (timeout: 250ms)
+2026-11-04 10:12:42.042 [main] [INFO] WebElement - Clicking branchSelector_1 
+2026-11-04 10:12:42.365 [main] [INFO] WaitUtil - Waiting for condition (timeout: 5000ms, polling: 200ms): Waiting for bypass warning alert
+2026-11-04 10:12:42.366 [main] [INFO] WebElement - Waiting for bypassWarningAlert to be visible (timeout: 250ms)
+2026-11-04 10:12:42.624 [main] [INFO] WaitUtil - Sleeping for 200ms: Polling for condition (attempt): Waiting for bypass warning alert
+2026-11-04 10:12:42.824 [main] [INFO] WebElement - Waiting for bypassWarningAlert to be visible (timeout: 250ms)
+2026-11-04 10:12:43.082 [main] [INFO] WaitUtil - Sleeping for 200ms: Polling for condition (attempt): Waiting for bypass warning alert
+2026-11-04 10:12:43.283 [main] [INFO] WebElement - Waiting for bypassWarningAlert to be visible (timeout: 250ms)
+2026-11-04 10:12:43.539 [main] [INFO] WaitUtil - Sleeping for 200ms: Polling for condition (attempt): Waiting for bypass warning alert
+2026-11-04 10:12:43.740 [main] [INFO] WebElement - Waiting for bypassWarningAlert to be visible (timeout: 250ms)
+2026-11-04 10:12:43.994 [main] [INFO] WaitUtil - Sleeping for 200ms: Polling for condition (attempt): Waiting for bypass warning alert
+2026-11-04 10:12:44.195 [main] [INFO] WebElement - Waiting for bypassWarningAlert to be visible (timeout: 250ms)
+2026-11-04 10:12:44.451 [main] [INFO] WaitUtil - Sleeping for 200ms: Polling for condition (attempt): Waiting for bypass warning alert
+2026-11-04 10:12:44.651 [main] [INFO] WebElement - Waiting for bypassWarningAlert to be visible (timeout: 250ms)
+2026-11-04 10:12:44.907 [main] [INFO] WaitUtil - Sleeping for 200ms: Polling for condition (attempt): Waiting for bypass warning alert
+2026-11-04 10:12:45.108 [main] [INFO] WebElement - Waiting for bypassWarningAlert to be visible (timeout: 250ms)
+2026-11-04 10:12:45.363 [main] [INFO] WaitUtil - Sleeping for 200ms: Polling for condition (attempt): Waiting for bypass warning alert
+2026-11-04 10:12:45.563 [main] [INFO] WebElement - Waiting for bypassWarningAlert to be visible (timeout: 250ms)
+2026-11-04 10:12:45.818 [main] [INFO] WaitUtil - Sleeping for 200ms: Polling for condition (attempt): Waiting for bypass warning alert
+2026-11-04 10:12:46.019 [main] [INFO] WebElement - Waiting for bypassWarningAlert to be visible (timeout: 250ms)
+2026-11-04 10:12:46.273 [main] [INFO] WaitUtil - Sleeping for 200ms: Polling for condition (attempt): Waiting for bypass warning alert
+2026-11-04 10:12:46.474 [main] [INFO] WebElement - Waiting for bypassWarningAlert to be visible (timeout: 250ms)
+2026-11-04 10:12:46.729 [main] [INFO] WaitUtil - Sleeping for 200ms: Polling for condition (attempt): Waiting for bypass warning alert
+2026-11-04 10:12:46.929 [main] [INFO] WebElement - Waiting for bypassWarningAlert to be visible (timeout: 250ms)
+2026-11-04 10:12:47.184 [main] [INFO] WaitUtil - Sleeping for 200ms: Polling for condition (attempt): Waiting for bypass warning alert
+2026-11-04 10:12:47.384 [main] [WARN] WaitUtil - Condition not met after 5000ms timeout: Waiting for bypass warning alert
+2026-11-04 10:12:47.385 [main] [INFO] WaitUtil - Waiting for condition (timeout: 10000ms, polling: 500ms): Waiting for a blocked-merge note containing: protected
+2026-11-04 10:12:47.385 [main] [INFO] WaitUtil - Sleeping for 1500ms: Waiting for the merge check to answer
+2026-11-04 10:12:48.895 [main] [INFO] WebElement - Waiting for mergeBlockedAlerts_0 to be visible (timeout: 250ms)
+2026-11-04 10:12:48.905 [main] [INFO] WebElement - Getting text from mergeBlockedAlerts_0: &#x27;There are changes to merge, but the branch &quot;release-EPBDS-15818&quot; is protected and you may not merge into it.&#x27;
+2026-11-04 10:12:48.905 [main] [INFO] WaitUtil - Condition met after 1520ms: Waiting for a blocked-merge note containing: protected
+2026-11-04 10:12:48.905 [main] [INFO] WebElement - Waiting for bypassConfirmBtn to be hidden
+2026-11-04 10:12:48.918 [main] [INFO] DockerDriverPool - Closing Playwright Docker for thread: main
+2026-11-04 10:12:51.810 [main] [INFO] WaitUtil - Sleeping for 2000ms: Waiting for Docker daemon to complete resource cleanup</pre></div></td></tr><tr class='row passed' data-status='passed' data-suite='git' data-error=''><td><span class='badge' style='color:#1a7f37;background:#dafbe1'>PASSED</span></td><td>git<br><small>shard-04</small></td><td><strong>TestMergeConflictDeletedFileUi</strong><br>deletedSideOffersNoDownloadLink<br><small>EPBDS-16574</small></td><td>1 min 29 s</td><td class='artifacts'><small>steps</small></td><td><button class='toggle' data-target='d3'>details</button></td></tr><tr class='details-row passed' id='d3' hidden><td colspan='6'><div class='tabs'><button class='tab active' data-tab='t3-0'>Overview</button><button class='tab' data-tab='t3-1'>Steps (808)</button></div><div class='panel' id='t3-0'><table class='kv'><tr><th>Group / shard</th><td>git / shard-04</td></tr><tr><th>Class</th><td><code>tests.ui.webstudio.git.TestMergeConflictDeletedFileUi</code> · <a href='https://github.com/openl-tablets/openl-tests/blob/feaf0991f63b7fb9fae34a71c0185f29d681430f/src/test/java/tests/ui/webstudio/git/TestMergeConflictDeletedFileUi.java' target='_blank'>source</a></td></tr><tr><th>Method</th><td><code>deletedSideOffersNoDownloadLink</code></td></tr><tr><th>Test case</th><td>EPBDS-16574</td></tr><tr><th>Known issue</th><td>—</td></tr><tr><th>Description</th><td>EPBDS-16462: when a file is modified in one branch and deleted in the other, the Resolve Conflicts dialog must offer Download only for the sides that still hold the file, must show the missing side as a plain label rather than a link, and must keep Compare available.</td></tr><tr><th>Started / finished</th><td>2026-11-04T10:12:30.296Z → 2026-11-04T10:13:59.439Z (1 min 29 s)</td></tr><tr><th>Application build</th><td>latest</td></tr><tr><th>Tests revision</th><td>EPBDS-16896 @ feaf0991f63b</td></tr></table></div><div class='panel' id='t3-1' hidden><p class='hint'>Framework log of this test: container start, every page action, waits, REST calls and assertions. Showing the last 50 of 808 lines · <a href='attachments/shard-04/tests.ui.webstudio.git.TestMergeConflictDeletedFileUi/deletedSideOffersNoDownloadLink/test-steps.log' target='_blank'>full log</a></p><pre class='log'>2026-11-04 10:13:55.278 [main] [INFO] WaitUtil - Condition met after 15ms: Waiting for the loading overlay to disappear
+2026-11-04 10:13:55.278 [main] [INFO] WebElement - Waiting for mergeBranchOptions_0 to be visible (timeout: 250ms)
+2026-11-04 10:13:55.285 [main] [INFO] WebElement - Clicking mergeBranchOptions_0 
+2026-11-04 10:13:55.587 [main] [INFO] WebElement - Waiting for syncReceiveBtn to be visible
+2026-11-04 10:13:55.632 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-04 10:13:55.639 [main] [INFO] WaitUtil - Condition met after 7ms: Waiting for the loading overlay to disappear
+2026-11-04 10:13:55.639 [main] [INFO] WebElement - Waiting for syncReceiveBtn to be visible (timeout: 250ms)
+2026-11-04 10:13:55.645 [main] [INFO] WebElement - Clicking syncReceiveBtn 
+2026-11-04 10:13:55.799 [main] [INFO] WaitUtil - Waiting for condition (timeout: 10000ms, polling: 250ms): Waiting for Resolve Conflicts dialog to appear
+2026-11-04 10:13:55.799 [main] [INFO] WebElement - Waiting for useYoursRadio to be visible (timeout: 250ms)
+2026-11-04 10:13:55.946 [main] [INFO] WaitUtil - Condition met after 147ms: Waiting for Resolve Conflicts dialog to appear
+2026-11-04 10:13:55.985 [main] [INFO] WaitUtil - Waiting for condition (timeout: 5000ms, polling: 100ms): Waiting for Use Theirs radio button
+2026-11-04 10:13:55.985 [main] [INFO] WebElement - Waiting for useTheirsRadio to be visible (timeout: 250ms)
+2026-11-04 10:13:55.996 [main] [INFO] WaitUtil - Condition met after 11ms: Waiting for Use Theirs radio button
+2026-11-04 10:13:55.996 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-04 10:13:56.001 [main] [INFO] WaitUtil - Condition met after 5ms: Waiting for the loading overlay to disappear
+2026-11-04 10:13:56.002 [main] [INFO] WebElement - Waiting for useTheirsRadio to be visible (timeout: 250ms)
+2026-11-04 10:13:56.008 [main] [INFO] WebElement - Clicking useTheirsRadio 
+2026-11-04 10:13:56.067 [main] [INFO] WaitUtil - Sleeping for 500ms: Wait for radio button selection
+2026-11-04 10:13:56.567 [main] [INFO] WaitUtil - Waiting for condition (timeout: 5000ms, polling: 100ms): Waiting for Save button
+2026-11-04 10:13:56.567 [main] [INFO] WebElement - Waiting for saveButton to be visible (timeout: 250ms)
+2026-11-04 10:13:56.579 [main] [INFO] WebElement - Checking if saveButton is enabled
+2026-11-04 10:13:56.613 [main] [INFO] WaitUtil - Condition met after 46ms: Waiting for Save button
+2026-11-04 10:13:56.614 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-04 10:13:56.624 [main] [INFO] WaitUtil - Condition met after 10ms: Waiting for the loading overlay to disappear
+2026-11-04 10:13:56.625 [main] [INFO] WebElement - Waiting for saveButton to be visible (timeout: 250ms)
+2026-11-04 10:13:56.636 [main] [INFO] WebElement - Clicking saveButton 
+2026-11-04 10:13:56.749 [main] [INFO] WaitUtil - Sleeping for 2000ms: Wait for conflict resolution
+2026-11-04 10:13:58.749 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-04 10:13:58.759 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-04 10:13:58.765 [main] [INFO] WaitUtil - Condition met after 6ms: Waiting for the loading overlay to disappear
+2026-11-04 10:13:58.765 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-04 10:13:58.769 [main] [INFO] WaitUtil - Condition met after 4ms: Waiting for the loading overlay to disappear
+2026-11-04 10:13:58.770 [main] [INFO] WebElement - Waiting for mergeSummaryCloseBtn to be visible (timeout: 250ms)
+2026-11-04 10:13:58.775 [main] [INFO] WebElement - Clicking mergeSummaryCloseBtn 
+2026-11-04 10:13:58.815 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-04 10:13:58.822 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-04 10:13:58.827 [main] [INFO] WaitUtil - Condition met after 5ms: Waiting for the loading overlay to disappear
+2026-11-04 10:13:58.827 [main] [INFO] WebElement - Waiting for detailRoot to be visible (timeout: 20000ms)
+2026-11-04 10:13:58.833 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-04 10:13:58.838 [main] [INFO] WaitUtil - Condition met after 5ms: Waiting for the loading overlay to disappear
+2026-11-04 10:13:58.838 [main] [INFO] WebElement - Waiting for filesTab to be visible (timeout: 250ms)
+2026-11-04 10:13:58.843 [main] [INFO] WebElement - Clicking filesTab 
+2026-11-04 10:13:59.101 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-04 10:13:59.126 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-04 10:13:59.151 [main] [INFO] WaitUtil - Condition met after 25ms: Waiting for the loading overlay to disappear
+2026-11-04 10:13:59.151 [main] [INFO] WebElement - Waiting for filesSearchField to be visible (timeout: 10000ms)
+2026-11-04 10:13:59.405 [main] [INFO] WebElement - Waiting for fileTreeNode to be visible (timeout: 20000ms)
+2026-11-04 10:13:59.463 [main] [INFO] DockerDriverPool - Closing Playwright Docker for thread: main
+2026-11-04 10:13:59.841 [main] [INFO] WaitUtil - Sleeping for 2000ms: Waiting for Docker daemon to complete resource cleanup</pre></div></td></tr><tr class='row passed' data-status='passed' data-suite='git' data-error=''><td><span class='badge' style='color:#1a7f37;background:#dafbe1'>PASSED</span></td><td>git<br><small>shard-05</small></td><td><strong>TestProtectedBranchBypassSettingOffUi</strong><br>testManagerBlockedWhenBypassSettingOff<br><small>EPBDS-15960</small></td><td>40 s</td><td class='artifacts'><small>steps</small></td><td><button class='toggle' data-target='d4'>details</button></td></tr><tr class='details-row passed' id='d4' hidden><td colspan='6'><div class='tabs'><button class='tab active' data-tab='t4-0'>Overview</button><button class='tab' data-tab='t4-1'>Steps (271)</button></div><div class='panel' id='t4-0'><table class='kv'><tr><th>Group / shard</th><td>git / shard-05</td></tr><tr><th>Class</th><td><code>tests.ui.webstudio.git.TestProtectedBranchBypassSettingOffUi</code> · <a href='https://github.com/openl-tablets/openl-tests/blob/feaf0991f63b7fb9fae34a71c0185f29d681430f/src/test/java/tests/ui/webstudio/git/TestProtectedBranchBypassSettingOffUi.java' target='_blank'>source</a></td></tr><tr><th>Method</th><td><code>testManagerBlockedWhenBypassSettingOff</code></td></tr><tr><th>Test case</th><td>EPBDS-15960</td></tr><tr><th>Known issue</th><td>—</td></tr><tr><th>Description</th><td>H.8: setting OFF hides the bypass flow — an eligible Manager merging into a protected branch is told the branch is protected, with no bypass warning and no confirm modal.</td></tr><tr><th>Started / finished</th><td>2026-11-04T10:12:22.411Z → 2026-11-04T10:13:02.372Z (40 s)</td></tr><tr><th>Application build</th><td>latest</td></tr><tr><th>Tests revision</th><td>EPBDS-16896 @ feaf0991f63b</td></tr></table></div><div class='panel' id='t4-1' hidden><p class='hint'>Framework log of this test: container start, every page action, waits, REST calls and assertions. Showing the last 50 of 271 lines · <a href='attachments/shard-05/tests.ui.webstudio.git.TestProtectedBranchBypassSettingOffUi/testManagerBlockedWhenBypassSettingOff/test-steps.log' target='_blank'>full log</a></p><pre class='log'>2026-11-04 10:12:54.741 [main] [INFO] WaitUtil - Sleeping for 500ms: Waiting for Sync dialog to open
+2026-11-04 10:12:55.242 [main] [INFO] WebElement - Waiting for dialogHeader to be visible (timeout: 1000ms)
+2026-11-04 10:12:55.254 [main] [INFO] WaitUtil - Condition met after 957ms: Click Sync until the merge dialog appears
+2026-11-04 10:12:55.254 [main] [INFO] SyncChangesDialogComponent - Selecting branch: release-EPBDS-15818
+2026-11-04 10:12:55.254 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-04 10:12:55.266 [main] [INFO] WaitUtil - Condition met after 12ms: Waiting for the loading overlay to disappear
+2026-11-04 10:12:55.266 [main] [INFO] WebElement - Waiting for branchSelector to be visible (timeout: 250ms)
+2026-11-04 10:12:55.280 [main] [INFO] WebElement - Clicking branchSelector 
+2026-11-04 10:12:55.368 [main] [INFO] WaitUtil - Waiting for condition (timeout: 2000ms, polling: 100ms): Waiting for selector options to appear
+2026-11-04 10:12:55.424 [main] [INFO] WaitUtil - Condition met after 56ms: Waiting for selector options to appear
+2026-11-04 10:12:55.467 [main] [INFO] WebElement - Waiting for branchSelector_0 to be visible (timeout: 250ms)
+2026-11-04 10:12:55.489 [main] [INFO] WebElement - Getting text from branchSelector_0: &#x27;masterDefault&#x27;
+2026-11-04 10:12:55.489 [main] [INFO] WebElement - Waiting for branchSelector_1 to be visible (timeout: 250ms)
+2026-11-04 10:12:55.518 [main] [INFO] WebElement - Getting text from branchSelector_1: &#x27;release-EPBDS-15818&#x27;
+2026-11-04 10:12:55.519 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-04 10:12:55.530 [main] [INFO] WaitUtil - Condition met after 11ms: Waiting for the loading overlay to disappear
+2026-11-04 10:12:55.530 [main] [INFO] WebElement - Waiting for branchSelector_1 to be visible (timeout: 250ms)
+2026-11-04 10:12:55.543 [main] [INFO] WebElement - Clicking branchSelector_1 
+2026-11-04 10:12:55.781 [main] [INFO] WaitUtil - Waiting for condition (timeout: 5000ms, polling: 200ms): Waiting for bypass warning alert
+2026-11-04 10:12:55.781 [main] [INFO] WebElement - Waiting for bypassWarningAlert to be visible (timeout: 250ms)
+2026-11-04 10:12:56.045 [main] [INFO] WaitUtil - Sleeping for 200ms: Polling for condition (attempt): Waiting for bypass warning alert
+2026-11-04 10:12:56.246 [main] [INFO] WebElement - Waiting for bypassWarningAlert to be visible (timeout: 250ms)
+2026-11-04 10:12:56.509 [main] [INFO] WaitUtil - Sleeping for 200ms: Polling for condition (attempt): Waiting for bypass warning alert
+2026-11-04 10:12:56.710 [main] [INFO] WebElement - Waiting for bypassWarningAlert to be visible (timeout: 250ms)
+2026-11-04 10:12:56.968 [main] [INFO] WaitUtil - Sleeping for 200ms: Polling for condition (attempt): Waiting for bypass warning alert
+2026-11-04 10:12:57.169 [main] [INFO] WebElement - Waiting for bypassWarningAlert to be visible (timeout: 250ms)
+2026-11-04 10:12:57.427 [main] [INFO] WaitUtil - Sleeping for 200ms: Polling for condition (attempt): Waiting for bypass warning alert
+2026-11-04 10:12:57.628 [main] [INFO] WebElement - Waiting for bypassWarningAlert to be visible (timeout: 250ms)
+2026-11-04 10:12:57.886 [main] [INFO] WaitUtil - Sleeping for 200ms: Polling for condition (attempt): Waiting for bypass warning alert
+2026-11-04 10:12:58.086 [main] [INFO] WebElement - Waiting for bypassWarningAlert to be visible (timeout: 250ms)
+2026-11-04 10:12:58.344 [main] [INFO] WaitUtil - Sleeping for 200ms: Polling for condition (attempt): Waiting for bypass warning alert
+2026-11-04 10:12:58.544 [main] [INFO] WebElement - Waiting for bypassWarningAlert to be visible (timeout: 250ms)
+2026-11-04 10:12:58.801 [main] [INFO] WaitUtil - Sleeping for 200ms: Polling for condition (attempt): Waiting for bypass warning alert
+2026-11-04 10:12:59.001 [main] [INFO] WebElement - Waiting for bypassWarningAlert to be visible (timeout: 250ms)
+2026-11-04 10:12:59.258 [main] [INFO] WaitUtil - Sleeping for 200ms: Polling for condition (attempt): Waiting for bypass warning alert
+2026-11-04 10:12:59.458 [main] [INFO] WebElement - Waiting for bypassWarningAlert to be visible (timeout: 250ms)
+2026-11-04 10:12:59.715 [main] [INFO] WaitUtil - Sleeping for 200ms: Polling for condition (attempt): Waiting for bypass warning alert
+2026-11-04 10:12:59.915 [main] [INFO] WebElement - Waiting for bypassWarningAlert to be visible (timeout: 250ms)
+2026-11-04 10:13:00.173 [main] [INFO] WaitUtil - Sleeping for 200ms: Polling for condition (attempt): Waiting for bypass warning alert
+2026-11-04 10:13:00.375 [main] [INFO] WebElement - Waiting for bypassWarningAlert to be visible (timeout: 250ms)
+2026-11-04 10:13:00.633 [main] [INFO] WaitUtil - Sleeping for 200ms: Polling for condition (attempt): Waiting for bypass warning alert
+2026-11-04 10:13:00.834 [main] [WARN] WaitUtil - Condition not met after 5000ms timeout: Waiting for bypass warning alert
+2026-11-04 10:13:00.834 [main] [INFO] WaitUtil - Waiting for condition (timeout: 10000ms, polling: 500ms): Waiting for a blocked-merge note containing: protected
+2026-11-04 10:13:00.835 [main] [INFO] WaitUtil - Sleeping for 1500ms: Waiting for the merge check to answer
+2026-11-04 10:13:02.348 [main] [INFO] WebElement - Waiting for mergeBlockedAlerts_0 to be visible (timeout: 250ms)
+2026-11-04 10:13:02.363 [main] [INFO] WebElement - Getting text from mergeBlockedAlerts_0: &#x27;There are changes to merge, but the branch &quot;release-EPBDS-15818&quot; is protected and you may not merge into it.&#x27;
+2026-11-04 10:13:02.364 [main] [INFO] WaitUtil - Condition met after 1529ms: Waiting for a blocked-merge note containing: protected
+2026-11-04 10:13:02.364 [main] [INFO] WebElement - Waiting for bypassConfirmBtn to be hidden
+2026-11-04 10:13:02.390 [main] [INFO] DockerDriverPool - Closing Playwright Docker for thread: main
+2026-11-04 10:13:02.911 [main] [INFO] WaitUtil - Sleeping for 2000ms: Waiting for Docker daemon to complete resource cleanup</pre></div></td></tr><tr class='row passed' data-status='passed' data-suite='git' data-error=''><td><span class='badge' style='color:#1a7f37;background:#dafbe1'>PASSED</span></td><td>git<br><small>shard-07</small></td><td><strong>TestProtectedBranchBypassIdempotentRetryUi</strong><br>testBypassMergeIsIdempotent<br><small>EPBDS-15960</small></td><td>41 s</td><td class='artifacts'><small>steps</small></td><td><button class='toggle' data-target='d5'>details</button></td></tr><tr class='details-row passed' id='d5' hidden><td colspan='6'><div class='tabs'><button class='tab active' data-tab='t5-0'>Overview</button><button class='tab' data-tab='t5-1'>Steps (349)</button></div><div class='panel' id='t5-0'><table class='kv'><tr><th>Group / shard</th><td>git / shard-07</td></tr><tr><th>Class</th><td><code>tests.ui.webstudio.git.TestProtectedBranchBypassIdempotentRetryUi</code> · <a href='https://github.com/openl-tablets/openl-tests/blob/feaf0991f63b7fb9fae34a71c0185f29d681430f/src/test/java/tests/ui/webstudio/git/TestProtectedBranchBypassIdempotentRetryUi.java' target='_blank'>source</a></td></tr><tr><th>Method</th><td><code>testBypassMergeIsIdempotent</code></td></tr><tr><th>Test case</th><td>EPBDS-15960</td></tr><tr><th>Known issue</th><td>—</td></tr><tr><th>Description</th><td>H.7: after a successful bypass merge, re-opening the Sync dialog for the same direction shows the branches up-to-date with Send disabled — the merge is idempotent and cannot be re-applied.</td></tr><tr><th>Started / finished</th><td>2026-11-04T10:12:30.014Z → 2026-11-04T10:13:10.837Z (41 s)</td></tr><tr><th>Application build</th><td>latest</td></tr><tr><th>Tests revision</th><td>EPBDS-16896 @ feaf0991f63b</td></tr></table></div><div class='panel' id='t5-1' hidden><p class='hint'>Framework log of this test: container start, every page action, waits, REST calls and assertions. Showing the last 50 of 349 lines · <a href='attachments/shard-07/tests.ui.webstudio.git.TestProtectedBranchBypassIdempotentRetryUi/testBypassMergeIsIdempotent/test-steps.log' target='_blank'>full log</a></p><pre class='log'>2026-11-04 10:13:08.915 [main] [INFO] WaitUtil - Condition met after 4ms: Waiting for the loading overlay to disappear
+2026-11-04 10:13:08.915 [main] [INFO] CorePage - domain.ui.webstudio.pages.mainpages.RepositoryPage was opened.
+2026-11-04 10:13:08.915 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 250ms): Waiting for the list of projects to be drawn
+2026-11-04 10:13:08.920 [main] [INFO] WaitUtil - Condition met after 5ms: Waiting for the list of projects to be drawn
+2026-11-04 10:13:08.920 [main] [INFO] WebElement - Waiting for projectNameInRow to be visible (timeout: 90000ms)
+2026-11-04 10:13:08.925 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-04 10:13:08.929 [main] [INFO] WaitUtil - Condition met after 4ms: Waiting for the loading overlay to disappear
+2026-11-04 10:13:08.929 [main] [INFO] WebElement - Waiting for projectNameInRow to be visible (timeout: 250ms)
+2026-11-04 10:13:08.935 [main] [INFO] WebElement - Clicking projectNameInRow 
+2026-11-04 10:13:08.960 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 250ms): Waiting for the card of project &#x27;BypassIdempotentUiProject&#x27; to open
+2026-11-04 10:13:08.961 [main] [INFO] WebElement - Waiting for projectDetail to be visible (timeout: 1000ms)
+2026-11-04 10:13:09.291 [main] [INFO] WebElement - Waiting for projectCardName to be visible (timeout: 1000ms)
+2026-11-04 10:13:09.356 [main] [INFO] WebElement - Waiting for projectCardName to be visible (timeout: 250ms)
+2026-11-04 10:13:09.377 [main] [INFO] WebElement - Getting text from projectCardName: &#x27;BypassIdempotentUiProject&#x27;
+2026-11-04 10:13:09.377 [main] [INFO] WaitUtil - Condition met after 416ms: Waiting for the card of project &#x27;BypassIdempotentUiProject&#x27; to open
+2026-11-04 10:13:09.377 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-04 10:13:09.388 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-04 10:13:09.398 [main] [INFO] WaitUtil - Condition met after 10ms: Waiting for the loading overlay to disappear
+2026-11-04 10:13:09.431 [main] [INFO] WebElement - Waiting for moduleOpenLinks_0 to be visible (timeout: 1000ms)
+2026-11-04 10:13:09.463 [main] [INFO] WaitUtil - Waiting for condition (timeout: 15000ms, polling: 1000ms): Re-open the Sync dialog after the merge
+2026-11-04 10:13:09.464 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-04 10:13:09.489 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-04 10:13:09.500 [main] [INFO] WaitUtil - Condition met after 11ms: Waiting for the loading overlay to disappear
+2026-11-04 10:13:09.500 [main] [INFO] WebElement - Waiting for syncBtn to be visible (timeout: 10000ms)
+2026-11-04 10:13:09.516 [main] [INFO] WebElement - Waiting for syncBtn to be visible (timeout: 20000ms)
+2026-11-04 10:13:09.532 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-04 10:13:09.542 [main] [INFO] WaitUtil - Condition met after 10ms: Waiting for the loading overlay to disappear
+2026-11-04 10:13:09.542 [main] [INFO] WebElement - Waiting for syncBtn to be visible (timeout: 250ms)
+2026-11-04 10:13:09.553 [main] [INFO] WebElement - Clicking syncBtn 
+2026-11-04 10:13:09.824 [main] [INFO] WaitUtil - Sleeping for 500ms: Waiting for Sync dialog to open
+2026-11-04 10:13:10.325 [main] [INFO] WebElement - Waiting for dialogHeader to be visible (timeout: 1000ms)
+2026-11-04 10:13:10.334 [main] [INFO] WaitUtil - Condition met after 870ms: Re-open the Sync dialog after the merge
+2026-11-04 10:13:10.334 [main] [INFO] SyncChangesDialogComponent - Selecting branch: release-EPBDS-15818
+2026-11-04 10:13:10.335 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-04 10:13:10.343 [main] [INFO] WaitUtil - Condition met after 8ms: Waiting for the loading overlay to disappear
+2026-11-04 10:13:10.343 [main] [INFO] WebElement - Waiting for branchSelector to be visible (timeout: 250ms)
+2026-11-04 10:13:10.350 [main] [INFO] WebElement - Clicking branchSelector 
+2026-11-04 10:13:10.421 [main] [INFO] WaitUtil - Waiting for condition (timeout: 2000ms, polling: 100ms): Waiting for selector options to appear
+2026-11-04 10:13:10.467 [main] [INFO] WaitUtil - Condition met after 45ms: Waiting for selector options to appear
+2026-11-04 10:13:10.511 [main] [INFO] WebElement - Waiting for branchSelector_0 to be visible (timeout: 250ms)
+2026-11-04 10:13:10.573 [main] [INFO] WebElement - Getting text from branchSelector_0: &#x27;masterDefault&#x27;
+2026-11-04 10:13:10.573 [main] [INFO] WebElement - Waiting for branchSelector_1 to be visible (timeout: 250ms)
+2026-11-04 10:13:10.604 [main] [INFO] WebElement - Getting text from branchSelector_1: &#x27;release-EPBDS-15818&#x27;
+2026-11-04 10:13:10.604 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-04 10:13:10.619 [main] [INFO] WaitUtil - Condition met after 14ms: Waiting for the loading overlay to disappear
+2026-11-04 10:13:10.619 [main] [INFO] WebElement - Waiting for branchSelector_1 to be visible (timeout: 250ms)
+2026-11-04 10:13:10.642 [main] [INFO] WebElement - Clicking branchSelector_1 
+2026-11-04 10:13:10.812 [main] [INFO] WebElement - Checking if exportYourChangesBtn is enabled
+2026-11-04 10:13:10.862 [main] [INFO] DockerDriverPool - Closing Playwright Docker for thread: main
+2026-11-04 10:13:11.376 [main] [INFO] WaitUtil - Sleeping for 2000ms: Waiting for Docker daemon to complete resource cleanup</pre></div></td></tr><tr class='row passed' data-status='passed' data-suite='git' data-error=''><td><span class='badge' style='color:#1a7f37;background:#dafbe1'>PASSED</span></td><td>git<br><small>shard-09</small></td><td><strong>TestProtectedBranchBypassManagerMergeUi</strong><br>testManagerBypassMergeFlowUi<br><small>EPBDS-15960</small></td><td>37 s</td><td class='artifacts'><small>steps</small></td><td><button class='toggle' data-target='d6'>details</button></td></tr><tr class='details-row passed' id='d6' hidden><td colspan='6'><div class='tabs'><button class='tab active' data-tab='t6-0'>Overview</button><button class='tab' data-tab='t6-1'>Steps (272)</button></div><div class='panel' id='t6-0'><table class='kv'><tr><th>Group / shard</th><td>git / shard-09</td></tr><tr><th>Class</th><td><code>tests.ui.webstudio.git.TestProtectedBranchBypassManagerMergeUi</code> · <a href='https://github.com/openl-tablets/openl-tests/blob/feaf0991f63b7fb9fae34a71c0185f29d681430f/src/test/java/tests/ui/webstudio/git/TestProtectedBranchBypassManagerMergeUi.java' target='_blank'>source</a></td></tr><tr><th>Method</th><td><code>testManagerBypassMergeFlowUi</code></td></tr><tr><th>Test case</th><td>EPBDS-15960</td></tr><tr><th>Known issue</th><td>—</td></tr><tr><th>Description</th><td>Sections G/H: Manager merging into a protected branch with bypass=ON sees the in-dialog warning, the secondary confirmation modal, and the Merge Summary of the merge.</td></tr><tr><th>Started / finished</th><td>2026-11-04T10:12:24.029Z → 2026-11-04T10:13:00.740Z (37 s)</td></tr><tr><th>Application build</th><td>latest</td></tr><tr><th>Tests revision</th><td>EPBDS-16896 @ feaf0991f63b</td></tr></table></div><div class='panel' id='t6-1' hidden><p class='hint'>Framework log of this test: container start, every page action, waits, REST calls and assertions. Showing the last 50 of 272 lines · <a href='attachments/shard-09/tests.ui.webstudio.git.TestProtectedBranchBypassManagerMergeUi/testManagerBypassMergeFlowUi/test-steps.log' target='_blank'>full log</a></p><pre class='log'>2026-11-04 10:12:56.691 [main] [INFO] WebElement - Clicking syncBtn 
+2026-11-04 10:12:57.032 [main] [INFO] WaitUtil - Sleeping for 500ms: Waiting for Sync dialog to open
+2026-11-04 10:12:57.532 [main] [INFO] WebElement - Waiting for dialogHeader to be visible (timeout: 1000ms)
+2026-11-04 10:12:57.545 [main] [INFO] WaitUtil - Condition met after 932ms: Click Sync until the merge dialog appears
+2026-11-04 10:12:57.545 [main] [INFO] SyncChangesDialogComponent - Selecting branch: release-EPBDS-15818
+2026-11-04 10:12:57.545 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-04 10:12:57.553 [main] [INFO] WaitUtil - Condition met after 8ms: Waiting for the loading overlay to disappear
+2026-11-04 10:12:57.554 [main] [INFO] WebElement - Waiting for branchSelector to be visible (timeout: 250ms)
+2026-11-04 10:12:57.566 [main] [INFO] WebElement - Clicking branchSelector 
+2026-11-04 10:12:57.643 [main] [INFO] WaitUtil - Waiting for condition (timeout: 2000ms, polling: 100ms): Waiting for selector options to appear
+2026-11-04 10:12:57.680 [main] [INFO] WaitUtil - Condition met after 37ms: Waiting for selector options to appear
+2026-11-04 10:12:57.705 [main] [INFO] WebElement - Waiting for branchSelector_0 to be visible (timeout: 250ms)
+2026-11-04 10:12:57.733 [main] [INFO] WebElement - Getting text from branchSelector_0: &#x27;masterDefault&#x27;
+2026-11-04 10:12:57.733 [main] [INFO] WebElement - Waiting for branchSelector_1 to be visible (timeout: 250ms)
+2026-11-04 10:12:57.755 [main] [INFO] WebElement - Getting text from branchSelector_1: &#x27;release-EPBDS-15818&#x27;
+2026-11-04 10:12:57.755 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-04 10:12:57.769 [main] [INFO] WaitUtil - Condition met after 13ms: Waiting for the loading overlay to disappear
+2026-11-04 10:12:57.770 [main] [INFO] WebElement - Waiting for branchSelector_1 to be visible (timeout: 250ms)
+2026-11-04 10:12:57.782 [main] [INFO] WebElement - Clicking branchSelector_1 
+2026-11-04 10:12:57.991 [main] [INFO] WaitUtil - Waiting for condition (timeout: 5000ms, polling: 200ms): Waiting for bypass warning alert
+2026-11-04 10:12:57.992 [main] [INFO] WebElement - Waiting for bypassWarningAlert to be visible (timeout: 250ms)
+2026-11-04 10:12:58.097 [main] [INFO] WaitUtil - Condition met after 105ms: Waiting for bypass warning alert
+2026-11-04 10:12:58.097 [main] [INFO] WebElement - Waiting for bypassWarningAlert to be visible (timeout: 250ms)
+2026-11-04 10:12:58.161 [main] [INFO] WebElement - Getting text from bypassWarningAlert: &#x27;Bypass branch protection?The branch &quot;release-EPBDS-15818&quot; is protected. Confirming will merge into it anyway. This action cannot be undone.&#x27;
+2026-11-04 10:12:58.165 [main] [INFO] SyncChangesDialogComponent - Clicking &#x27;Send your updates&#x27; button
+2026-11-04 10:12:58.165 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-04 10:12:58.185 [main] [INFO] WaitUtil - Condition met after 20ms: Waiting for the loading overlay to disappear
+2026-11-04 10:12:58.185 [main] [INFO] WebElement - Waiting for exportYourChangesBtn to be visible (timeout: 250ms)
+2026-11-04 10:12:58.201 [main] [INFO] WebElement - Clicking exportYourChangesBtn 
+2026-11-04 10:12:58.435 [main] [INFO] WebElement - Waiting for bypassConfirmBtn to be visible
+2026-11-04 10:12:58.454 [main] [INFO] WebElement - Waiting for bypassConfirmTitle to be visible (timeout: 250ms)
+2026-11-04 10:12:58.736 [main] [INFO] WebElement - Getting text from bypassConfirmTitle: &#x27;Bypass branch protection?&#x27;
+2026-11-04 10:12:58.737 [main] [INFO] BypassConfirmDialogComponent - Clicking &#x27;Confirm bypass and merge&#x27; on bypass confirmation dialog
+2026-11-04 10:12:58.751 [main] [INFO] CoreComponent - Messages currently open: 0
+2026-11-04 10:12:58.771 [main] [INFO] WaitUtil - Sleeping for 100ms: Waiting between message close attempts
+2026-11-04 10:12:58.881 [main] [INFO] WaitUtil - Sleeping for 100ms: Waiting between message close attempts
+2026-11-04 10:12:59.000 [main] [INFO] WaitUtil - Sleeping for 100ms: Waiting between message close attempts
+2026-11-04 10:12:59.101 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-04 10:12:59.111 [main] [INFO] WaitUtil - Condition met after 10ms: Waiting for the loading overlay to disappear
+2026-11-04 10:12:59.112 [main] [INFO] WebElement - Waiting for bypassConfirmBtn to be visible (timeout: 250ms)
+2026-11-04 10:12:59.123 [main] [INFO] WebElement - Clicking bypassConfirmBtn 
+2026-11-04 10:12:59.346 [main] [INFO] WaitUtil - Waiting for condition (timeout: 120000ms, polling: 250ms): Waiting for the merge to finish with the Merge Summary or an error
+2026-11-04 10:12:59.412 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the merge to finish with the Merge Summary or an error
+2026-11-04 10:12:59.700 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the merge to finish with the Merge Summary or an error
+2026-11-04 10:13:00.045 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the merge to finish with the Merge Summary or an error
+2026-11-04 10:13:00.686 [main] [INFO] WaitUtil - Condition met after 1340ms: Waiting for the merge to finish with the Merge Summary or an error
+2026-11-04 10:13:00.686 [main] [INFO] WebElement - Waiting for mergeSummaryResult to be visible (timeout: 250ms)
+2026-11-04 10:13:00.740 [main] [INFO] WebElement - Getting text from mergeSummaryResult: &#x27;Merged &quot;EPBDS-15818_dev&quot; into &quot;release-EPBDS-15818&quot;.&#x27;
+2026-11-04 10:13:00.773 [main] [INFO] DockerDriverPool - Closing Playwright Docker for thread: main
+2026-11-04 10:13:01.285 [main] [INFO] WaitUtil - Sleeping for 2000ms: Waiting for Docker daemon to complete resource cleanup</pre></div></td></tr><tr class='row passed' data-status='passed' data-suite='git' data-error=''><td><span class='badge' style='color:#1a7f37;background:#dafbe1'>PASSED</span></td><td>git<br><small>shard-10</small></td><td><strong>TestProtectedBranchBypassLegacyEditorUi</strong><br>testContributorCannotEditOnProtectedBranchLegacy<br><small>EPBDS-15960</small></td><td>51 s</td><td class='artifacts'><small>steps</small></td><td><button class='toggle' data-target='d7'>details</button></td></tr><tr class='details-row passed' id='d7' hidden><td colspan='6'><div class='tabs'><button class='tab active' data-tab='t7-0'>Overview</button><button class='tab' data-tab='t7-1'>Steps (225)</button></div><div class='panel' id='t7-0'><table class='kv'><tr><th>Group / shard</th><td>git / shard-10</td></tr><tr><th>Class</th><td><code>tests.ui.webstudio.git.TestProtectedBranchBypassLegacyEditorUi</code> · <a href='https://github.com/openl-tablets/openl-tests/blob/feaf0991f63b7fb9fae34a71c0185f29d681430f/src/test/java/tests/ui/webstudio/git/TestProtectedBranchBypassLegacyEditorUi.java' target='_blank'>source</a></td></tr><tr><th>Method</th><td><code>testContributorCannotEditOnProtectedBranchLegacy</code></td></tr><tr><th>Test case</th><td>EPBDS-15960</td></tr><tr><th>Known issue</th><td>—</td></tr><tr><th>Description</th><td>I.3: a Contributor (never bypass-eligible) viewing a project on a protected branch in the legacy UI does NOT see the mutating toolbar actions — the branch stays protected.</td></tr><tr><th>Started / finished</th><td>2026-11-04T10:12:17.787Z → 2026-11-04T10:13:08.319Z (51 s)</td></tr><tr><th>Application build</th><td>latest</td></tr><tr><th>Tests revision</th><td>EPBDS-16896 @ feaf0991f63b</td></tr></table></div><div class='panel' id='t7-1' hidden><p class='hint'>Framework log of this test: container start, every page action, waits, REST calls and assertions. Showing the last 50 of 225 lines · <a href='attachments/shard-10/tests.ui.webstudio.git.TestProtectedBranchBypassLegacyEditorUi/testContributorCannotEditOnProtectedBranchLegacy/test-steps.log' target='_blank'>full log</a></p><pre class='log'>2026-11-04 10:12:47.984 [main] [INFO] WebElement - Waiting for filesSearchField to be visible (timeout: 10000ms)
+2026-11-04 10:12:48.303 [main] [INFO] WebElement - Waiting for filesAddBtn to be visible (timeout: 20000ms)
+2026-11-04 10:13:08.357 [main] [WARN] RestAssuredFilter - 
+
+
+-=HTTP REQUEST=-
+DELETE http://localhost:32769/rest/users/manager_15960_legacy
+Header: Accept : application/json
+
+2026-11-04 10:13:08.358 [main] [WARN] RestAssuredFilter - 
+
+
+-=HTTP RESPONSE=-
+403 HTTP/1.1 403 ForbiddenHeader: Server : Jetty(12.1.14)
+Header: Date : Wed, 04 Nov 2026 10:13:08 GMT
+Header: Content-Type : application/json
+Header: X-Content-Type-Options : nosniff
+Header: X-XSS-Protection : 0
+Header: Cache-Control : no-cache, no-store, max-age=0, must-revalidate
+Header: Pragma : no-cache
+Header: Expires : 0
+Header: X-Frame-Options : DENY
+Header: Transfer-Encoding : chunked
+Body: 
+{&quot;message&quot;: &quot;Access Denied&quot;}
+2026-11-04 10:13:08.379 [main] [WARN] RestAssuredFilter - 
+
+
+-=HTTP REQUEST=-
+DELETE http://localhost:32769/rest/users/contributor_15960_legacy
+Header: Accept : application/json
+
+2026-11-04 10:13:08.379 [main] [WARN] RestAssuredFilter - 
+
+
+-=HTTP RESPONSE=-
+403 HTTP/1.1 403 ForbiddenHeader: Server : Jetty(12.1.14)
+Header: Date : Wed, 04 Nov 2026 10:13:08 GMT
+Header: Content-Type : application/json
+Header: X-Content-Type-Options : nosniff
+Header: X-XSS-Protection : 0
+Header: Cache-Control : no-cache, no-store, max-age=0, must-revalidate
+Header: Pragma : no-cache
+Header: Expires : 0
+Header: X-Frame-Options : DENY
+Header: Transfer-Encoding : chunked
+Body: 
+{&quot;message&quot;: &quot;Access Denied&quot;}
+2026-11-04 10:13:08.389 [main] [INFO] DockerDriverPool - Closing Playwright Docker for thread: main
+2026-11-04 10:13:09.760 [main] [INFO] WaitUtil - Sleeping for 2000ms: Waiting for Docker daemon to complete resource cleanup</pre></div></td></tr><tr class='row passed' data-status='passed' data-suite='git' data-error=''><td><span class='badge' style='color:#1a7f37;background:#dafbe1'>PASSED</span></td><td>git<br><small>shard-10</small></td><td><strong>TestProtectedBranchBypassLegacyEditorUi</strong><br>testEligibleManagerCanEditOnProtectedBranchLegacy<br><small>EPBDS-15960</small></td><td>30 s</td><td class='artifacts'><small>steps</small></td><td><button class='toggle' data-target='d8'>details</button></td></tr><tr class='details-row passed' id='d8' hidden><td colspan='6'><div class='tabs'><button class='tab active' data-tab='t8-0'>Overview</button><button class='tab' data-tab='t8-1'>Steps (225)</button></div><div class='panel' id='t8-0'><table class='kv'><tr><th>Group / shard</th><td>git / shard-10</td></tr><tr><th>Class</th><td><code>tests.ui.webstudio.git.TestProtectedBranchBypassLegacyEditorUi</code> · <a href='https://github.com/openl-tablets/openl-tests/blob/feaf0991f63b7fb9fae34a71c0185f29d681430f/src/test/java/tests/ui/webstudio/git/TestProtectedBranchBypassLegacyEditorUi.java' target='_blank'>source</a></td></tr><tr><th>Method</th><td><code>testEligibleManagerCanEditOnProtectedBranchLegacy</code></td></tr><tr><th>Test case</th><td>EPBDS-15960</td></tr><tr><th>Known issue</th><td>—</td></tr><tr><th>Description</th><td>I.1: an eligible Manager with bypass ON, viewing a project on a protected branch in the legacy UI, sees the mutating toolbar actions (Add Folder / Upload File) rendered.</td></tr><tr><th>Started / finished</th><td>2026-11-04T10:13:35.468Z → 2026-11-04T10:14:05.200Z (30 s)</td></tr><tr><th>Application build</th><td>latest</td></tr><tr><th>Tests revision</th><td>EPBDS-16896 @ feaf0991f63b</td></tr></table></div><div class='panel' id='t8-1' hidden><p class='hint'>Framework log of this test: container start, every page action, waits, REST calls and assertions. Showing the last 50 of 225 lines · <a href='attachments/shard-10/tests.ui.webstudio.git.TestProtectedBranchBypassLegacyEditorUi/testEligibleManagerCanEditOnProtectedBranchLegacy/test-steps.log' target='_blank'>full log</a></p><pre class='log'>2026-11-04 10:14:04.805 [main] [INFO] WebElement - Waiting for filesSearchField to be visible (timeout: 10000ms)
+2026-11-04 10:14:05.151 [main] [INFO] WebElement - Waiting for filesAddBtn to be visible (timeout: 20000ms)
+2026-11-04 10:14:05.260 [main] [WARN] RestAssuredFilter - 
+
+
+-=HTTP REQUEST=-
+DELETE http://localhost:32771/rest/users/manager_15960_legacy
+Header: Accept : application/json
+
+2026-11-04 10:14:05.260 [main] [WARN] RestAssuredFilter - 
+
+
+-=HTTP RESPONSE=-
+403 HTTP/1.1 403 ForbiddenHeader: Server : Jetty(12.1.14)
+Header: Date : Wed, 04 Nov 2026 10:14:05 GMT
+Header: Content-Type : application/json
+Header: X-Content-Type-Options : nosniff
+Header: X-XSS-Protection : 0
+Header: Cache-Control : no-cache, no-store, max-age=0, must-revalidate
+Header: Pragma : no-cache
+Header: Expires : 0
+Header: X-Frame-Options : DENY
+Header: Transfer-Encoding : chunked
+Body: 
+{&quot;message&quot;: &quot;Access Denied&quot;}
+2026-11-04 10:14:05.294 [main] [WARN] RestAssuredFilter - 
+
+
+-=HTTP REQUEST=-
+DELETE http://localhost:32771/rest/users/contributor_15960_legacy
+Header: Accept : application/json
+
+2026-11-04 10:14:05.294 [main] [WARN] RestAssuredFilter - 
+
+
+-=HTTP RESPONSE=-
+403 HTTP/1.1 403 ForbiddenHeader: Server : Jetty(12.1.14)
+Header: Date : Wed, 04 Nov 2026 10:14:05 GMT
+Header: Content-Type : application/json
+Header: X-Content-Type-Options : nosniff
+Header: X-XSS-Protection : 0
+Header: Cache-Control : no-cache, no-store, max-age=0, must-revalidate
+Header: Pragma : no-cache
+Header: Expires : 0
+Header: X-Frame-Options : DENY
+Header: Transfer-Encoding : chunked
+Body: 
+{&quot;message&quot;: &quot;Access Denied&quot;}
+2026-11-04 10:14:05.309 [main] [INFO] DockerDriverPool - Closing Playwright Docker for thread: main
+2026-11-04 10:14:05.768 [main] [INFO] WaitUtil - Sleeping for 2000ms: Waiting for Docker daemon to complete resource cleanup</pre></div></td></tr><tr class='row passed' data-status='passed' data-suite='sso' data-error=''><td><span class='badge' style='color:#1a7f37;background:#dafbe1'>PASSED</span></td><td>sso<br><small>shard-08</small></td><td><strong>TestProtectedBranchBypassGroupMembershipUi</strong><br>testGroupDerivedManagerCanBypassMerge<br><small>EPBDS-15960</small></td><td>11 s</td><td class='artifacts'><small>steps</small></td><td><button class='toggle' data-target='d9'>details</button></td></tr><tr class='details-row passed' id='d9' hidden><td colspan='6'><div class='tabs'><button class='tab active' data-tab='t9-0'>Overview</button><button class='tab' data-tab='t9-1'>Steps (194)</button></div><div class='panel' id='t9-0'><table class='kv'><tr><th>Group / shard</th><td>sso / shard-08</td></tr><tr><th>Class</th><td><code>tests.ui.webstudio.sso.TestProtectedBranchBypassGroupMembershipUi</code> · <a href='https://github.com/openl-tablets/openl-tests/blob/feaf0991f63b7fb9fae34a71c0185f29d681430f/src/test/java/tests/ui/webstudio/sso/TestProtectedBranchBypassGroupMembershipUi.java' target='_blank'>source</a></td></tr><tr><th>Method</th><td><code>testGroupDerivedManagerCanBypassMerge</code></td></tr><tr><th>Test case</th><td>EPBDS-15960</td></tr><tr><th>Known issue</th><td>—</td></tr><tr><th>Description</th><td>Z.6: a user whose Manager role comes only from Keycloak group membership (group bypass-managers granted MANAGER on the project) is bypass-eligible and can merge into a protected branch through the UI bypass-confirm flow.</td></tr><tr><th>Started / finished</th><td>2026-11-04T10:12:48.664Z → 2026-11-04T10:13:00.085Z (11 s)</td></tr><tr><th>Application build</th><td>latest</td></tr><tr><th>Tests revision</th><td>EPBDS-16896 @ feaf0991f63b</td></tr></table></div><div class='panel' id='t9-1' hidden><p class='hint'>Framework log of this test: container start, every page action, waits, REST calls and assertions. Showing the last 50 of 194 lines · <a href='attachments/shard-08/tests.ui.webstudio.sso.TestProtectedBranchBypassGroupMembershipUi/testGroupDerivedManagerCanBypassMerge/test-steps.log' target='_blank'>full log</a></p><pre class='log'>2026-11-04 10:12:57.582 [main] [INFO] WaitUtil - Condition met after 5ms: Waiting for the loading overlay to disappear
+2026-11-04 10:12:57.583 [main] [INFO] WebElement - Waiting for syncBtn to be visible (timeout: 10000ms)
+2026-11-04 10:12:57.590 [main] [INFO] WebElement - Waiting for syncBtn to be visible (timeout: 20000ms)
+2026-11-04 10:12:57.595 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-04 10:12:57.600 [main] [INFO] WaitUtil - Condition met after 4ms: Waiting for the loading overlay to disappear
+2026-11-04 10:12:57.600 [main] [INFO] WebElement - Waiting for syncBtn to be visible (timeout: 250ms)
+2026-11-04 10:12:57.607 [main] [INFO] WebElement - Clicking syncBtn 
+2026-11-04 10:12:57.839 [main] [INFO] WaitUtil - Sleeping for 500ms: Waiting for Sync dialog to open
+2026-11-04 10:12:58.339 [main] [INFO] WebElement - Waiting for dialogHeader to be visible (timeout: 1000ms)
+2026-11-04 10:12:58.350 [main] [INFO] WaitUtil - Condition met after 779ms: Click Sync until the merge dialog appears
+2026-11-04 10:12:58.351 [main] [INFO] SyncChangesDialogComponent - Selecting branch: release-EPBDS-15818
+2026-11-04 10:12:58.351 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-04 10:12:58.389 [main] [INFO] WaitUtil - Condition met after 38ms: Waiting for the loading overlay to disappear
+2026-11-04 10:12:58.390 [main] [INFO] WebElement - Waiting for branchSelector to be visible (timeout: 250ms)
+2026-11-04 10:12:58.400 [main] [INFO] WebElement - Clicking branchSelector 
+2026-11-04 10:12:58.464 [main] [INFO] WaitUtil - Waiting for condition (timeout: 2000ms, polling: 100ms): Waiting for selector options to appear
+2026-11-04 10:12:58.481 [main] [INFO] WaitUtil - Condition met after 17ms: Waiting for selector options to appear
+2026-11-04 10:12:58.494 [main] [INFO] WebElement - Waiting for branchSelector_0 to be visible (timeout: 250ms)
+2026-11-04 10:12:58.511 [main] [INFO] WebElement - Getting text from branchSelector_0: &#x27;masterDefault&#x27;
+2026-11-04 10:12:58.512 [main] [INFO] WebElement - Waiting for branchSelector_1 to be visible (timeout: 250ms)
+2026-11-04 10:12:58.526 [main] [INFO] WebElement - Getting text from branchSelector_1: &#x27;release-EPBDS-15818&#x27;
+2026-11-04 10:12:58.526 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-04 10:12:58.533 [main] [INFO] WaitUtil - Condition met after 7ms: Waiting for the loading overlay to disappear
+2026-11-04 10:12:58.533 [main] [INFO] WebElement - Waiting for branchSelector_1 to be visible (timeout: 250ms)
+2026-11-04 10:12:58.541 [main] [INFO] WebElement - Clicking branchSelector_1 
+2026-11-04 10:12:58.857 [main] [INFO] WaitUtil - Waiting for condition (timeout: 5000ms, polling: 200ms): Waiting for bypass warning alert
+2026-11-04 10:12:58.857 [main] [INFO] WebElement - Waiting for bypassWarningAlert to be visible (timeout: 250ms)
+2026-11-04 10:12:58.909 [main] [INFO] WaitUtil - Condition met after 52ms: Waiting for bypass warning alert
+2026-11-04 10:12:58.909 [main] [INFO] SyncChangesDialogComponent - Clicking &#x27;Send your updates&#x27; button
+2026-11-04 10:12:58.909 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-04 10:12:58.919 [main] [INFO] WaitUtil - Condition met after 9ms: Waiting for the loading overlay to disappear
+2026-11-04 10:12:58.920 [main] [INFO] WebElement - Waiting for exportYourChangesBtn to be visible (timeout: 250ms)
+2026-11-04 10:12:58.928 [main] [INFO] WebElement - Clicking exportYourChangesBtn 
+2026-11-04 10:12:59.084 [main] [INFO] WebElement - Waiting for bypassConfirmBtn to be visible
+2026-11-04 10:12:59.101 [main] [INFO] BypassConfirmDialogComponent - Clicking &#x27;Confirm bypass and merge&#x27; on bypass confirmation dialog
+2026-11-04 10:12:59.109 [main] [INFO] CoreComponent - Messages currently open: 0
+2026-11-04 10:12:59.116 [main] [INFO] WaitUtil - Sleeping for 100ms: Waiting between message close attempts
+2026-11-04 10:12:59.226 [main] [INFO] WaitUtil - Sleeping for 100ms: Waiting between message close attempts
+2026-11-04 10:12:59.342 [main] [INFO] WaitUtil - Sleeping for 100ms: Waiting between message close attempts
+2026-11-04 10:12:59.443 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-04 10:12:59.456 [main] [INFO] WaitUtil - Condition met after 13ms: Waiting for the loading overlay to disappear
+2026-11-04 10:12:59.456 [main] [INFO] WebElement - Waiting for bypassConfirmBtn to be visible (timeout: 250ms)
+2026-11-04 10:12:59.462 [main] [INFO] WebElement - Clicking bypassConfirmBtn 
+2026-11-04 10:12:59.633 [main] [INFO] WaitUtil - Waiting for condition (timeout: 120000ms, polling: 250ms): Waiting for the merge to finish with the Merge Summary or an error
+2026-11-04 10:12:59.708 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the merge to finish with the Merge Summary or an error
+2026-11-04 10:13:00.036 [main] [INFO] WaitUtil - Condition met after 402ms: Waiting for the merge to finish with the Merge Summary or an error
+2026-11-04 10:13:00.037 [main] [INFO] WebElement - Waiting for mergeSummaryResult to be visible (timeout: 250ms)
+2026-11-04 10:13:00.083 [main] [INFO] WebElement - Getting text from mergeSummaryResult: &#x27;Merged &quot;EPBDS-15818_dev&quot; into &quot;release-EPBDS-15818&quot;.&#x27;
+2026-11-04 10:13:00.130 [main] [INFO] DockerDriverPool - Closing Playwright Docker for thread: main
+2026-11-04 10:13:03.005 [main] [INFO] WaitUtil - Sleeping for 2000ms: Waiting for Docker daemon to complete resource cleanup</pre></div></td></tr><tr class='row passed' data-status='passed' data-suite='studio_smoke' data-error=''><td><span class='badge' style='color:#1a7f37;background:#dafbe1'>PASSED</span></td><td>studio_smoke<br><small>shard-06</small></td><td><strong>TestProtectedBranchBypassSecuritySettingsUi</strong><br>testAllowBypassCheckboxRenderTogglePersistence<br><small>EPBDS-15960</small></td><td>39 s</td><td class='artifacts'><small>steps</small></td><td><button class='toggle' data-target='d10'>details</button></td></tr><tr class='details-row passed' id='d10' hidden><td colspan='6'><div class='tabs'><button class='tab active' data-tab='t10-0'>Overview</button><button class='tab' data-tab='t10-1'>Steps (244)</button></div><div class='panel' id='t10-0'><table class='kv'><tr><th>Group / shard</th><td>studio_smoke / shard-06</td></tr><tr><th>Class</th><td><code>tests.ui.webstudio.studio_smoke.TestProtectedBranchBypassSecuritySettingsUi</code> · <a href='https://github.com/openl-tablets/openl-tests/blob/feaf0991f63b7fb9fae34a71c0185f29d681430f/src/test/java/tests/ui/webstudio/studio_smoke/TestProtectedBranchBypassSecuritySettingsUi.java' target='_blank'>source</a></td></tr><tr><th>Method</th><td><code>testAllowBypassCheckboxRenderTogglePersistence</code></td></tr><tr><th>Test case</th><td>EPBDS-15960</td></tr><tr><th>Known issue</th><td>—</td></tr><tr><th>Description</th><td>Section G: &#x27;Allow Managers to bypass protected branches&#x27; checkbox is rendered with its info-tooltip icon, defaults to OFF, toggles on click, and the saved value persists after Apply + restart + re-login.</td></tr><tr><th>Started / finished</th><td>2026-11-04T10:12:28.833Z → 2026-11-04T10:13:07.439Z (39 s)</td></tr><tr><th>Application build</th><td>latest</td></tr><tr><th>Tests revision</th><td>EPBDS-16896 @ feaf0991f63b</td></tr></table></div><div class='panel' id='t10-1' hidden><p class='hint'>Framework log of this test: container start, every page action, waits, REST calls and assertions. Showing the last 50 of 244 lines · <a href='attachments/shard-06/tests.ui.webstudio.studio_smoke.TestProtectedBranchBypassSecuritySettingsUi/testAllowBypassCheckboxRenderTogglePersistence/test-steps.log' target='_blank'>full log</a></p><pre class='log'>2026-11-04 10:12:39.724 [main] [INFO] WaitUtil - Condition met after 10ms: Waiting for the loading overlay to disappear
+2026-11-04 10:12:39.725 [main] [INFO] WebElement - Waiting for applyChangesBtn to be visible (timeout: 250ms)
+2026-11-04 10:12:39.734 [main] [INFO] WebElement - Clicking applyChangesBtn 
+2026-11-04 10:12:40.160 [main] [INFO] WaitUtil - Sleeping for 2000ms: Wait for auth context to restart after Apply
+2026-11-04 10:12:42.163 [main] [INFO] WaitUtil - Retrying action with polling (timeout: 10000ms, polling: 1000ms): Reload page after applying security changes
+2026-11-04 10:12:42.177 [main] [INFO] WaitUtil - Sleeping for 1000ms: Retrying action: Reload page after applying security changes
+2026-11-04 10:12:43.307 [main] [INFO] WaitUtil - Action succeeded after 1144ms: Reload page after applying security changes
+2026-11-04 10:12:43.307 [main] [INFO] WaitUtil - Sleeping for 1000ms: Wait for the login page to fully render
+2026-11-04 10:12:44.308 [main] [INFO] DriverPool - App URL (DOCKER): http://appcontainer-942306:8080
+2026-11-04 10:12:44.308 [main] [INFO] LoginService - Logging in with user: admin
+2026-11-04 10:12:44.308 [main] [INFO] WaitUtil - Sleeping for 500ms: Waiting for possible redirects to finish
+2026-11-04 10:12:44.810 [main] [INFO] LoginService - Navigated to login page: http://appcontainer-942306:8080
+2026-11-04 10:12:44.811 [main] [INFO] CorePage - domain.ui.webstudio.pages.mainpages.LoginPage was opened.
+2026-11-04 10:12:44.811 [main] [INFO] WebElement - Waiting for usernameField to be visible (timeout: 15000ms)
+2026-11-04 10:12:44.835 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-04 10:12:44.838 [main] [INFO] WaitUtil - Condition met after 3ms: Waiting for the loading overlay to disappear
+2026-11-04 10:12:44.838 [main] [INFO] WebElement - Waiting for usernameField to be visible (timeout: 250ms)
+2026-11-04 10:12:44.843 [main] [INFO] WebElement - Filling usernameField with text: &#x27;admin&#x27;
+2026-11-04 10:12:44.859 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-04 10:12:44.870 [main] [INFO] WaitUtil - Condition met after 11ms: Waiting for the loading overlay to disappear
+2026-11-04 10:12:44.870 [main] [INFO] WebElement - Waiting for passwordField to be visible (timeout: 250ms)
+2026-11-04 10:12:44.876 [main] [INFO] WebElement - Filling passwordField with text: &#x27;admin&#x27;
+2026-11-04 10:12:44.892 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-04 10:12:44.898 [main] [INFO] WaitUtil - Condition met after 6ms: Waiting for the loading overlay to disappear
+2026-11-04 10:12:44.898 [main] [INFO] WebElement - Waiting for loginButton to be visible (timeout: 250ms)
+2026-11-04 10:12:44.908 [main] [INFO] WebElement - Clicking loginButton 
+2026-11-04 10:12:45.932 [main] [INFO] WebElement - Waiting for completeProfileModal to be visible (timeout: 20000ms)
+2026-11-04 10:13:05.943 [main] [INFO] CorePage - domain.ui.webstudio.pages.mainpages.EditorPage was opened.
+2026-11-04 10:13:05.951 [main] [INFO] CorePage - Messages currently open: 0
+2026-11-04 10:13:05.957 [main] [INFO] WaitUtil - Sleeping for 100ms: Waiting between message close attempts
+2026-11-04 10:13:06.063 [main] [INFO] WaitUtil - Sleeping for 100ms: Waiting between message close attempts
+2026-11-04 10:13:06.169 [main] [INFO] WaitUtil - Sleeping for 100ms: Waiting between message close attempts
+2026-11-04 10:13:06.275 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-04 10:13:06.279 [main] [INFO] WaitUtil - Condition met after 4ms: Waiting for the loading overlay to disappear
+2026-11-04 10:13:06.279 [main] [INFO] WebElement - Waiting for User Logo to be visible (timeout: 250ms)
+2026-11-04 10:13:06.284 [main] [INFO] WebElement - Clicking User Logo 
+2026-11-04 10:13:06.329 [main] [INFO] WebElement - Waiting for User Menu Drawer to be visible
+2026-11-04 10:13:06.337 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-04 10:13:06.344 [main] [INFO] WaitUtil - Condition met after 7ms: Waiting for the loading overlay to disappear
+2026-11-04 10:13:06.344 [main] [INFO] WebElement - Waiting for Administration Menu Item to be visible (timeout: 250ms)
+2026-11-04 10:13:06.355 [main] [INFO] WebElement - Clicking Administration Menu Item 
+2026-11-04 10:13:06.769 [main] [INFO] CorePage - domain.ui.webstudio.pages.mainpages.AdminPage was opened.
+2026-11-04 10:13:06.770 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-04 10:13:06.789 [main] [INFO] WaitUtil - Condition met after 19ms: Waiting for the loading overlay to disappear
+2026-11-04 10:13:06.789 [main] [INFO] WebElement - Waiting for navigationItem to be visible (timeout: 250ms)
+2026-11-04 10:13:06.928 [main] [INFO] WebElement - Clicking navigationItem 
+2026-11-04 10:13:07.274 [main] [INFO] WebElement - Waiting for allowBypassCheckbox to be visible
+2026-11-04 10:13:07.375 [main] [INFO] WebElement - Waiting for allowBypassCheckbox to be visible (timeout: 250ms)
+2026-11-04 10:13:07.457 [main] [INFO] DockerDriverPool - Closing Playwright Docker for thread: main
+2026-11-04 10:13:08.501 [main] [INFO] WaitUtil - Sleeping for 2000ms: Waiting for Docker daemon to complete resource cleanup</pre></div></td></tr></tbody></table></div>
+</div>
+<script>
+const rows=[...document.querySelectorAll('tr.row')];
+function apply(){const s=document.getElementById('status').value,u=document.getElementById('suite').value,q=document.getElementById('search').value.toLowerCase();
+rows.forEach(r=>{const ok=(!s||r.dataset.status===s)&&(!u||r.dataset.suite===u)&&(!q||(r.textContent+' '+(r.dataset.error||'')).toLowerCase().includes(q));r.hidden=!ok;const d=r.nextElementSibling;if(d&&d.classList.contains('details-row')&&!ok){d.hidden=true;r.querySelector('button.toggle')?.classList.remove('open');}});}
+['status','suite'].forEach(id=>document.getElementById(id).addEventListener('change',apply));document.getElementById('search').addEventListener('input',apply);
+document.querySelectorAll('button.toggle').forEach(b=>b.addEventListener('click',()=>{const d=document.getElementById(b.dataset.target);d.hidden=!d.hidden;b.classList.toggle('open',!d.hidden);}));
+document.getElementById('expand-failed').addEventListener('click',()=>{document.querySelectorAll('tr.details-row.failed').forEach(d=>{d.hidden=false;const b=d.previousElementSibling.querySelector('button.toggle');if(b)b.classList.add('open');});});
+document.querySelectorAll('button.tab').forEach(b=>b.addEventListener('click',()=>{const panel=document.getElementById(b.dataset.tab);const box=b.closest('td');box.querySelectorAll('.panel').forEach(p=>p.hidden=true);box.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));panel.hidden=false;b.classList.add('active');}));
+</script></body></html>
