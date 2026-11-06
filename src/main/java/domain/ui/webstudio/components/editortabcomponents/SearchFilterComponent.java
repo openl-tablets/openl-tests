@@ -230,6 +230,8 @@ public class SearchFilterComponent extends BaseComponent {
         WaitUtil.waitForListNotEmpty(() -> options, DEFAULT_TIMEOUT_MS, 100, "Waiting for the search scopes to be listed");
         List<String> names = options.stream().map(WebElement::getText).map(String::trim).collect(Collectors.toList());
         scopeSelect.click();
+        WaitUtil.requireCondition(() -> !"true".equals(scopeSelect.getAttribute("aria-expanded")), DEFAULT_TIMEOUT_MS, 100,
+                "Waiting for the list of search scopes to close");
         return names;
     }
 
