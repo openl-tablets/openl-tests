@@ -43,7 +43,7 @@ public class TestUserErrorResultAndVarArgsGraphUi extends BaseTest {
                 .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
                 .expandFolderInTree(TEST)
                 .selectItemInFolder(TEST, TEST_TABLE);
-        editorPage.getEditorToolbarPanelComponent().clickTableActionsTestBtn();
+        editorPage.getEditorToolbarPanelComponent().clickRun().clickRunInsideMenu();
 
         SoftAssertions softly = new SoftAssertions();
         TestResultValidationComponent results = editorPage.getTestResultValidationComponent();
