@@ -280,10 +280,6 @@ public class EditorToolbarPanelComponent extends BaseComponent {
         return tableToolbar.isBenchmarkButtonVisible();
     }
 
-    public boolean isTableActionsTestBtnVisible() {
-        return tableToolbar.isTableActionsTestBtnVisible();
-    }
-
     public List<String> getTableActions() {
         return tableToolbar.getTableActions();
     }

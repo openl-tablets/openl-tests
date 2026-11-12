@@ -145,10 +145,6 @@ public class TableToolbarComponent extends BaseComponent {
         return benchmarkBtn.isVisible(1000);
     }
 
-    public boolean isTableActionsTestBtnVisible() {
-        return tableActionsTestBtn.isVisible(1000);
-    }
-
     public List<String> getTableActions() {
         runBtn.waitForVisible();
         WaitUtil.waitForStableSize(() -> tableActions.getLocator().count(), DEFAULT_TIMEOUT_MS, 250,
