@@ -280,6 +280,10 @@ public class EditorToolbarPanelComponent extends BaseComponent {
         return tableToolbar.isBenchmarkButtonVisible();
     }
 
+    public List<String> getTableActions() {
+        return tableToolbar.getTableActions();
+    }
+
     public TraceMenuComponent setFactorTextField(String text) {
         factorTextField.fill(text);
         return new TraceMenuComponent(page);
