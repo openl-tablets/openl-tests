@@ -29,6 +29,7 @@ public class TableToolbarComponent extends BaseComponent {
     private final WebElement availableTestRunsPopup;
     private final WebElement tableActionsTestBtn;
     private final WebElement tableActionsTestDropdownBtn;
+    private final WebElement tableActions;
     private final WebElement withinCurrentModuleOnlyInputArgs;
     private final WebElement withinCurrentModuleOnlyTestTables;
     private final List<WebElement> openLaunchers;
@@ -56,6 +57,9 @@ public class TableToolbarComponent extends BaseComponent {
         availableTestRunsPopup = new WebElement(page, "xpath=//div[contains(@class,'ant-dropdown')][not(contains(@class,'ant-dropdown-hidden'))]//ul[contains(@class,'ant-dropdown-menu')]", "availableTestRunsPopup");
         tableActionsTestBtn = createScopedElement("xpath=.//button[@data-testid='table-tests']", "tableActionsTestBtn");
         tableActionsTestDropdownBtn = createScopedElement("xpath=.//button[@data-testid='table-tests']", "tableActionsTestDropdownBtn");
+        tableActions = createScopedElement("xpath=.//button[starts-with(@data-testid,'table-')]"
+                + "[not(ancestor::div[@data-testid='table-target-tables' or @data-testid='table-available-tests'])]",
+                "tableActions");
         withinCurrentModuleOnlyInputArgs = new WebElement(page, "xpath=//input[@data-testid='launch-module-only']", "withinCurrentModuleOnlyInputArgs");
         withinCurrentModuleOnlyTestTables = new WebElement(page, "xpath=//input[@data-testid='tests-module-only']", "withinCurrentModuleOnlyTestTables");
         openLaunchers = createElementList("xpath=//button[@data-testid='run-start' or @data-testid='trace-start'"
@@ -143,6 +147,13 @@ public class TableToolbarComponent extends BaseComponent {
 
     public boolean isTableActionsTestBtnVisible() {
         return tableActionsTestBtn.isVisible(1000);
+    }
+
+    public List<String> getTableActions() {
+        runBtn.waitForVisible();
+        WaitUtil.waitForStableSize(() -> tableActions.getLocator().count(), DEFAULT_TIMEOUT_MS, 250,
+                "Waiting for the actions of the table toolbar to stop changing");
+        return tableActions.getLocator().allInnerTexts().stream().map(String::trim).toList();
     }
 
     public WebElement getEditTableBtn() {

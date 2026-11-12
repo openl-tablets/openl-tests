@@ -16,6 +16,7 @@ import org.testng.annotations.Test;
 import tests.BaseTest;
 
 import java.io.File;
+import java.util.List;
 
 import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.TEST;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -47,12 +48,11 @@ public class TestTestTableRunsWithoutTestButtonUi extends BaseTest {
                 .selectItemInFolder(TEST, TEST_TABLE);
         EditorToolbarPanelComponent toolbar = editorPage.getEditorToolbarPanelComponent();
 
-        assertThat(toolbar.isRunButtonVisible()).as("A Test table must offer Run").isTrue();
-        assertThat(toolbar.isTableActionsTestBtnVisible())
-                .as("A Test table must not offer Test: Run already executes its cases")
-                .isFalse();
-        assertThat(toolbar.isTraceButtonVisible()).as("A Test table must still offer Trace").isTrue();
-        assertThat(toolbar.isBenchmarkButtonVisible()).as("A Test table must still offer Benchmark").isTrue();
+        List<String> actions = toolbar.getTableActions();
+        assertThat(actions).as("A Test table must not offer Test: Run already executes its cases").doesNotContain("Test");
+        assertThat(actions)
+                .as("A Test table must offer exactly Edit, Copy, Remove, Run, Trace and Benchmark")
+                .containsExactly("Edit", "Copy", "Remove", "Run", "Trace", "Benchmark");
 
         toolbar.clickRun();
         RunMenuComponent launcher = toolbar.getRunLauncher();
@@ -100,6 +100,10 @@ public class TestTestTableRunsWithoutTestButtonUi extends BaseTest {
         } finally {
             DownloadUtil.cleanupDownloadFile(saved);
         }
+
+        assertThat(toolbar.getTableActions())
+                .as("The Test table must still not offer Test once its toolbar has long settled")
+                .doesNotContain("Test");
 
         toolbar.clickTargetTable();
         assertThat(toolbar.getAvailableTestRunsLinkText())
