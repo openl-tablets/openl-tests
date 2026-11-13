@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class TestProjectWithoutDescriptorUi extends BaseTest {
 
     private static final String TEMPLATE = "Sample Project";
+    private static final String CARD_REFUSED = "The card of the project should open, not say the project does not exist";
 
     @Test
     @TestCaseId("EPBDS-16638")
@@ -27,6 +28,7 @@ public class TestProjectWithoutDescriptorUi extends BaseTest {
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     @KnownIssue(value = "EPBDS-16638",
             failsWith = "The Management tab should read the roles of the project, not refuse them")
+    @KnownIssue(value = "EPBDS-17252", failsWith = CARD_REFUSED)
     public void testManagementTabOpensForAProjectWithoutDescriptor() {
         ProjectDetailPage card = projectWithoutDescriptor();
         assertThat(card.isManagementTabOffered())
@@ -50,6 +52,7 @@ public class TestProjectWithoutDescriptorUi extends BaseTest {
             + "EPBDS-16639: the copy is refused.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     @KnownIssue(value = "EPBDS-16639", failsWith = "Copying the project to a branch should not be refused")
+    @KnownIssue(value = "EPBDS-17252", failsWith = CARD_REFUSED)
     public void testCopyToBranchWorksForAProjectWithoutDescriptor() {
         ProjectDetailPage card = projectWithoutDescriptor();
         String branch = StringUtil.generateUniqueName("branch");
@@ -64,7 +67,9 @@ public class TestProjectWithoutDescriptorUi extends BaseTest {
 
     private ProjectDetailPage projectWithoutDescriptor() {
         String projectName = WorkflowService.loginCreateProjectWithoutDescriptor(User.ADMIN, TEMPLATE);
-        return new RepositoryPage().openProjectsList().openProjectDetail(projectName);
+        ProjectDetailPage card = new RepositoryPage().openProjectsList().openProjectDetail(projectName);
+        assertThat(card.isShownAsMissing()).as(CARD_REFUSED).isFalse();
+        return card;
     }
 
 }

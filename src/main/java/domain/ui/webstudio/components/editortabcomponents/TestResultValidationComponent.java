@@ -3,6 +3,7 @@ package domain.ui.webstudio.components.editortabcomponents;
 import com.microsoft.playwright.Download;
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
+import com.microsoft.playwright.PlaywrightException;
 import configuration.core.ui.WebElement;
 import configuration.driver.DriverPool;
 import domain.ui.webstudio.components.BaseComponent;
@@ -300,7 +301,15 @@ public class TestResultValidationComponent extends BaseComponent {
         if (shown == page) {
             closeResultsOverTheEditor();
         } else {
-            shown.waitForClose(closeBtn::click);
+            shown.waitForClose(() -> {
+                try {
+                    closeBtn.click();
+                } catch (PlaywrightException e) {
+                    if (!shown.isClosed()) {
+                        throw e;
+                    }
+                }
+            });
         }
     }
 

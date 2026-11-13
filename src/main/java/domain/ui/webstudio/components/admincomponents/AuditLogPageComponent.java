@@ -18,6 +18,7 @@ public class AuditLogPageComponent extends BaseComponent {
     private static final long EVENTS_SHOWN_MS = 30000;
     private static final String ROWS = ".//tbody[contains(@class,'ant-table-tbody')]/tr[contains(@class,'ant-table-row')]";
     private static final String ROW = ROWS + "[@data-row-key='%s']";
+    private static final String CHANGE_MARK = "^[+~-] ";
     private static final String CELL_TEXTS = "rows => rows.map(row => Array.from(row.cells, cell => cell.innerText))";
 
     private WebElement firstRow;
@@ -52,7 +53,8 @@ public class AuditLogPageComponent extends BaseComponent {
         @SuppressWarnings("unchecked")
         List<List<String>> table = (List<List<String>>) rows.evaluateAll(CELL_TEXTS);
         return table.stream().map(cells -> cells.stream().map(text -> text.replaceAll("\\s+", " ").trim()).toList())
-                .map(cells -> new AuditEvent(cells.get(1), cells.get(3), cells.get(4), cells.get(5), cells.get(6),
+                .map(cells -> new AuditEvent(cells.get(1), cells.get(3), cells.get(4),
+                        cells.get(5).replaceFirst(CHANGE_MARK, ""), cells.get(6),
                         cells.get(7), cells.get(8)))
                 .toList();
     }
