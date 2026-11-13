@@ -18,6 +18,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 public class DockerDriverPool {
 
@@ -30,6 +36,7 @@ public class DockerDriverPool {
     private static final String PLAYWRIGHT_VERSION = "v1.64.0-noble";
     private static final String PLAYWRIGHT_NPM_PACKAGE = "playwright@1.64.0";
     private static final Object NPM_CACHE_WARM_UP_LOCK = new Object();
+    private static final Duration BROWSER_CLOSE_LIMIT = Duration.ofMinutes(2);
 
     private static final String HOST_RESOURCE_PATH = ProjectConfiguration.getProperty(PropertyNameSpace.HOST_RESOURCE_PATH);
     private static final String CONTAINER_RESOURCE_PATH = ProjectConfiguration.getProperty(PropertyNameSpace.CONTAINER_RESOURCE_PATH);
@@ -61,6 +68,36 @@ public class DockerDriverPool {
         public Page getPage() { return page; }
 
         public void close() {
+            closeBrowserWithinLimit();
+            DriverPool.closeQuietly("playwright container", () -> {
+                if (playwrightContainer != null && playwrightContainer.isRunning()) {
+                    playwrightContainer.stop();
+                }
+            });
+        }
+
+        private void closeBrowserWithinLimit() {
+            ExecutorService closer = Executors.newSingleThreadExecutor(task -> {
+                Thread thread = new Thread(task, "playwright-close");
+                thread.setDaemon(true);
+                return thread;
+            });
+            Future<?> closing = closer.submit(this::closeBrowser);
+            try {
+                closing.get(BROWSER_CLOSE_LIMIT.toMillis(), TimeUnit.MILLISECONDS);
+            } catch (TimeoutException e) {
+                LOGGER.error("Closing the browser did not finish in {} s; the Playwright container is stopped instead. Thread stacks:{}{}",
+                        BROWSER_CLOSE_LIMIT.toSeconds(), System.lineSeparator(), threadStacks());
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            } catch (ExecutionException e) {
+                LOGGER.warn("Error closing the browser: {}", e.getCause().getMessage());
+            } finally {
+                closer.shutdownNow();
+            }
+        }
+
+        private void closeBrowser() {
             DriverPool.closeQuietly("page", () -> {
                 if (page != null && !page.isClosed()) {
                     page.close();
@@ -81,11 +118,17 @@ public class DockerDriverPool {
                     playwright.close();
                 }
             });
-            DriverPool.closeQuietly("playwright container", () -> {
-                if (playwrightContainer != null && playwrightContainer.isRunning()) {
-                    playwrightContainer.stop();
+        }
+
+        private static String threadStacks() {
+            StringBuilder stacks = new StringBuilder();
+            Thread.getAllStackTraces().forEach((thread, frames) -> {
+                stacks.append('"').append(thread.getName()).append("\" ").append(thread.getState()).append(System.lineSeparator());
+                for (StackTraceElement frame : frames) {
+                    stacks.append("    at ").append(frame).append(System.lineSeparator());
                 }
             });
+            return stacks.toString();
         }
     }
 

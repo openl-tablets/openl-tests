@@ -3,6 +3,7 @@ package domain.ui.webstudio.components.editortabcomponents;
 import configuration.core.ui.WebElement;
 import configuration.driver.DriverPool;
 import domain.ui.webstudio.components.BaseComponent;
+import domain.ui.webstudio.components.common.HeaderSearchComponent;
 import helpers.utils.WaitUtil;
 
 import java.util.List;
@@ -17,8 +18,7 @@ public class SearchFilterComponent extends BaseComponent {
     private static final int SEARCH_CLICK_TIMEOUT_MS = 3000;
     private static final int COMPILATION_TIMEOUT_MS = 300000;
 
-    private WebElement quickSearch;
-    private WebElement openExtendedSearchBtn;
+    private HeaderSearchComponent tablesSearch;
     private WebElement form;
     private WebElement scopeSelect;
     private WebElement kindSelect;
@@ -45,8 +45,7 @@ public class SearchFilterComponent extends BaseComponent {
     }
 
     private void initializeElements() {
-        quickSearch = new WebElement(page, "xpath=//input[@data-testid='module-tables-search']", "quickSearch");
-        openExtendedSearchBtn = new WebElement(page, "xpath=//button[@data-testid='module-tables-search-extended']", "openExtendedSearchBtn");
+        tablesSearch = new HeaderSearchComponent(page, HeaderSearchComponent.Scope.TABLES);
         form = new WebElement(page, FORM, "extendedSearchForm");
         scopeSelect = new WebElement(page, FORM + "//div[@data-testid='table-search-scope']//input", "searchScope");
         kindSelect = new WebElement(page, FORM + "//div[@data-testid='table-search-kind']//input", "searchKind");
@@ -83,8 +82,7 @@ public class SearchFilterComponent extends BaseComponent {
     }
 
     public SearchFilterComponent filterTablesRail(String text) {
-        quickSearch.click();
-        quickSearch.fill(text);
+        tablesSearch.search(text);
         WaitUtil.sleep(500, "Waiting for the tables rail to be filtered by name");
         return this;
     }
@@ -94,8 +92,8 @@ public class SearchFilterComponent extends BaseComponent {
             if (form.isVisible(PROBE_MS)) {
                 return true;
             }
-            if (openExtendedSearchBtn.isVisible(PROBE_MS)) {
-                openExtendedSearchBtn.click();
+            if (tablesSearch.isActionOffered(PROBE_MS)) {
+                tablesSearch.pressAction();
             }
             return form.isVisible(PROBE_MS);
         }, DEFAULT_TIMEOUT_MS, SETTLE_MS, "Opening the extended search");

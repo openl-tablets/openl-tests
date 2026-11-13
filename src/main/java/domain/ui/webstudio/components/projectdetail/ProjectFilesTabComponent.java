@@ -3,6 +3,7 @@ package domain.ui.webstudio.components.projectdetail;
 import com.microsoft.playwright.Page;
 import configuration.core.ui.WebElement;
 import domain.ui.webstudio.components.BaseComponent;
+import domain.ui.webstudio.components.common.HeaderSearchComponent;
 import helpers.utils.WaitUtil;
 
 import java.net.URLDecoder;
@@ -18,7 +19,6 @@ public class ProjectFilesTabComponent extends BaseComponent {
 
     private final WebElement fileNodeByName;
     private final WebElement addBtn;
-    private final WebElement searchField;
     private final WebElement fileActionsBtn;
     private final WebElement addMenuItem;
     private final WebElement fileActionsMenuItem;
@@ -35,6 +35,7 @@ public class ProjectFilesTabComponent extends BaseComponent {
     private final WebElement filePreviewEmpty;
     private final WebElement filePreviewError;
     private final WebElement filePaneLoading;
+    private final HeaderSearchComponent filesSearch;
 
     public ProjectFilesTabComponent(Page page) {
         this(new WebElement(page, "xpath=//*[@data-testid='project-detail']", "projectDetail"));
@@ -44,7 +45,6 @@ public class ProjectFilesTabComponent extends BaseComponent {
         super(rootLocator);
         fileNodeByName = createScopedElement("xpath=.//div[@role='treeitem'][.//*[normalize-space()='%s']]", "fileTreeNode");
         addBtn = createScopedElement("xpath=.//*[@data-testid='files-add']", "filesAddBtn");
-        searchField = createScopedElement("xpath=.//*[@data-testid='files-search']", "filesSearchField");
         fileActionsBtn = createScopedElement("xpath=.//*[@data-testid='file-actions']", "fileActionsBtn");
         addMenuItem = new WebElement(page, "xpath=//div[contains(@class,'ant-dropdown')][not(contains(@class,'ant-dropdown-hidden'))]//li[contains(@class,'ant-dropdown-menu-item')][.//span[@data-testid='%s']]", "filesAddMenuItem");
         fileActionsMenuItem = new WebElement(page, "xpath=//div[contains(@class,'ant-dropdown')][not(contains(@class,'ant-dropdown-hidden'))]//li[contains(@class,'ant-dropdown-menu-item')][normalize-space()='%s']", "fileActionsMenuItem");
@@ -61,14 +61,15 @@ public class ProjectFilesTabComponent extends BaseComponent {
         filePreviewEmpty = createScopedElement("xpath=.//*[@data-testid='file-preview-empty']", "filePreviewEmpty");
         filePreviewError = createScopedElement("xpath=.//*[@data-testid='file-preview-error']", "filePreviewError");
         filePaneLoading = createScopedElement("xpath=.//*[@data-testid='file-pane-loading']", "filePaneLoading");
+        filesSearch = new HeaderSearchComponent(page, HeaderSearchComponent.Scope.FILES);
     }
 
     public boolean isOpen(int timeoutInMillis) {
-        return searchField.isVisible(timeoutInMillis);
+        return filesSearch.isOffered(timeoutInMillis);
     }
 
     public void waitForOpen(int timeoutInMillis) {
-        searchField.waitForVisible(timeoutInMillis);
+        filesSearch.waitForOffered(timeoutInMillis);
     }
 
     public void deleteFile(String fileName) {
@@ -80,10 +81,6 @@ public class ProjectFilesTabComponent extends BaseComponent {
         fileNodeByName.format(fileName).waitForHidden(DEFAULT_TIMEOUT_MS);
     }
 
-    /**
-     * Copies a file of the project beside itself. A module is the workbook it is written in, so copying a
-     * module is copying its workbook: the copy is a module of the project by the layout it lands in.
-     */
     public void copyFile(String fileName, String copyName) {
         fileNodeByName.format(fileName).waitForVisible(DEFAULT_TIMEOUT_MS).click();
         fileActionsBtn.waitForVisible(DEFAULT_TIMEOUT_MS).click();
@@ -96,10 +93,6 @@ public class ProjectFilesTabComponent extends BaseComponent {
         fileNodeByName.format(copyName).waitForVisible(DEFAULT_TIMEOUT_MS);
     }
 
-    /**
-     * Renames a file where it stands. The Files tab offers it beside Copy and Move — a rename is a move
-     * within the same folder — and a workbook renamed this way renames the module the project reads from it.
-     */
     public void renameFile(String fileName, String newName) {
         fileNodeByName.format(fileName).waitForVisible(DEFAULT_TIMEOUT_MS).click();
         fileActionsBtn.waitForVisible(DEFAULT_TIMEOUT_MS).click();
@@ -134,10 +127,6 @@ public class ProjectFilesTabComponent extends BaseComponent {
         return elapsed;
     }
 
-    /**
-     * What the file pane is showing, for the reader of a failure. It only ever describes, so a pane that is
-     * being redrawn while it is read is described as it was found rather than waited for.
-     */
     public String describeFilePaneState(String expectedFileName) {
         String pane = filePaneLoading.exists() ? "loading"
                 : filePreviewError.exists() ? "error: " + textOrNothing(filePreviewError)

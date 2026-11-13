@@ -1,6 +1,7 @@
 package domain.ui.webstudio.pages.mainpages;
 
 import configuration.core.ui.WebElement;
+import domain.ui.webstudio.components.common.HeaderSearchComponent;
 import domain.ui.webstudio.pages.BasePage;
 import helpers.utils.WaitUtil;
 
@@ -15,7 +16,7 @@ public class DeploymentsHomePage extends BasePage {
     private WebElement emptyRepositoriesPlaceholder;
     private WebElement noRepositoriesRailPlaceholder;
     private WebElement summary;
-    private WebElement searchInput;
+    private HeaderSearchComponent deploymentsSearch;
     private WebElement deploymentsTable;
     private WebElement deploymentOpenTemplate;
     private WebElement noMatchPlaceholder;
@@ -37,9 +38,7 @@ public class DeploymentsHomePage extends BasePage {
         noRepositoriesRailPlaceholder = new WebElement(page,
                 "xpath=//*[@data-testid='deployments-no-repositories']", "deploymentsNoRepositories");
         summary = new WebElement(page, "xpath=//*[@data-testid='deployments-summary']", "deploymentsSummary");
-        searchInput = new WebElement(page,
-                "xpath=//*[@data-testid='deployments-search']//input | //input[@data-testid='deployments-search']",
-                "deploymentsSearch");
+        deploymentsSearch = new HeaderSearchComponent(page, HeaderSearchComponent.Scope.DEPLOYMENTS);
         deploymentsTable = new WebElement(page, "xpath=//*[@data-testid='deployments-table']", "deploymentsTable");
         deploymentOpenTemplate = new WebElement(page,
                 "xpath=//button[starts-with(@data-testid,'deployment-open-')][normalize-space()='%s']",
@@ -119,8 +118,7 @@ public class DeploymentsHomePage extends BasePage {
     }
 
     public DeploymentsHomePage search(String query) {
-        searchInput.waitForVisible(DEFAULT_TIMEOUT_MS);
-        searchInput.fill(query);
+        deploymentsSearch.search(query);
         WaitUtil.sleep(FILTER_SETTLE_MS, "Letting the client-side deployments filter apply");
         return this;
     }

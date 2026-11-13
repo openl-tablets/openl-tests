@@ -27,7 +27,7 @@ public class RepositoryPage extends BasePage {
     private WebElement mergeSummaryResult;
     private WebElement copyProjectNameField;
     private WebElement copyProjectSubmitBtn;
-    private WebElement filterByNameInput;
+    private HeaderSearchComponent projectsSearch;
     private CreateNewProjectComponent createNewProjectComponent;
     private ConfigureCommitInfoComponent configureCommitInfoComponent;
     private WebElement configureCommitInfoComponentShade;
@@ -56,7 +56,7 @@ public class RepositoryPage extends BasePage {
         copyProjectNameField = new WebElement(page, "xpath=//*[@data-testid='copy-project-name']", "copyProjectNameField");
         copyProjectSubmitBtn = new WebElement(page, "xpath=//*[@data-testid='copy-project-submit']", "copyProjectSubmitBtn");
 
-        filterByNameInput = new WebElement(page, "xpath=//*[@data-testid='projects-search']", "filterByNameInput");
+        projectsSearch = new HeaderSearchComponent(page, HeaderSearchComponent.Scope.PROJECTS);
 
         createNewProjectComponent = createScopedComponent(CreateNewProjectComponent.class, "xpath=//div[@id='modalNewProject_container']", "createNewProjectComponent");
         tabSwitcherComponent = createScopedComponent(TabSwitcherComponent.class, "xpath=//ul[@role='menu' and contains(@class,'ant-menu-horizontal')]", "tabSwitcherComponent");
@@ -318,14 +318,12 @@ public class RepositoryPage extends BasePage {
     }
 
     public void filterByName(String name) {
-        filterByNameInput.click();
-        filterByNameInput.fill(name);
+        projectsSearch.search(name);
         WaitUtil.sleep(800, "Waiting for the React client-side name filter to apply");
     }
 
     public void clearNameFilter() {
-        filterByNameInput.click();
-        filterByNameInput.fill("");
+        projectsSearch.search("");
         WaitUtil.sleep(800, "Waiting for the filter to clear and the full list to restore");
     }
 

@@ -4,6 +4,7 @@ import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import configuration.core.ui.WebElement;
 import domain.ui.webstudio.components.BaseComponent;
+import domain.ui.webstudio.components.common.HeaderSearchComponent;
 import domain.ui.webstudio.components.editortabcomponents.CompareLocalChangesDialogComponent;
 import helpers.utils.WaitUtil;
 
@@ -23,7 +24,7 @@ public class ProjectHistoryTabComponent extends BaseComponent {
     private final WebElement revisionEntries;
     private final WebElement technicalRevisionEntries;
     private final WebElement technicalRevisionsSwitch;
-    private final WebElement searchField;
+    private final HeaderSearchComponent revisionsSearch;
     private final WebElement openRevisionButton;
     private final WebElement emptyState;
     private final WebElement revisionComment;
@@ -39,7 +40,7 @@ public class ProjectHistoryTabComponent extends BaseComponent {
         technicalRevisionEntries = createScopedElement("xpath=.//li[.//span[contains(@class,'ant-tag') and normalize-space()='technical']]"
                 + "//*" + COMMENT_PREDICATE, "technicalRevisionEntries");
         technicalRevisionsSwitch = createScopedElement("xpath=.//*[@data-testid='revisions-tech']", "technicalRevisionsSwitch");
-        searchField = createScopedElement("xpath=.//*[starts-with(@data-testid,'revisions-search-')]/descendant-or-self::input", "searchField");
+        revisionsSearch = new HeaderSearchComponent(page, HeaderSearchComponent.Scope.REVISIONS);
         openRevisionButton = createScopedElement("xpath=.//li[.//*" + COMMENT_PREDICATE + "[normalize-space()='%s']]"
                 + "//button[starts-with(@data-testid,'revision-open-')]", "openRevisionButton");
         revisionComment = createScopedElement("xpath=.//*" + COMMENT_PREDICATE + "[normalize-space()='%s']", "revisionComment");
@@ -82,7 +83,7 @@ public class ProjectHistoryTabComponent extends BaseComponent {
     }
 
     public boolean isSearchOffered() {
-        return searchField.isVisible(DEFAULT_TIMEOUT_MS);
+        return revisionsSearch.isOffered(DEFAULT_TIMEOUT_MS);
     }
 
     public ProjectHistoryTabComponent showTechnicalRevisions(boolean shown) {
@@ -93,8 +94,7 @@ public class ProjectHistoryTabComponent extends BaseComponent {
     }
 
     public ProjectHistoryTabComponent search(String text) {
-        searchField.clear();
-        searchField.fillSequentially(text);
+        revisionsSearch.search(text);
         return this;
     }
 

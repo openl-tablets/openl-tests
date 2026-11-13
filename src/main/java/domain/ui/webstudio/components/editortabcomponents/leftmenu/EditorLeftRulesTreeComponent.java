@@ -2,6 +2,7 @@ package domain.ui.webstudio.components.editortabcomponents.leftmenu;
 
 import com.microsoft.playwright.PlaywrightException;
 import domain.ui.webstudio.components.BaseComponent;
+import domain.ui.webstudio.components.common.HeaderSearchComponent;
 import configuration.core.ui.WebElement;
 import configuration.driver.DriverPool;
 import helpers.utils.WaitUtil;
@@ -105,8 +106,7 @@ public class EditorLeftRulesTreeComponent extends BaseComponent {
     private WebElement viewSelect;
     private WebElement viewSelectValue;
     private WebElement viewOptionTemplate;
-    private WebElement searchInput;
-    private WebElement extendedSearchBtn;
+    private HeaderSearchComponent tablesSearch;
     private WebElement tree;
     private WebElement selectedNodeTitle;
     private WebElement tableIconTemplate;
@@ -131,8 +131,7 @@ public class EditorLeftRulesTreeComponent extends BaseComponent {
         viewSelect = new WebElement(page, "xpath=//div[@data-testid='module-tables-view']", "viewSelect");
         viewSelectValue = new WebElement(page, "xpath=//div[@data-testid='module-tables-view']//div[contains(@class,'ant-select-content')]", "viewSelectValue");
         viewOptionTemplate = new WebElement(page, "xpath=" + OPEN_DROPDOWN + "//div[contains(@class,'ant-select-item-option')][@title='%s']", "viewOption");
-        searchInput = new WebElement(page, "xpath=//input[@data-testid='module-tables-search']", "tablesSearchInput");
-        extendedSearchBtn = new WebElement(page, "xpath=//button[@data-testid='module-tables-search-extended']", "extendedSearchBtn");
+        tablesSearch = new HeaderSearchComponent(page, HeaderSearchComponent.Scope.TABLES);
         tree = new WebElement(page, TREE, "tablesTree");
         selectedNodeTitle = new WebElement(page, TREE + "//div[contains(@class,'ant-tree-treenode-selected')]" + ROW_NAME, "selectedNodeTitle");
         tableIconTemplate = new WebElement(page, TREE_NODE + "[not(contains(@id,'-grp-'))]"
@@ -379,14 +378,13 @@ public class EditorLeftRulesTreeComponent extends BaseComponent {
     }
 
     public EditorLeftRulesTreeComponent searchByName(String text) {
-        searchInput.click();
-        searchInput.fill(text);
+        tablesSearch.search(text);
         WaitUtil.sleep(500, "Waiting for the tables tree to be filtered by name");
         return this;
     }
 
     public void openExtendedSearch() {
-        extendedSearchBtn.click();
+        tablesSearch.pressAction();
     }
 
     public EditorLeftRulesTreeComponent showUtilityTables() {

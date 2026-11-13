@@ -11,6 +11,7 @@ import domain.serviceclasses.models.UserData;
 import domain.ui.webstudio.components.admincomponents.AdminNavigationComponent;
 import domain.ui.webstudio.components.admincomponents.AdminTableSearchComponent;
 import domain.ui.webstudio.components.admincomponents.UsersPageComponent;
+import domain.ui.webstudio.components.common.HeaderSearchComponent;
 import domain.ui.webstudio.pages.mainpages.EditorPage;
 import domain.ui.webstudio.pages.mainpages.LoginPage;
 import helpers.service.LoginService;
@@ -72,7 +73,7 @@ public class TestAdminUsersSearchUi extends BaseTest {
                 .as("A user who signed out must no longer be shown online")
                 .isFalse();
 
-        AdminTableSearchComponent usersSearch = new AdminTableSearchComponent("users-search-input");
+        AdminTableSearchComponent usersSearch = new AdminTableSearchComponent(HeaderSearchComponent.Scope.USERS);
         usersSearch.search("searchable");
         assertThat(usersPage.isUserInList(SECOND_USER))
                 .as("A matching fragment must keep the matching user visible")

@@ -8,6 +8,7 @@ import domain.api.AuthorizedApiMethod;
 import domain.api.GroupsMethod;
 import domain.ui.webstudio.components.admincomponents.AdminTableSearchComponent;
 import domain.ui.webstudio.components.admincomponents.UsersPageComponent;
+import domain.ui.webstudio.components.common.HeaderSearchComponent;
 import org.testng.annotations.Test;
 
 import java.util.List;
@@ -52,7 +53,7 @@ public class TestUsersViewRolesOauth2Ui extends AbstractUsersViewRolesSsoTest {
         UsersPageComponent users = ssoLogin("admin", "admin").openUserMenu()
                 .navigateToAdministration()
                 .navigateToUsersPage();
-        AdminTableSearchComponent search = new AdminTableSearchComponent("users-search-input").search(GROUPS_USER);
+        AdminTableSearchComponent search = new AdminTableSearchComponent(HeaderSearchComponent.Scope.USERS).search(GROUPS_USER);
         assertThat(users.getAllUsernames()).as("the search leaves only %s in the list", GROUPS_USER)
                 .containsExactly(GROUPS_USER);
 
