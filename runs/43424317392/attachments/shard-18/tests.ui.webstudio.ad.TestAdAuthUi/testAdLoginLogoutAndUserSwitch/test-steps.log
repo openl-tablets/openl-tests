@@ -1,0 +1,187 @@
+2026-11-13 12:21:51.490 [main] [INFO] BaseTest - Initializing test with Playwright Docker: testAdLoginLogoutAndUserSwitch
+2026-11-13 12:21:51.493 [main] [INFO] BaseTest - [user.mode] -> [ad]
+2026-11-13 12:21:51.493 [main] [INFO] BaseTest - [security.administrators] -> [studioadmin]
+2026-11-13 12:21:51.494 [main] [INFO] BaseTest - [JAVA_OPTS] -> [-Xms32m -XX:MaxRAMPercentage=50.0]
+2026-11-13 12:21:51.494 [main] [INFO] BaseTest - [webstudio.configured] -> [true]
+2026-11-13 12:21:51.494 [main] [INFO] BaseTest - [security.ad.server-url] -> [ldap://samba:389]
+2026-11-13 12:21:51.494 [main] [INFO] BaseTest - [security.ad.domain] -> [openl.local]
+2026-11-13 12:21:51.497 [main] [INFO] AppContainerFactory - Starting app container: appcontainer-522457 (startup timeout: PT10M)
+2026-11-13 12:22:13.123 [main] [INFO] AppContainerFactory - App Localhost accessible url for appcontainer-522457: http://localhost:32770
+2026-11-13 12:22:13.124 [main] [INFO] AppContainerFactory - App Url accessible from the Browser container: http://appcontainer-522457:8080
+2026-11-13 12:22:13.125 [main] [INFO] WaitUtil - Sleeping for 3000ms: Wait 3 seconds for DNS propagation in Docker's embedded DNS server
+2026-11-13 12:22:16.126 [main] [INFO] WaitUtil - Waiting for condition (timeout: 10000ms, polling: 250ms): Waiting for the app container to be running before Playwright container starts
+2026-11-13 12:22:16.128 [main] [INFO] WaitUtil - Condition met after 2ms: Waiting for the app container to be running before Playwright container starts
+2026-11-13 12:22:16.129 [main] [INFO] WaitUtil - Sleeping for 1000ms: Letting Docker DNS propagate the app container hostname across the network
+2026-11-13 12:22:17.130 [main] [INFO] DockerDriverPool - Initializing Playwright Docker container with browser: chrome
+2026-11-13 12:22:17.133 [main] [INFO] DockerDriverPool - npm cache of the Playwright Server container is shared from /home/runner/work/_temp/playwright-npm-cache
+2026-11-13 12:22:17.134 [main] [INFO] DockerDriverPool - Creating Playwright Server Docker container with image: mcr.microsoft.com/playwright:v1.64.0-noble
+2026-11-13 12:22:17.134 [main] [INFO] DockerDriverPool - Volume mapping configured: src/test/resources (host) -> /test_resources (container)
+2026-11-13 12:22:17.134 [main] [INFO] DockerDriverPool - Starting container and waiting for Playwright Server (startup timeout 300 s)...
+2026-11-13 12:22:19.308 [main] [INFO] DockerDriverPool - Playwright Server container started in 2173 ms
+2026-11-13 12:22:19.308 [main] [INFO] DockerDriverPool - Container started - ID: f5ff58018780d6baf7921c06cbb331066bcff1f06ccb9090d28e634fcb9a4866
+2026-11-13 12:22:19.308 [main] [INFO] DockerDriverPool - Mapped Playwright Server port: localhost:32771 -> 3000
+2026-11-13 12:22:19.308 [main] [INFO] DockerDriverPool - Container is attached to network for service discovery
+2026-11-13 12:22:19.320 [main] [INFO] DockerDriverPool - Container startup logs:
+Listening on ws://0.0.0.0:3000/
+
+2026-11-13 12:22:19.321 [main] [INFO] DockerDriverPool - Playwright Server ready: http://localhost:32771
+2026-11-13 12:22:32.453 [main] [INFO] DockerDriverPool - Created Playwright instance for server connection
+2026-11-13 12:22:32.603 [main] [INFO] DockerDriverPool - Connected to Playwright Server via WebSocket on attempt 1: ws://localhost:32771/
+2026-11-13 12:22:32.604 [main] [INFO] DockerDriverPool - Video recording enabled for Docker container with temp directory: /tmp/playwright-videos
+2026-11-13 12:22:32.641 [main] [INFO] PlaywrightTracing - Playwright tracing started (DOM snapshots, network, console, sources)
+2026-11-13 12:22:32.692 [main] [INFO] DockerDriverPool - Browser container initialized successfully for thread: main
+2026-11-13 12:22:32.693 [main] [INFO] DriverPool - Playwright initialized in PLAYWRIGHT_DOCKER mode
+2026-11-13 12:22:33.456 [main] [WARN] RestAssuredFilter - 
+
+
+-=HTTP REQUEST=-
+GET http://localhost:32770/web/public/info/openl.json
+Header: Accept : */*
+
+2026-11-13 12:22:33.456 [main] [WARN] RestAssuredFilter - 
+
+
+-=HTTP RESPONSE=-
+200 HTTP/1.1 200 OKHeader: Server : Jetty(12.1.15)
+Header: Date : Fri, 13 Nov 2026 12:22:33 GMT
+Header: Content-Type : text/html;charset=utf-8
+Header: Cache-Control : no-store
+Header: X-Content-Type-Options : nosniff
+Header: X-XSS-Protection : 0
+Header: X-Frame-Options : DENY
+Header: Content-Length : 3049
+Body: 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>OpenL Studio</title>
+    <meta name="description" content="For creation, editing, testing and deploying of OpenL Tablets rules"/>
+    <base href="/"/>
+    <link rel="icon" href="favicon.ico?v=studio" sizes="48x48"/>
+    <link rel="icon" href="favicon.svg?v=studio" sizes="any" type="image/svg+xml"/>
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=studio"/>
+    <link rel="manifest" href="icons/site.webmanifest?v=studio"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <script>
+        // Paints the page in the remembered appearance before the bundle arrives, so a dark reader sees no
+        // white flash. The key mirrors THEME_MODE_KEY in src/utils/themeMode.ts; the bundle takes over from here.
+        (function () {
+            try {
+                var mode = localStorage.getItem('openl.theme.mode') || 'auto'
+                var dark = mode === 'dark' || (mode !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches)
+                document.documentElement.style.colorScheme = dark ? 'dark' : 'light'
+            } catch (e) {
+                // a browser that refuses storage is painted by the bundle alone
+            }
+        })()
+    </script>
+  <script type="module" crossorigin src="./assets/index-WxKmxTNi.js"></script>
+  <link rel="modulepreload" crossorigin href="./assets/rolldown-runtime-COiEfhsA.js">
+  <link rel="modulepreload" crossorigin href="./assets/jsx-runtime-CxJzAMUs.js">
+  <link rel="modulepreload" crossorigin href="./assets/dayjs.min-C79hm5sx.js">
+  <link rel="modulepreload" crossorigin href="./assets/dateFormat-CBDFxAAh.js">
+  <link rel="modulepreload" crossorigin href="./assets/store-DmlY6vCs.js">
+  <link rel="modulepreload" crossorigin href="./assets/tree-a1bRDKaP.js">
+  <link rel="modulepreload" crossorigin href="./assets/extends-CvVTau-c.js">
+  <link rel="modulepreload" crossorigin href="./assets/functions-CV3hARed.js">
+  <link rel="modulepreload" crossorigin href="./assets/listPageTheme-Bpu2xfzr.js">
+  <link rel="modulepreload" crossorigin href="./assets/projectId-D9YkejOL.js">
+  <link rel="modulepreload" crossorigin href="./assets/paper-BP56THFh.js">
+  <link rel="modulepreload" crossorigin href="./assets/tables-bpgXyJP0.js">
+  <link rel="modulepreload" crossorigin href="./assets/useSearchScope-BBiCDajq.js">
+  <link rel="modulepreload" crossorigin href="./assets/users-Cdcl8SXt.js">
+  <link rel="modulepreload" crossorigin href="./assets/projectsTheme-scAR5IdW.js">
+  <link rel="modulepreload" crossorigin href="./assets/escapeRegExp-CUtDFyBH.js">
+  <link rel="modulepreload" crossorigin href="./assets/RevisionChanges-BCeA_FTz.js">
+  <link rel="modulepreload" crossorigin href="./assets/scrollTo-hf8N_DWb.js">
+  <link rel="modulepreload" crossorigin href="./assets/preload-helper-DclECHGd.js">
+</head>
+<body>
+<div id="appRoot" style="min-height: 48.5px"></div>
+<noscript>You need to enable JavaScript to run this app.</noscript>
+</body>
+</html>
+
+
+2026-11-13 12:22:33.490 [main] [INFO] BaseTest - Application info unavailable: Failed to parse the JSON document
+2026-11-13 12:22:33.501 [main] [INFO] DriverPool - App URL (DOCKER): http://appcontainer-522457:8080
+2026-11-13 12:22:33.882 [main] [INFO] CorePage - domain.ui.webstudio.pages.mainpages.LoginPage was opened.
+2026-11-13 12:22:33.886 [main] [INFO] WebElement - Waiting for usernameField to be visible (timeout: 15000ms)
+2026-11-13 12:22:34.070 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-13 12:22:34.105 [main] [INFO] WaitUtil - Condition met after 35ms: Waiting for the loading overlay to disappear
+2026-11-13 12:22:34.105 [main] [INFO] WebElement - Waiting for usernameField to be visible (timeout: 250ms)
+2026-11-13 12:22:34.147 [main] [INFO] WebElement - Filling usernameField with text: 'studioadmin'
+2026-11-13 12:22:34.228 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-13 12:22:34.241 [main] [INFO] WaitUtil - Condition met after 12ms: Waiting for the loading overlay to disappear
+2026-11-13 12:22:34.242 [main] [INFO] WebElement - Waiting for passwordField to be visible (timeout: 250ms)
+2026-11-13 12:22:34.254 [main] [INFO] WebElement - Filling passwordField with text: 'OpenLPass123!'
+2026-11-13 12:22:34.272 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-13 12:22:34.283 [main] [INFO] WaitUtil - Condition met after 11ms: Waiting for the loading overlay to disappear
+2026-11-13 12:22:34.283 [main] [INFO] WebElement - Waiting for loginButton to be visible (timeout: 250ms)
+2026-11-13 12:22:34.293 [main] [INFO] WebElement - Clicking loginButton 
+2026-11-13 12:22:35.193 [main] [INFO] WebElement - Waiting for completeProfileModal to be visible (timeout: 20000ms)
+2026-11-13 12:22:55.201 [main] [INFO] CorePage - domain.ui.webstudio.pages.mainpages.EditorPage was opened.
+2026-11-13 12:22:55.216 [main] [INFO] CorePage - Messages currently open: 0
+2026-11-13 12:22:55.221 [main] [INFO] WaitUtil - Sleeping for 100ms: Waiting between message close attempts
+2026-11-13 12:22:55.327 [main] [INFO] WaitUtil - Sleeping for 100ms: Waiting between message close attempts
+2026-11-13 12:22:55.432 [main] [INFO] WaitUtil - Sleeping for 100ms: Waiting between message close attempts
+2026-11-13 12:22:55.538 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-13 12:22:55.546 [main] [INFO] WaitUtil - Condition met after 8ms: Waiting for the loading overlay to disappear
+2026-11-13 12:22:55.546 [main] [INFO] WebElement - Waiting for User Logo to be visible (timeout: 250ms)
+2026-11-13 12:22:55.558 [main] [INFO] WebElement - Clicking User Logo 
+2026-11-13 12:22:55.613 [main] [INFO] WebElement - Waiting for User Menu Drawer to be visible
+2026-11-13 12:22:55.625 [main] [INFO] WebElement - Waiting for Administration Menu Item to be visible (timeout: 1000ms)
+2026-11-13 12:22:55.673 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-13 12:22:55.689 [main] [INFO] WaitUtil - Condition met after 15ms: Waiting for the loading overlay to disappear
+2026-11-13 12:22:55.690 [main] [INFO] WebElement - Waiting for Sign Out Menu Item to be visible (timeout: 250ms)
+2026-11-13 12:22:55.706 [main] [INFO] WebElement - Clicking Sign Out Menu Item 
+2026-11-13 12:22:56.152 [main] [INFO] DriverPool - App URL (DOCKER): http://appcontainer-522457:8080
+2026-11-13 12:22:56.456 [main] [INFO] CorePage - domain.ui.webstudio.pages.mainpages.LoginPage was opened.
+2026-11-13 12:22:56.458 [main] [INFO] WebElement - Waiting for usernameField to be visible (timeout: 15000ms)
+2026-11-13 12:22:56.601 [main] [INFO] DriverPool - App URL (DOCKER): http://appcontainer-522457:8080
+2026-11-13 12:22:56.718 [main] [INFO] CorePage - domain.ui.webstudio.pages.mainpages.LoginPage was opened.
+2026-11-13 12:22:56.718 [main] [INFO] WebElement - Waiting for usernameField to be visible (timeout: 15000ms)
+2026-11-13 12:22:56.845 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-13 12:22:56.851 [main] [INFO] WaitUtil - Condition met after 6ms: Waiting for the loading overlay to disappear
+2026-11-13 12:22:56.851 [main] [INFO] WebElement - Waiting for usernameField to be visible (timeout: 250ms)
+2026-11-13 12:22:56.860 [main] [INFO] WebElement - Filling usernameField with text: 'studiouser'
+2026-11-13 12:22:56.891 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-13 12:22:56.906 [main] [INFO] WaitUtil - Condition met after 15ms: Waiting for the loading overlay to disappear
+2026-11-13 12:22:56.906 [main] [INFO] WebElement - Waiting for passwordField to be visible (timeout: 250ms)
+2026-11-13 12:22:56.921 [main] [INFO] WebElement - Filling passwordField with text: 'OpenLPass123!'
+2026-11-13 12:22:56.942 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-13 12:22:56.950 [main] [INFO] WaitUtil - Condition met after 7ms: Waiting for the loading overlay to disappear
+2026-11-13 12:22:56.951 [main] [INFO] WebElement - Waiting for loginButton to be visible (timeout: 250ms)
+2026-11-13 12:22:56.960 [main] [INFO] WebElement - Clicking loginButton 
+2026-11-13 12:22:57.347 [main] [INFO] WebElement - Waiting for completeProfileModal to be visible (timeout: 20000ms)
+2026-11-13 12:23:17.353 [main] [INFO] CorePage - domain.ui.webstudio.pages.mainpages.EditorPage was opened.
+2026-11-13 12:23:17.359 [main] [INFO] CorePage - Messages currently open: 0
+2026-11-13 12:23:17.363 [main] [INFO] WaitUtil - Sleeping for 100ms: Waiting between message close attempts
+2026-11-13 12:23:17.468 [main] [INFO] WaitUtil - Sleeping for 100ms: Waiting between message close attempts
+2026-11-13 12:23:17.574 [main] [INFO] WaitUtil - Sleeping for 100ms: Waiting between message close attempts
+2026-11-13 12:23:17.679 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-13 12:23:17.683 [main] [INFO] WaitUtil - Condition met after 4ms: Waiting for the loading overlay to disappear
+2026-11-13 12:23:17.683 [main] [INFO] WebElement - Waiting for User Logo to be visible (timeout: 250ms)
+2026-11-13 12:23:17.688 [main] [INFO] WebElement - Clicking User Logo 
+2026-11-13 12:23:17.737 [main] [INFO] WebElement - Waiting for User Menu Drawer to be visible
+2026-11-13 12:23:17.748 [main] [INFO] WebElement - Waiting for Administration Menu Item to be visible (timeout: 1000ms)
+2026-11-13 12:23:18.755 [main] [INFO] DriverPool - App URL (DOCKER): http://appcontainer-522457:8080
+2026-11-13 12:23:18.960 [main] [INFO] CorePage - domain.ui.webstudio.pages.mainpages.LoginPage was opened.
+2026-11-13 12:23:18.960 [main] [INFO] WebElement - Waiting for usernameField to be visible (timeout: 15000ms)
+2026-11-13 12:23:19.001 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-13 12:23:19.008 [main] [INFO] WaitUtil - Condition met after 6ms: Waiting for the loading overlay to disappear
+2026-11-13 12:23:19.009 [main] [INFO] WebElement - Waiting for usernameField to be visible (timeout: 250ms)
+2026-11-13 12:23:19.017 [main] [INFO] WebElement - Filling usernameField with text: 'studioadmin'
+2026-11-13 12:23:19.038 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-13 12:23:19.044 [main] [INFO] WaitUtil - Condition met after 6ms: Waiting for the loading overlay to disappear
+2026-11-13 12:23:19.044 [main] [INFO] WebElement - Waiting for passwordField to be visible (timeout: 250ms)
+2026-11-13 12:23:19.051 [main] [INFO] WebElement - Filling passwordField with text: 'WrongPassword!'
+2026-11-13 12:23:19.069 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-13 12:23:19.075 [main] [INFO] WaitUtil - Condition met after 6ms: Waiting for the loading overlay to disappear
+2026-11-13 12:23:19.075 [main] [INFO] WebElement - Waiting for loginButton to be visible (timeout: 250ms)
+2026-11-13 12:23:19.083 [main] [INFO] WebElement - Clicking loginButton 
+2026-11-13 12:23:39.149 [main] [INFO] CorePage - domain.ui.webstudio.pages.mainpages.EditorPage was opened.
+2026-11-13 12:23:39.150 [main] [INFO] WebElement - Waiting for loginErrorMessage to be visible (timeout: 10000ms)
+2026-11-13 12:23:39.169 [main] [INFO] DockerDriverPool - Closing Playwright Docker for thread: main
+2026-11-13 12:23:39.585 [main] [INFO] WaitUtil - Sleeping for 2000ms: Waiting for Docker daemon to complete resource cleanup
