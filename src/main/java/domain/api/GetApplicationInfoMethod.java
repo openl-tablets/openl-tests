@@ -13,9 +13,21 @@ public class GetApplicationInfoMethod extends ApiBaseMethod {
         super("/web/public/info/openl.json");
     }
 
+    private GetApplicationInfoMethod(String path) {
+        super(path);
+    }
+
+    public static GetApplicationInfoMethod restPublic() {
+        return new GetApplicationInfoMethod("/rest/public/info/openl.json");
+    }
+
     public Response getApplicationInfo() {
         LOGGER.debug("Retrieving application info from: {}", fullApiUrl);
         return callApi(Method.GET, null, true);
+    }
+
+    public String getOpenLVersion() {
+        return getApplicationInfo().then().statusCode(200).extract().jsonPath().getString("'openl.version'");
     }
 
     public Map<String, String> getApplicationInfoFields() {
