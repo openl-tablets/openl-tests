@@ -3,12 +3,14 @@ package domain.ui.webstudio.components.common;
 import configuration.core.ui.WebElement;
 import configuration.driver.DriverPool;
 import domain.ui.webstudio.components.BaseComponent;
+import domain.ui.webstudio.components.admincomponents.PersonalAccessTokenPageComponent;
 import domain.ui.webstudio.pages.mainpages.AdminPage;
 
 public class UserSlidingRightMenuComponent extends BaseComponent {
 
     private WebElement myProfileMenuItem;
     private WebElement administrationMenuItem;
+    private WebElement personalAccessTokensMenuItem;
     private WebElement helpMenuItem;
     private WebElement signOutMenuItem;
 
@@ -25,6 +27,7 @@ public class UserSlidingRightMenuComponent extends BaseComponent {
     private void initializeComponents() {
         myProfileMenuItem = createScopedElement("xpath=.//li[contains(@class,'ant-menu-item')]//span[text()='My Profile']", "My Profile Menu Item");
         administrationMenuItem = createScopedElement("xpath=.//li[contains(@class,'ant-menu-item')]//span[text()='Administration']", "Administration Menu Item");
+        personalAccessTokensMenuItem = createScopedElement("xpath=.//li[contains(@class,'ant-menu-item')]//span[text()='Personal Access Tokens']", "Personal Access Tokens Menu Item");
         helpMenuItem = createScopedElement("xpath=.//li[contains(@class,'ant-menu-item')]//span[text()='Help']", "Help Menu Item");
         signOutMenuItem = createScopedElement("xpath=.//li[contains(@class,'ant-menu-item')]//span[text()='Sign Out']", "Sign Out Menu Item");
     }
@@ -37,6 +40,11 @@ public class UserSlidingRightMenuComponent extends BaseComponent {
     public AdminPage navigateToAdministration() {
         select(MenuElements.ADMINISTRATION);
         return new AdminPage();
+    }
+
+    public PersonalAccessTokenPageComponent navigateToPersonalAccessTokens() {
+        select(MenuElements.PERSONAL_ACCESS_TOKENS);
+        return new PersonalAccessTokenPageComponent();
     }
 
     public void openHelp() {
@@ -66,6 +74,9 @@ public class UserSlidingRightMenuComponent extends BaseComponent {
             case ADMINISTRATION:
                 administrationMenuItem.click();
                 break;
+            case PERSONAL_ACCESS_TOKENS:
+                personalAccessTokensMenuItem.click();
+                break;
             case HELP:
                 helpMenuItem.click();
                 break;
@@ -78,6 +89,7 @@ public class UserSlidingRightMenuComponent extends BaseComponent {
     public enum MenuElements {
         MY_PROFILE("My Profile"),
         ADMINISTRATION("Administration"),
+        PERSONAL_ACCESS_TOKENS("Personal Access Tokens"),
         HELP("Help"),
         SIGN_OUT("Sign Out");
 
