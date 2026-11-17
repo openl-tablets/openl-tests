@@ -51,7 +51,7 @@ public class TestDeploymentsListUi extends BaseTest {
     @Test
     @TestCaseId("IPBQA-33012")
     @Description("EPBDS-16307: the Deployments list filters by its search box, states when nothing matches, "
-            + "restores on Clear search, keeps reporting the repository total, pages through ?size, and a "
+            + "restores on Clear search, counts the deployments that match the search, pages through ?size, and a "
             + "search made from a later page shows the match instead of an empty page.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEPLOY_STUDIO_PARAMS)
     public void testDeploymentsListSearchAndPaging() {
@@ -74,8 +74,8 @@ public class TestDeploymentsListUi extends BaseTest {
                 .as("A case-insensitive fragment must leave only the matching deployment")
                 .containsExactly(BRAVO_DEPLOYMENT);
         assertThat(deployments.getSummary())
-                .as("The summary must keep reporting the repository total while the list is filtered")
-                .contains("2 deployments");
+                .as("The summary must count the deployments that match the search")
+                .isEqualTo("1 deployment");
 
         deployments.search("no-such-deployment-xyz");
         assertThat(deployments.isNoMatchShown(10000))
@@ -89,6 +89,9 @@ public class TestDeploymentsListUi extends BaseTest {
         assertThat(deployments.getVisibleDeploymentNames())
                 .as("Clear search must restore both deployments")
                 .containsExactlyInAnyOrder(ALPHA_DEPLOYMENT, BRAVO_DEPLOYMENT);
+        assertThat(deployments.getSummary())
+                .as("The summary must count both deployments again after Clear search")
+                .contains("2 deployments");
 
         deployments = new DeploymentsHomePage().openWithQuery("?size=1");
         assertThat(deployments.isPaginationShown(10000))

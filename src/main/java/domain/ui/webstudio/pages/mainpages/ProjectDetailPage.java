@@ -16,6 +16,7 @@ import domain.ui.webstudio.components.repositorytabcomponents.CopyProjectDialogC
 import domain.ui.webstudio.components.repositorytabcomponents.ExportProjectModalComponent;
 import domain.ui.webstudio.pages.BasePage;
 import helpers.utils.ProjectLinkUtil;
+import helpers.utils.StringUtil;
 import helpers.utils.WaitUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -95,7 +96,7 @@ public class ProjectDetailPage extends BasePage {
         files = new ProjectFilesTabComponent(page);
         history = new ProjectHistoryTabComponent(page);
         openRevisionSelect = new WebElement(page, "xpath=//*[@data-testid='open-revision-select']", "openRevisionSelect");
-        openRevisionOption = new WebElement(page, "xpath=//div[contains(@class,'ant-select-item-option')][@title='%s']", "openRevisionOption");
+        openRevisionOption = new WebElement(page, "xpath=//div[contains(@class,'ant-select-item-option')][@title=%s]", "openRevisionOption");
         openRevisionSubmit = new WebElement(page, "xpath=//*[@data-testid='open-revision-submit']", "openRevisionSubmit");
         openRevisionOptions = createElementList("xpath=//div[contains(@class,'ant-select-item-option')]", "openRevisionOptions");
         exportProjectModalComponent = new ExportProjectModalComponent();
@@ -543,7 +544,7 @@ public class ProjectDetailPage extends BasePage {
     public ProjectDetailPage openRevision(String revisionLabel) {
         clickHeaderAction("Open Revision");
         openRevisionSelect.waitForVisible(DEFAULT_TIMEOUT_MS).click();
-        openRevisionOption.format(revisionLabel).click();
+        openRevisionOption.format(StringUtil.xpathLiteral(revisionLabel)).click();
         openRevisionSubmit.click();
         waitUntilSpinnerLoaded();
         return this;

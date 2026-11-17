@@ -25,9 +25,9 @@ public class TestRepositoriesInheritedThroughEnvironmentUi extends BaseTest {
 
     private static final String RATING = "openl-rating";
     private static final String POLICY_LIFE = "openl-policy-life";
-    private static final String INHERITED_SAVE = "EPBDS- {project-name} saved";
+    private static final String INHERITED_HINT = "EPBDS- inherited hint";
     private static final List<String> INHERITED_SETTINGS = List.of("branch", "protectedBranches", "newBranchTemplate",
-            "useCustomComments", "defaultCommentSave");
+            "invalidCommentMessage");
     private static final String NOTHING_UNSAVED = "Leaving a repository whose settings were only looked at should not ask to discard unsaved changes";
 
     @Test
@@ -49,7 +49,7 @@ public class TestRepositoriesInheritedThroughEnvironmentUi extends BaseTest {
                 .as("%s should inherit the branch of design.repo-git", RATING).isEqualTo("development");
         softly.assertThat(repositories.getProtectedBranches())
                 .as("%s should inherit the protected branches of design.repo-git", RATING).isEqualTo("master, release-*");
-        assertSecondLevelInherited(softly, repositories, RATING, INHERITED_SAVE);
+        assertSecondLevelInherited(softly, repositories, RATING, INHERITED_HINT);
         softly.assertThat(repositories.isDesignRepositoryTypeEditable())
                 .as("Type of %s, inherited through its $ref, is read-only", RATING).isFalse();
         for (String setting : INHERITED_SETTINGS) {
@@ -95,15 +95,12 @@ public class TestRepositoriesInheritedThroughEnvironmentUi extends BaseTest {
     }
 
     private void assertSecondLevelInherited(SoftAssertions softly, RepositoriesPageComponent repositories, String repository,
-                                            String saveComment) {
+                                            String invalidCommentHint) {
         softly.assertThat(repositories.getSettingValue("newBranchTemplate"))
                 .as("%s should inherit the default branch name through design.repo-git and repo-default.design.new-branch", repository)
                 .isEqualTo("EPBDS-{username}");
-        softly.assertThat(repositories.isSettingChecked("useCustomComments"))
-                .as("%s should inherit custom comments through design.repo-git and repo-default.design.comment-template", repository)
-                .isTrue();
-        softly.assertThat(repositories.getSettingValue("defaultCommentSave"))
-                .as("Save comment of %s", repository)
-                .isEqualTo(saveComment);
+        softly.assertThat(repositories.getSettingValue("invalidCommentMessage"))
+                .as("Invalid user message hint of %s, through design.repo-git and repo-default.design.comment-template", repository)
+                .isEqualTo(invalidCommentHint);
     }
 }

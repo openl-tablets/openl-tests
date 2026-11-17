@@ -104,6 +104,16 @@ public class StringUtil {
         return oneLine(value, 300);
     }
 
+    public static String xpathLiteral(String value) {
+        if (!value.contains("'")) {
+            return "'" + value + "'";
+        }
+        if (!value.contains("\"")) {
+            return "\"" + value + "\"";
+        }
+        return "concat('" + value.replace("'", "', \"'\", '") + "')";
+    }
+
     public static String sanitizeFileName(String fileName) {
         if (fileName == null || fileName.isEmpty()) {
             return "unnamed";

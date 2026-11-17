@@ -4,6 +4,7 @@ import configuration.core.ui.WebElement;
 import configuration.driver.DriverPool;
 import domain.ui.webstudio.components.BaseComponent;
 import helpers.utils.DownloadUtil;
+import helpers.utils.StringUtil;
 import helpers.utils.WaitUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -42,7 +43,7 @@ public class ExportProjectModalComponent extends BaseComponent {
         selectedRevisionLabel = new WebElement(page,
                 "xpath=//*[@data-testid='export-project-revision']//*[contains(@class,'ant-select-content')]", "exportSelectedRevision");
         revisionOption = new WebElement(page,
-                "xpath=//div[contains(@class,'ant-select-item-option')][@title='%s']", "exportRevisionOption");
+                "xpath=//div[contains(@class,'ant-select-item-option')][@title=%s]", "exportRevisionOption");
         revisionOptions = createElementList(
                 "xpath=//div[contains(@class,'ant-select-dropdown') and not(contains(@class,'ant-select-dropdown-hidden'))]"
                         + "//div[contains(@class,'ant-select-item-option')]",
@@ -73,17 +74,6 @@ public class ExportProjectModalComponent extends BaseComponent {
         return revisions;
     }
 
-    /**
-     * Folds the list of revisions away, so what stands under it can be pressed. Escape is not what does it
-     * here: the dialog answers Escape by closing itself, and the list is then asked about a dialog that is
-     * no longer there. Moving on from the select is what folds the list away.
-     */
-    /**
-     * Folds the list of revisions away, so what stands under it can be pressed. The list closes when a
-     * revision is taken from it, so the one already taken is taken again: the list folds away and the
-     * dialog still stands at the revision it stood at. Escape is not used — the dialog answers it by
-     * closing itself.
-     */
     private void closeRevisionDropdown() {
         if (!openDropdown.exists()) {
             return;
@@ -114,7 +104,7 @@ public class ExportProjectModalComponent extends BaseComponent {
     public void selectRevision(String revision) {
         LOGGER.info("Selecting revision to export: {}", revision);
         revisionSelect.click();
-        revisionOption.format(revision).click();
+        revisionOption.format(StringUtil.xpathLiteral(revision)).click();
     }
 
     public void clickExport() {
@@ -128,11 +118,6 @@ public class ExportProjectModalComponent extends BaseComponent {
         return downloadedFile;
     }
 
-    /**
-     * Leaves the export without making it. The list of revisions hangs over the foot of the dialog while it
-     * is open, and nothing short of choosing from it folds it away, so the dialog is then left by the cross
-     * it carries — which is the same leaving, by the other way the dialog offers.
-     */
     public void clickCancel() {
         closeRevisionDropdown();
         if (!isDialogVisible()) {

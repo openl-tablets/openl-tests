@@ -2,7 +2,6 @@ package tests.ui.webstudio.rules_editor;
 
 import configuration.annotations.AppContainerConfig;
 import configuration.annotations.Description;
-import configuration.annotations.KnownIssue;
 import configuration.annotations.TestCaseId;
 import configuration.appcontainer.AppContainerStartParameters;
 import domain.serviceclasses.constants.User;
@@ -48,7 +47,6 @@ public class TestRunExecutionScreensUi extends BaseTest {
 
     @Test
     @TestCaseId({"EPBDS-16581", "EPBDS-16582", "EPBDS-16583"})
-    @KnownIssue(value = "EPBDS-17194", failsWith = "a benchmark of a rule that throws must say it could not be measured")
     @Description("EPBDS-16581: the window of a test run over several test tables counts the tables finished while the "
             + "run goes on. EPBDS-16582: Test into File of a table still saves the file when the Run panel of the same "
             + "table is opened while it works. EPBDS-16583: a benchmark of a rule that throws says it could not be "

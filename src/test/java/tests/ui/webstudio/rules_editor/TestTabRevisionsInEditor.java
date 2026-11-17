@@ -1,7 +1,6 @@
 package tests.ui.webstudio.rules_editor;
 
 import configuration.annotations.Description;
-import configuration.annotations.KnownIssue;
 import configuration.annotations.TestCaseId;
 import configuration.annotations.AppContainerConfig;
 import configuration.appcontainer.AppContainerStartParameters;
@@ -24,10 +23,8 @@ public class TestTabRevisionsInEditor extends BaseTest {
     @Test
     @TestCaseId({"IPBQA-30123", "EPBDS-12242"})
     @Description("Verifies revisions tab in editor: initial revision after project creation, new revision after save, and opening old revision shows original cell value. "
-            + "EPBDS-12242: the revision of a project copied as new says Copied from: <project>. with the source project as a link in the Revisions tab that opens that project. "
-            + "Fails on EPBDS-17171: the link was removed by EPBDS-16945.")
+            + "EPBDS-12242: the revision of a project copied as new says Copied from: <project>. with the source project as a link in the Revisions tab that opens that project.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
-    @KnownIssue(value = "EPBDS-17171", failsWith = "The source project in the Copied from comment should be a link")
     public void testTabRevisionsInEditor() {
         String projectName = WorkflowService.loginCreateProjectFromTemplate(User.ADMIN, "Sample Project");
         EditorPage editorPage = new EditorPage();

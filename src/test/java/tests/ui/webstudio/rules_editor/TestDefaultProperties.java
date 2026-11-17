@@ -46,12 +46,9 @@ public class TestDefaultProperties extends BaseTest {
                 .expandFolderInTree("Run")
                 .selectItemInFolder("Run", "SpreadsheetTable");
 
-        // The name a table goes by is what the panel is headed with, and three tables of this module are
-        // called SpreadsheetTable, so the name carries what tells them apart. A Run table declares nothing
-        // else, and the panel says so rather than listing anything.
         assertThat(editorPage.getRightTableDetailsComponent().getTitle())
-                .as("The panel should be headed with the name of the Run table")
-                .startsWith("SpreadsheetTable$Run$");
+                .as("The panel should be headed with the name of the Run table, read from its header (EPBDS-8226)")
+                .isEqualTo("SpreadsheetTable");
         assertThat(editorPage.getRightTableDetailsComponent().saysNoProperties())
                 .as("The panel should say that the Run table declares no property of its own")
                 .isTrue();
@@ -61,8 +58,8 @@ public class TestDefaultProperties extends BaseTest {
                 .selectItemInFolder("Test", "SpreadsheetTable");
 
         assertThat(editorPage.getRightTableDetailsComponent().getTitle())
-                .as("The panel should be headed with the name of the Test table")
-                .startsWith("SpreadsheetTable$Test$");
+                .as("The panel should be headed with the name of the Test table, read from its header (EPBDS-8226)")
+                .isEqualTo("SpreadsheetTable");
         assertThat(editorPage.getRightTableDetailsComponent().saysNoProperties())
                 .as("The panel should say that the Test table declares no property of its own")
                 .isTrue();
