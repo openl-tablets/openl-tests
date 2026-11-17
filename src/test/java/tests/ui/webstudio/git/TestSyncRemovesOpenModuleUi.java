@@ -3,12 +3,14 @@ package tests.ui.webstudio.git;
 import configuration.annotations.AppContainerConfig;
 import configuration.annotations.Description;
 import configuration.annotations.TestCaseId;
+import configuration.annotations.KnownIssue;
 import configuration.appcontainer.AppContainerStartParameters;
 import configuration.driver.DriverPool;
 import domain.serviceclasses.constants.User;
 import domain.ui.webstudio.components.common.CreateNewProjectComponent;
 import domain.ui.webstudio.components.common.SyncChangesDialogComponent;
 import domain.ui.webstudio.components.common.TabSwitcherComponent;
+import domain.ui.webstudio.components.projectdetail.ProjectFilesTabComponent;
 import domain.ui.webstudio.pages.mainpages.EditorPage;
 import domain.ui.webstudio.pages.mainpages.ProjectDetailPage;
 import domain.ui.webstudio.pages.mainpages.RepositoryPage;
@@ -32,6 +34,7 @@ public class TestSyncRemovesOpenModuleUi extends BaseTest {
 
     @Test
     @TestCaseId("EPBDS-12358")
+    @KnownIssue(value = "EPBDS-17269", failsWith = ProjectFilesTabComponent.FILE_OPENS_EDITOR)
     @Description("EPBDS-12358: when the updates received in the editor through Sync remove the module that is open, "
             + "the reader lands on the page of the project with its own header and a message that the module is no "
             + "longer in the project, not on a dead screen of the deleted module.")

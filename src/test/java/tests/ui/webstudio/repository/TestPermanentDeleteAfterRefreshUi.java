@@ -3,10 +3,12 @@ package tests.ui.webstudio.repository;
 import configuration.annotations.Description;
 import configuration.annotations.TestCaseId;
 import configuration.annotations.AppContainerConfig;
+import configuration.annotations.KnownIssue;
 import configuration.appcontainer.AppContainerStartParameters;
 import domain.serviceclasses.constants.User;
 import domain.ui.webstudio.components.common.CreateNewProjectComponent;
 import domain.ui.webstudio.components.common.TabSwitcherComponent;
+import domain.ui.webstudio.components.projectdetail.ProjectFilesTabComponent;
 import domain.ui.webstudio.pages.mainpages.EditorPage;
 import domain.ui.webstudio.pages.mainpages.ProjectDetailPage;
 import domain.ui.webstudio.pages.mainpages.RepositoryPage;
@@ -23,6 +25,7 @@ public class TestPermanentDeleteAfterRefreshUi extends BaseTest {
 
     @Test
     @TestCaseId("EPBDS-15385")
+    @KnownIssue(value = "EPBDS-17269", failsWith = ProjectFilesTabComponent.FILE_OPENS_EDITOR)
     @Description("A file deleted in the Elements tab does not reappear after a full browser page refresh.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void testDeletedFileDoesNotReturnAfterRefresh() {

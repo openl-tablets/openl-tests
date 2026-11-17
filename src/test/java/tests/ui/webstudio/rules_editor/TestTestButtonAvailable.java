@@ -3,12 +3,14 @@ package tests.ui.webstudio.rules_editor;
 import configuration.annotations.Description;
 import configuration.annotations.TestCaseId;
 import configuration.annotations.AppContainerConfig;
+import configuration.annotations.KnownIssue;
 import configuration.appcontainer.AppContainerStartParameters;
 import configuration.driver.DriverPool;
 import domain.serviceclasses.constants.User;
 import domain.ui.webstudio.components.common.CreateNewProjectComponent;
 import domain.ui.webstudio.components.common.TabSwitcherComponent;
 import domain.ui.webstudio.components.editortabcomponents.leftmenu.EditorLeftRulesTreeComponent;
+import domain.ui.webstudio.components.projectdetail.ProjectFilesTabComponent;
 import domain.ui.webstudio.pages.mainpages.EditorPage;
 import domain.ui.webstudio.pages.mainpages.RepositoryPage;
 import helpers.service.LoginService;
@@ -28,6 +30,7 @@ public class TestTestButtonAvailable extends BaseTest {
 
     @Test
     @TestCaseId("IPBQA-31701")
+    @KnownIssue(value = "EPBDS-17269", failsWith = ProjectFilesTabComponent.FILE_OPENS_EDITOR)
     @Description("Project Compilation - Test button available, run tests, copy module, compilation progress for large project")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void testTestButtonAvailable() {

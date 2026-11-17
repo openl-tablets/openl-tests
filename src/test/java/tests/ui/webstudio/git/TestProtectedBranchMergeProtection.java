@@ -46,7 +46,7 @@ public class TestProtectedBranchMergeProtection extends BaseTest {
 
         repositoryPage.openProjectDetail(PROJECT_NAME).createBranch(BRANCH_NAME, true);
 
-        repositoryPage.openProjectsList().openProjectDetail(PROJECT_NAME).openFilesTab()
+        repositoryPage.openProjectsList().openProjectDetail(PROJECT_NAME)
                 .uploadFile(TestDataUtil.getFilePathFromResources("TestMergeBranchesNoConflicts_Module6.xlsx"));
         repositoryPage.openProjectsList().saveProject(PROJECT_NAME, BRANCH_NAME + ": add Module6");
 

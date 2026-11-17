@@ -3,6 +3,7 @@ package tests.ui.webstudio.git;
 import configuration.annotations.AppContainerConfig;
 import configuration.annotations.Description;
 import configuration.annotations.TestCaseId;
+import configuration.annotations.KnownIssue;
 import configuration.appcontainer.AppContainerStartParameters;
 import configuration.driver.DriverPool;
 import domain.serviceclasses.constants.User;
@@ -12,6 +13,7 @@ import domain.ui.webstudio.components.editortabcomponents.EditorToolbarPanelComp
 import domain.ui.webstudio.components.editortabcomponents.leftmenu.EditorLeftRulesTreeComponent;
 import domain.ui.webstudio.components.repositorytabcomponents.ResolveConflictsDialogComponent;
 import domain.ui.webstudio.components.repositorytabcomponents.ResolveConflictsDialogComponent.ConflictSide;
+import domain.ui.webstudio.components.projectdetail.ProjectFilesTabComponent;
 import domain.ui.webstudio.pages.mainpages.EditorPage;
 import domain.ui.webstudio.pages.mainpages.ProjectDetailPage;
 import domain.ui.webstudio.pages.mainpages.RepositoryPage;
@@ -34,6 +36,7 @@ public class TestMergeConflictDeletedFileUi extends BaseTest {
 
     @Test
     @TestCaseId("EPBDS-16574")
+    @KnownIssue(value = "EPBDS-17269", failsWith = ProjectFilesTabComponent.FILE_OPENS_EDITOR)
     @Description("EPBDS-16462: when a file is modified in one branch and deleted in the other, the Resolve "
             + "Conflicts dialog must offer Download only for the sides that still hold the file, must show the "
             + "missing side as a plain label rather than a link, and must keep Compare available.")

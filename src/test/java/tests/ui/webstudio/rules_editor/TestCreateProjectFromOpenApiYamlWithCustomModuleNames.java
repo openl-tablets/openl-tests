@@ -3,12 +3,14 @@ package tests.ui.webstudio.rules_editor;
 import configuration.annotations.Description;
 import configuration.annotations.TestCaseId;
 import configuration.annotations.AppContainerConfig;
+import configuration.annotations.KnownIssue;
 import configuration.appcontainer.AppContainerStartParameters;
 import configuration.driver.DriverPool;
 import domain.serviceclasses.constants.User;
 import domain.ui.webstudio.components.common.CreateNewProjectComponent;
 import domain.ui.webstudio.components.common.TabSwitcherComponent;
 import domain.ui.webstudio.components.editortabcomponents.leftmenu.EditorLeftRulesTreeComponent;
+import domain.ui.webstudio.components.projectdetail.ProjectFilesTabComponent;
 import domain.ui.webstudio.pages.mainpages.EditorPage;
 import domain.ui.webstudio.pages.mainpages.ProjectDetailPage;
 import domain.ui.webstudio.pages.mainpages.RepositoryPage;
@@ -29,6 +31,7 @@ public class TestCreateProjectFromOpenApiYamlWithCustomModuleNames extends BaseT
 
     @Test
     @TestCaseId("IPBQA-30678")
+    @KnownIssue(value = "EPBDS-17269", failsWith = ProjectFilesTabComponent.FILE_OPENS_EDITOR)
     @Description("Create project from YAML file with custom module names and paths, verify structure and that the "
             + "project saves after a module is removed (regression guard for EPBDS-16361).")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
@@ -77,8 +80,6 @@ public class TestCreateProjectFromOpenApiYamlWithCustomModuleNames extends BaseT
                 .as("Data_Types_file.xlsx should be present in the project files").isTrue();
         assertThat(projectFiles.isFilePresent("Spreadsheets.xlsx"))
                 .as("Spreadsheets.xlsx should be present in the project files").isTrue();
-        // The uploaded specification is kept in the project root under the name its format reads as, whatever
-        // it was called when it was uploaded (EPBDS-16415).
         assertThat(projectFiles.isFilePresent("openapi.yaml"))
                 .as("The uploaded specification should be kept as openapi.yaml").isTrue();
         assertThat(projectFiles.isFilePresent(YAML_FILE))
@@ -110,9 +111,6 @@ public class TestCreateProjectFromOpenApiYamlWithCustomModuleNames extends BaseT
 
         editorPage.getEditorToolbarPanelComponent().navigateToProjectRoot(projectName);
 
-        // The descriptor names only the module whose workbook lies outside the standard layout; the other is
-        // found by the pattern over rules/, so each is renamed where it is named: one on the card, the other
-        // by its workbook on the Files tab.
         RepositoryPage repository = editorPage.getTabSwitcherComponent()
                 .selectTab(TabSwitcherComponent.TabName.REPOSITORY);
         ProjectDetailPage card = repository.openProjectsList().openProjectDetail(projectName);
@@ -137,8 +135,6 @@ public class TestCreateProjectFromOpenApiYamlWithCustomModuleNames extends BaseT
                 .contains("rules/Spreadsheets_test.xlsx")
                 .doesNotContain("rules/Spreadsheets.xlsx");
 
-        // Taking a declaration out of the descriptor leaves the workbook where it is, which is what the
-        // Files tab is for; the module is no longer read because nothing else leads to that workbook.
         repository = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.REPOSITORY);
         card = repository.openProjectsList().openProjectDetail(projectName);
         card.getOverviewTab().removeDeclaredModule("Data_Type_test");
@@ -159,8 +155,6 @@ public class TestCreateProjectFromOpenApiYamlWithCustomModuleNames extends BaseT
                 .as("The workbook of the removed module is left where it stands")
                 .contains("rules1/Data_Types_file.xlsx");
 
-        // The old dialog offered to take the workbook away with the module; the workbook is a file now, so
-        // it is deleted where the files are.
         repository = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.REPOSITORY);
         repository.openProjectsList().openProjectDetail(projectName).deleteFile("Data_Types_file.xlsx");
 

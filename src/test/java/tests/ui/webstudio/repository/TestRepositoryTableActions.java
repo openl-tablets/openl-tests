@@ -19,7 +19,6 @@ import helpers.service.LoginService;
 import helpers.service.UserService;
 import helpers.utils.StringUtil;
 import helpers.utils.TestDataUtil;
-import helpers.utils.WaitUtil;
 import org.testng.ITestResult;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
@@ -151,12 +150,9 @@ public class TestRepositoryTableActions extends BaseTest {
 
         repositoryPage.createProject(CreateNewProjectComponent.TabName.EXCEL_FILES, projectName2, MAIN_XLS);
         ProjectDetailPage excelProject = repositoryPage.openProjectDetail(projectName2);
-        excelProject.selectFile(MAIN_XLS);
-        WaitUtil.waitForCondition(() -> ("rules/" + MAIN_XLS).equals(excelProject.getSelectedFileFromUrl()),
-                10000, 250, "Waiting for the workbook to be selected");
-        assertThat(excelProject.getSelectedFileFromUrl())
+        assertThat(excelProject.isFileListedAt("rules/" + MAIN_XLS))
                 .as("The uploaded workbook must be put into the rules folder (EPBDS-16421)")
-                .isEqualTo("rules/" + MAIN_XLS);
+                .isTrue();
         assertThat(excelProject.openOverviewTab().isOverviewEditOffered())
                 .as("Precondition: the Overview of the Excel project must offer Edit")
                 .isTrue();
@@ -256,7 +252,6 @@ public class TestRepositoryTableActions extends BaseTest {
 
         repositoryPage.openProject(projectName);
         repositoryPage.openProjectDetail(projectName)
-                .openFilesTab()
                 .uploadFile(TestDataUtil.getFilePathFromResources(RULES_XLS));
         repositoryPage.openProjectsList().saveProjectWithCommitInfo(projectName, "Second user upload");
 

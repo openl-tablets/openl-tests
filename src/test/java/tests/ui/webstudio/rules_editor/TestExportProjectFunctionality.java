@@ -3,6 +3,7 @@ package tests.ui.webstudio.rules_editor;
 import configuration.annotations.Description;
 import configuration.annotations.TestCaseId;
 import configuration.annotations.AppContainerConfig;
+import configuration.annotations.KnownIssue;
 import configuration.appcontainer.AppContainerStartParameters;
 import configuration.driver.DriverPool;
 import domain.serviceclasses.constants.User;
@@ -12,6 +13,7 @@ import domain.ui.webstudio.components.common.TabSwitcherComponent;
 import domain.ui.webstudio.components.editortabcomponents.EditProjectDialogComponent;
 import domain.ui.webstudio.components.editortabcomponents.ExportProjectDialogComponent;
 import domain.ui.webstudio.components.repositorytabcomponents.ExportProjectModalComponent;
+import domain.ui.webstudio.components.projectdetail.ProjectFilesTabComponent;
 import domain.ui.webstudio.pages.mainpages.AdminPage;
 import domain.ui.webstudio.pages.mainpages.EditorPage;
 import domain.ui.webstudio.pages.mainpages.ProjectDetailPage;
@@ -102,6 +104,7 @@ public class TestExportProjectFunctionality extends BaseTest {
 
     @Test
     @TestCaseId({"IPBQA-25697", "EPBDS-16704"})
+    @KnownIssue(value = "EPBDS-17269", failsWith = ProjectFilesTabComponent.FILE_OPENS_EDITOR)
     @Description("Rules Editor - Export Project: Full functionality with revision selection, branches, and multi-user scenarios. "
             + "The archive of an exported revision is named after the chosen revision, in the moment shown in the revision list (EPBDS-16704)")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)

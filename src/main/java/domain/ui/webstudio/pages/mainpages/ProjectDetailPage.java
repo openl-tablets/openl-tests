@@ -33,7 +33,6 @@ public class ProjectDetailPage extends BasePage {
 
     private static final int HEADER_ACTION_PROBE_MS = DEFAULT_TIMEOUT_MS / 5;
     private static final int NOTICE_POLL_MS = 100;
-    private static final int TAB_SWITCH_ATTEMPTS = 3;
     private static final int COMPARE_WINDOW_WIDTH = 1280;
     private static final int COMPARE_WINDOW_HEIGHT = 800;
     private static final Pattern PROJECT_ADDRESS = Pattern.compile(".*/projects/[^/?]+.*");
@@ -42,7 +41,6 @@ public class ProjectDetailPage extends BasePage {
     private TabSwitcherComponent tabSwitcherComponent;
     private WebElement overviewTab;
     private WebElement missingProject;
-    private WebElement filesTab;
     private WebElement historyTab;
     private WebElement managementTab;
     private WebElement publishTab;
@@ -78,7 +76,6 @@ public class ProjectDetailPage extends BasePage {
         tabSwitcherComponent = createScopedComponent(TabSwitcherComponent.class, "xpath=//ul[@role='menu' and contains(@class,'ant-menu-horizontal')]", "tabSwitcherComponent");
         overviewTab = new WebElement(page, "xpath=//div[@data-node-key='overview']", "overviewTab");
         missingProject = new WebElement(page, "xpath=//*[@data-testid='project-workspace-missing']", "missingProject");
-        filesTab = new WebElement(page, "xpath=//div[@data-node-key='files']", "filesTab");
         historyTab = new WebElement(page, "xpath=//div[@data-node-key='history']", "historyTab");
         managementTab = new WebElement(page, "xpath=//div[@data-node-key='access']", "managementTab");
         publishTab = new WebElement(page, "xpath=//div[@data-node-key='publish']", "publishTab");
@@ -264,7 +261,7 @@ public class ProjectDetailPage extends BasePage {
     }
 
     public boolean isHistoryTabOffered() {
-        filesTab.waitForVisible(DEFAULT_TIMEOUT_MS);
+        overviewTab.waitForVisible(DEFAULT_TIMEOUT_MS);
         return historyTab.isVisible();
     }
 
@@ -288,14 +285,7 @@ public class ProjectDetailPage extends BasePage {
 
     public ProjectDetailPage openFilesTab() {
         detailRoot.waitForVisible(DEFAULT_TIMEOUT_MS);
-        for (int attempt = 1; attempt <= TAB_SWITCH_ATTEMPTS; attempt++) {
-            filesTab.click();
-            waitUntilSpinnerLoaded();
-            if (files.isOpen(DEFAULT_TIMEOUT_MS / 2)) {
-                return this;
-            }
-        }
-        files.waitForOpen(DEFAULT_TIMEOUT_MS);
+        files.showProjectInTree();
         return this;
     }
 
@@ -656,6 +646,11 @@ public class ProjectDetailPage extends BasePage {
         return this;
     }
 
+    public boolean isFileListedAt(String filePath) {
+        openFilesTab();
+        return files.isFileListedAt(filePath);
+    }
+
     public boolean isFilePresent(String fileName) {
         openFilesTab();
         return files.isNodePresent(fileName);
@@ -679,8 +674,8 @@ public class ProjectDetailPage extends BasePage {
         return this;
     }
 
-    public boolean isFilesTabOpen() {
-        return files.isOpen(DEFAULT_TIMEOUT_MS);
+    public boolean isFilePaneShown() {
+        return files.isFilePaneShown();
     }
 
     public boolean isResourceNotFoundShown() {
@@ -703,10 +698,6 @@ public class ProjectDetailPage extends BasePage {
         return files.describeFilePaneState(expectedFileName);
     }
 
-    public boolean isFilePreviewEmptyShown() {
-        return files.isFilePreviewEmptyShown();
-    }
-
     public ProjectDetailPage uploadFile(String filePath) {
         return uploadFileAs(filePath, null);
     }
@@ -720,13 +711,13 @@ public class ProjectDetailPage extends BasePage {
     }
 
     public ProjectDetailPage uploadFileAs(String filePath, String targetName, String targetFolder) {
-        openFilesTab();
+        detailRoot.waitForVisible(DEFAULT_TIMEOUT_MS);
         files.uploadFileAs(filePath, targetName, targetFolder);
         return this;
     }
 
     public boolean isAddFilesMenuAvailable() {
-        openFilesTab();
+        detailRoot.waitForVisible(DEFAULT_TIMEOUT_MS);
         return files.isAddMenuAvailable();
     }
 
@@ -752,7 +743,7 @@ public class ProjectDetailPage extends BasePage {
     }
 
     public ProjectDetailPage createFolder(String folderPath) {
-        openFilesTab();
+        detailRoot.waitForVisible(DEFAULT_TIMEOUT_MS);
         files.createFolder(folderPath);
         return this;
     }

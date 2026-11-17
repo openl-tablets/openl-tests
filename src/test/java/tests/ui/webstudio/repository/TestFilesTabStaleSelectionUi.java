@@ -24,7 +24,7 @@ public class TestFilesTabStaleSelectionUi extends BaseTest {
 
     @Test
     @TestCaseId("IPBQA-33039")
-    @Description("EPBDS-16437: deleting the file the Files tab has selected must drop that selection - the file "
+    @Description("EPBDS-16437: deleting the file selected in the projects tree must drop that selection - the file "
             + "pane must not be left with the 'The resource is not found.' banner.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void testSelectionOfDeletedFileIsDropped() {
@@ -47,8 +47,7 @@ public class TestFilesTabStaleSelectionUi extends BaseTest {
     @Test
     @TestCaseId("IPBQA-33040")
     @Description("EPBDS-16441: a deep link naming a file the tree does not hold must have its stale selection "
-            + "dropped from the URL, leave the Files tab open on its empty pane and never keep the "
-            + "'The resource is not found.' banner.")
+            + "dropped from the URL, open no file pane and never keep the 'The resource is not found.' banner.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void testStaleDeepLinkSelectionIsDropped() {
         ProjectDetailPage detail = openProjectWithUploadedFile();
@@ -61,21 +60,18 @@ public class TestFilesTabStaleSelectionUi extends BaseTest {
 
         DriverPool.getPage().navigate(urlWithSelection.replace(UPLOAD_FILE, MISSING_TEXT_FILE));
         detail = new ProjectDetailPage();
-        assertThat(detail.isFilesTabOpen())
-                .as("A deep link naming a missing file must still open the Files tab")
-                .isTrue();
         long treeLoadMillis = detail.waitForFileTreeToList(UPLOAD_FILE);
         boolean dropped = detail.waitForFileSelectionDropped(MISSING_TEXT_FILE);
         assertThat(dropped)
-                .as("Once the tree is loaded (took %d ms) the Files tab must drop the missing file from the URL (EPBDS-16441); state: %s",
+                .as("Once the tree is loaded (took %d ms) the project page must drop the missing file from the URL (EPBDS-16441); state: %s",
                         treeLoadMillis, detail.describeFilePaneState(UPLOAD_FILE))
                 .isTrue();
         assertThat(detail.getSelectedFileFromUrl())
                 .as("No file may stay selected in the URL after the stale selection is dropped")
                 .isEmpty();
-        assertThat(detail.isFilePreviewEmptyShown())
-                .as("The file pane must fall back to its empty state instead of opening the phantom file")
-                .isTrue();
+        assertThat(detail.isFilePaneShown())
+                .as("No file pane may open for the phantom file")
+                .isFalse();
         assertThat(detail.isResourceNotFoundShown())
                 .as("The dropped selection must not leave the not-found banner in the file pane (EPBDS-16441)")
                 .isFalse();

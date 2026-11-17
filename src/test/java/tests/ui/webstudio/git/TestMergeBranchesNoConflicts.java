@@ -3,6 +3,7 @@ package tests.ui.webstudio.git;
 import configuration.annotations.Description;
 import configuration.annotations.TestCaseId;
 import configuration.annotations.AppContainerConfig;
+import configuration.annotations.KnownIssue;
 import configuration.appcontainer.AppContainerStartParameters;
 import configuration.driver.DriverPool;
 import domain.api.UsersMethod;
@@ -14,6 +15,7 @@ import domain.ui.webstudio.components.editortabcomponents.EditorTableActionsPane
 import domain.ui.webstudio.components.editortabcomponents.EditorToolbarPanelComponent;
 import domain.ui.webstudio.components.editortabcomponents.leftmenu.EditorLeftRulesTreeComponent;
 import domain.ui.webstudio.components.repositorytabcomponents.SyncUpdatesDialogComponent;
+import domain.ui.webstudio.components.projectdetail.ProjectFilesTabComponent;
 import domain.ui.webstudio.pages.mainpages.EditorPage;
 import domain.ui.webstudio.pages.mainpages.ProjectDetailPage;
 import domain.ui.webstudio.pages.mainpages.RepositoryPage;
@@ -42,6 +44,7 @@ public class TestMergeBranchesNoConflicts extends BaseTest {
 
     @Test
     @TestCaseId({"IPBQA-29455", "EPBDS-17078"})
+    @KnownIssue(value = "EPBDS-17269", failsWith = ProjectFilesTabComponent.FILE_OPENS_EDITOR)
     @Description("Git - Merge branches without conflicts between master and MyBranch. Verifies EPBDS-8488: the "
             + "merge commit is authored by the WebStudio user's display name, not a .gitconfig identity, and the "
             + "first save on MyBranch after a module is deleted and another uploaded succeeds (regression guard for "

@@ -1,9 +1,10 @@
 package domain.ui.webstudio.components.projectdetail;
 
+import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
+import com.microsoft.playwright.PlaywrightException;
 import configuration.core.ui.WebElement;
 import domain.ui.webstudio.components.BaseComponent;
-import domain.ui.webstudio.components.common.HeaderSearchComponent;
 import helpers.utils.WaitUtil;
 
 import java.net.URLDecoder;
@@ -13,11 +14,31 @@ import java.util.regex.Pattern;
 
 public class ProjectFilesTabComponent extends BaseComponent {
 
+    public static final String PROJECT_NOT_IN_TREE = "The projects tree does not list the project the page shows";
+    public static final String FILE_OPENS_EDITOR = "Picking the file in the projects tree opened Rules Editor instead of its pane";
+
     private static final int FILE_DIALOG_TIMEOUT_MS = DEFAULT_TIMEOUT_MS * 3;
     private static final int TREE_LOAD_TIMEOUT_MS = DEFAULT_TIMEOUT_MS * 6;
+    private static final int POLL_MS = 200;
+    private static final int WHEEL_STEP_PX = 300;
     private static final Pattern FILE_PARAM = Pattern.compile("[?&]file=([^&#]*)");
+    private static final Pattern PROJECT_ID = Pattern.compile("/projects/([^/?#]+)");
+    private static final Pattern EDITOR_URL = Pattern.compile("/projects/[^/?#]+/modules/");
+    private static final String TREE = "//*[@data-testid='projects-tree']";
+    private static final String CLOSED_ROW = TREE + "//div[contains(@class,'ant-tree-treenode-switcher-close')]";
+    private static final String NODE_BY_NAME = TREE + "//span[starts-with(@data-testid,'tree-file-%1$s-') "
+            + "or starts-with(@data-testid,'tree-folder-%1$s-')][span[1][normalize-space()='%2$s']]";
 
-    private final WebElement fileNodeByName;
+    private final WebElement tree;
+    private final WebElement treeOrEmpty;
+    private final WebElement treeMode;
+    private final WebElement actionBar;
+    private final WebElement projectNode;
+    private final WebElement closedRowSwitcher;
+    private final WebElement firstClosedGroup;
+    private final WebElement firstClosedFolder;
+    private final WebElement presentNodeByName;
+    private final WebElement fileNodeByPath;
     private final WebElement addBtn;
     private final WebElement fileActionsBtn;
     private final WebElement addMenuItem;
@@ -32,10 +53,10 @@ public class ProjectFilesTabComponent extends BaseComponent {
     private final WebElement uploadSubmitBtn;
     private final WebElement folderPathInput;
     private final WebElement folderSubmitBtn;
+    private final WebElement filePane;
     private final WebElement filePreviewEmpty;
     private final WebElement filePreviewError;
     private final WebElement filePaneLoading;
-    private final HeaderSearchComponent filesSearch;
 
     public ProjectFilesTabComponent(Page page) {
         this(new WebElement(page, "xpath=//*[@data-testid='project-detail']", "projectDetail"));
@@ -43,8 +64,22 @@ public class ProjectFilesTabComponent extends BaseComponent {
 
     public ProjectFilesTabComponent(WebElement rootLocator) {
         super(rootLocator);
-        fileNodeByName = createScopedElement("xpath=.//div[@role='treeitem'][.//*[normalize-space()='%s']]", "fileTreeNode");
-        addBtn = createScopedElement("xpath=.//*[@data-testid='files-add']", "filesAddBtn");
+        tree = new WebElement(page, "xpath=" + TREE, "projectsTree");
+        treeOrEmpty = new WebElement(page, "xpath=(" + TREE + " | //*[@data-testid='projects-tree-empty'])[1]",
+                "projectsTreeOrEmpty");
+        treeMode = new WebElement(page, "xpath=//*[@data-testid='projects-rail-mode']"
+                + "//label[contains(@class,'ant-segmented-item')][normalize-space()='Tree']", "projectsRailTreeMode");
+        actionBar = new WebElement(page, "xpath=//*[@data-testid='project-actions']", "projectActions");
+        projectNode = new WebElement(page, "xpath=(" + TREE + "//*[@data-testid='tree-project-%s'])[1]", "treeProject");
+        closedRowSwitcher = new WebElement(page, "xpath=(" + CLOSED_ROW + "[.//*[@data-testid=\"%s\"]]"
+                + "/span[contains(@class,'ant-tree-switcher')])[1]", "closedTreeRowSwitcher");
+        firstClosedGroup = new WebElement(page, "xpath=(" + CLOSED_ROW
+                + "//*[starts-with(@data-testid,'tree-group-')])[1]", "firstClosedTreeGroup");
+        firstClosedFolder = new WebElement(page, "xpath=(" + CLOSED_ROW
+                + "//span[starts-with(@data-testid,'tree-folder-%s-')])[1]", "firstClosedTreeFolder");
+        presentNodeByName = new WebElement(page, "xpath=(" + NODE_BY_NAME + "[not(@data-change='deleted')])[1]", "presentTreeFileNode");
+        fileNodeByPath = new WebElement(page, "xpath=(" + TREE + "//span[@data-testid=\"tree-file-%s-%s\"][not(@data-change='deleted')])[1]", "treeFileNodeByPath");
+        addBtn = new WebElement(page, "xpath=//*[@data-testid='addFiles-%s']", "addFilesBtn");
         fileActionsBtn = createScopedElement("xpath=.//*[@data-testid='file-actions']", "fileActionsBtn");
         addMenuItem = new WebElement(page, "xpath=//div[contains(@class,'ant-dropdown')][not(contains(@class,'ant-dropdown-hidden'))]//li[contains(@class,'ant-dropdown-menu-item')][.//span[@data-testid='%s']]", "filesAddMenuItem");
         fileActionsMenuItem = new WebElement(page, "xpath=//div[contains(@class,'ant-dropdown')][not(contains(@class,'ant-dropdown-hidden'))]//li[contains(@class,'ant-dropdown-menu-item')][normalize-space()='%s']", "fileActionsMenuItem");
@@ -58,31 +93,37 @@ public class ProjectFilesTabComponent extends BaseComponent {
         uploadSubmitBtn = new WebElement(page, "xpath=//*[@data-testid='files-upload-submit']", "filesUploadSubmitBtn");
         folderPathInput = new WebElement(page, "xpath=//*[@data-testid='files-folder-path']//input", "folderPathInput");
         folderSubmitBtn = new WebElement(page, "xpath=//*[@data-testid='files-folder-submit']", "folderSubmitBtn");
+        filePane = createScopedElement("xpath=.//*[@data-testid='project-file-pane']", "projectFilePane");
         filePreviewEmpty = createScopedElement("xpath=.//*[@data-testid='file-preview-empty']", "filePreviewEmpty");
         filePreviewError = createScopedElement("xpath=.//*[@data-testid='file-preview-error']", "filePreviewError");
         filePaneLoading = createScopedElement("xpath=.//*[@data-testid='file-pane-loading']", "filePaneLoading");
-        filesSearch = new HeaderSearchComponent(page, HeaderSearchComponent.Scope.FILES);
     }
 
-    public boolean isOpen(int timeoutInMillis) {
-        return filesSearch.isOffered(timeoutInMillis);
-    }
-
-    public void waitForOpen(int timeoutInMillis) {
-        filesSearch.waitForOffered(timeoutInMillis);
+    public void showProjectInTree() {
+        if (!treeOrEmpty.isVisible(DEFAULT_TIMEOUT_MS / 4)) {
+            treeMode.click();
+        }
+        String projectId = shownProjectId();
+        WebElement project = projectNode.format(projectId);
+        scrollTree(-Integer.MAX_VALUE / 2);
+        WaitUtil.requireCondition(() -> isRendered(project, firstClosedGroup),
+                DEFAULT_TIMEOUT_MS * 2, POLL_MS, PROJECT_NOT_IN_TREE + " (" + projectId + ")");
+        unfold("tree-project-" + projectId);
     }
 
     public void deleteFile(String fileName) {
-        fileNodeByName.format(fileName).click();
+        pickFile(fileName);
         fileActionsBtn.waitForVisible(DEFAULT_TIMEOUT_MS).click();
         fileActionsMenuItem.format("Delete").click();
         fileDeleteSubmitBtn.click();
         waitUntilSpinnerLoaded();
-        fileNodeByName.format(fileName).waitForHidden(DEFAULT_TIMEOUT_MS);
+        WebElement present = presentNodeByName.format(shownProjectId(), fileName);
+        WaitUtil.requireCondition(() -> !present.exists(), DEFAULT_TIMEOUT_MS, POLL_MS,
+                "The projects tree still lists '" + fileName + "' as not deleted");
     }
 
     public void copyFile(String fileName, String copyName) {
-        fileNodeByName.format(fileName).waitForVisible(DEFAULT_TIMEOUT_MS).click();
+        pickFile(fileName);
         fileActionsBtn.waitForVisible(DEFAULT_TIMEOUT_MS).click();
         fileActionsMenuItem.format("Copy").click();
         WebElement name = new WebElement(page, "xpath=//*[@data-testid='file-copy-name']", "fileCopyName");
@@ -90,11 +131,11 @@ public class ProjectFilesTabComponent extends BaseComponent {
         name.fill(copyName);
         new WebElement(page, "xpath=//*[@data-testid='file-copy-submit']", "fileCopySubmit").click();
         waitUntilSpinnerLoaded();
-        fileNodeByName.format(copyName).waitForVisible(DEFAULT_TIMEOUT_MS);
+        requireListed(copyName);
     }
 
     public void renameFile(String fileName, String newName) {
-        fileNodeByName.format(fileName).waitForVisible(DEFAULT_TIMEOUT_MS).click();
+        pickFile(fileName);
         fileActionsBtn.waitForVisible(DEFAULT_TIMEOUT_MS).click();
         fileActionsMenuItem.format("Rename").click();
         WebElement name = new WebElement(page, "xpath=//*[@data-testid='file-move-name']", "fileMoveName");
@@ -102,11 +143,11 @@ public class ProjectFilesTabComponent extends BaseComponent {
         name.fill(newName);
         new WebElement(page, "xpath=//*[@data-testid='file-move-submit']", "fileMoveSubmit").click();
         waitUntilSpinnerLoaded();
-        fileNodeByName.format(newName).waitForVisible(DEFAULT_TIMEOUT_MS);
+        requireListed(newName);
     }
 
     public void selectFile(String fileName) {
-        fileNodeByName.format(fileName).waitForVisible(DEFAULT_TIMEOUT_MS).click();
+        pickFile(fileName);
     }
 
     public boolean isResourceNotFoundShown() {
@@ -115,15 +156,17 @@ public class ProjectFilesTabComponent extends BaseComponent {
     }
 
     public boolean waitForFileSelectionDropped(String fileName) {
-        return WaitUtil.waitForCondition(() -> !selectedFileParam().contains(fileName), DEFAULT_TIMEOUT_MS, 200,
-                "Waiting for the Files tab to drop '" + fileName + "' from the URL selection");
+        return WaitUtil.waitForCondition(() -> !selectedFileParam().contains(fileName), DEFAULT_TIMEOUT_MS, POLL_MS,
+                "Waiting for the project page to drop '" + fileName + "' from the URL selection");
     }
 
     public long waitForTreeToList(String fileName) {
         long started = System.currentTimeMillis();
-        fileNodeByName.format(fileName).waitForVisible(TREE_LOAD_TIMEOUT_MS);
+        showProjectInTree();
+        WaitUtil.requireCondition(() -> isListed(presentNodeByName, fileName), TREE_LOAD_TIMEOUT_MS, POLL_MS,
+                "Waiting for the projects tree to list '" + fileName + "'");
         long elapsed = System.currentTimeMillis() - started;
-        LOGGER.info("Files tree listed '{}' after {} ms", fileName, elapsed);
+        LOGGER.info("Projects tree listed '{}' after {} ms", fileName, elapsed);
         return elapsed;
     }
 
@@ -131,8 +174,10 @@ public class ProjectFilesTabComponent extends BaseComponent {
         String pane = filePaneLoading.exists() ? "loading"
                 : filePreviewError.exists() ? "error: " + textOrNothing(filePreviewError)
                 : filePreviewEmpty.exists() ? "empty"
-                : "preview";
-        return "tree lists '" + expectedFileName + "': " + fileNodeByName.format(expectedFileName).exists()
+                : filePane.exists() ? "preview"
+                : "none";
+        return "tree lists '" + expectedFileName + "': "
+                + presentNodeByName.format(shownProjectId(), expectedFileName).exists()
                 + ", file pane: " + pane + ", url file param: '" + selectedFileParam() + "'";
     }
 
@@ -149,12 +194,23 @@ public class ProjectFilesTabComponent extends BaseComponent {
         return matcher.find() ? URLDecoder.decode(matcher.group(1), StandardCharsets.UTF_8) : "";
     }
 
-    public boolean isFilePreviewEmptyShown() {
-        return filePreviewEmpty.isVisible(DEFAULT_TIMEOUT_MS);
+    public boolean isFilePaneShown() {
+        return filePane.isVisible(DEFAULT_TIMEOUT_MS / 4);
+    }
+
+    public boolean isFileListedAt(String filePath) {
+        showProjectInTree();
+        String projectId = shownProjectId();
+        WebElement file = fileNodeByPath.format(projectId, filePath);
+        WebElement firstClosed = firstClosedFolder.format(projectId);
+        return WaitUtil.waitForCondition(() -> isRendered(file, firstClosed), TREE_LOAD_TIMEOUT_MS, POLL_MS,
+                "Waiting for the projects tree to list '" + filePath + "'");
     }
 
     public boolean isNodePresent(String nodeName) {
-        return fileNodeByName.format(nodeName).isVisible(DEFAULT_TIMEOUT_MS);
+        showProjectInTree();
+        return WaitUtil.waitForCondition(() -> isListed(presentNodeByName, nodeName), DEFAULT_TIMEOUT_MS, POLL_MS,
+                "Waiting for the projects tree to list '" + nodeName + "'");
     }
 
     public void uploadFileAs(String filePath, String targetName, String targetFolder) {
@@ -171,11 +227,12 @@ public class ProjectFilesTabComponent extends BaseComponent {
     }
 
     public boolean isAddMenuAvailable() {
-        return addBtn.isVisible(DEFAULT_TIMEOUT_MS);
+        actionBar.waitForVisible(DEFAULT_TIMEOUT_MS);
+        return addBtn.format(shownProjectId()).isVisible(DEFAULT_TIMEOUT_MS);
     }
 
     public void pickUpdateFile(String fileName, String newFilePath) {
-        fileNodeByName.format(fileName).click();
+        pickFile(fileName);
         fileActionsBtn.waitForVisible(DEFAULT_TIMEOUT_MS).click();
         fileActionsMenuItem.format("Update").click();
         updateFileSubmitBtn.waitForVisible(FILE_DIALOG_TIMEOUT_MS);
@@ -199,7 +256,94 @@ public class ProjectFilesTabComponent extends BaseComponent {
     }
 
     private void openAddMenuItem(String itemTestId) {
-        addBtn.hover();
+        addBtn.format(shownProjectId()).hover();
         addMenuItem.format(itemTestId).click();
+    }
+
+    private void pickFile(String name) {
+        reveal(presentNodeByName, name).click();
+        WaitUtil.requireCondition(() -> isEditorShown() || isSelected(name), DEFAULT_TIMEOUT_MS, POLL_MS,
+                "Waiting for the project page to show '" + name + "'");
+        if (isEditorShown()) {
+            throw new IllegalStateException(FILE_OPENS_EDITOR + " ('" + name + "')");
+        }
+    }
+
+    private boolean isSelected(String name) {
+        String selected = selectedFileParam();
+        return selected.equals(name) || selected.endsWith("/" + name);
+    }
+
+    private boolean isEditorShown() {
+        return EDITOR_URL.matcher(page.url()).find();
+    }
+
+    private WebElement reveal(WebElement nodes, String name) {
+        showProjectInTree();
+        WaitUtil.requireCondition(() -> isListed(nodes, name), TREE_LOAD_TIMEOUT_MS, POLL_MS,
+                "Waiting for the projects tree to list '" + name + "'");
+        return nodes.format(shownProjectId(), name);
+    }
+
+    private void requireListed(String name) {
+        WaitUtil.requireCondition(() -> isListed(presentNodeByName, name), DEFAULT_TIMEOUT_MS, POLL_MS,
+                "Waiting for the projects tree to list '" + name + "'");
+    }
+
+    private boolean isListed(WebElement nodes, String name) {
+        String projectId = shownProjectId();
+        return isRendered(nodes.format(projectId, name), firstClosedFolder.format(projectId));
+    }
+
+    private boolean isRendered(WebElement node, WebElement firstClosed) {
+        if (node.exists()) {
+            return true;
+        }
+        if (!unfoldFirst(firstClosed)) {
+            scrollTree(WHEEL_STEP_PX);
+        }
+        return node.exists();
+    }
+
+    private void scrollTree(int pixels) {
+        if (tree.exists()) {
+            tree.hover();
+            page.mouse().wheel(0, pixels);
+        }
+    }
+
+    private boolean unfoldFirst(WebElement closedNode) {
+        String testId;
+        try {
+            testId = closedNode.getLocator().getAttribute("data-testid", new Locator.GetAttributeOptions().setTimeout(POLL_MS));
+        } catch (PlaywrightException noneRendered) {
+            return false;
+        }
+        if (testId == null) {
+            return false;
+        }
+        unfold(testId);
+        return true;
+    }
+
+    private void unfold(String nodeTestId) {
+        WebElement switcher = closedRowSwitcher.format(nodeTestId);
+        if (!switcher.exists()) {
+            return;
+        }
+        try {
+            switcher.getLocator().click(new Locator.ClickOptions().setTimeout(DEFAULT_TIMEOUT_MS / 5));
+        } catch (PlaywrightException openedMeanwhile) {
+            LOGGER.info("Tree row {} was unfolded before the click", nodeTestId);
+        }
+        switcher.waitForHidden(DEFAULT_TIMEOUT_MS);
+    }
+
+    private String shownProjectId() {
+        Matcher matcher = PROJECT_ID.matcher(page.url());
+        if (!matcher.find()) {
+            throw new IllegalStateException("The page shows no project: " + page.url());
+        }
+        return matcher.group(1);
     }
 }
