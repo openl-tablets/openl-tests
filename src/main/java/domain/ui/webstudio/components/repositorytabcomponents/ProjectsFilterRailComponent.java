@@ -24,6 +24,7 @@ public class ProjectsFilterRailComponent extends BaseComponent {
     private static final int DRAG_STEPS = 20;
     private static final double TITLE_X_SHARE = 0.35;
     private static final String GROUP_ID_PREFIX = "filter-group-";
+    private static final String RAIL_MODE = "//*[@data-testid='projects-rail-mode']//label[contains(@class,'ant-segmented-item')]";
 
     private final WebElement filterGroupToggle;
     private final WebElement filterGroupShow;
@@ -34,6 +35,8 @@ public class ProjectsFilterRailComponent extends BaseComponent {
     private final WebElement filterRepoCheckbox;
     private final WebElement filterStatusCheckbox;
     private final WebElement filterBranchCheckbox;
+    private final WebElement filtersMode;
+    private final WebElement filtersModeSelected;
 
     public ProjectsFilterRailComponent(Page page) {
         this(new WebElement(page, "xpath=//*[@data-testid='projects-rail']", "projectsRail"));
@@ -50,9 +53,20 @@ public class ProjectsFilterRailComponent extends BaseComponent {
         filterRepoCheckbox = createScopedElement("xpath=.//*[@data-testid='filter-repo-%s']", "filterRepoCheckbox");
         filterStatusCheckbox = createScopedElement("xpath=.//*[@data-testid='filter-status-%s']", "filterStatusCheckbox");
         filterBranchCheckbox = createScopedElement("xpath=.//*[@data-testid='filter-branch-%s']", "filterBranchCheckbox");
+        filtersMode = new WebElement(page, "xpath=" + RAIL_MODE + "[normalize-space()='Filters']", "projectsRailFiltersMode");
+        filtersModeSelected = new WebElement(page, "xpath=" + RAIL_MODE
+                + "[contains(@class,'ant-segmented-item-selected')][normalize-space()='Filters']", "projectsRailFiltersModeSelected");
+    }
+
+    public void showFilters() {
+        if (filtersMode.isVisible(PROBE_MS) && !filtersModeSelected.exists()) {
+            filtersMode.click();
+            filtersModeSelected.waitForVisible(DEFAULT_TIMEOUT_MS);
+        }
     }
 
     public void startArranging() {
+        showFilters();
         arrangeButton.click();
         arrangeDoneButton.waitForVisible(DEFAULT_TIMEOUT_MS);
     }
@@ -63,6 +77,7 @@ public class ProjectsFilterRailComponent extends BaseComponent {
     }
 
     public List<String> getGroupOrder() {
+        showFilters();
         List<List<String>> reads = new ArrayList<>(List.of(List.of()));
         WaitUtil.waitForCondition(() -> {
             List<String> current = readTestIdSuffixes("*", GROUP_ID_PREFIX);
@@ -78,11 +93,13 @@ public class ProjectsFilterRailComponent extends BaseComponent {
     }
 
     public boolean waitForFilterValues(boolean shown) {
+        showFilters();
         return WaitUtil.waitForCondition(() -> (countFilterValues() > 0) == shown, DEFAULT_TIMEOUT_MS, 100,
                 "Waiting for the filter values to be " + (shown ? "listed" : "hidden"));
     }
 
     public void dragGroupOnto(String groupId, String targetGroupId) {
+        showFilters();
         BoundingBox group = boxOf(filterGroup.format(groupId));
         BoundingBox from = boxOf(filterGroupHandle.format(groupId));
         BoundingBox to = boxOf(filterGroupHandle.format(targetGroupId));
@@ -102,6 +119,7 @@ public class ProjectsFilterRailComponent extends BaseComponent {
     }
 
     public void expandFilterGroup(String groupId) {
+        showFilters();
         WebElement showBtn = filterGroupShow.format(groupId);
         if (showBtn.isVisible(PROBE_MS)) {
             showBtn.click();

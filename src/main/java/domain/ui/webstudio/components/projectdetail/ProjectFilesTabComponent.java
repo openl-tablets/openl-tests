@@ -30,6 +30,7 @@ public class ProjectFilesTabComponent extends BaseComponent {
             + "or starts-with(@data-testid,'tree-folder-%1$s-')][span[1][normalize-space()='%2$s']]";
 
     private final WebElement tree;
+    private final WebElement shownTooltip;
     private final WebElement treeOrEmpty;
     private final WebElement treeMode;
     private final WebElement actionBar;
@@ -65,6 +66,8 @@ public class ProjectFilesTabComponent extends BaseComponent {
     public ProjectFilesTabComponent(WebElement rootLocator) {
         super(rootLocator);
         tree = new WebElement(page, "xpath=" + TREE, "projectsTree");
+        shownTooltip = new WebElement(page, "xpath=//div[contains(concat(' ',normalize-space(@class),' '),' ant-tooltip ')]"
+                + "[not(contains(@class,'ant-tooltip-hidden'))]", "shownTooltip");
         treeOrEmpty = new WebElement(page, "xpath=(" + TREE + " | //*[@data-testid='projects-tree-empty'])[1]",
                 "projectsTreeOrEmpty");
         treeMode = new WebElement(page, "xpath=//*[@data-testid='projects-rail-mode']"
@@ -306,10 +309,16 @@ public class ProjectFilesTabComponent extends BaseComponent {
     }
 
     private void scrollTree(int pixels) {
-        if (tree.exists()) {
-            tree.hover();
-            page.mouse().wheel(0, pixels);
+        if (!tree.exists()) {
+            return;
         }
+        page.mouse().move(0, 0);
+        if (shownTooltip.exists()) {
+            WaitUtil.waitForCondition(() -> !shownTooltip.exists(), DEFAULT_TIMEOUT_MS / 4, POLL_MS,
+                    "Waiting for the tooltip over the projects tree to close");
+        }
+        tree.hover();
+        page.mouse().wheel(0, pixels);
     }
 
     private boolean unfoldFirst(WebElement closedNode) {

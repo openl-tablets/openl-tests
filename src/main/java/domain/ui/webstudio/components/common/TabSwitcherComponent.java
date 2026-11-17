@@ -32,9 +32,9 @@ public class TabSwitcherComponent extends BaseComponent {
 
     private void initializeElements() {
         tabLabelTemplate = createScopedElement("xpath=./li[./span[text()='%s']]/span", "selectedTabLabel");
-        projectsList = new WebElement(page, "xpath=//div[@data-testid='projects-home']", "projectsList");
-        // Inside a project the breadcrumb leads back to the list as well. The name of the application leads
-        // there too, from every screen, so the one meant here is named inside the screen's own header.
+        projectsList = new WebElement(page, "xpath=(//div[@data-testid='projects-home']//*[@data-testid='projects-table'"
+                + " or @data-testid='projects-grid' or @data-testid='projects-empty' or @data-testid='projects-no-match'"
+                + " or @data-testid='projects-indexing'])[1]", "projectsList");
         projectsCrumb = new WebElement(page, "xpath=//div[@data-testid='module-header']//a[@href='/projects']"
                 + " | //div[@data-testid='project-header']//a[@href='/projects']"
                 + " | //div[@data-testid='project-detail']//a[@href='/projects']", "projectsCrumb");
@@ -50,13 +50,6 @@ public class TabSwitcherComponent extends BaseComponent {
                 timeoutMs, 500, "Waiting for the '" + tabName + "' tab to be offered");
     }
 
-    /**
-     * Goes to the screen the tab names, which for Projects is the list of them.
-     *
-     * <p>A project and a module of it are drawn under the same tab as the list, so while either is open the
-     * tab is already the one standing out. Pressing it is still how a reader comes back to the list, so the
-     * press is made whatever the tab looks like and what is waited for is the list itself.
-     */
     @SuppressWarnings("unchecked")
     public <T extends BasePage> T selectTab(TabName tabName) {
         WebElement tabLabel = tabLabelTemplate.format(tabName.getValue());
@@ -72,8 +65,6 @@ public class TabSwitcherComponent extends BaseComponent {
                 if (projectsList.isVisible(LIST_PROBE_MS)) {
                     return true;
                 }
-                // Inside a project the tab is already the one standing out, and pressing the one standing
-                // out does nothing; the breadcrumb is what leads back to the list from there.
                 if (projectsCrumb.isVisible(LIST_PROBE_MS)) {
                     projectsCrumb.click(TAB_CLICK_MS);
                 }
