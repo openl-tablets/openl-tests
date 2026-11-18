@@ -6,6 +6,7 @@ import configuration.annotations.KnownIssue;
 import configuration.annotations.TestCaseId;
 import configuration.appcontainer.AppContainerStartParameters;
 import domain.serviceclasses.constants.User;
+import domain.ui.webstudio.components.repositorytabcomponents.DeployModalComponent;
 import domain.ui.webstudio.pages.mainpages.DeploymentsHomePage;
 import domain.ui.webstudio.pages.mainpages.RepositoryPage;
 import helpers.service.DeployInfrastructureService;
@@ -23,6 +24,8 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestDeployProjectWithoutDescriptorUi extends BaseTest {
+
+    private static final String REFUSED_AS_UNREADABLE = "The deployment must be refused because the project cannot be read (EPBDS-16641)";
 
     private static final String TEMPLATE = "Sample Project";
     private static final Map<String, String> additionalContainerFiles = new HashMap<>();
@@ -55,11 +58,12 @@ public class TestDeployProjectWithoutDescriptorUi extends BaseTest {
 
     @Test
     @TestCaseId("EPBDS-16641")
-    @Description("A project whose rules.xml was deleted is deployed and stands among the deployments. Fails "
-            + "on EPBDS-16641: nothing is deployed.")
+    @Description("A project saved without its rules.xml is not deployed: the deployment is refused with a message "
+            + "naming the project that cannot be read, and nothing is deployed (EPBDS-16641). Fails on EPBDS-17284: "
+            + "the PostgreSQL deployment repository of this test answers Access denied instead.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEPLOY_STUDIO_PARAMS)
-    @KnownIssue(value = "EPBDS-16641", failsWith = "The deployment should stand among the deployments")
-    public void testDeployWorksForAProjectWithoutDescriptor() {
+    @KnownIssue(value = "EPBDS-17284", failsWith = REFUSED_AS_UNREADABLE)
+    public void testDeployIsRefusedForAProjectSavedWithoutDescriptor() {
         String projectName = WorkflowService.loginCreateProjectWithoutDescriptor(User.ADMIN, TEMPLATE);
         String deployment = StringUtil.generateUniqueName("Deploy");
 
@@ -67,12 +71,18 @@ public class TestDeployProjectWithoutDescriptorUi extends BaseTest {
         assertThat(repositoryPage.isDeployAvailable(projectName))
                 .as("The project should still be offered to be deployed")
                 .isTrue();
-        repositoryPage.clickDeploy(projectName)
-                .deployWithAllFields(null, deployment, "Deploy of a project without a descriptor");
+        DeployModalComponent deployModal = repositoryPage.clickDeploy(projectName);
+        deployModal.deployWithAllFields(null, deployment, "Deploy of a project without a descriptor");
+
+        assertThat(deployModal.getErrorNotificationText())
+                .as(REFUSED_AS_UNREADABLE)
+                .contains("Nothing is deployed")
+                .contains("cannot be read from the design repository");
+        deployModal.clickCancel();
 
         assertThat(new DeploymentsHomePage().open().waitForLoaded().getVisibleDeploymentNames())
-                .as("The deployment should stand among the deployments")
-                .contains(deployment);
+                .as("Nothing may be deployed")
+                .doesNotContain(deployment);
     }
 
 }

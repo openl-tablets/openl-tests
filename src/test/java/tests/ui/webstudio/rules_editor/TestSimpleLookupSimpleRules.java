@@ -28,7 +28,8 @@ public class TestSimpleLookupSimpleRules extends BaseTest {
     @TestCaseId("IPBQA-29967")
     @Description("SimpleLookup and SimpleRules tables: open, recreate, run, edit, copy and create test table. "
             + "The Create Table modal (EPBDS-6912) titles the default return column 'Output' (legacy wizard "
-            + "wrote 'RETURN').")
+            + "wrote 'RETURN'). The Run form of a table keeps the input of its last run (EPBDS-16742), "
+            + "so the gender is cleared before the run that leaves it out.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void testSimpleLookupSimpleRules() {
         String projectName = WorkflowService.loginCreateProjectFromExcelFile(User.ADMIN, EXCEL_FILE);
@@ -114,7 +115,13 @@ public class TestSimpleLookupSimpleRules extends BaseTest {
                 .isEqualTo(List.of("\"female\"", "\"Single\"", "350"));
 
         rulesTree.selectItemInFolder(DECISION, "SimpleLEx2");
-        runSimpleLookup(editorPage, null, "Married");
+        IRunMenu runMenu = editorPage.getEditorToolbarPanelComponent().clickRun();
+        assertThat(runMenu.getFieldValue("gender"))
+                .as("The Run form keeps the gender entered in the last run of the table (EPBDS-16742)")
+                .isEqualTo("\"female\"");
+        runMenu.clearFieldValue("gender");
+        runMenu.setInputSelectField("2", "Married")
+                .clickRunInsideMenu();
         assertThat(editorPage.getTestResultValidationComponent().getTestResult(1))
                 .isEqualTo(List.of("null", "\"Married\"", "500"));
 
@@ -147,11 +154,10 @@ public class TestSimpleLookupSimpleRules extends BaseTest {
     }
 
     private void runSimpleLookup(EditorPage editorPage, String gender, String status) {
-        IRunMenu runMenu = editorPage.getEditorToolbarPanelComponent().clickRun();
-        if (gender != null) {
-            runMenu.setInputSelectField("1", gender);
-        }
-        runMenu.setInputSelectField("2", status)
+        editorPage.getEditorToolbarPanelComponent()
+                .clickRun()
+                .setInputSelectField("1", gender)
+                .setInputSelectField("2", status)
                 .clickRunInsideMenu();
     }
 

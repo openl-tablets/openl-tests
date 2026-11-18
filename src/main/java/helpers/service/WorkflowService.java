@@ -2,6 +2,7 @@ package helpers.service;
 
 import configuration.driver.DriverPool;
 import domain.serviceclasses.constants.User;
+import domain.ui.webstudio.components.admincomponents.SystemSettingsPageComponent;
 import domain.ui.webstudio.components.common.CreateNewProjectComponent;
 import domain.ui.webstudio.components.common.TabSwitcherComponent;
 import domain.ui.webstudio.pages.mainpages.EditorPage;
@@ -37,12 +38,20 @@ public class WorkflowService {
         return loginCreateProject(user, CreateNewProjectComponent.TabName.TEMPLATE, templateName);
     }
 
+    public static void setDetectProjectsByExcelFiles(User user, boolean enable) {
+        SystemSettingsPageComponent systemSettings = new RepositoryPage().openUserMenu()
+                .navigateToAdministration()
+                .navigateToSystemSettingsPage();
+        systemSettings.setDetectProjectsByExcelFiles(enable);
+        systemSettings.applySettingsAndRelogin(user);
+    }
+
     public static String loginCreateProjectWithoutDescriptor(User user, String templateName) {
         String projectName = loginCreateProjectFromTemplate(user, templateName);
-        RepositoryPage repositoryPage = new EditorPage().getTabSwitcherComponent()
-                .selectTab(TabSwitcherComponent.TabName.REPOSITORY);
-        repositoryPage.openProjectsList().openProjectDetail(projectName).deleteFile("rules.xml");
-        repositoryPage.openProjectsList().saveProject(projectName, "Descriptor deleted");
+        setDetectProjectsByExcelFiles(user, true);
+        new RepositoryPage().openProjectsList().openProjectDetail(projectName).deleteFile("rules.xml");
+        new RepositoryPage().openProjectsList().saveProject(projectName, "Descriptor deleted");
+        setDetectProjectsByExcelFiles(user, false);
         return projectName;
     }
 }

@@ -2,7 +2,6 @@ package tests.ui.webstudio.rules_editor;
 
 import configuration.annotations.AppContainerConfig;
 import configuration.annotations.Description;
-import configuration.annotations.KnownIssue;
 import configuration.annotations.TestCaseId;
 import configuration.appcontainer.AppContainerStartParameters;
 import domain.serviceclasses.constants.User;
@@ -146,9 +145,8 @@ public class TestRunFormInputUi extends BaseTest {
     @Test
     @TestCaseId("EPBDS-16880")
     @Description("EPBDS-16742: the Trace form opens with the input entered in the Run form, as the one input form "
-            + "Run and Trace shared in 6.4.0 did. Fails on EPBDS-16742: Trace opens with the defaults of Policy.")
+            + "Run and Trace shared in 6.4.0 did.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
-    @KnownIssue(value = "EPBDS-16742", failsWith = TRACE_KEEPS_RUN_INPUT)
     public void traceFormKeepsTheInputEnteredInRun() {
         EditorPage editorPage = openWorkbookTable(METHOD, SHOW);
         IRunMenu run = editorPage.getEditorToolbarPanelComponent().clickRun();

@@ -61,13 +61,13 @@ public class TestMigrateLegacyProjectUi extends BaseTest {
     @TestCaseId("IPBQA-33027")
     @Description("EPBDS-16327 Migrate of a project that declares nothing: with no rules.xml the workbook in "
             + "the root is what there is to move, so the migration moves it under rules/ and writes the "
-            + "descriptor that names it.")
+            + "descriptor that names it. With Detect projects by Excel files off, rules.xml cannot be deleted "
+            + "(EPBDS-16638), so the setting is turned on first, as for a project found by its workbook.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void testMigrateMovesRootWorkbookOfAProjectWithoutDescriptor() {
         String projectName = WorkflowService.loginCreateProjectFromZip(User.ADMIN, "MigrateXlsProject.zip");
-        RepositoryPage repositoryPage = new EditorPage().getTabSwitcherComponent()
-                .selectTab(TabSwitcherComponent.TabName.REPOSITORY);
-        ProjectDetailPage detail = repositoryPage.openProjectDetail(projectName);
+        WorkflowService.setDetectProjectsByExcelFiles(User.ADMIN, true);
+        ProjectDetailPage detail = new RepositoryPage().openProjectsList().openProjectDetail(projectName);
         detail.deleteFile("rules.xml");
 
         detail.openOverviewTab();

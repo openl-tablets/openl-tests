@@ -2,10 +2,11 @@ package tests.ui.webstudio.repository;
 
 import configuration.annotations.AppContainerConfig;
 import configuration.annotations.Description;
-import configuration.annotations.KnownIssue;
 import configuration.annotations.TestCaseId;
 import configuration.appcontainer.AppContainerStartParameters;
 import domain.serviceclasses.constants.User;
+import domain.ui.webstudio.components.common.TabSwitcherComponent;
+import domain.ui.webstudio.pages.mainpages.EditorPage;
 import domain.ui.webstudio.pages.mainpages.ProjectDetailPage;
 import domain.ui.webstudio.pages.mainpages.RepositoryPage;
 import helpers.service.WorkflowService;
@@ -22,15 +23,24 @@ public class TestProjectWithoutDescriptorUi extends BaseTest {
 
     @Test
     @TestCaseId("EPBDS-16638")
-    @Description("The card of a project whose rules.xml was deleted opens and its Management tab lists the "
-            + "roles of the project. Fails on EPBDS-16638: the roles are refused with 410 as of a deleted project, "
-            + "and the tab says Failed to load access.")
+    @Description("With Detect projects by Excel files off, deleting the rules.xml of a project is refused with a "
+            + "message that tells to edit it or to turn the setting on, the file stays, and the Management tab of "
+            + "the project lists its roles (EPBDS-16638).")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
-    @KnownIssue(value = "EPBDS-16638",
-            failsWith = "The Management tab should read the roles of the project, not refuse them")
-    @KnownIssue(value = "EPBDS-17252", failsWith = CARD_REFUSED)
-    public void testManagementTabOpensForAProjectWithoutDescriptor() {
-        ProjectDetailPage card = projectWithoutDescriptor();
+    public void testDeletingTheDescriptorIsRefusedAndManagementTabOpens() {
+        String projectName = WorkflowService.loginCreateProjectFromTemplate(User.ADMIN, TEMPLATE);
+        RepositoryPage repositoryPage = new EditorPage().getTabSwitcherComponent()
+                .selectTab(TabSwitcherComponent.TabName.REPOSITORY);
+        ProjectDetailPage card = repositoryPage.openProjectsList().openProjectDetail(projectName);
+
+        String refusal = card.deleteFileExpectingRefusal("rules.xml");
+        assertThat(refusal)
+                .contains("The project descriptor rules.xml cannot be deleted or moved")
+                .contains("turn on Detect projects by Excel files");
+        assertThat(card.isFilePresent("rules.xml"))
+                .as("rules.xml must stay in the project")
+                .isTrue();
+
         assertThat(card.isManagementTabOffered())
                 .as("The Management tab should be offered on the card of the project")
                 .isTrue();
@@ -48,21 +58,21 @@ public class TestProjectWithoutDescriptorUi extends BaseTest {
 
     @Test
     @TestCaseId("EPBDS-16639")
-    @Description("A project whose rules.xml was deleted is copied to a branch of its own. Fails on "
-            + "EPBDS-16639: the copy is refused.")
+    @Description("A project saved without its rules.xml (Detect projects by Excel files turned on to delete it, "
+            + "then off) is not copied to a new branch: the copy is refused with a message that tells to save the "
+            + "project with its rules.xml first, and no branch is left (EPBDS-16639).")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
-    @KnownIssue(value = "EPBDS-16639", failsWith = "Copying the project to a branch should not be refused")
-    @KnownIssue(value = "EPBDS-17252", failsWith = CARD_REFUSED)
-    public void testCopyToBranchWorksForAProjectWithoutDescriptor() {
+    public void testCopyToBranchIsRefusedForAProjectSavedWithoutDescriptor() {
         ProjectDetailPage card = projectWithoutDescriptor();
         String branch = StringUtil.generateUniqueName("branch");
-        String refused = card.createBranchExpectingError(branch);
-        assertThat(refused)
-                .as("Copying the project to a branch should not be refused")
-                .isEmpty();
+        String refusal = card.createBranchExpectingError(branch);
+        assertThat(refusal)
+                .contains("The branch is not created")
+                .contains("Save the project with its rules.xml first");
+        card.cancelCopyDialog();
         assertThat(card.isBranchPresent(branch))
-                .as("The branch the copy was asked for should stand among the project's branches")
-                .isTrue();
+                .as("No branch may be left behind")
+                .isFalse();
     }
 
     private ProjectDetailPage projectWithoutDescriptor() {

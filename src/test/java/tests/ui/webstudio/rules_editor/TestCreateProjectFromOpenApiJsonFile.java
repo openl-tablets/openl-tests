@@ -3,14 +3,12 @@ package tests.ui.webstudio.rules_editor;
 import configuration.annotations.Description;
 import configuration.annotations.TestCaseId;
 import configuration.annotations.AppContainerConfig;
-import configuration.annotations.KnownIssue;
 import configuration.appcontainer.AppContainerStartParameters;
 import configuration.driver.DriverPool;
 import domain.serviceclasses.constants.User;
 import domain.ui.webstudio.components.common.TableComponent;
 import domain.ui.webstudio.components.common.TabSwitcherComponent;
 import domain.ui.webstudio.components.editortabcomponents.leftmenu.EditorLeftRulesTreeComponent;
-import domain.ui.webstudio.components.projectdetail.ProjectFilesTabComponent;
 import domain.ui.webstudio.pages.mainpages.EditorPage;
 import domain.ui.webstudio.pages.mainpages.ProjectDetailPage;
 import domain.ui.webstudio.pages.mainpages.RepositoryPage;
@@ -32,7 +30,6 @@ public class TestCreateProjectFromOpenApiJsonFile extends BaseTest {
 
     @Test
     @TestCaseId("IPBQA-30678")
-    @KnownIssue(value = "EPBDS-17269", failsWith = ProjectFilesTabComponent.FILE_OPENS_EDITOR)
     @Description("Create project from OpenAPI JSON file and verify repository tree structure and Editor module properties;"
             + " copying a module keeps the modules the descriptor already declares (EPBDS-16227) and an uploaded"
             + " workbook does not rewrite an explicit rules.xml.")

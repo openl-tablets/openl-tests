@@ -12,6 +12,7 @@ import helpers.utils.WaitUtil;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 public class TableComponent extends BaseComponent {
 
@@ -179,6 +180,15 @@ public class TableComponent extends BaseComponent {
     public void doubleClickCell(int rowIndex, int columnIndex) {
         waitUntilSpinnerLoaded();
         getCell(rowIndex, columnIndex).doubleClick();
+    }
+
+    public List<String> getCellConstants() {
+        Locator options = page.locator("xpath=//datalist[@data-testid='table-cell-constants']/option");
+        return WaitUtil.waitForResult(() -> {
+                    List<String> names = options.all().stream().map(option -> option.getAttribute("value")).toList();
+                    return names.isEmpty() ? Optional.<List<String>>empty() : Optional.of(names);
+                }, DEFAULT_TIMEOUT_MS, 200, "Waiting for the cell editor to offer the constants of its type")
+                .orElse(List.of());
     }
 
     public WebElement openCellEditor(int rowIndex, int columnIndex) {

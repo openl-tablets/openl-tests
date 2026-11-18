@@ -45,6 +45,7 @@ public class ProjectFilesTabComponent extends BaseComponent {
     private final WebElement addMenuItem;
     private final WebElement fileActionsMenuItem;
     private final WebElement fileDeleteSubmitBtn;
+    private final WebElement errorNotification;
     private final WebElement updateFileInput;
     private final WebElement updateFileSubmitBtn;
     private final WebElement updateFileNameWarning;
@@ -87,6 +88,7 @@ public class ProjectFilesTabComponent extends BaseComponent {
         addMenuItem = new WebElement(page, "xpath=//div[contains(@class,'ant-dropdown')][not(contains(@class,'ant-dropdown-hidden'))]//li[contains(@class,'ant-dropdown-menu-item')][.//span[@data-testid='%s']]", "filesAddMenuItem");
         fileActionsMenuItem = new WebElement(page, "xpath=//div[contains(@class,'ant-dropdown')][not(contains(@class,'ant-dropdown-hidden'))]//li[contains(@class,'ant-dropdown-menu-item')][normalize-space()='%s']", "fileActionsMenuItem");
         fileDeleteSubmitBtn = new WebElement(page, "xpath=//*[@data-testid='file-delete-submit']", "fileDeleteSubmitBtn");
+        errorNotification = new WebElement(page, "xpath=(//div[contains(@class,'ant-notification-notice-error')])[last()]", "errorNotification");
         updateFileInput = new WebElement(page, "xpath=//input[@data-testid='update-file-dragger']", "updateFileInput");
         updateFileSubmitBtn = new WebElement(page, "xpath=//*[@data-testid='update-file-submit']", "updateFileSubmitBtn");
         updateFileNameWarning = new WebElement(page, "xpath=//*[@data-testid='update-file-name-warning']", "updateFileNameWarning");
@@ -123,6 +125,19 @@ public class ProjectFilesTabComponent extends BaseComponent {
         WebElement present = presentNodeByName.format(shownProjectId(), fileName);
         WaitUtil.requireCondition(() -> !present.exists(), DEFAULT_TIMEOUT_MS, POLL_MS,
                 "The projects tree still lists '" + fileName + "' as not deleted");
+    }
+
+    public String deleteFileExpectingRefusal(String fileName) {
+        pickFile(fileName);
+        fileActionsBtn.waitForVisible(DEFAULT_TIMEOUT_MS).click();
+        fileActionsMenuItem.format("Delete").click();
+        fileDeleteSubmitBtn.click();
+        errorNotification.waitForVisible(DEFAULT_TIMEOUT_MS);
+        String refusal = errorNotification.getText().trim();
+        fileDeleteSubmitBtn.waitForHidden(DEFAULT_TIMEOUT_MS);
+        WaitUtil.requireCondition(() -> presentNodeByName.format(shownProjectId(), fileName).exists(),
+                DEFAULT_TIMEOUT_MS, POLL_MS, "The projects tree no longer lists '" + fileName + "' although its deletion was refused");
+        return refusal;
     }
 
     public void copyFile(String fileName, String copyName) {

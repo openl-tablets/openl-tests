@@ -9,6 +9,7 @@ import helpers.service.UserService;
 
 public class SystemSettingsPageComponent extends BaseComponent {
 
+    private static final long RESTART_TIMEOUT_MS = 60000;
     private static final int FIELD_ERROR_SHOWN_MS = 5000;
 
     private WebElement dispatchingValidationCheckbox;
@@ -115,7 +116,7 @@ public class SystemSettingsPageComponent extends BaseComponent {
 
     public void applySettingsAndRelogin(User user) {
         clickApplyButton();
-        new LoginPage().login(UserService.getUser(user));
+        new LoginPage().login(UserService.getUser(user), RESTART_TIMEOUT_MS);
     }
 
     public String getDatabaseUrl() {

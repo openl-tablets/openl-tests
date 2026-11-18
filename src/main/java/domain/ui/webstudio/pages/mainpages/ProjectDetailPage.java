@@ -395,6 +395,11 @@ public class ProjectDetailPage extends BasePage {
         return errors;
     }
 
+    public ProjectDetailPage cancelCopyDialog() {
+        copyProjectDialogComponent.clickCancelButton();
+        return this;
+    }
+
     public ProjectDetailPage switchBranch(String branchName) {
         openOverviewTab();
         overview.switchBranch(branchName);
@@ -645,6 +650,11 @@ public class ProjectDetailPage extends BasePage {
         openFilesTab();
         files.deleteFile(fileName);
         return this;
+    }
+
+    public String deleteFileExpectingRefusal(String fileName) {
+        openFilesTab();
+        return files.deleteFileExpectingRefusal(fileName);
     }
 
     public boolean isFileListedAt(String filePath) {

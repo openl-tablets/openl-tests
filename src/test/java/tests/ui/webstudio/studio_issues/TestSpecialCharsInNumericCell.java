@@ -33,7 +33,8 @@ public class TestSpecialCharsInNumericCell extends BaseTest {
     @Test
     @TestCaseId({"EPBDS-15348", "EPBDS-16808"})
     @Description("BUG: Special characters in a table cell break editing; a decimal value cannot be entered until the page is refreshed. "
-            + "Guards the React cell editor that replaced the editor the bug was filed against, where the characters are refused silently. "
+            + "Guards the React cell editor that replaced the editor the bug was filed against, where the Double cell of Bank Rating takes the name of the constant MaxLimit, so it is written as text (EPBDS-13456): "
+            + "the characters land, and a decimal value typed after clearing them is taken without a refresh. "
             + "EPBDS-16808 NaN can be entered into the same Double cell through the Formula Editor, the table is saved, and the cell still shows NaN after the page is reloaded")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void testSpecialCharsDoNotBlockDecimalInput() {
@@ -72,12 +73,16 @@ public class TestSpecialCharsInNumericCell extends BaseTest {
 
     private void writeAfterSpecialCharacters(TableComponent table, String value) {
         WebElement editor = table.openCellEditor(SCORE_ROW, SCORE_COLUMN);
+        assertThat(table.getCellConstants())
+                .as("The editor of a number cell of a module with constants of its type offers their names (EPBDS-13456)")
+                .contains("MaxLimit");
         editor.clear();
         editor.fillSequentially(SPECIAL_CHARACTERS);
         assertThat(editor.getCurrentInputValue())
-                .as("None of the characters %s may land in a cell that holds a number", SPECIAL_CHARACTERS)
-                .isEmpty();
+                .as("A number cell of a module with constants of its type is written as text (EPBDS-13456)")
+                .isEqualTo(SPECIAL_CHARACTERS);
 
+        editor.clear();
         editor.fillSequentially(value);
         assertThat(editor.getCurrentInputValue())
                 .as("'%s' must be taken right after %s was typed, without the page being refreshed",
