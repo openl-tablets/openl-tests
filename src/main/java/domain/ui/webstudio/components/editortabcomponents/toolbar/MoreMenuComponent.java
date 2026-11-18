@@ -2,6 +2,7 @@ package domain.ui.webstudio.components.editortabcomponents.toolbar;
 
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
+import com.microsoft.playwright.Response;
 import configuration.core.ui.WebElement;
 import domain.ui.webstudio.components.BaseComponent;
 import domain.ui.webstudio.components.editortabcomponents.ChangesDialogComponent;
@@ -24,6 +25,8 @@ public class MoreMenuComponent extends BaseComponent implements IMoreMenu {
     private final WebElement revisionsBtn;
     private final WebElement compareExcelFilesBtn;
     private final WebElement tableDependenciesBtn;
+    private final WebElement reformatExcelFilesBtn;
+    private final WebElement reformatConfirmBtn;
     private final WebElement allMenuLinks;
     private final WebElement revisionsTab;
 
@@ -41,6 +44,8 @@ public class MoreMenuComponent extends BaseComponent implements IMoreMenu {
         revisionsBtn = new WebElement(page, OPEN_MENU + "//li[normalize-space()='Revisions']", "revisionsBtn");
         compareExcelFilesBtn = new WebElement(page, OPEN_MENU + "//li[normalize-space()='Compare Excel files']", "compareExcelFilesBtn");
         tableDependenciesBtn = new WebElement(page, OPEN_MENU + "//li[normalize-space()='Table Dependencies']", "tableDependenciesBtn");
+        reformatExcelFilesBtn = new WebElement(page, OPEN_MENU + "//li[normalize-space()='Reformat Excel files']", "reformatExcelFilesBtn");
+        reformatConfirmBtn = new WebElement(page, "xpath=//button[@data-testid='reformat-ok']", "reformatConfirmBtn");
         allMenuLinks = new WebElement(page, OPEN_MENU + "//li[contains(@class,'ant-dropdown-menu-item')]", "allMoreMenuLinks");
         revisionsTab = new WebElement(page, "xpath=//div[@data-testid='project-tabs']//div[@data-node-key='history']", "revisionsTab");
     }
@@ -106,6 +111,19 @@ public class MoreMenuComponent extends BaseComponent implements IMoreMenu {
     public void clickTableDependencies() {
         clickMenuItem(tableDependenciesBtn, "Table Dependencies");
         WaitUtil.sleep(1000, "Waiting for Table Dependencies view to load");
+    }
+
+    @Override
+    public void reformatExcelFiles() {
+        clickMenuItem(reformatExcelFilesBtn, "Reformat Excel files");
+        reformatConfirmBtn.waitForVisible(DEFAULT_TIMEOUT_MS);
+        Response reformatted = page.waitForResponse(
+                response -> "POST".equals(response.request().method()) && response.url().endsWith("/format"),
+                new Page.WaitForResponseOptions().setTimeout(DEFAULT_TIMEOUT_MS * 4L),
+                reformatConfirmBtn::click);
+        if (!reformatted.ok()) {
+            throw new IllegalStateException("Reformat Excel files was answered with " + reformatted.status());
+        }
     }
 
     private void clickMenuItem(WebElement item, String itemName) {

@@ -26,6 +26,7 @@ public class CreateTableDialogComponent extends BaseComponent {
     private WebElement sheetInput;
     private WebElement resultTypeInput;
     private WebElement datatypeInput;
+    private WebElement testedTableInput;
     private WebElement headerPreview;
     private WebElement createButton;
     private WebElement argumentTypeTemplate;
@@ -71,6 +72,9 @@ public class CreateTableDialogComponent extends BaseComponent {
         datatypeInput = new WebElement(page,
                 "xpath=//*[@data-testid='create-table-datatype']//input | //input[@data-testid='create-table-datatype']",
                 "createTableDatatype");
+        testedTableInput = new WebElement(page,
+                "xpath=//*[@data-testid='create-table-target']//input | //input[@data-testid='create-table-target']",
+                "createTableTestedTable");
         headerPreview = new WebElement(page, "xpath=//*[@data-testid='create-table-header']", "createTableHeader");
         createButton = new WebElement(page,
                 "xpath=" + MODAL + "//div[contains(@class,'ant-modal-footer')]//button[.//span[normalize-space()='Create']]",
@@ -157,6 +161,15 @@ public class CreateTableDialogComponent extends BaseComponent {
         openDropdownOption(datatypeInput, datatype).waitForVisible(DEFAULT_TIMEOUT_MS).click(DEFAULT_TIMEOUT_MS / 2);
         WaitUtil.waitForCondition(() -> getGeneratedHeader().contains(datatype), DEFAULT_TIMEOUT_MS, 200,
                 "Waiting for the create table header to name the datatype '" + datatype + "'");
+        return this;
+    }
+
+    public CreateTableDialogComponent selectTestedTable(String table) {
+        testedTableInput.waitForVisible(DEFAULT_TIMEOUT_MS);
+        testedTableInput.click();
+        openDropdownOption(testedTableInput, table).waitForVisible(DEFAULT_TIMEOUT_MS).click(DEFAULT_TIMEOUT_MS / 2);
+        WaitUtil.waitForCondition(() -> getGeneratedHeader().contains(table), DEFAULT_TIMEOUT_MS, 200,
+                "Waiting for the create table header to name the tested table '" + table + "'");
         return this;
     }
 
