@@ -104,6 +104,11 @@ public class RepositoryPage extends BasePage {
         }
     }
 
+    public void completeTemplateProjectCreation(String projectName) {
+        createNewProjectComponent.clickCreate();
+        finishCreation(projectName);
+    }
+
     private void finishCreation(String projectName) {
         fillCommitInfo();
         waitUntilSpinnerLoaded();
@@ -298,23 +303,25 @@ public class RepositoryPage extends BasePage {
         waitUntilSpinnerLoaded();
     }
 
-    public void saveProject(String projectName, String comment) {
+    public SaveProjectDialogComponent openSaveDialog(String projectName) {
         clickRowAction(projectName, "Save");
-        saveProjectDialogComponent.waitForVisible().setComment(comment).submit();
+        return saveProjectDialogComponent.waitForVisible();
+    }
+
+    public void saveProject(String projectName, String comment) {
+        openSaveDialog(projectName).setComment(comment).submit();
         waitUntilSpinnerLoaded();
     }
 
     public List<String> saveProjectAndGetChangedFiles(String projectName, String comment) {
-        clickRowAction(projectName, "Save");
-        List<String> changes = saveProjectDialogComponent.waitForVisible().getChangedFiles();
+        List<String> changes = openSaveDialog(projectName).getChangedFiles();
         saveProjectDialogComponent.setComment(comment).submit();
         waitUntilSpinnerLoaded();
         return changes;
     }
 
     public void saveProjectWithCommitInfo(String projectName, String comment) {
-        clickRowAction(projectName, "Save");
-        saveProjectDialogComponent.waitForVisible().setComment(comment).clickSubmit();
+        openSaveDialog(projectName).setComment(comment).clickSubmit();
         fillCommitInfo();
         saveProjectDialogComponent.waitForSubmitHidden();
         waitUntilSpinnerLoaded();

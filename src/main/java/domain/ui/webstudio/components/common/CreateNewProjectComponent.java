@@ -50,6 +50,7 @@ public class CreateNewProjectComponent extends BaseComponent {
     private WebElement repoSelect;
     private WebElement repoOption;
     private WebElement pathField;
+    private WebElement commentField;
 
     public CreateNewProjectComponent() {
         super(DriverPool.getPage());
@@ -94,6 +95,7 @@ public class CreateNewProjectComponent extends BaseComponent {
                 "xpath=//*[@data-testid='new-project-branch']//input | //input[@data-testid='new-project-branch']", "newProjectBranch");
         repoOption = new WebElement(DriverPool.getPage(), "xpath=//div[contains(@class,'ant-select-item-option')][.//*[normalize-space(text())='%s'] or @title='%s']", "newProjectRepoOption");
         pathField = new WebElement(DriverPool.getPage(), "xpath=//*[@data-testid='new-project-path']", "newProjectPath");
+        commentField = new WebElement(DriverPool.getPage(), "xpath=//*[@data-testid='new-project-comment']", "newProjectComment");
     }
 
     public CreateNewProjectComponent selectRepository(String repositoryName) {
@@ -113,6 +115,10 @@ public class CreateNewProjectComponent extends BaseComponent {
 
     public String getPathInRepositoryValue() {
         return pathField.getCurrentInputValue();
+    }
+
+    public String getComment() {
+        return commentField.getCurrentInputValue();
     }
 
     public CreateNewProjectComponent setPathInRepository(String path) {

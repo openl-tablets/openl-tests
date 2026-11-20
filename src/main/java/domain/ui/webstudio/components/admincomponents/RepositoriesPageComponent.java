@@ -195,6 +195,17 @@ public class RepositoriesPageComponent extends BaseComponent {
         return settingField.format(setting).isEnabled();
     }
 
+    public boolean isSettingShown(String setting) {
+        return settingField.format(setting).isVisible();
+    }
+
+    public RepositoriesPageComponent setSettingValue(String setting, String value) {
+        WebElement field = settingField.format(setting);
+        field.clear();
+        field.fillSequentially(value);
+        return this;
+    }
+
     public boolean isDesignRepositoryTypeEditable() {
         return remoteRepositoryTypeInput.isEnabled();
     }
