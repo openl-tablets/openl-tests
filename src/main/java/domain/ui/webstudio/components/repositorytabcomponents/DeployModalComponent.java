@@ -87,8 +87,10 @@ public class DeployModalComponent extends BaseComponent {
         WaitUtil.requireCondition(() -> (Boolean) searchInput.getLocator().evaluate("input => document.activeElement === input"),
                 DEFAULT_TIMEOUT_MS, 100, "Waiting for the search input of the field to take the focus");
         String borderStyle = searchInput.getCssValue("border-top-style");
-        page.keyboard().press("Escape");
-        firstDropdownOption.waitForHidden(DEFAULT_TIMEOUT_MS);
+        if ("true".equals(searchInput.getAttribute("aria-expanded"))) {
+            page.keyboard().press("Escape");
+            firstDropdownOption.waitForHidden(DEFAULT_TIMEOUT_MS);
+        }
         return borderStyle;
     }
 

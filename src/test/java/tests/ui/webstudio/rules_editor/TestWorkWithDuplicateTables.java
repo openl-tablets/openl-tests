@@ -1,6 +1,7 @@
 package tests.ui.webstudio.rules_editor;
 
 import configuration.annotations.Description;
+import configuration.annotations.KnownIssue;
 import configuration.annotations.TestCaseId;
 import configuration.annotations.AppContainerConfig;
 import configuration.appcontainer.AppContainerStartParameters;
@@ -28,8 +29,12 @@ public class TestWorkWithDuplicateTables extends BaseTest {
 
     @Test
     @TestCaseId("IPBQA-31790")
-    @Description("Work With Duplicate Tables - error messages, Run/Trace/Benchmark with WithinCurrentModuleOnly checkboxes.")
+    @Description("Work With Duplicate Tables - error messages, Run/Trace/Benchmark with WithinCurrentModuleOnly checkboxes. "
+            + "Fails on EPBDS-17302 when the browser is slow: after a table is saved, Within Current Module Only of the "
+            + "module Test menu stays locked although the project is compiled.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
+    @KnownIssue(value = "EPBDS-17302",
+            failsWith = "[TopPanel WithinCurrentModuleOnly should be unchecked (diff modules)] Expecting value to be false but was true")
     public void testWorkWithDuplicateTables() {
         LoginService loginService = new LoginService(DriverPool.getPage());
         EditorPage editorPage = loginService.login(UserService.getUser(User.ADMIN));
