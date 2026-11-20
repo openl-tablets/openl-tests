@@ -132,32 +132,32 @@ public class EditorTableActionsPanelComponent extends BaseComponent {
     }
 
     public void undoClickChanges() {
-        undoChangesBtn.click();
-        waitWhileTablePanelActionExecuted();
+        pressEditAction(undoChangesBtn);
     }
 
     public void redoClickChanges() {
-        redoChangesBtn.click();
-        waitWhileTablePanelActionExecuted();
+        pressEditAction(redoChangesBtn);
     }
 
     public void clickInsertRowAfter() {
-        insertRowAfterBtn.click();
-        waitWhileTablePanelActionExecuted();
+        pressEditAction(insertRowAfterBtn);
     }
 
     public void clickRemoveRow() {
-        removeRowBtn.click();
-        waitWhileTablePanelActionExecuted();
+        pressEditAction(removeRowBtn);
     }
 
     public void clickInsertColumnBefore() {
-        insertColumnBeforeBtn.click();
-        waitWhileTablePanelActionExecuted();
+        pressEditAction(insertColumnBeforeBtn);
     }
 
     public void clickRemoveColumn() {
-        removeColumnBtn.click();
+        pressEditAction(removeColumnBtn);
+    }
+
+    private void pressEditAction(WebElement action) {
+        movePointerAway();
+        action.click();
         waitWhileTablePanelActionExecuted();
     }
 }
