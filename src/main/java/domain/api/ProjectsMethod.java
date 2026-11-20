@@ -59,6 +59,13 @@ public class ProjectsMethod extends AuthorizedApiMethod {
                 true);
     }
 
+    public Response getTableWithStyles(String projectId, String tableId) {
+        return callApi(Method.GET,
+                authorizedRequest(),
+                fullApiUrl + "/" + projectId + "/tables/" + tableId + "?raw=true&styles=true",
+                true);
+    }
+
     public Response createTable(String projectId, Object request) {
         return callApi(Method.POST,
                 authorizedJsonRequest(request),

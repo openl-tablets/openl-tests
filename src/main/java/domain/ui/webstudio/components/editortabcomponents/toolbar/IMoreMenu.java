@@ -9,4 +9,5 @@ public interface IMoreMenu {
     void clickRevisions();
     CompareExcelFilesDialogComponent clickCompareExcelFiles();
     void clickTableDependencies();
+    void reformatExcelFiles();
 }
