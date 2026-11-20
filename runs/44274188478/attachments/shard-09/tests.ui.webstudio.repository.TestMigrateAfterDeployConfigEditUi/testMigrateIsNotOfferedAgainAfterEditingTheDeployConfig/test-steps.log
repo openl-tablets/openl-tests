@@ -1,0 +1,488 @@
+2026-11-18 09:22:11.165 [main] [INFO] BaseTest - Initializing test with Playwright Docker: testMigrateIsNotOfferedAgainAfterEditingTheDeployConfig
+2026-11-18 09:22:11.166 [main] [INFO] BaseTest - [user.mode] -> [multi]
+2026-11-18 09:22:11.166 [main] [INFO] BaseTest - [security.administrators] -> [admin]
+2026-11-18 09:22:11.166 [main] [INFO] BaseTest - [JAVA_OPTS] -> [-Xms32m -XX:MaxRAMPercentage=50.0]
+2026-11-18 09:22:11.167 [main] [INFO] AppContainerFactory - Starting app container: appcontainer-295758 (startup timeout: PT10M)
+2026-11-18 09:22:25.339 [main] [INFO] AppContainerFactory - App Localhost accessible url for appcontainer-295758: http://localhost:32777
+2026-11-18 09:22:25.339 [main] [INFO] AppContainerFactory - App Url accessible from the Browser container: http://appcontainer-295758:8080
+2026-11-18 09:22:25.339 [main] [INFO] WaitUtil - Sleeping for 3000ms: Wait 3 seconds for DNS propagation in Docker's embedded DNS server
+2026-11-18 09:22:28.339 [main] [INFO] WaitUtil - Waiting for condition (timeout: 10000ms, polling: 250ms): Waiting for the app container to be running before Playwright container starts
+2026-11-18 09:22:28.342 [main] [INFO] WaitUtil - Condition met after 2ms: Waiting for the app container to be running before Playwright container starts
+2026-11-18 09:22:28.342 [main] [INFO] WaitUtil - Sleeping for 1000ms: Letting Docker DNS propagate the app container hostname across the network
+2026-11-18 09:22:29.342 [main] [INFO] DockerDriverPool - Initializing Playwright Docker container with browser: chrome
+2026-11-18 09:22:29.343 [main] [INFO] DockerDriverPool - npm cache of the Playwright Server container is shared from /home/runner/work/_temp/playwright-npm-cache
+2026-11-18 09:22:29.343 [main] [INFO] DockerDriverPool - Creating Playwright Server Docker container with image: mcr.microsoft.com/playwright:v1.64.0-noble
+2026-11-18 09:22:29.343 [main] [INFO] DockerDriverPool - Volume mapping configured: src/test/resources (host) -> /test_resources (container)
+2026-11-18 09:22:29.343 [main] [INFO] DockerDriverPool - Starting container and waiting for Playwright Server (startup timeout 300 s)...
+2026-11-18 09:22:30.321 [main] [INFO] DockerDriverPool - Playwright Server container started in 978 ms
+2026-11-18 09:22:30.322 [main] [INFO] DockerDriverPool - Container started - ID: e4c0ceff1b53b2e41d9f672180a19a444a52299c3e1f4244675112feea895776
+2026-11-18 09:22:30.322 [main] [INFO] DockerDriverPool - Mapped Playwright Server port: localhost:32778 -> 3000
+2026-11-18 09:22:30.322 [main] [INFO] DockerDriverPool - Container is attached to network for service discovery
+2026-11-18 09:22:30.333 [main] [INFO] DockerDriverPool - Container startup logs:
+Listening on ws://0.0.0.0:3000/
+
+2026-11-18 09:22:30.334 [main] [INFO] DockerDriverPool - Playwright Server ready: http://localhost:32778
+2026-11-18 09:22:30.586 [main] [INFO] DockerDriverPool - Created Playwright instance for server connection
+2026-11-18 09:22:30.740 [main] [INFO] DockerDriverPool - Connected to Playwright Server via WebSocket on attempt 1: ws://localhost:32778/
+2026-11-18 09:22:30.740 [main] [INFO] DockerDriverPool - Video recording enabled for Docker container with temp directory: /tmp/playwright-videos
+2026-11-18 09:22:30.799 [main] [INFO] PlaywrightTracing - Playwright tracing started (DOM snapshots, network, console, sources)
+2026-11-18 09:22:30.836 [main] [INFO] DockerDriverPool - Browser container initialized successfully for thread: main
+2026-11-18 09:22:30.836 [main] [INFO] DriverPool - Playwright initialized in PLAYWRIGHT_DOCKER mode
+2026-11-18 09:22:30.854 [main] [WARN] RestAssuredFilter - 
+
+
+-=HTTP REQUEST=-
+GET http://localhost:32777/web/public/info/openl.json
+Header: Accept : */*
+
+2026-11-18 09:22:30.854 [main] [WARN] RestAssuredFilter - 
+
+
+-=HTTP RESPONSE=-
+200 HTTP/1.1 200 OKHeader: Server : Jetty(12.1.15)
+Header: Date : Wed, 18 Nov 2026 09:22:30 GMT
+Header: Content-Type : text/html;charset=utf-8
+Header: Cache-Control : no-store
+Header: X-Content-Type-Options : nosniff
+Header: X-XSS-Protection : 0
+Header: X-Frame-Options : DENY
+Header: Content-Length : 3134
+Body: 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>OpenL Studio</title>
+    <meta name="description" content="For creation, editing, testing and deploying of OpenL Tablets rules"/>
+    <base href="/"/>
+    <link rel="icon" href="favicon.ico?v=studio" sizes="48x48"/>
+    <link rel="icon" href="favicon.svg?v=studio" sizes="any" type="image/svg+xml"/>
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=studio"/>
+    <link rel="manifest" href="icons/site.webmanifest?v=studio"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <script>
+        // Paints the page in the remembered appearance before the bundle arrives, so a dark reader sees no
+        // white flash. The key mirrors THEME_MODE_KEY in src/utils/themeMode.ts; the bundle takes over from here.
+        (function () {
+            try {
+                var mode = localStorage.getItem('openl.theme.mode') || 'auto'
+                var dark = mode === 'dark' || (mode !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches)
+                document.documentElement.style.colorScheme = dark ? 'dark' : 'light'
+            } catch (e) {
+                // a browser that refuses storage is painted by the bundle alone
+            }
+        })()
+    </script>
+  <script type="module" crossorigin src="./assets/index-B8WxbMj-.js"></script>
+  <link rel="modulepreload" crossorigin href="./assets/rolldown-runtime-COiEfhsA.js">
+  <link rel="modulepreload" crossorigin href="./assets/jsx-runtime-CxtlQ2t7.js">
+  <link rel="modulepreload" crossorigin href="./assets/cached-B9AbfPq8.js">
+  <link rel="modulepreload" crossorigin href="./assets/dayjs.min-C79hm5sx.js">
+  <link rel="modulepreload" crossorigin href="./assets/dateFormat-DI3C9Uxj.js">
+  <link rel="modulepreload" crossorigin href="./assets/store-BCfGJTvT.js">
+  <link rel="modulepreload" crossorigin href="./assets/tree-B5L9rU0w.js">
+  <link rel="modulepreload" crossorigin href="./assets/functions-BHWCgGVF.js">
+  <link rel="modulepreload" crossorigin href="./assets/listPageTheme-DkMlhuma.js">
+  <link rel="modulepreload" crossorigin href="./assets/projectId-Cc5oAFDy.js">
+  <link rel="modulepreload" crossorigin href="./assets/paper-BwdL3qDI.js">
+  <link rel="modulepreload" crossorigin href="./assets/tables-Cy2qqQRf.js">
+  <link rel="modulepreload" crossorigin href="./assets/useSearchScope-DC0sJZn0.js">
+  <link rel="modulepreload" crossorigin href="./assets/users-Cdcl8SXt.js">
+  <link rel="modulepreload" crossorigin href="./assets/projectsTheme-BPtzJwWd.js">
+  <link rel="modulepreload" crossorigin href="./assets/escapeRegExp-CUtDFyBH.js">
+  <link rel="modulepreload" crossorigin href="./assets/RevisionChanges-e_YHtUJB.js">
+  <link rel="modulepreload" crossorigin href="./assets/scrollTo-jUc2x3Bm.js">
+  <link rel="modulepreload" crossorigin href="./assets/useStoredSetting-ChnRZx2h.js">
+  <link rel="modulepreload" crossorigin href="./assets/preload-helper-DclECHGd.js">
+</head>
+<body>
+<div id="appRoot" style="min-height: 48.5px"></div>
+<noscript>You need to enable JavaScript to run this app.</noscript>
+</body>
+</html>
+
+
+2026-11-18 09:22:30.854 [main] [INFO] BaseTest - Application info unavailable: Failed to parse the JSON document
+2026-11-18 09:22:30.856 [main] [INFO] DriverPool - App URL (DOCKER): http://appcontainer-295758:8080
+2026-11-18 09:22:30.856 [main] [INFO] LoginService - Logging in with user: admin
+2026-11-18 09:22:30.856 [main] [INFO] WaitUtil - Sleeping for 500ms: Waiting for possible redirects to finish
+2026-11-18 09:22:31.714 [main] [INFO] LoginService - Navigated to login page: http://appcontainer-295758:8080
+2026-11-18 09:22:31.715 [main] [INFO] CorePage - domain.ui.webstudio.pages.mainpages.LoginPage was opened.
+2026-11-18 09:22:31.715 [main] [INFO] WebElement - Waiting for usernameField to be visible (timeout: 15000ms)
+2026-11-18 09:22:31.844 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-18 09:22:31.853 [main] [INFO] WaitUtil - Condition met after 9ms: Waiting for the loading overlay to disappear
+2026-11-18 09:22:31.853 [main] [INFO] WebElement - Waiting for usernameField to be visible (timeout: 250ms)
+2026-11-18 09:22:31.863 [main] [INFO] WebElement - Filling usernameField with text: 'admin'
+2026-11-18 09:22:31.895 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-18 09:22:31.900 [main] [INFO] WaitUtil - Condition met after 5ms: Waiting for the loading overlay to disappear
+2026-11-18 09:22:31.900 [main] [INFO] WebElement - Waiting for passwordField to be visible (timeout: 250ms)
+2026-11-18 09:22:31.906 [main] [INFO] WebElement - Filling passwordField with text: 'admin'
+2026-11-18 09:22:31.922 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-18 09:22:31.926 [main] [INFO] WaitUtil - Condition met after 4ms: Waiting for the loading overlay to disappear
+2026-11-18 09:22:31.927 [main] [INFO] WebElement - Waiting for loginButton to be visible (timeout: 250ms)
+2026-11-18 09:22:31.932 [main] [INFO] WebElement - Clicking loginButton 
+2026-11-18 09:22:33.009 [main] [INFO] WebElement - Waiting for completeProfileModal to be visible (timeout: 20000ms)
+2026-11-18 09:22:33.090 [main] [INFO] CorePage - Filling the Complete Your Profile modal, attempt 1
+2026-11-18 09:22:33.091 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-18 09:22:33.125 [main] [INFO] WaitUtil - Condition met after 34ms: Waiting for the loading overlay to disappear
+2026-11-18 09:22:33.125 [main] [INFO] WebElement - Waiting for firstNameField to be visible (timeout: 250ms)
+2026-11-18 09:22:33.143 [main] [INFO] WebElement - Filling firstNameField with text: 'Franklin'
+2026-11-18 09:22:33.187 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-18 09:22:33.197 [main] [INFO] WaitUtil - Condition met after 8ms: Waiting for the loading overlay to disappear
+2026-11-18 09:22:33.197 [main] [INFO] WebElement - Waiting for lastNameField to be visible (timeout: 250ms)
+2026-11-18 09:22:33.225 [main] [INFO] WebElement - Filling lastNameField with text: 'Hilpert'
+2026-11-18 09:22:33.281 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-18 09:22:33.288 [main] [INFO] WaitUtil - Condition met after 7ms: Waiting for the loading overlay to disappear
+2026-11-18 09:22:33.288 [main] [INFO] WebElement - Waiting for emailField to be visible (timeout: 250ms)
+2026-11-18 09:22:33.299 [main] [INFO] WebElement - Filling emailField with text: 'milo.rau@gmail.com'
+2026-11-18 09:22:33.328 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-18 09:22:33.338 [main] [INFO] WaitUtil - Condition met after 10ms: Waiting for the loading overlay to disappear
+2026-11-18 09:22:33.338 [main] [INFO] WebElement - Waiting for displayNameField to be visible (timeout: 250ms)
+2026-11-18 09:22:33.351 [main] [INFO] WebElement - Filling displayNameField with text: 'Joie Gottlieb'
+2026-11-18 09:22:33.377 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-18 09:22:33.393 [main] [INFO] WaitUtil - Condition met after 16ms: Waiting for the loading overlay to disappear
+2026-11-18 09:22:33.393 [main] [INFO] WebElement - Waiting for saveBtn to be visible (timeout: 250ms)
+2026-11-18 09:22:33.408 [main] [INFO] WebElement - Clicking saveBtn 
+2026-11-18 09:22:33.517 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 250ms): Waiting for the Complete Your Profile modal to close
+2026-11-18 09:22:33.517 [main] [INFO] WebElement - Waiting for completeProfileModal to be visible (timeout: 500ms)
+2026-11-18 09:22:33.535 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the Complete Your Profile modal to close
+2026-11-18 09:22:33.786 [main] [INFO] WebElement - Waiting for completeProfileModal to be visible (timeout: 500ms)
+2026-11-18 09:22:34.310 [main] [INFO] WaitUtil - Condition met after 793ms: Waiting for the Complete Your Profile modal to close
+2026-11-18 09:22:34.310 [main] [INFO] WebElement - Waiting for completeProfileModal to be visible (timeout: 3000ms)
+2026-11-18 09:22:37.317 [main] [INFO] CorePage - domain.ui.webstudio.pages.mainpages.EditorPage was opened.
+2026-11-18 09:22:37.318 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 500ms): Going to 'Projects'
+2026-11-18 09:22:37.318 [main] [INFO] WebElement - Waiting for projectsList to be visible (timeout: 1500ms)
+2026-11-18 09:22:38.824 [main] [INFO] WebElement - Waiting for selectedTabLabel to be visible (timeout: 1500ms)
+2026-11-18 09:22:38.829 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-18 09:22:38.831 [main] [INFO] WaitUtil - Condition met after 2ms: Waiting for the loading overlay to disappear
+2026-11-18 09:22:38.832 [main] [INFO] WebElement - Waiting for selectedTabLabel to be visible (timeout: 3000ms)
+2026-11-18 09:22:38.835 [main] [INFO] WebElement - Clicking with increased timeout selectedTabLabel 
+2026-11-18 09:22:38.862 [main] [INFO] WebElement - Waiting for projectsList to be visible (timeout: 1500ms)
+2026-11-18 09:22:39.213 [main] [INFO] WaitUtil - Condition met after 1895ms: Going to 'Projects'
+2026-11-18 09:22:39.214 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-18 09:22:39.226 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-18 09:22:39.234 [main] [INFO] WaitUtil - Condition met after 8ms: Waiting for the loading overlay to disappear
+2026-11-18 09:22:39.234 [main] [INFO] CorePage - domain.ui.webstudio.pages.mainpages.RepositoryPage was opened.
+2026-11-18 09:22:39.235 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-18 09:22:39.245 [main] [INFO] WaitUtil - Condition met after 10ms: Waiting for the loading overlay to disappear
+2026-11-18 09:22:39.245 [main] [INFO] WebElement - Waiting for createProjectLink to be visible (timeout: 250ms)
+2026-11-18 09:22:39.251 [main] [INFO] WebElement - Clicking createProjectLink 
+2026-11-18 09:22:39.364 [main] [INFO] WaitUtil - Retrying action with polling (timeout: 40000ms, polling: 250ms): Opening the 'From template' step of the Create project wizard
+2026-11-18 09:22:39.364 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-18 09:22:39.377 [main] [INFO] WaitUtil - Condition met after 13ms: Waiting for the loading overlay to disappear
+2026-11-18 09:22:39.377 [main] [INFO] WebElement - Waiting for methodTemplate to be visible (timeout: 250ms)
+2026-11-18 09:22:39.398 [main] [INFO] WebElement - Clicking methodTemplate 
+2026-11-18 09:22:39.879 [main] [INFO] WaitUtil - Waiting for condition (timeout: 3000ms, polling: 250ms): Waiting for the 'From template' step to render
+2026-11-18 09:22:39.895 [main] [INFO] WaitUtil - Condition met after 16ms: Waiting for the 'From template' step to render
+2026-11-18 09:22:39.895 [main] [INFO] WaitUtil - Action succeeded after 531ms: Opening the 'From template' step of the Create project wizard
+2026-11-18 09:22:39.895 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-18 09:22:39.908 [main] [INFO] WaitUtil - Condition met after 12ms: Waiting for the loading overlay to disappear
+2026-11-18 09:22:39.908 [main] [INFO] WebElement - Waiting for templateGroup to be visible (timeout: 250ms)
+2026-11-18 09:22:39.919 [main] [INFO] WebElement - Clicking templateGroup 
+2026-11-18 09:22:39.983 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-18 09:22:39.989 [main] [INFO] WaitUtil - Condition met after 6ms: Waiting for the loading overlay to disappear
+2026-11-18 09:22:39.989 [main] [INFO] WebElement - Waiting for templateItem to be visible (timeout: 250ms)
+2026-11-18 09:22:39.998 [main] [INFO] WebElement - Clicking templateItem 
+2026-11-18 09:22:40.110 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 300ms): Waiting for the name field to hold only the requested project name
+2026-11-18 09:22:40.110 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-18 09:22:40.119 [main] [INFO] WaitUtil - Condition met after 9ms: Waiting for the loading overlay to disappear
+2026-11-18 09:22:40.119 [main] [INFO] WebElement - Waiting for newProjectName to be visible (timeout: 250ms)
+2026-11-18 09:22:40.130 [main] [INFO] WebElement - Filling newProjectName with text: 'project-766697'
+2026-11-18 09:22:40.211 [main] [INFO] WebElement - Getting current input value from newProjectName: 'project-766697'
+2026-11-18 09:22:40.211 [main] [INFO] WaitUtil - Condition met after 101ms: Waiting for the name field to hold only the requested project name
+2026-11-18 09:22:40.211 [main] [INFO] WebElement - Waiting for newProjectBranch to be visible (timeout: 4000ms)
+2026-11-18 09:22:40.243 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 250ms): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:40.259 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:40.259 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:40.516 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:40.516 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:40.775 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:40.776 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:41.045 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:41.046 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:41.303 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:41.303 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:41.559 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:41.559 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:41.816 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:41.816 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:42.072 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:42.072 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:42.328 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:42.329 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:42.584 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:42.585 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:42.841 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:42.841 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:43.097 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:43.097 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:43.353 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:43.354 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:43.610 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:43.610 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:43.866 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:43.866 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:44.122 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:44.122 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:44.378 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:44.379 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:44.635 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:44.635 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:44.892 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:44.892 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:45.148 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:45.148 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:45.406 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:45.406 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:45.662 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:45.663 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:45.919 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:45.919 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:46.176 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:46.176 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:46.433 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:46.433 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:46.689 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:46.689 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:46.948 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:46.948 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:47.206 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:47.206 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:47.462 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:47.463 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:47.718 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:47.719 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:47.974 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:47.975 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:48.230 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:48.231 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:48.487 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:48.487 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:48.743 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:48.744 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:48.999 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:49.000 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:49.256 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:49.256 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:49.512 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:49.512 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:49.768 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:49.768 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:50.024 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:50.024 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:50.280 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:50.280 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:50.536 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:50.537 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:50.793 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:50.793 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:51.049 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:51.049 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:51.305 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:51.306 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:51.561 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:51.562 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:51.818 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:51.818 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:52.074 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:52.074 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:52.331 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:52.331 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:52.587 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:52.587 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:52.843 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:52.844 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:53.099 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:53.100 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:53.356 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:53.356 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:53.612 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:53.612 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:53.868 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:53.868 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:54.124 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:54.125 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:54.380 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:54.381 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:54.636 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:54.636 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:54.892 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:54.893 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:55.148 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:55.149 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:55.406 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:55.406 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:55.662 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:55.662 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:55.930 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:55.930 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:56.187 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:56.187 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:56.443 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:56.443 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:56.700 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:56.700 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:56.956 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:56.956 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:57.212 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:57.212 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:57.468 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:57.468 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:57.724 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:57.724 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:57.980 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:57.981 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:58.236 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:58.236 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:58.492 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:58.492 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:58.748 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:58.749 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:59.004 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:59.005 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:59.261 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:59.261 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:59.518 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:59.518 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:22:59.774 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:22:59.774 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:23:00.030 [main] [INFO] WebElement - Getting current input value from newProjectBranch: ''
+2026-11-18 09:23:00.031 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to fill in the branch
+2026-11-18 09:23:00.281 [main] [WARN] WaitUtil - Condition not met after 20000ms timeout: Waiting for the wizard to fill in the branch
+2026-11-18 09:23:00.281 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-18 09:23:00.286 [main] [INFO] WaitUtil - Condition met after 5ms: Waiting for the loading overlay to disappear
+2026-11-18 09:23:00.287 [main] [INFO] WebElement - Waiting for newProjectSubmit to be visible (timeout: 250ms)
+2026-11-18 09:23:00.291 [main] [INFO] WebElement - Clicking newProjectSubmit 
+2026-11-18 09:23:00.346 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 250ms): Waiting for the wizard to close on what it was given
+2026-11-18 09:23:00.346 [main] [INFO] WebElement - Waiting for newProjectSubmit to be visible (timeout: 4000ms)
+2026-11-18 09:23:00.364 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to close on what it was given
+2026-11-18 09:23:00.614 [main] [INFO] WebElement - Waiting for newProjectSubmit to be visible (timeout: 4000ms)
+2026-11-18 09:23:00.632 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to close on what it was given
+2026-11-18 09:23:00.882 [main] [INFO] WebElement - Waiting for newProjectSubmit to be visible (timeout: 4000ms)
+2026-11-18 09:23:00.894 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to close on what it was given
+2026-11-18 09:23:01.144 [main] [INFO] WebElement - Waiting for newProjectSubmit to be visible (timeout: 4000ms)
+2026-11-18 09:23:01.187 [main] [INFO] WaitUtil - Sleeping for 250ms: Polling for condition (attempt): Waiting for the wizard to close on what it was given
+2026-11-18 09:23:01.439 [main] [INFO] WebElement - Waiting for newProjectSubmit to be visible (timeout: 4000ms)
+2026-11-18 09:23:05.667 [main] [INFO] WaitUtil - Condition met after 5321ms: Waiting for the wizard to close on what it was given
+2026-11-18 09:23:05.667 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-18 09:23:05.677 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-18 09:23:05.683 [main] [INFO] WaitUtil - Condition met after 6ms: Waiting for the loading overlay to disappear
+2026-11-18 09:23:05.683 [main] [INFO] WebElement - Waiting for modalShade to be visible (timeout: 3000ms)
+2026-11-18 09:23:08.693 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-18 09:23:08.699 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-18 09:23:08.703 [main] [INFO] WaitUtil - Condition met after 4ms: Waiting for the loading overlay to disappear
+2026-11-18 09:23:08.889 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-18 09:23:08.925 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-18 09:23:08.929 [main] [INFO] WaitUtil - Condition met after 4ms: Waiting for the loading overlay to disappear
+2026-11-18 09:23:08.929 [main] [INFO] WaitUtil - Waiting for condition (timeout: 90000ms, polling: 500ms): Waiting for 'project-766697' to be listed among the projects
+2026-11-18 09:23:08.929 [main] [INFO] WebElement - Waiting for projectRow to be visible (timeout: 1000ms)
+2026-11-18 09:23:09.263 [main] [INFO] WaitUtil - Condition met after 334ms: Waiting for 'project-766697' to be listed among the projects
+2026-11-18 09:23:09.263 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 250ms): Waiting for project row actions
+2026-11-18 09:23:09.269 [main] [INFO] WaitUtil - Condition met after 6ms: Waiting for project row actions
+2026-11-18 09:23:09.286 [main] [INFO] WebElement - Waiting for projectRowMoreBtn to be visible (timeout: 4000ms)
+2026-11-18 09:23:09.290 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-18 09:23:09.293 [main] [INFO] WaitUtil - Condition met after 3ms: Waiting for the loading overlay to disappear
+2026-11-18 09:23:09.293 [main] [INFO] WebElement - Waiting for projectRowMoreBtn to be visible (timeout: 250ms)
+2026-11-18 09:23:09.296 [main] [INFO] WebElement - Clicking projectRowMoreBtn 
+2026-11-18 09:23:09.344 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 250ms): Waiting for the row overflow menu
+2026-11-18 09:23:09.350 [main] [INFO] WaitUtil - Condition met after 6ms: Waiting for the row overflow menu
+2026-11-18 09:23:09.390 [main] [INFO] CorePage - domain.ui.webstudio.pages.mainpages.EditorPage was opened.
+2026-11-18 09:23:09.391 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 500ms): Going to 'Projects'
+2026-11-18 09:23:09.391 [main] [INFO] WebElement - Waiting for projectsList to be visible (timeout: 1500ms)
+2026-11-18 09:23:09.398 [main] [INFO] WaitUtil - Condition met after 7ms: Going to 'Projects'
+2026-11-18 09:23:09.398 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-18 09:23:09.404 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-18 09:23:09.409 [main] [INFO] WaitUtil - Condition met after 5ms: Waiting for the loading overlay to disappear
+2026-11-18 09:23:09.410 [main] [INFO] CorePage - domain.ui.webstudio.pages.mainpages.RepositoryPage was opened.
+2026-11-18 09:23:09.534 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-18 09:23:09.567 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-18 09:23:09.570 [main] [INFO] WaitUtil - Condition met after 3ms: Waiting for the loading overlay to disappear
+2026-11-18 09:23:09.570 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 250ms): Waiting for the list of projects to be drawn
+2026-11-18 09:23:09.573 [main] [INFO] WaitUtil - Condition met after 3ms: Waiting for the list of projects to be drawn
+2026-11-18 09:23:09.573 [main] [INFO] WebElement - Waiting for projectNameInRow to be visible (timeout: 90000ms)
+2026-11-18 09:23:09.907 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-18 09:23:09.914 [main] [INFO] WaitUtil - Condition met after 7ms: Waiting for the loading overlay to disappear
+2026-11-18 09:23:09.914 [main] [INFO] WebElement - Waiting for projectNameInRow to be visible (timeout: 250ms)
+2026-11-18 09:23:09.922 [main] [INFO] WebElement - Clicking projectNameInRow 
+2026-11-18 09:23:09.961 [main] [INFO] CorePage - domain.ui.webstudio.pages.mainpages.ProjectDetailPage was opened.
+2026-11-18 09:23:09.962 [main] [INFO] WebElement - Waiting for publishTab to be visible (timeout: 20000ms)
+2026-11-18 09:23:10.755 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-18 09:23:10.759 [main] [INFO] WaitUtil - Condition met after 4ms: Waiting for the loading overlay to disappear
+2026-11-18 09:23:10.759 [main] [INFO] WebElement - Waiting for publishTab to be visible (timeout: 250ms)
+2026-11-18 09:23:10.764 [main] [INFO] WebElement - Clicking publishTab 
+2026-11-18 09:23:10.794 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-18 09:23:10.798 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-18 09:23:10.815 [main] [INFO] WaitUtil - Condition met after 17ms: Waiting for the loading overlay to disappear
+2026-11-18 09:23:10.815 [main] [INFO] WebElement - Waiting for deployConfigEdit to be visible (timeout: 20000ms)
+2026-11-18 09:23:11.044 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-18 09:23:11.081 [main] [INFO] WaitUtil - Condition met after 37ms: Waiting for the loading overlay to disappear
+2026-11-18 09:23:11.081 [main] [INFO] WebElement - Waiting for deployConfigEdit to be visible (timeout: 250ms)
+2026-11-18 09:23:11.092 [main] [INFO] WebElement - Clicking deployConfigEdit 
+2026-11-18 09:23:11.198 [main] [INFO] WebElement - Waiting for deployServiceName to be visible (timeout: 20000ms)
+2026-11-18 09:23:11.213 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-18 09:23:11.228 [main] [INFO] WaitUtil - Condition met after 15ms: Waiting for the loading overlay to disappear
+2026-11-18 09:23:11.228 [main] [INFO] WebElement - Waiting for deployServiceName to be visible (timeout: 250ms)
+2026-11-18 09:23:11.237 [main] [INFO] WebElement - Filling deployServiceName with text: 'firstService'
+2026-11-18 09:23:11.271 [main] [INFO] WebElement - Waiting for deployConfigSave to be visible (timeout: 20000ms)
+2026-11-18 09:23:11.281 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-18 09:23:11.291 [main] [INFO] WaitUtil - Condition met after 10ms: Waiting for the loading overlay to disappear
+2026-11-18 09:23:11.291 [main] [INFO] WebElement - Waiting for deployConfigSave to be visible (timeout: 250ms)
+2026-11-18 09:23:11.304 [main] [INFO] WebElement - Clicking deployConfigSave 
+2026-11-18 09:23:11.392 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-18 09:23:11.801 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-18 09:23:11.911 [main] [INFO] WaitUtil - Condition met after 110ms: Waiting for the loading overlay to disappear
+2026-11-18 09:23:11.911 [main] [INFO] WebElement - Waiting for publishTab to be visible (timeout: 20000ms)
+2026-11-18 09:23:11.998 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-18 09:23:12.011 [main] [INFO] WaitUtil - Condition met after 13ms: Waiting for the loading overlay to disappear
+2026-11-18 09:23:12.011 [main] [INFO] WebElement - Waiting for publishTab to be visible (timeout: 250ms)
+2026-11-18 09:23:12.026 [main] [INFO] WebElement - Clicking publishTab 
+2026-11-18 09:23:12.068 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-18 09:23:12.103 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-18 09:23:12.119 [main] [INFO] WaitUtil - Condition met after 16ms: Waiting for the loading overlay to disappear
+2026-11-18 09:23:12.119 [main] [INFO] WebElement - Waiting for deployConfigMigrate to be visible (timeout: 10000ms)
+2026-11-18 09:23:22.130 [main] [INFO] WebElement - Waiting for publishTab to be visible (timeout: 20000ms)
+2026-11-18 09:23:22.138 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-18 09:23:22.143 [main] [INFO] WaitUtil - Condition met after 5ms: Waiting for the loading overlay to disappear
+2026-11-18 09:23:22.143 [main] [INFO] WebElement - Waiting for publishTab to be visible (timeout: 250ms)
+2026-11-18 09:23:22.151 [main] [INFO] WebElement - Clicking publishTab 
+2026-11-18 09:23:22.174 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-18 09:23:22.179 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-18 09:23:22.183 [main] [INFO] WaitUtil - Condition met after 4ms: Waiting for the loading overlay to disappear
+2026-11-18 09:23:22.183 [main] [INFO] WebElement - Waiting for deployConfigMigrate to be visible (timeout: 10000ms)
+2026-11-18 09:23:32.190 [main] [INFO] WebElement - Waiting for publishTab to be visible (timeout: 20000ms)
+2026-11-18 09:23:32.198 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-18 09:23:32.202 [main] [INFO] WaitUtil - Condition met after 4ms: Waiting for the loading overlay to disappear
+2026-11-18 09:23:32.202 [main] [INFO] WebElement - Waiting for publishTab to be visible (timeout: 250ms)
+2026-11-18 09:23:32.207 [main] [INFO] WebElement - Clicking publishTab 
+2026-11-18 09:23:32.226 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-18 09:23:32.231 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-18 09:23:32.236 [main] [INFO] WaitUtil - Condition met after 5ms: Waiting for the loading overlay to disappear
+2026-11-18 09:23:32.236 [main] [INFO] WebElement - Waiting for deployConfigEdit to be visible (timeout: 20000ms)
+2026-11-18 09:23:32.242 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-18 09:23:32.246 [main] [INFO] WaitUtil - Condition met after 4ms: Waiting for the loading overlay to disappear
+2026-11-18 09:23:32.246 [main] [INFO] WebElement - Waiting for deployConfigEdit to be visible (timeout: 250ms)
+2026-11-18 09:23:32.252 [main] [INFO] WebElement - Clicking deployConfigEdit 
+2026-11-18 09:23:32.314 [main] [INFO] WebElement - Waiting for deployServiceName to be visible (timeout: 20000ms)
+2026-11-18 09:23:32.343 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-18 09:23:32.363 [main] [INFO] WaitUtil - Condition met after 20ms: Waiting for the loading overlay to disappear
+2026-11-18 09:23:32.363 [main] [INFO] WebElement - Waiting for deployServiceName to be visible (timeout: 250ms)
+2026-11-18 09:23:32.392 [main] [INFO] WebElement - Filling deployServiceName with text: 'secondService'
+2026-11-18 09:23:32.455 [main] [INFO] WebElement - Waiting for deployConfigSave to be visible (timeout: 20000ms)
+2026-11-18 09:23:32.477 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-18 09:23:32.494 [main] [INFO] WaitUtil - Condition met after 17ms: Waiting for the loading overlay to disappear
+2026-11-18 09:23:32.494 [main] [INFO] WebElement - Waiting for deployConfigSave to be visible (timeout: 250ms)
+2026-11-18 09:23:32.516 [main] [INFO] WebElement - Clicking deployConfigSave 
+2026-11-18 09:23:32.797 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-18 09:23:33.273 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-18 09:23:33.415 [main] [INFO] WaitUtil - Condition met after 142ms: Waiting for the loading overlay to disappear
+2026-11-18 09:23:33.415 [main] [INFO] WebElement - Waiting for publishTab to be visible (timeout: 20000ms)
+2026-11-18 09:23:33.433 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-18 09:23:33.446 [main] [INFO] WaitUtil - Condition met after 13ms: Waiting for the loading overlay to disappear
+2026-11-18 09:23:33.446 [main] [INFO] WebElement - Waiting for publishTab to be visible (timeout: 250ms)
+2026-11-18 09:23:33.457 [main] [INFO] WebElement - Clicking publishTab 
+2026-11-18 09:23:33.523 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-18 09:23:33.535 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-18 09:23:33.567 [main] [INFO] WaitUtil - Condition met after 32ms: Waiting for the loading overlay to disappear
+2026-11-18 09:23:33.567 [main] [INFO] WebElement - Waiting for deployConfigMigrate to be visible (timeout: 10000ms)
+2026-11-18 09:23:43.591 [main] [INFO] DockerDriverPool - Closing Playwright Docker for thread: main
+2026-11-18 09:23:44.179 [main] [INFO] WaitUtil - Sleeping for 2000ms: Waiting for Docker daemon to complete resource cleanup
