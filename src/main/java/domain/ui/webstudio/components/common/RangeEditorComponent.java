@@ -7,6 +7,8 @@ import domain.ui.webstudio.components.BaseComponent;
 public class RangeEditorComponent extends BaseComponent {
 
     private WebElement doneBtn;
+    private WebElement fromInput;
+    private WebElement previewText;
     private WebElement discardChangesBtn;
 
     public RangeEditorComponent() {
@@ -21,15 +23,13 @@ public class RangeEditorComponent extends BaseComponent {
 
     private void initializeElements() {
         doneBtn = createScopedElement("xpath=.//button[@data-testid='range-write']", "Range Editor Done Button");
+        fromInput = createScopedElement("xpath=.//input[@data-testid='range-from']", "Range Editor From Input");
+        previewText = createScopedElement("xpath=.//*[@data-testid='range-preview']", "Range Editor Preview");
         discardChangesBtn = new WebElement(page,
                 "xpath=//div[contains(@class,'ant-modal-container')]//button[@data-testid='table-edit-discard']",
                 "Discard Changes Button");
     }
 
-    /**
-     * Opens the range panel of the cell being written: a cell that holds a range offers it from its own
-     * editor, which is what a reader presses once the cell is open for writing.
-     */
     public void openFromCellEditor() {
         WebElement cellEditor = new WebElement(page, "xpath=//*[@data-testid='table-cell-input']", "cellEditor");
         cellEditor.waitForVisible(DEFAULT_TIMEOUT_MS);
@@ -42,6 +42,14 @@ public class RangeEditorComponent extends BaseComponent {
 
     public boolean isOpen(int timeoutInMillis) {
         return doneBtn.isVisible(timeoutInMillis);
+    }
+
+    public void setFrom(String value) {
+        fromInput.fill(value);
+    }
+
+    public String getPreview() {
+        return previewText.getText().trim();
     }
 
     public void clickDone() {

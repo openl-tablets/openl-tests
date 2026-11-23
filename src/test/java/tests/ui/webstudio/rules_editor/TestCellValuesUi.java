@@ -4,6 +4,7 @@ import configuration.annotations.AppContainerConfig;
 import configuration.annotations.Description;
 import configuration.annotations.TestCaseId;
 import configuration.appcontainer.AppContainerStartParameters;
+import configuration.core.ui.WebElement;
 import domain.serviceclasses.constants.User;
 import domain.ui.webstudio.components.common.TableComponent;
 import domain.ui.webstudio.components.editortabcomponents.leftmenu.EditorLeftRulesTreeComponent;
@@ -25,6 +26,8 @@ public class TestCellValuesUi extends BaseTest {
     private static final String AS_WRITTEN_WORKBOOK = "CellValuesAsWritten.xlsx";
     private static final String AS_WRITTEN_MODULE = "CellValuesAsWritten";
     private static final String BEYOND_INT = "2147483648";
+    private static final String VOCABULARY_WORKBOOK = "VocabularFail.xlsx";
+    private static final String VOCABULARY_MODULE = "VocabularFail";
 
     @Test
     @TestCaseId({"EPBDS-8391", "EPBDS-8392"})
@@ -85,6 +88,31 @@ public class TestCellValuesUi extends BaseTest {
         assertShownAsWritten(editorPage, "DueDate", 3, 2, "12/31/2024 and later",
                 "Cannot parse cell value '12/31/2024 and later'");
         assertShownAsWritten(editorPage, "Codes", 3, 2, "1,2abc,3", "Cannot parse cell value '2abc'");
+    }
+
+    @Test
+    @TestCaseId("EPBDS-17245")
+    @Description("EPBDS-17245: the cells -3, 3 and 4 of the RiskGroup column riskOfWorkWithCorporate, in a table that "
+            + "does not compile, open the list of RiskGroup values and not a number field.")
+    @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
+    public void everyCellOfAVocabularyColumnOpensTheListOfItsValues() {
+        String projectName = WorkflowService.loginCreateProjectFromExcelFile(User.ADMIN, VOCABULARY_WORKBOOK);
+        EditorPage editorPage = new EditorPage();
+        editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, VOCABULARY_MODULE);
+        selectTable(editorPage, DECISION, "CorporateRating");
+        editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
+        TableComponent table = editorPage.getCenterTable();
+
+        String[][] cells = {{"4", "-3"}, {"7", "3"}, {"8", "4"}};
+        for (String[] cell : cells) {
+            int row = table.getRowIndexHolding(cell[0], cell[1]);
+            WebElement editor = table.openCellEditor(row, 2);
+            assertThat(editor.getAttribute("class"))
+                    .as("EPBDS-17245: the cell %s of the RiskGroup column must be edited with the list of RiskGroup "
+                            + "values", cell[1])
+                    .contains("ant-select");
+            editor.press("Escape");
+        }
     }
 
     private void assertShownAsWritten(EditorPage editorPage, String tableName, int row, int column, String written,

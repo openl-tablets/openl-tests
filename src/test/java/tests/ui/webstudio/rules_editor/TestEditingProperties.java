@@ -14,6 +14,7 @@ import domain.ui.webstudio.pages.mainpages.EditorPage;
 import domain.ui.webstudio.pages.mainpages.RepositoryPage;
 import helpers.service.LoginService;
 import helpers.service.UserService;
+import helpers.service.WorkflowService;
 import helpers.utils.WaitUtil;
 import org.testng.annotations.Test;
 import tests.BaseTest;
@@ -25,6 +26,8 @@ public class TestEditingProperties extends BaseTest {
 
     private static final String PROJECT_NAME = "TestAddDeleteEditProperties";
     private static final String EXCEL_FILE = "TestAddDeleteEditProperties.xlsx";
+    private static final String ENVIRONMENT_FILE = "EnvironmentProperties.xlsx";
+    private static final String ENVIRONMENT_MODULE = "EnvironmentProperties";
 
     @Test
     @TestCaseId("IPBQA-25861")
@@ -67,6 +70,25 @@ public class TestEditingProperties extends BaseTest {
         editAndCheckDropdownProperty(editorPage, "Recalculate", "recalculate", "Analyze");
         editAndCheckDropdownProperty(editorPage, "Validate DT", "validateDT", "Off");
         editAndCheckDropdownProperty(editorPage, "Empty Result Processing", "emptyResultProcessing", "Skip");
+    }
+
+    @Test
+    @TestCaseId("EPBDS-7986")
+    @Description("EPBDS-7986: properties written in an Environment table are not silently lost: the module compiles "
+            + "and Studio warns that properties are not supported in an Environment table and are ignored.")
+    @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
+    public void environmentTablePropertiesAreReportedAsIgnored() {
+        String projectName = WorkflowService.loginCreateProjectFromExcelFile(User.ADMIN, ENVIRONMENT_FILE);
+        EditorPage editorPage = new EditorPage();
+        editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, ENVIRONMENT_MODULE);
+
+        assertThat(editorPage.getProblemsPanelComponent().getAllWarnings())
+                .as("The properties of the Environment table must be reported as ignored")
+                .anyMatch(warning -> warning.contains(
+                        "Properties are not supported in an Environment table and are ignored."));
+        assertThat(editorPage.getProblemsPanelComponent().getAllErrors())
+                .as("The warning must not turn into an error: the module still compiles")
+                .isEmpty();
     }
 
     private EditorPage loginAndCreateProject() {

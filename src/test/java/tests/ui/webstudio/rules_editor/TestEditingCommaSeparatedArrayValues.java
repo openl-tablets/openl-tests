@@ -60,8 +60,8 @@ public class TestEditingCommaSeparatedArrayValues extends BaseTest {
     }
 
     @Test
-    @TestCaseId("IPBQA-25824")
-    @Description("Editing comma-separated array values via the multiselect popup: chosen/non-chosen values, Select All / Deselect All, save and re-open, switch to Formula Editor and back, multiple table types (Decision/Spreadsheet/TBasic/Method).")
+    @TestCaseId({"IPBQA-25824", "EPBDS-17140"})
+    @Description("Editing comma-separated array values via the multiselect popup: chosen/non-chosen values, Select All / Deselect All, save and re-open, switch to Formula Editor and back, multiple table types (Decision/Spreadsheet/TBasic/Method). EPBDS-17140: double-clicking a cell that takes several alias values, such as the region of a Method table, opens the multiselect list of values and not a plain text area.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void testEditingCommaSeparatedArrayValues() {
         String projectName = WorkflowService.loginCreateProjectFromExcelFile(User.ADMIN, DDL_PROJECT_FILE);

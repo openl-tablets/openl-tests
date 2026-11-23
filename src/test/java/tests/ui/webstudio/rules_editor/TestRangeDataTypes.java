@@ -24,6 +24,8 @@ public class TestRangeDataTypes extends BaseTest {
 
     private static final String EXCEL_FILE = "TestRangeDataTypes.xlsx";
     private static final String MODULE_NAME = "TestRangeDataTypes";
+    private static final String NOTATION_FILE = "RangeNotation.xlsx";
+    private static final String NOTATION_MODULE = "RangeNotation";
 
     @Test
     @TestCaseId("EPBDS-7489")
@@ -47,6 +49,47 @@ public class TestRangeDataTypes extends BaseTest {
         validateRangeEditorOpensAndCloses(editorPage, rulesTree, "Test", "Test2", 4, 2);
         validateRangeEditorOpensAndCloses(editorPage, rulesTree, VOCABULARY, "Vocabulary1", 2, 1);
         validateRangeEditorOpensAndCloses(editorPage, rulesTree, "Constants", "Constants", 2, 3);
+    }
+
+    @Test
+    @TestCaseId("EPBDS-8670")
+    @Description("EPBDS-8670: a range written as 3+ and edited to 4 in the Range Editor is shown as 4+ in the editor and "
+            + "stays 4+ after Done and Save, instead of being rewritten as >=4.")
+    @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
+    public void rangeEditedInRangeEditorKeepsTheNotationItWasWrittenIn() {
+        String projectName = WorkflowService.loginCreateProjectFromExcelFile(User.ADMIN, NOTATION_FILE);
+        EditorPage editorPage = new EditorPage();
+        editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, NOTATION_MODULE);
+        EditorLeftRulesTreeComponent rulesTree = editorPage.getEditorLeftRulesTreeComponent();
+        rulesTree.setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
+                .expandFolderInTree(DECISION)
+                .selectItemInFolder(DECISION, "Tier");
+        editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
+        TableComponent table = editorPage.getCenterTable();
+        int row = table.getRowIndexHolding("3+", "Senior");
+        table.doubleClickCell(row, 1);
+        RangeEditorComponent rangeEditor = editorPage.getRangeEditorComponent();
+        rangeEditor.openFromCellEditor();
+        assertThat(rangeEditor.isOpen(3000)).as("Range Editor must open for the cell 3+").isTrue();
+
+        String written = rangeEditor.getPreview();
+        rangeEditor.setFrom("4");
+        WaitUtil.waitForCondition(() -> !rangeEditor.getPreview().equals(written), 5000, 100,
+                "Waiting for the Range Editor to preview the edited range");
+        assertThat(rangeEditor.getPreview())
+                .as("The Range Editor must preview the edited range in the notation the author wrote")
+                .isEqualTo("4+");
+        rangeEditor.clickDone();
+        editorPage.getEditorTableActionsPanelComponent().clickSaveChanges();
+
+        editorPage.reloadPage();
+        editorPage.getEditorLeftRulesTreeComponent()
+                .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
+                .expandFolderInTree(DECISION)
+                .selectItemInFolder(DECISION, "Tier");
+        assertThat(editorPage.getCenterTable().getCellText(row, 1))
+                .as("The saved cell must keep the 3+ notation: 4+, not >=4")
+                .isEqualTo("4+");
     }
 
     private void validateRangeEditorOpensAndCloses(EditorPage editorPage,

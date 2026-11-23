@@ -40,6 +40,8 @@ public class TestRulesEditorMergedRowsAndColumnsUi extends BaseTest {
     private static final String LONG_GROUP_WORKBOOK = "LongMergedGroup.xlsx";
     private static final String SHIFTED_WORKBOOK = "ShiftedCellEditor.xlsx";
     private static final String LAYOUT_WORKBOOK = "RenderedTableLayout.xlsx";
+    private static final String NOTE_ABOVE_HEADER_WORKBOOK = "TableLost.xlsx";
+    private static final String PROPERTIES_WORKBOOK = "ColumnProperties.xlsx";
 
     @Test
     @TestCaseId("EPBDS-16879")
@@ -194,6 +196,71 @@ public class TestRulesEditorMergedRowsAndColumnsUi extends BaseTest {
         assertThat(cells)
                 .as("The other columns must stay")
                 .contains("Marital Status", "Premium Increase", "700", "500");
+    }
+
+    @Test
+    @TestCaseId("EPBDS-17221")
+    @Description("EPBDS-17221: saving a cell edit of a table whose header has a note right above it keeps the table "
+            + "in the module with the edited value instead of making it disappear.")
+    @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
+    public void tableUnderANoteIsKeptWhenAValueIsSaved() {
+        EditorPage editorPage = openWorkbookTable(NOTE_ABOVE_HEADER_WORKBOOK, DATA, "persons");
+        editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
+        TableComponent table = editorPage.getCenterTable();
+        table.editCell(table.getRowIndexHolding("Ann", "30", "Paris"), 1, "Anna");
+        editorPage.getEditorTableActionsPanelComponent().clickSaveChanges();
+
+        assertThat(editorPage.getEditorLeftRulesTreeComponent().isItemExistsInFolder(DATA, "persons"))
+                .as("The persons table must stay in the Data folder after the save")
+                .isTrue();
+        reloadTable(editorPage, DATA, "persons");
+        assertThat(editorPage.getCenterTable().getRowIndexHolding("Anna", "30", "Paris"))
+                .as("The saved value must stand in the table")
+                .isPositive();
+    }
+
+    @Test
+    @TestCaseId("EPBDS-7697")
+    @Description("EPBDS-7697: inserting a column and removing it again, saving each time, leaves the table "
+            + "properties in place and the table compiling.")
+    @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
+    public void tablePropertiesStayInPlaceWhenAColumnIsInsertedAndRemoved() {
+        EditorPage editorPage = openWorkbookTable(PROPERTIES_WORKBOOK, DECISION, "Level");
+        editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
+        TableComponent table = editorPage.getCenterTable();
+        EditorTableActionsPanelComponent actions = editorPage.getEditorTableActionsPanelComponent();
+        int lastRule = table.getRowIndexHolding("0", "2", "Low2");
+
+        table.clickCell(lastRule, 2);
+        actions.clickInsertColumnBefore();
+        table.editCell(lastRule, 2, "x");
+        actions.clickSaveChanges();
+
+        reloadTable(editorPage, DECISION, "Level");
+        table = editorPage.getCenterTable();
+        assertThat(table.getRow(2).getValue())
+                .as("After the column is inserted the property keeps its name and its value in their cells")
+                .startsWith("properties", "description", "Level rules");
+
+        editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
+        table.clickCell(lastRule, 2);
+        actions.clickRemoveColumn();
+        actions.clickSaveChanges();
+
+        reloadTable(editorPage, DECISION, "Level");
+        table = editorPage.getCenterTable();
+        assertThat(table.getRow(2).getValue())
+                .as("After the column is removed the table looks as it did before")
+                .containsExactly("properties", "description", "Level rules");
+        assertThat(table.getCellTexts())
+                .as("The inserted value must be gone with its column")
+                .doesNotContain("x");
+        assertThat(editorPage.getRightTableDetailsComponent().getPropertyValue("Description"))
+                .as("The Table Details panel must still read the property")
+                .isEqualTo("Level rules");
+        assertThat(editorPage.getProblemsPanelComponent().getAllErrors())
+                .as("The table must compile after the column is removed")
+                .isEmpty();
     }
 
     @Test
@@ -387,13 +454,14 @@ public class TestRulesEditorMergedRowsAndColumnsUi extends BaseTest {
     }
 
     @Test
-    @TestCaseId({"EPBDS-16766", "EPBDS-13609"})
+    @TestCaseId({"EPBDS-16766", "EPBDS-13609", "EPBDS-17039"})
     @Description("EPBDS-16766: with Excel Formatting on, the indent the workbook gives a cell is drawn: the text indented "
             + "by 2 on the left starts 2 em further from the left border than the plain one, and the right-aligned "
             + "text indented by 4 ends 4 em further from the right border. EPBDS-13609: in the rules table myRule "
             + "a1 and a2 are each merged over two rules while true and BBB are merged over the two middle ones, so some "
             + "rows have all their cells merged into the next row; a1 and a2 must still be equally tall and cover two "
-            + "rows each.")
+            + "rows each. EPBDS-17039: with Excel Formatting off the line between the groups a1 and a2 is dotted, not "
+            + "solid like the lines of the header.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void indentsAreDrawnAndMergedRowsKeepTheirHeight() {
         String projectName = WorkflowService.loginCreateProjectFromExcelFile(User.ADMIN, LAYOUT_WORKBOOK);
@@ -429,6 +497,11 @@ public class TestRulesEditorMergedRowsAndColumnsUi extends BaseTest {
         assertThat(merged.getCellHeight(5, 1))
                 .as("EPBDS-13609: a2 merged over two rules must be as tall as a1")
                 .isCloseTo(merged.getCellHeight(3, 1), within(1.5));
+
+        new ThemeMenuComponent().setExcelFormatting(false);
+        assertThat(merged.getCell(3, 1).getCssValue("border-bottom-style"))
+                .as("EPBDS-17039: with Excel Formatting off the line between the groups a1 and a2 must be dotted")
+                .isEqualTo("dotted");
     }
 
     private void typeDecimal(TableComponent table, int row, int column, String shown, String typed, String what) {
