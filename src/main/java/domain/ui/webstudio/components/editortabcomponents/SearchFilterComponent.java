@@ -33,6 +33,8 @@ public class SearchFilterComponent extends BaseComponent {
     private WebElement results;
     private List<WebElement> resultRows;
     private List<WebElement> viewTableRows;
+    private WebElement hiddenNote;
+    private WebElement showHiddenLink;
 
     public SearchFilterComponent() {
         super(DriverPool.getPage());
@@ -61,6 +63,8 @@ public class SearchFilterComponent extends BaseComponent {
         resultRows = createElementList(RESULTS + "//div[starts-with(@data-testid,'table-search-result-')]", "searchResultRows");
         viewTableRows = createElementList(RESULTS + "//div[starts-with(@data-testid,'table-search-result-')]"
                 + "//button[starts-with(@data-testid,'table-search-open-')]", "viewTableButtons");
+        hiddenNote = new WebElement(page, RESULTS + "//*[@data-testid='table-search-hidden']", "hiddenByTypeFilterNote");
+        showHiddenLink = new WebElement(page, RESULTS + "//*[@data-testid='table-search-hidden-show']", "showHiddenTablesLink");
     }
 
     public SearchFilterComponent typeSearchAndEnter(String text) {
@@ -168,6 +172,21 @@ public class SearchFilterComponent extends BaseComponent {
                 "xpath=//div[contains(@class,'ant-modal-container')][.//div[@data-testid='table-search-form']]"
                         + "//div[contains(@class,'ant-empty-description')]", "noSearchResults");
         return empty.isVisible(PROBE_MS) ? empty.getText().trim() : "";
+    }
+
+    public String getHiddenByTypeFilterMessage() {
+        return hiddenNote.isVisible(DEFAULT_TIMEOUT_MS) ? hiddenNote.getText().trim() : "";
+    }
+
+    public SearchFilterComponent clickShowHiddenTables() {
+        showHiddenLink.click();
+        WaitUtil.requireCondition(() -> !hiddenNote.isVisible(PROBE_MS), DEFAULT_TIMEOUT_MS, SETTLE_MS,
+                "Waiting for the tables hidden by the type filter to be listed");
+        return this;
+    }
+
+    public String getResultsText() {
+        return results.getInnerText();
     }
 
     public int getFoundTablesCount() {

@@ -37,6 +37,15 @@ public class ProjectOverviewTabComponent extends BaseComponent {
     private final WebElement processorInput;
     private final WebElement addVersionPatternBtn;
     private final WebElement versionPatternField;
+    private final WebElement editTagsBtn;
+    private final WebElement saveTagsBtn;
+    private final WebElement addTagBtn;
+    private final WebElement tagKeyInput;
+    private final WebElement tagValueInput;
+    private final WebElement tagSuggestions;
+    private final WebElement tagSuggestion;
+    private final WebElement tagRows;
+    private final WebElement openTagField;
 
     public ProjectOverviewTabComponent(Page page) {
         this(new WebElement(page, "xpath=//*[@data-testid='overview-panel']", "overviewPanel"));
@@ -78,6 +87,21 @@ public class ProjectOverviewTabComponent extends BaseComponent {
         processorInput = createScopedElement("xpath=.//*[@data-testid='edit-processor']", "processorInput");
         addVersionPatternBtn = createScopedElement("xpath=.//*[@data-testid='edit-version-pattern-add']", "addVersionPatternBtn");
         versionPatternField = createScopedElement("xpath=.//input[@data-testid='edit-version-pattern-0']", "versionPatternField");
+        editTagsBtn = createScopedElement("xpath=.//*[@data-testid='edit-tags']", "editTagsBtn");
+        saveTagsBtn = createScopedElement("xpath=.//*[@data-testid='tags-save']", "saveTagsBtn");
+        addTagBtn = createScopedElement("xpath=.//*[@data-testid='edit-tag-add']", "addTagBtn");
+        tagKeyInput = createScopedElement("xpath=.//*[@data-testid='edit-tag-%s']//input", "tagKeyInput");
+        tagValueInput = createScopedElement("xpath=.//*[@data-testid='edit-tag-%s-value']//input", "tagValueInput");
+        tagSuggestions = new WebElement(page,
+                "xpath=//div[contains(concat(' ',normalize-space(@class),' '),' ant-select-dropdown ')][.//div[@id='%s']]"
+                        + "//div[contains(concat(' ',normalize-space(@class),' '),' ant-select-item-option ')]",
+                "tagSuggestions");
+        tagSuggestion = new WebElement(page,
+                "xpath=//div[contains(concat(' ',normalize-space(@class),' '),' ant-select-dropdown ')][.//div[@id='%s']]"
+                        + "//div[contains(concat(' ',normalize-space(@class),' '),' ant-select-item-option ')][@title='%s']",
+                "tagSuggestion");
+        tagRows = createScopedElement("xpath=.//*[starts-with(@data-testid,'edit-tag-')][substring(@data-testid,string-length(@data-testid)-3)='-row']", "tagRows");
+        openTagField = createScopedElement("xpath=.//*[@data-testid='project-tags-editor']//input[@aria-expanded='true']", "openTagField");
     }
 
     public String getCurrentBranch() {
@@ -110,6 +134,87 @@ public class ProjectOverviewTabComponent extends BaseComponent {
         boolean present = branchMenuItem.format(branchName, branchName).isVisible(PROBE_MS);
         page.keyboard().press("Escape");
         return present;
+    }
+
+    public void startEditingTags() {
+        editTagsBtn.click();
+        addTagBtn.waitForVisible(DEFAULT_TIMEOUT_MS);
+    }
+
+    public int addTagRow() {
+        int rows = tagRows.getLocator().count();
+        addTagBtn.click();
+        tagKeyInput.format(rows).waitForVisible(DEFAULT_TIMEOUT_MS);
+        return rows;
+    }
+
+    public void saveTags() {
+        saveTagsBtn.click();
+        addTagBtn.waitForHidden(DEFAULT_TIMEOUT_MS);
+    }
+
+    public List<String> getTagKeySuggestions(int row) {
+        return suggestionsOf(tagKeyInput.format(row));
+    }
+
+    public List<String> getTagValueSuggestions(int row) {
+        return suggestionsOf(tagValueInput.format(row));
+    }
+
+    public List<String> typeTagKey(int row, String text) {
+        return typeInto(tagKeyInput.format(row), text);
+    }
+
+    public List<String> typeTagValue(int row, String text) {
+        return typeInto(tagValueInput.format(row), text);
+    }
+
+    public void pickTagSuggestion(String text) {
+        String listId = openTagField.getAttribute("aria-controls");
+        tagSuggestion.format(listId, text).click();
+    }
+
+    public void closeTagSuggestions(int row) {
+        WebElement key = tagKeyInput.format(row);
+        if ("true".equals(key.getAttribute("aria-expanded"))) {
+            key.press("Escape");
+        }
+    }
+
+    private List<String> suggestionsOf(WebElement field) {
+        if (!"true".equals(field.getAttribute("aria-expanded"))) {
+            field.click();
+        }
+        return readSuggestions(field);
+    }
+
+    private List<String> typeInto(WebElement field, String text) {
+        field.click();
+        field.fill("");
+        field.fillSequentially(text);
+        return readSuggestions(field);
+    }
+
+    private List<String> readSuggestions(WebElement field) {
+        WebElement suggestions = tagSuggestions.format(field.getAttribute("aria-controls"));
+        suggestions.getLocator().first().waitFor();
+        List<List<String>> reads = new ArrayList<>(List.of(List.of()));
+        WaitUtil.waitForCondition(() -> {
+            List<String> current = readNames(suggestions);
+            boolean settled = current.equals(reads.getLast());
+            reads.add(current);
+            return settled;
+        }, DEFAULT_TIMEOUT_MS, 300, "Waiting for the tag suggestions to settle");
+        return reads.getLast();
+    }
+
+    private List<String> readNames(WebElement options) {
+        Locator found = options.getLocator();
+        List<String> names = new ArrayList<>();
+        for (int i = 0; i < found.count(); i++) {
+            names.add(found.nth(i).innerText().trim());
+        }
+        return names;
     }
 
     public String getTagValueForType(String tagType) {

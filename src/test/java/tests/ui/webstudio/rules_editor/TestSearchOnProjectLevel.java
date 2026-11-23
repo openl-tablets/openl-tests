@@ -163,7 +163,11 @@ public class TestSearchOnProjectLevel extends BaseTest {
     }
 
     @Test
-    @TestCaseId("IPBQA-32590")
+    @TestCaseId({"IPBQA-32590", "EPBDS-16932", "EPBDS-1656", "EPBDS-5111"})
+    @Description("Extended search on project level. EPBDS-16932: a search that names no table type tells how many "
+            + "utility tables the type filter hides and Show them lists them. EPBDS-1656: several tags in the Tags "
+            + "property find the tables tagged with any of them. EPBDS-5111: a date typed in Text in cells finds "
+            + "the tables whose properties hold that day.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void testAdvancedSearchOnProjectLevel() {
         LoginService loginService = new LoginService(DriverPool.getPage());
@@ -174,6 +178,7 @@ public class TestSearchOnProjectLevel extends BaseTest {
         String nameProjectSpreadsheetSalary = "SpreadsheetSalary";
         String nameProjectSearchingByTag = "SearchingByTag";
         String nameProjectExample1BankRating = "Example1BankRating";
+        String nameProjectTechnicalDateTags = "TechnicalDateTags";
 
         repositoryPage.createProject(CreateNewProjectComponent.TabName.ZIP_ARCHIVE,
                 nameProjectSpreadsheetSalary, "RulesEditor.TestSearchOnProjectLevel.SpreadsheetSalary.zip");
@@ -181,6 +186,8 @@ public class TestSearchOnProjectLevel extends BaseTest {
                 nameProjectSearchingByTag, "RulesEditor.TestSearchOnProjectLevel.SearchingByTag.zip");
         repositoryPage.createProject(CreateNewProjectComponent.TabName.ZIP_ARCHIVE,
                 nameProjectExample1BankRating, "RulesEditor.TestSearchOnProjectLevel.Example1BankRating.zip");
+        repositoryPage.createProject(CreateNewProjectComponent.TabName.ZIP_ARCHIVE,
+                nameProjectTechnicalDateTags, "RulesEditor.TestSearchOnProjectLevel.TechnicalDateTags.zip");
 
         new EditorPage();
         editorPage = new EditorPage();
@@ -273,5 +280,43 @@ public class TestSearchOnProjectLevel extends BaseTest {
         editorPage.getCenterTable().editCell(3, 1, "Step 1");
         editorPage.getEditorTableActionsPanelComponent().clickSaveChanges();
         editorPage.getEditorToolbarPanelComponent().clickSave();
+        editorPage.getSaveChangesComponent().clickSave();
+        editorPage.waitUntilSpinnerLoaded();
+
+        search.closeSearch();
+        editorPage.getEditorToolbarPanelComponent().navigateToProjectsInBreadcrumbs();
+        editorPage.getEditorLeftProjectModuleSelectorComponent().selectFirstModule(nameProjectTechnicalDateTags);
+        search.setSearchName("Technical");
+        search.performSearch();
+        assertThat(search.getHiddenByTypeFilterMessage())
+                .as("The search must tell that a utility table matched but is hidden by the type filter (EPBDS-16932)")
+                .contains("1 table hidden by the type filter");
+        assertThat(search.getFoundTablesCount())
+                .as("A utility table of the type Other must not be listed while the type filter hides it (EPBDS-16932)")
+                .isZero();
+        search.clickShowHiddenTables();
+        assertThat(search.getFoundTablesCount()).isEqualTo(1);
+        assertThat(search.getResultsText())
+                .as("Show them must list the technical table in the results (EPBDS-16932)")
+                .contains("Technical Notes Of Greetings");
+
+        search.setSearchName("");
+        search.setTextInCells("3/12/2014");
+        search.performSearch();
+        assertThat(search.getFoundTablesCount()).isEqualTo(1);
+        assertThat(search.isTableFound("DatedGreeting"))
+                .as("A date typed in Text in cells must find the table whose property holds that day (EPBDS-5111)")
+                .isTrue();
+
+        search.setTextInCells("");
+        search.searchByProperty("Tags", "xx,xxx");
+        search.performSearch();
+        assertThat(search.getFoundTablesCount()).isEqualTo(2);
+        assertThat(search.isTableFound("TaggedFirst"))
+                .as("Several tags must find the table tagged with the first of them (EPBDS-1656)")
+                .isTrue();
+        assertThat(search.isTableFound("TaggedSecond"))
+                .as("Several tags must find the table tagged with the second of them (EPBDS-1656)")
+                .isTrue();
     }
 }

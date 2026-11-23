@@ -37,6 +37,12 @@ public class ProjectsFilterRailComponent extends BaseComponent {
     private final WebElement filterBranchCheckbox;
     private final WebElement filtersMode;
     private final WebElement filtersModeSelected;
+    private final WebElement treeMode;
+    private final WebElement treeModeSelected;
+    private final WebElement groupBtn;
+    private final WebElement firstLevelSelect;
+    private final WebElement levelOptions;
+    private final WebElement groupingCloseBtn;
 
     public ProjectsFilterRailComponent(Page page) {
         this(new WebElement(page, "xpath=//*[@data-testid='projects-rail']", "projectsRail"));
@@ -56,6 +62,18 @@ public class ProjectsFilterRailComponent extends BaseComponent {
         filtersMode = new WebElement(page, "xpath=" + RAIL_MODE + "[normalize-space()='Filters']", "projectsRailFiltersMode");
         filtersModeSelected = new WebElement(page, "xpath=" + RAIL_MODE
                 + "[contains(@class,'ant-segmented-item-selected')][normalize-space()='Filters']", "projectsRailFiltersModeSelected");
+        treeMode = new WebElement(page, "xpath=" + RAIL_MODE + "[normalize-space()='Tree']", "projectsRailTreeMode");
+        treeModeSelected = new WebElement(page, "xpath=" + RAIL_MODE
+                + "[contains(@class,'ant-segmented-item-selected')][normalize-space()='Tree']", "projectsRailTreeModeSelected");
+        groupBtn = new WebElement(page, "xpath=//*[@data-testid='projects-tree-group']", "groupProjectsBtn");
+        firstLevelSelect = new WebElement(page, "xpath=//*[@data-testid='grouping-level-1']//input", "groupingLevelOne");
+        levelOptions = new WebElement(page,
+                "xpath=//div[contains(concat(' ',normalize-space(@class),' '),' ant-select-dropdown ')]"
+                        + "[not(contains(@class,'ant-select-dropdown-hidden'))]"
+                        + "//div[contains(concat(' ',normalize-space(@class),' '),' ant-select-item-option ')]",
+                "groupingLevelOptions");
+        groupingCloseBtn = new WebElement(page, "xpath=//div[contains(@class,'ant-modal')]"
+                + "[.//*[@data-testid='grouping-level-1']]//button[contains(@class,'ant-modal-close')]", "groupingCloseBtn");
     }
 
     public void showFilters() {
@@ -63,6 +81,26 @@ public class ProjectsFilterRailComponent extends BaseComponent {
             filtersMode.click();
             filtersModeSelected.waitForVisible(DEFAULT_TIMEOUT_MS);
         }
+    }
+
+    public List<String> getGroupingLevelOptions() {
+        if (treeMode.isVisible(PROBE_MS) && !treeModeSelected.exists()) {
+            treeMode.click();
+            treeModeSelected.waitForVisible(DEFAULT_TIMEOUT_MS);
+        }
+        groupBtn.click();
+        firstLevelSelect.click();
+        levelOptions.getLocator().first().waitFor();
+        List<String> names = new ArrayList<>();
+        Locator options = levelOptions.getLocator();
+        for (int i = 0; i < options.count(); i++) {
+            names.add(options.nth(i).innerText().trim());
+        }
+        if ("true".equals(firstLevelSelect.getAttribute("aria-expanded"))) {
+            firstLevelSelect.press("Escape");
+        }
+        groupingCloseBtn.click();
+        return names;
     }
 
     public void startArranging() {

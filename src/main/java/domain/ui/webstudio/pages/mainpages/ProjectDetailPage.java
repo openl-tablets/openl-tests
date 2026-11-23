@@ -451,6 +451,47 @@ public class ProjectDetailPage extends BasePage {
         return overview.getTagValueForType(tagType);
     }
 
+    public ProjectDetailPage startEditingTags() {
+        openOverviewTab();
+        overview.startEditingTags();
+        return this;
+    }
+
+    public int addTagRow() {
+        return overview.addTagRow();
+    }
+
+    public ProjectDetailPage saveTags() {
+        overview.saveTags();
+        return this;
+    }
+
+    public List<String> getTagKeySuggestions(int row) {
+        return overview.getTagKeySuggestions(row);
+    }
+
+    public List<String> getTagValueSuggestions(int row) {
+        return overview.getTagValueSuggestions(row);
+    }
+
+    public List<String> typeTagKey(int row, String text) {
+        return overview.typeTagKey(row, text);
+    }
+
+    public List<String> typeTagValue(int row, String text) {
+        return overview.typeTagValue(row, text);
+    }
+
+    public ProjectDetailPage pickTagSuggestion(String text) {
+        overview.pickTagSuggestion(text);
+        return this;
+    }
+
+    public ProjectDetailPage closeTagSuggestions(int row) {
+        overview.closeTagSuggestions(row);
+        return this;
+    }
+
     public String getTagNotAllowedWarning(String tagType) {
         return tagWarning("tag-not-allowed-" + tagType);
     }

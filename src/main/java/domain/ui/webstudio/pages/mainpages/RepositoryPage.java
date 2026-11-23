@@ -199,6 +199,10 @@ public class RepositoryPage extends BasePage {
         filterRail.setStatusFilter(status, checked);
     }
 
+    public List<String> getGroupingLevelOptions() {
+        return filterRail.getGroupingLevelOptions();
+    }
+
     public List<String> getBranchFilterOptions() {
         return filterRail.getBranchFilterOptions();
     }
