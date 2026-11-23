@@ -6,6 +6,7 @@ import configuration.annotations.AppContainerConfig;
 import configuration.appcontainer.AppContainerStartParameters;
 import domain.api.RepositoryProjectsMethod;
 import domain.serviceclasses.constants.User;
+import domain.ui.webstudio.components.common.CreateNewProjectComponent;
 import domain.ui.webstudio.components.common.SyncChangesDialogComponent;
 import domain.ui.webstudio.components.common.TabSwitcherComponent;
 import domain.ui.webstudio.components.repositorytabcomponents.DeleteBranchModalComponent;
@@ -24,17 +25,19 @@ public class TestDeleteBranchLastProjectCopyUi extends BaseTest {
     private static final String SOLO_PROJECT = "SoloBranchProject";
     private static final String SOLO_BRANCH = "solo-branch";
     private static final String DEFAULT_BRANCH = "master";
+    private static final String SHARED_USER = "leakuser";
     private static final String LAST_BRANCH_WARNING =
             "No other branch contains this project, so deleting the branch deletes the project.";
     private static final String UNSAFE_CONFIRM_LABEL = "I understand the consequences, delete this branch";
 
     @Test
-    @TestCaseId({"IPBQA-33016", "EPBDS-16410", "EPBDS-16411"})
+    @TestCaseId({"IPBQA-33016", "EPBDS-16410", "EPBDS-16411", "EPBDS-16938"})
     @Description("EPBDS-16410 The Sync button is offered in the Editor for a project that lives only in a non-default branch; "
             + "EPBDS-16411 the Sync updates dialog of that project offers the default branch to merge with and lets the updates be sent to it. "
             + "EPBDS-16378 Deleting the only branch that holds a project must warn that the project goes with it, require "
             + "the explicit unsafe confirmation, leave everything intact on Cancel, and on confirm delete the "
-            + "branch together with the project while other projects survive.")
+            + "branch together with the project while other projects survive. "
+            + "EPBDS-16938 The access granted on the project does not pass to a new project created later with the same name.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void testDeletingLastProjectBranchWarnsAndDeletesTheProject() {
         String anchorProject = WorkflowService.loginCreateProjectFromTemplate(User.ADMIN, "Sample Project");
@@ -87,7 +90,15 @@ public class TestDeleteBranchLastProjectCopyUi extends BaseTest {
                 .as("Cancel must leave the project untouched")
                 .isTrue();
 
-        detail = repositoryPage.openProjectDetail(SOLO_PROJECT);
+        editor.openUserMenu().navigateToAdministration().navigateToUsersPage()
+                .clickAddUser().setUsername(SHARED_USER).setPassword(SHARED_USER).saveUser();
+        repositoryPage = editor.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.REPOSITORY);
+        detail = repositoryPage.openProjectsList().openProjectDetail(SOLO_PROJECT);
+        detail.grantAccess(SHARED_USER, "Manager");
+        assertThat(detail.getAccessRole(SHARED_USER))
+                .as("Precondition: the user holds the role granted on the solo project")
+                .isEqualTo("Manager");
+
         detail.openDeleteBranchDialog().clickDelete();
         detail.waitUntilSpinnerLoaded();
 
@@ -95,6 +106,15 @@ public class TestDeleteBranchLastProjectCopyUi extends BaseTest {
         assertThat(repositoryPage.isProjectPresent(SOLO_PROJECT))
                 .as("Deleting the only branch of the project must delete the project itself")
                 .isFalse();
+        repositoryPage.createProject(CreateNewProjectComponent.TabName.TEMPLATE, SOLO_PROJECT, "Sample Project");
+        detail = repositoryPage.openProjectsList().openProjectDetail(SOLO_PROJECT);
+        assertThat(detail.managementTabListsRoles())
+                .as("The Management tab of the new project lists its roles")
+                .isTrue();
+        assertThat(detail.getAccessRole(SHARED_USER))
+                .as("The access granted on the deleted project must not pass to a new project of the same name (EPBDS-16938)")
+                .isEmpty();
+        repositoryPage.openProjectsList();
         assertThat(repositoryPage.isProjectPresent(anchorProject))
                 .as("Projects that also live on other branches must survive the branch deletion")
                 .isTrue();

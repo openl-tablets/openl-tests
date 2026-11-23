@@ -252,6 +252,97 @@ public class TestACLProjectLevelRoles extends BaseTest {
                 .anyMatch(details -> details.contains("CSV"));
     }
 
+    @Test
+    @TestCaseId("EPBDS-15723")
+    @Description("A Manager of a project grants another user a role on it from the Management tab, changes the role, and revokes it: "
+            + "the user sees the project with the actions of the granted role and no longer sees it once the role is revoked (EPBDS-15723)")
+    @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
+    public void testManagerGrantsChangesAndRevokesAccessToAnotherUser() {
+        LoginService loginService = new LoginService(DriverPool.getPage());
+        EditorPage editorPage = loginService.login(UserService.getUser(User.ADMIN));
+        RepositoryPage adminRepoPage = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.REPOSITORY);
+        String projectName = StringUtil.generateUniqueName("ManagerGrants");
+        String markerProject = StringUtil.generateUniqueName("GranteeMarker");
+        adminRepoPage.createProject(CreateNewProjectComponent.TabName.TEMPLATE, projectName, "Sample Project");
+        adminRepoPage.createProject(CreateNewProjectComponent.TabName.TEMPLATE, markerProject, "Sample Project");
+
+        UsersPageComponent users = editorPage.openUserMenu().navigateToAdministration().navigateToUsersPage();
+        users.clickAddUser().setUsername("grantor").setPassword("grantor").saveUser();
+        users.clickAddUser().setUsername("grantee").setPassword("grantee").saveUser();
+        assertThat(users.isUserInList("grantee")).as("User 'grantee' should be added to the list").isTrue();
+        users.clickEditUser("grantor")
+                .clickProjectsTab()
+                .clickAddRoleBtn()
+                .setProject(0, projectName)
+                .setProjectRole(0, "Manager")
+                .saveUser();
+        users.clickEditUser("grantee")
+                .clickProjectsTab()
+                .clickAddRoleBtn()
+                .setProject(0, markerProject)
+                .setProjectRole(0, "Viewer")
+                .saveUser();
+        editorPage.openUserMenu().signOut();
+
+        UserData grantor = new UserData("grantor", "grantor");
+        UserData grantee = new UserData("grantee", "grantee");
+        editorPage = loginService.login(grantee);
+        RepositoryPage granteeRepo = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.REPOSITORY);
+        waitForProject(granteeRepo, markerProject, true);
+        assertThat(granteeRepo.getAllVisibleProjectsInTable()).as("Before the grant the user does not see the project").doesNotContain(projectName);
+        editorPage.openUserMenu().signOut();
+
+        editorPage = loginService.login(grantor);
+        RepositoryPage grantorRepo = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.REPOSITORY);
+        ProjectDetailPage card = grantorRepo.openProjectsList().openProjectDetail(projectName);
+        assertThat(card.managementTabListsRoles()).as("The Manager sees the roles of the project").isTrue();
+        assertThat(card.getAccessRole("grantor")).as("The Manager is listed with the Manager role").isEqualTo("Manager");
+        card.grantAccess("grantee", "Contributor");
+        assertThat(card.getAccessRole("grantee")).as("The role granted by the Manager is listed (EPBDS-15723)").isEqualTo("Contributor");
+        editorPage.openUserMenu().signOut();
+
+        editorPage = loginService.login(grantee);
+        granteeRepo = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.REPOSITORY);
+        waitForProject(granteeRepo, projectName, true);
+        assertThat(granteeRepo.getProjectActionLabels(projectName))
+                .as("The user the Manager granted Contributor can copy the project (EPBDS-15723)")
+                .contains("Copy");
+        editorPage.openUserMenu().signOut();
+
+        editorPage = loginService.login(grantor);
+        grantorRepo = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.REPOSITORY);
+        card = grantorRepo.openProjectsList().openProjectDetail(projectName);
+        card.changeAccessRole("grantee", "Viewer");
+        editorPage.openUserMenu().signOut();
+
+        editorPage = loginService.login(grantee);
+        granteeRepo = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.REPOSITORY);
+        waitForProject(granteeRepo, projectName, true);
+        assertThat(granteeRepo.getProjectActionLabels(projectName))
+                .as("The user whose role the Manager changed to Viewer can no longer copy the project (EPBDS-15723)")
+                .doesNotContain("Copy");
+        editorPage.openUserMenu().signOut();
+
+        editorPage = loginService.login(grantor);
+        grantorRepo = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.REPOSITORY);
+        card = grantorRepo.openProjectsList().openProjectDetail(projectName);
+        card.revokeAccess("grantee");
+        assertThat(card.getAccessRole("grantee")).as("The role revoked by the Manager is no longer listed (EPBDS-15723)").isEmpty();
+        editorPage.openUserMenu().signOut();
+
+        editorPage = loginService.login(grantee);
+        granteeRepo = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.REPOSITORY);
+        waitForProject(granteeRepo, markerProject, true);
+        assertThat(granteeRepo.getAllVisibleProjectsInTable())
+                .as("The user whose role the Manager revoked no longer sees the project (EPBDS-15723)")
+                .doesNotContain(projectName);
+    }
+
+    private static void waitForProject(RepositoryPage repositoryPage, String projectName, boolean listed) {
+        WaitUtil.requireCondition(() -> repositoryPage.getAllVisibleProjectsInTable().contains(projectName) == listed,
+                15000, 500, "Waiting for '" + projectName + "' to be " + (listed ? "listed" : "hidden"));
+    }
+
     private static boolean signedInWithLoginForm(AuditEvent event, String user) {
         return event.user().equals(user) && event.action().equals("Sign in") && event.outcome().equals("Success")
                 && event.signedInWith().equals("Login form");

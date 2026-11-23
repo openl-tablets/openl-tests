@@ -146,11 +146,6 @@ public class CreateNewProjectComponent extends BaseComponent {
         }
     }
 
-    /**
-     * Presses Create once the wizard has everything it asks for, and says what it refused when it refuses.
-     * A repository that holds branches is asked which branch to write to, and the wizard fills that in from
-     * the repository itself — until it has, pressing Create is refused rather than sent.
-     */
     private void submitAndExpectTheWizardToClose() {
         waitForBranchToBeOffered();
         submitBtn.click();
@@ -163,13 +158,16 @@ public class CreateNewProjectComponent extends BaseComponent {
         }
     }
 
-    /**
-     * Presses Create where the wizard is expected to refuse, and answers what it says: the wizard stays
-     * open, holding what it was given, so it can be read and put away by whoever asked.
-     */
     public String submitExpectingRefusal() {
         waitForBranchToBeOffered();
         submitBtn.click();
+        return getError();
+    }
+
+    public String submitExpectingRefusalOfThisCreate() {
+        waitForBranchToBeOffered();
+        page.waitForResponse(response -> response.status() == 409,
+                () -> submitBtn.click());
         return getError();
     }
 

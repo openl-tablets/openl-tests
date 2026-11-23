@@ -28,9 +28,10 @@ public class TestAdminSystemSettings extends BaseTest {
     private static final String VERIFY_ON_EDIT = "compile.auto";
 
     @Test
-    @TestCaseId({"IPBQA-30651", "EPBDS-17079"})
+    @TestCaseId({"IPBQA-30651", "EPBDS-17079", "EPBDS-16547"})
     @Description("System Settings - Test Dispatching Validation, Verify on Edit, Thread Number and audit log retention validation; "
-            + "the audit log records each settings change and the restarts that end the sessions (EPBDS-14601, EPBDS-17027)")
+            + "the audit log records each settings change and the restarts that end the sessions (EPBDS-14601, EPBDS-17027); "
+            + "the warning of Restore Defaults and Restart says it resets the System and the database settings only (EPBDS-16547)")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void testSystemSettings() {
         String projectNameForVerification = WorkflowService.loginCreateProjectFromTemplate(User.ADMIN, "Sample Project");
@@ -126,6 +127,11 @@ public class TestAdminSystemSettings extends BaseTest {
                 .isEqualTo(RETENTION_REFUSED);
         systemSettings.setAuditRetention("");
         systemSettings.waitForAuditRetentionErrorHidden();
+        assertThat(systemSettings.getRestoreDefaultsWarning())
+                .as("The warning of Restore Defaults and Restart says it resets the System and the database settings only (EPBDS-16547)")
+                .contains("the System settings and the database settings")
+                .contains("repository, security and other settings stay as they are")
+                .doesNotContain("All user defined values, such as repository settings, will be lost");
 
         AuditLogPageComponent auditLog = editorPage.openUserMenu().navigateToAdministration().navigateToAuditLogPage();
         List<AuditEvent> events = auditLog.getEvents();

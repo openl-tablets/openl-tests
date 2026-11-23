@@ -257,6 +257,59 @@ public class ProjectDetailPage extends BasePage {
         return this;
     }
 
+    public ProjectDetailPage grantAccess(String username, String role) {
+        openManagementTab();
+        new WebElement(page, "xpath=//*[@data-testid='access-add']", "addAccessButton")
+                .waitForVisible(DEFAULT_TIMEOUT_MS).click();
+        new WebElement(page, "xpath=//*[@data-testid='add-access-sid']//input", "addAccessUsernameInput")
+                .waitForVisible(DEFAULT_TIMEOUT_MS).fill(username);
+        pickDropdownOption(username);
+        new WebElement(page, "xpath=//*[@data-testid='add-access-role']", "addAccessRole")
+                .waitForVisible(DEFAULT_TIMEOUT_MS).click();
+        pickDropdownOption(role);
+        new WebElement(page, "xpath=//*[@data-testid='add-access-submit']", "addAccessSubmit").click();
+        new WebElement(page, "xpath=//*[@data-testid='add-access-sid']", "addAccessUsername")
+                .waitForHidden(DEFAULT_TIMEOUT_MS);
+        return this;
+    }
+
+    public String getAccessRole(String username) {
+        openManagementTab();
+        WebElement select = accessRoleSelect(username);
+        return select.isVisible(DEFAULT_TIMEOUT_MS / 2) ? select.getInnerText().trim() : "";
+    }
+
+    public ProjectDetailPage changeAccessRole(String username, String role) {
+        openManagementTab();
+        accessRoleSelect(username).waitForVisible(DEFAULT_TIMEOUT_MS).click();
+        pickDropdownOption(role);
+        WaitUtil.requireCondition(() -> role.equals(getAccessRole(username)), DEFAULT_TIMEOUT_MS, 250,
+                "Waiting for the role of " + username + " to read " + role);
+        return this;
+    }
+
+    public ProjectDetailPage revokeAccess(String username) {
+        openManagementTab();
+        new WebElement(page, "xpath=//*[@data-testid='access-remove-project-" + username + "']", "revokeAccessButton")
+                .waitForVisible(DEFAULT_TIMEOUT_MS).click();
+        new WebElement(page,
+                "xpath=//div[contains(concat(' ',normalize-space(@class),' '),' ant-popover ')]//button[contains(@class,'ant-btn-primary')]",
+                "revokeAccessConfirm").waitForVisible(DEFAULT_TIMEOUT_MS).click();
+        accessRoleSelect(username).waitForHidden(DEFAULT_TIMEOUT_MS);
+        return this;
+    }
+
+    private WebElement accessRoleSelect(String username) {
+        return new WebElement(page, "xpath=//*[@data-testid='access-role-project-" + username + "']", "accessRole");
+    }
+
+    private void pickDropdownOption(String title) {
+        new WebElement(page,
+                "xpath=//div[contains(concat(' ',normalize-space(@class),' '),' ant-select-dropdown ')]"
+                        + "//div[contains(@class,'ant-select-item-option')][not(contains(@class,'ant-select-item-option-content'))][@title='" + title + "']",
+                "dropdownOption").waitForVisible(DEFAULT_TIMEOUT_MS).click();
+    }
+
     public boolean isManagementTabOffered() {
         return managementTab.isVisible(DEFAULT_TIMEOUT_MS / 2);
     }

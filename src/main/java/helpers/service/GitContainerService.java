@@ -50,6 +50,7 @@ public class GitContainerService {
     private final List<String> lfsPatterns = new ArrayList<>();
     private final Map<String, byte[]> replacedFiles = new LinkedHashMap<>();
     private String externalLfsUrl;
+    private boolean archived;
     private String owner = DEFAULT_OWNER;
     private String ownerPassword = OWNER_PASSWORD;
     private GenericContainer<?> container;
@@ -82,6 +83,11 @@ public class GitContainerService {
     public GitContainerService withOwner(String login, String password) {
         owner = login;
         ownerPassword = password;
+        return this;
+    }
+
+    public GitContainerService withArchivedRepository() {
+        archived = true;
         return this;
     }
 
@@ -118,6 +124,9 @@ public class GitContainerService {
         }
         createRepository();
         commitFixture();
+        if (archived) {
+            archiveRepository();
+        }
         LOGGER.info("Gitea ready. Host URL: {} | in-network URL: {}", getHostUrl(), getInNetworkUrl());
     }
 
@@ -199,6 +208,12 @@ public class GitContainerService {
         body.put("private", false);
         Response response = ownerRequest().body(body).post(hostBaseUrl() + "/api/v1/user/repos");
         requireStatus(response, 201, "create the repository " + repoName);
+    }
+
+    private void archiveRepository() {
+        Response response = ownerRequest().body(Map.of("archived", true))
+                .patch(hostBaseUrl() + "/api/v1/repos/" + owner + "/" + repoName);
+        requireStatus(response, 200, "archive the repository " + repoName);
     }
 
     private void commitFixture() {

@@ -26,6 +26,7 @@ public class SystemSettingsPageComponent extends BaseComponent {
     private WebElement clearAllHistoryBtn;
     private WebElement cancelModalBtn;
     private WebElement applyButton;
+    private WebElement restoreDefaultsWarning;
 
     private WebElement databaseUrlField;
     private WebElement databaseUserField;
@@ -56,12 +57,17 @@ public class SystemSettingsPageComponent extends BaseComponent {
         formatTablesOnSaveCheckbox = createScopedElement("xpath=.//*[@id='formatTablesOnSave']", "formatTablesOnSaveCheckbox");
         clearAllHistoryBtn = createScopedElement("xpath=.//button[./span[text()='Clear All History']]", "clearAllHistoryBtn");
         cancelModalBtn = new WebElement(page, "xpath=//div[contains(@class,'ant-modal-container')]//button[./span[contains(text(),'Cancel')]]", "cancelModalBtn");
+        restoreDefaultsWarning = createScopedElement("xpath=.//p[.//*[contains(@class,'anticon-warning')]]", "restoreDefaultsWarning");
         applyButton = createScopedElement("xpath=.//button[./span[text()='Apply Changes'] or ./span[text()='Apply']]", "applyButton");
 
         databaseUrlField = createScopedElement("xpath=.//input[@id='db_url']", "databaseUrlField");
         databaseUserField = createScopedElement("xpath=.//input[@id='db_user']", "databaseUserField");
         databasePasswordField = createScopedElement("xpath=.//input[@id='db_password']", "databasePasswordField");
         databaseMaxPoolSizeField = createScopedElement("xpath=.//input[@id='db_maximumPoolSize']", "databaseMaxPoolSizeField");
+    }
+
+    public String getRestoreDefaultsWarning() {
+        return restoreDefaultsWarning.waitForVisible(DEFAULT_TIMEOUT_MS).getText().trim();
     }
 
     public void setDispatchingValidation(boolean enable) {
