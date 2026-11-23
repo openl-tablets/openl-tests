@@ -10,6 +10,7 @@ public interface ITraceWindow {
     ITraceWindow resume();
     String getDetailsText();
     String getTracedTableText();
+    List<String> getHighlightedTracedCells();
     boolean isNodeDetailsErrorDisplayed(int timeoutInMillis);
     boolean areDetailsDisplayed(int timeoutInMillis);
     boolean isDebugToolbarShown(int timeoutInMillis);

@@ -20,6 +20,12 @@ public class TestTestResultsShowDoublesRoundedUi extends BaseTest {
     private static final String WORKBOOK = "DoubleResult.xlsx";
     private static final String MODULE = "DoubleResult";
     private static final String TEST_TABLE = "mySprTest";
+    private static final String DECIMALS_ZIP = "ExactDecimals.zip";
+    private static final String DECIMALS_MODULE = "Rules";
+    private static final String DIVIDE_TEST = "divideTest";
+    private static final int EXPECTED_ROW = 4;
+    private static final int EXPECTED_COLUMN = 3;
+    private static final String QUOTIENT = "0.6666666666666666666666666666666667";
 
     @Test
     @TestCaseId({"EPBDS-16890", "EPBDS-17084"})
@@ -53,5 +59,46 @@ public class TestTestResultsShowDoublesRoundedUi extends BaseTest {
         assertThat(results.countResultWindows())
                 .as("The results of a second run are shown in the window already open, not in a new one")
                 .isEqualTo(1);
+    }
+
+    @Test
+    @TestCaseId("EPBDS-17043")
+    @Description("EPBDS-17043: a failed comparison of a BigDecimal shows the actual value with all its digits: 22 "
+            + "divided by 33 reads 0.6666666666666666666666666666666667, not the same 0.6666666666666666 as a double.")
+    @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
+    public void testResultsShowABigDecimalWithAllItsDigits() {
+        String projectName = WorkflowService.loginCreateProjectFromZip(User.ADMIN, DECIMALS_ZIP);
+        EditorPage editorPage = new EditorPage();
+        editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, DECIMALS_MODULE);
+        editorPage.getProblemsPanelComponent().waitForCompilationToComplete();
+        editorPage.getEditorLeftRulesTreeComponent()
+                .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
+                .expandFolderInTree(TEST)
+                .selectItemInFolder(TEST, DIVIDE_TEST);
+
+        editorPage.getEditorToolbarPanelComponent().clickRun().clickRunInsideMenu();
+        TestResultValidationComponent results = editorPage.getTestResultValidationComponent();
+        assertThat(results.getFailedTestCount())
+                .as("The case of " + DIVIDE_TEST + " fails: it expects 0.6 of 22 divided by 33")
+                .isPositive();
+        assertThat(results.getTestResult(1))
+                .as("EPBDS-17043: the failed case must show the actual quotient with all its digits")
+                .anyMatch(cell -> cell.contains(QUOTIENT));
+        results.closeResults();
+
+        editorPage.getEditorToolbarPanelComponent().getEditTableBtn().click();
+        editorPage.getCenterTable().editCell(EXPECTED_ROW, EXPECTED_COLUMN, QUOTIENT);
+        editorPage.getEditorTableActionsPanelComponent().clickSaveChanges();
+        assertThat(editorPage.getCenterTable().getCellText(EXPECTED_ROW, EXPECTED_COLUMN))
+                .as("EPBDS-17043: the saved expected value must keep all its digits")
+                .isEqualTo(QUOTIENT);
+
+        editorPage.getEditorToolbarPanelComponent().clickRun().clickRunInsideMenu();
+        assertThat(results.getPassedTestCount())
+                .as("EPBDS-17043: the case must pass once the expected value is written with all its digits")
+                .isPositive();
+        assertThat(results.getFailedTestCount())
+                .as("EPBDS-17043: the saved expected value must not be rounded to a double, which fails the case")
+                .isZero();
     }
 }

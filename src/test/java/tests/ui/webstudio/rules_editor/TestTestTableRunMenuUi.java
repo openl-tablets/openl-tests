@@ -12,13 +12,16 @@ import domain.ui.webstudio.components.editortabcomponents.toolbar.RunMenuCompone
 import domain.ui.webstudio.pages.mainpages.EditorPage;
 import helpers.service.WorkflowService;
 import helpers.utils.DownloadUtil;
+import helpers.utils.XlsxUtil;
 import org.assertj.core.api.SoftAssertions;
 import org.testng.annotations.Test;
 import tests.BaseTest;
 
 import java.io.File;
 import java.util.List;
+import java.util.Map;
 
+import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.METHOD;
 import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.TEST;
 
 public class TestTestTableRunMenuUi extends BaseTest {
@@ -29,7 +32,17 @@ public class TestTestTableRunMenuUi extends BaseTest {
     private static final String FAILING_CASE = "1";
     private static final String PASSING_CASE = "2";
     private static final String RESULTS_FILE = "test-results.xlsx";
+    private static final String RUN_FILE = "run-result.xlsx";
     private static final int RESULTS_FILE_MS = 60000;
+    private static final String INPUT_TYPES_WORKBOOK = "ExportInputTypes.xlsx";
+    private static final String INPUT_TYPES_MODULE = "ExportInputTypes";
+    private static final Map<String, List<String>> SAVED_VALUES = Map.of(
+            "DescribeHolder", List.of("first", "v", "a", "b", "c"),
+            "DescribeNode", List.of("a"));
+    private static final List<Map.Entry<String, String>> INPUTS = List.of(
+            Map.entry("DescribeHolder", "{\"params\": {\"h\": {\"name\": \"first\", \"attributes\": {\"k\": \"v\"}, "
+                    + "\"cells\": [[{\"code\": \"a\"}, {\"code\": \"b\"}], [{\"code\": \"c\"}]]}}}"),
+            Map.entry("DescribeNode", "{\"params\": {\"n\": {\"name\": \"a\"}}}"));
 
     @Test
     @TestCaseId({"IPBQA-33073", "EPBDS-17218"})
@@ -85,6 +98,43 @@ public class TestTestTableRunMenuUi extends BaseTest {
         softly.assertThat(toolbar.getTableActions())
                 .as("The Test table must still not offer Test once its toolbar has long settled")
                 .doesNotContain("Test");
+        softly.assertAll();
+    }
+
+    @Test
+    @TestCaseId({"EPBDS-14383", "EPBDS-14619"})
+    @Description("EPBDS-14383: Run into File of a table whose input datatype has a Map field and an array of arrays "
+            + "saves the file instead of hanging. EPBDS-14619: so does Run into File of a table whose input datatype "
+            + "has a field of its own type left empty.")
+    @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
+    public void runIntoFileSavesInputsOfMapArrayOfArraysAndRecursiveDatatypes() {
+        String projectName = WorkflowService.loginCreateProjectFromExcelFile(User.ADMIN, INPUT_TYPES_WORKBOOK);
+        EditorPage editorPage = new EditorPage();
+        editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, INPUT_TYPES_MODULE);
+        editorPage.getProblemsPanelComponent().waitForCompilationToComplete();
+        editorPage.getEditorLeftRulesTreeComponent()
+                .setViewFilter(EditorLeftRulesTreeComponent.FilterOptions.BY_TYPE)
+                .expandFolderInTree(METHOD);
+        SoftAssertions softly = new SoftAssertions();
+
+        for (Map.Entry<String, String> input : INPUTS) {
+            String table = input.getKey();
+            editorPage.getEditorLeftRulesTreeComponent().selectItemInFolder(METHOD, table);
+            EditorToolbarPanelComponent toolbar = editorPage.getEditorToolbarPanelComponent();
+            toolbar.clickRun();
+            RunMenuComponent launcher = toolbar.getRunLauncher();
+            launcher.setFlatParameterLayout(false).showJsonInput().pasteJsonInput(input.getValue());
+            File saved = DownloadUtil.downloadFile(launcher::clickRunIntoFile, RESULTS_FILE_MS);
+            try {
+                softly.assertThat(saved.getName()).as("Run into File of " + table + " must save the results").endsWith(RUN_FILE);
+                softly.assertThat(saved).as("The results file of " + table + " must not be empty").isNotEmpty();
+                softly.assertThat(XlsxUtil.readSheetFromRow(saved, "Parameters 1", "ID").stream().flatMap(List::stream))
+                        .as("The results file of " + table + " must hold the input values")
+                        .containsAll(SAVED_VALUES.get(table));
+            } finally {
+                DownloadUtil.cleanupDownloadFile(saved);
+            }
+        }
         softly.assertAll();
     }
 }

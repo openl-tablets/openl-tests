@@ -38,6 +38,10 @@ public class TestRunFormInputUi extends BaseTest {
     private static final String SHOW_CUSTOMER = "ShowCustomer";
     private static final String SHOW_MAP = "ShowMap";
     private static final String VOCABULARY_ZIP = "RunFormVocabularyInOtherModule.zip";
+    private static final String BIG_DECIMAL_WORKBOOK = "BigDecimalRun.xlsx";
+    private static final String BIG_DECIMAL_MODULE = "BigDecimalRun";
+    private static final String BIG_DECIMAL = "2.000000000000000005";
+    private static final String PRECISE = "\"precise\"";
     private static final long MAP_ROWS_MS = 5000;
     private static final String RETURNS_NULL = "ReturnsNull";
     private static final String FAILS_AT_RUNTIME = "FailsAtRuntime";
@@ -357,6 +361,48 @@ public class TestRunFormInputUi extends BaseTest {
         assertThat(run.getFieldChoices("a"))
                 .as("EPBDS-16605: the values of the vocabulary of another module must be offered in a list")
                 .containsExactly("a", "b", "c");
+    }
+
+    @Test
+    @TestCaseId({"EPBDS-17238", "EPBDS-17144"})
+    @Description("EPBDS-17238: the Form tab keeps and sends a BigDecimal of more digits than a double, 2.000000000000000005, "
+            + "the JSON tab keeps it when the tabs are switched, and the results page shows it with every digit. "
+            + "EPBDS-17144: a BigDecimal given to the run as a JSON number runs with all its digits, so myBigDecimal "
+            + "answers precise, not the result for 2.")
+    @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
+    public void bigDecimalOfManyDigitsIsRunWithAllItsDigits() {
+        String projectName = WorkflowService.loginCreateProjectFromExcelFile(User.ADMIN, BIG_DECIMAL_WORKBOOK);
+        EditorPage editorPage = new EditorPage();
+        selectTable(editorPage, projectName, BIG_DECIMAL_MODULE, DECISION, "myBigDecimal");
+
+        IRunMenu run = editorPage.getEditorToolbarPanelComponent().clickRun();
+        run.writeFieldValue("v", BIG_DECIMAL);
+        assertThat(run.getFieldValue("v"))
+                .as("EPBDS-17238: the Form tab must keep every digit of the number written into v")
+                .isEqualTo(BIG_DECIMAL);
+        run.clickRunInsideMenu();
+        TestResultValidationComponent results = editorPage.getTestResultValidationComponent();
+        assertThat(results.getUnfoldedRunCellText("Result"))
+                .as("EPBDS-17238: the form must send v with all its digits, so the row of 2.000000000000000005 answers")
+                .isEqualTo(PRECISE);
+        assertThat(results.getUnfoldedRunCellText("v"))
+                .as("EPBDS-17238: the results page must show the parameter with every digit")
+                .isEqualTo(BIG_DECIMAL);
+        results.closeResults();
+
+        run = editorPage.getEditorToolbarPanelComponent().clickRun();
+        run.showJsonInput().pasteJsonInput("{\"params\": {\"v\": " + BIG_DECIMAL + "}}");
+        run.showFormInput();
+        assertThat(run.getFieldValue("v"))
+                .as("EPBDS-17238: the Form tab must read the JSON number with every digit")
+                .isEqualTo(BIG_DECIMAL);
+        assertThat(run.showJsonInput().getJsonInput())
+                .as("EPBDS-17238: the JSON tab must still hold the number with every digit after the tabs are switched")
+                .contains(BIG_DECIMAL);
+        run.clickRunInsideMenu();
+        assertThat(results.getUnfoldedRunCellText("Result"))
+                .as("EPBDS-17144: a BigDecimal given as a JSON number must run with all its digits")
+                .isEqualTo(PRECISE);
     }
 
     private EditorPage openDriverPremiumTest() {

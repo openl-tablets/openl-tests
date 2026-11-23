@@ -4,13 +4,19 @@ import configuration.annotations.AppContainerConfig;
 import configuration.annotations.Description;
 import configuration.annotations.TestCaseId;
 import configuration.appcontainer.AppContainerStartParameters;
+import configuration.driver.DriverPool;
 import domain.serviceclasses.constants.User;
+import domain.ui.webstudio.components.common.CreateNewProjectComponent;
+import domain.ui.webstudio.components.common.TabSwitcherComponent;
 import domain.ui.webstudio.components.editortabcomponents.EditorToolbarPanelComponent;
 import domain.ui.webstudio.components.editortabcomponents.TestResultValidationComponent;
 import domain.ui.webstudio.components.editortabcomponents.leftmenu.EditorLeftRulesTreeComponent;
 import domain.ui.webstudio.components.editortabcomponents.toolbar.ITraceMenu;
 import domain.ui.webstudio.components.editortabcomponents.toolbar.RunTestsMenuComponent;
 import domain.ui.webstudio.pages.mainpages.EditorPage;
+import domain.ui.webstudio.pages.mainpages.RepositoryPage;
+import helpers.service.LoginService;
+import helpers.service.UserService;
 import helpers.service.WorkflowService;
 import helpers.utils.DownloadUtil;
 import helpers.utils.WaitUtil;
@@ -44,6 +50,15 @@ public class TestRunExecutionScreensUi extends BaseTest {
     private static final String MANY_CASES_MODULE = "ManyCases";
     private static final int CASES_PER_PAGE = 20;
     private static final int CASES_IN_TABLE = 45;
+    private static final String TRANSPOSED_WORKBOOK = "TransposedResults.zip";
+    private static final String TRANSPOSED_MODULE = "Rules";
+    private static final String USUAL_TEST = "PremiumTest";
+    private static final String TRANSPOSED_TEST = "TransposedPremiumTest";
+    private static final int DEFAULT_WAIT_MS = 15000;
+    private static final String DEPENDENCY_PROJECT = "NotClickable";
+    private static final String DEPENDENT_PROJECT = "Sample Project";
+    private static final String DEPENDENCY_MODULE = "example2";
+    private static final String DEPENDENCY_TEST = "mySpr";
 
     @Test
     @TestCaseId({"EPBDS-16581", "EPBDS-16582", "EPBDS-16583"})
@@ -189,6 +204,73 @@ public class TestRunExecutionScreensUi extends BaseTest {
         assertThat(traceMenu.waitForLaunchError())
                 .as("EPBDS-16589: a trace window the browser refused to open must be reported in the Trace panel")
                 .isEqualTo("The trace window did not open. Allow pop-up windows for this site and try again.");
+    }
+
+    @Test
+    @TestCaseId("EPBDS-17053")
+    @Description("EPBDS-17053: the tests of a project run the test tables of the project it depends on, and the name "
+            + "of such a test in the results is a link that opens its test table in the dependency project.")
+    @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
+    public void testOfDependencyProjectIsOpenedFromResults() {
+        EditorPage editorPage = new LoginService(DriverPool.getPage()).login(UserService.getUser(User.ADMIN));
+        RepositoryPage repositoryPage = editorPage.getTabSwitcherComponent()
+                .selectTab(TabSwitcherComponent.TabName.REPOSITORY);
+        repositoryPage.createProject(CreateNewProjectComponent.TabName.ZIP_ARCHIVE, DEPENDENCY_PROJECT, "NotClickable.zip");
+        repositoryPage.createProject(CreateNewProjectComponent.TabName.ZIP_ARCHIVE, DEPENDENT_PROJECT, "Sample-Project.zip");
+        editorPage = new EditorPage();
+        editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(DEPENDENT_PROJECT, "Main");
+        editorPage.getProblemsPanelComponent().waitForCompilationToComplete();
+
+        editorPage.getEditorToolbarPanelComponent().clickTestDropdown().runTests();
+        TestResultValidationComponent results = editorPage.getTestResultValidationComponent();
+        assertThat(results.isTestTableNameALink(DEPENDENCY_TEST))
+                .as("EPBDS-17053: the name of the test of the dependency project must be a link, not plain text")
+                .isTrue();
+
+        results.openTestTable(DEPENDENCY_TEST);
+        EditorToolbarPanelComponent toolbar = editorPage.getEditorToolbarPanelComponent();
+        EditorLeftRulesTreeComponent tree = editorPage.getEditorLeftRulesTreeComponent();
+        WaitUtil.waitForCondition(() -> DEPENDENCY_PROJECT.equals(toolbar.getBreadcrumbsProjectName().trim())
+                        && DEPENDENCY_MODULE.equals(toolbar.getBreadcrumbsModuleName().trim())
+                        && DEPENDENCY_TEST.equals(tree.getSelectedItemText()),
+                DEFAULT_WAIT_MS, 250, "Waiting for the test table of the dependency project to be opened");
+        assertThat(List.of(toolbar.getBreadcrumbsProjectName(), toolbar.getBreadcrumbsModuleName()))
+                .as("EPBDS-17053: the link must open the test table in the module of the dependency project")
+                .containsExactly(DEPENDENCY_PROJECT, DEPENDENCY_MODULE);
+        assertThat(editorPage.getEditorLeftRulesTreeComponent().getSelectedItemText())
+                .as("EPBDS-17053: the test table of the dependency project must be the selected table")
+                .isEqualTo(DEPENDENCY_TEST);
+    }
+
+    @Test
+    @TestCaseId("EPBDS-16960")
+    @Description("EPBDS-16960: the results of a test table are laid out as the test table is written: a case to a row "
+            + "for the usual table and a case to a column for the transposed one, and Transpose of the results "
+            + "switches the layout and back.")
+    @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
+    public void testResultsAreLaidOutAsTheirTestTableIs() {
+        String projectName = WorkflowService.loginCreateProjectFromZip(User.ADMIN, TRANSPOSED_WORKBOOK);
+        EditorPage editorPage = new EditorPage();
+        editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, TRANSPOSED_MODULE);
+        editorPage.getProblemsPanelComponent().waitForCompilationToComplete();
+
+        editorPage.getEditorToolbarPanelComponent().clickTestDropdown().runTests();
+        TestResultValidationComponent results = editorPage.getTestResultValidationComponent();
+        assertThat(results.isTestResultsTransposed(USUAL_TEST))
+                .as("EPBDS-16960: the results of a test table written the usual way round must list a case to a row")
+                .isFalse();
+        assertThat(results.isTestResultsTransposed(TRANSPOSED_TEST))
+                .as("EPBDS-16960: the results of a transposed test table must list a case to a column")
+                .isTrue();
+
+        results.transposeTestResults(USUAL_TEST);
+        assertThat(results.isTestResultsTransposed(USUAL_TEST))
+                .as("EPBDS-16960: Transpose must lay the results of the usual test table out a case to a column")
+                .isTrue();
+        results.transposeTestResults(USUAL_TEST);
+        assertThat(results.isTestResultsTransposed(USUAL_TEST))
+                .as("EPBDS-16960: Transpose clicked again must bring the usual layout back")
+                .isFalse();
     }
 
     private List<String> caseIds(int first, int last) {

@@ -17,6 +17,12 @@ public class TraceWindowComponent extends BasePage implements ITraceWindow {
     private static final int CALL_TREE_TIMEOUT_MS = DEFAULT_TIMEOUT_MS * 3;
     private static final int DETAILS_TIMEOUT_MS = 5000;
     private static final String TREE_NODE = "//*[@data-testid='trace-tree']//div[starts-with(@data-testid,'tree-frame-') or starts-with(@data-testid,'tree-step-')]";
+    private static final String HIGHLIGHTED_CELLS = """
+            cells => cells.filter(cell => {
+                const [red, green, blue, alpha] = (getComputedStyle(cell).backgroundColor.match(/[\\d.]+/g) || []).map(Number);
+                return (alpha === undefined || alpha === 1) && green > red && green > blue;
+            }).map(cell => cell.dataset.cell)
+            """;
     private static final String SIMPLE_ROW = "//*[@data-testid='simple-tree']//*[starts-with(@data-testid,'simple-node-') or starts-with(@data-testid,'simple-step-')]";
 
     private final List<WebElement> callTreeNodes;
@@ -110,6 +116,13 @@ public class TraceWindowComponent extends BasePage implements ITraceWindow {
     @Override
     public String getTracedTableText() {
         return tracedTable.getText();
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public List<String> getHighlightedTracedCells() {
+        return (List<String>) getPage().locator("xpath=//*[@data-testid='trace-table']//td[@data-cell]")
+                .evaluateAll(HIGHLIGHTED_CELLS);
     }
 
     @Override

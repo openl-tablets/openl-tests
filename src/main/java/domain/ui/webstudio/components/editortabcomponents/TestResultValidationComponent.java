@@ -28,7 +28,8 @@ public class TestResultValidationComponent extends BaseComponent {
     private static final String RESULTS = "//div[contains(@class,'ant-modal-container')][.//button[@data-testid='execution-close']]"
             + " | //main[not(@" + READ_MARK + ")][.//button[@data-testid='execution-close']]";
     private static final String IN_RESULTS = "(" + RESULTS + ")";
-    private static final String TABLE_LINK = IN_RESULTS + "//a[starts-with(@data-testid,'test-table-')]";
+    private static final String TABLE_NAME = IN_RESULTS + "//*[starts-with(@data-testid,'test-table-')]";
+    private static final String TABLE_LINK = TABLE_NAME + "[self::a]";
     private static final String FAILED_TABLE_LINK = TABLE_LINK + "[contains(@class,'ant-typography-danger')]";
     private static final String CASES = IN_RESULTS + "//table[starts-with(@data-testid,'test-results-')]";
     private static final String CASE_ID_CELLS = CASES + "//tbody/tr/td[1]";
@@ -223,6 +224,42 @@ public class TestResultValidationComponent extends BaseComponent {
 
     public List<String> getTestResult(int rowIndex) {
         return getResultTable().getRow(rowIndex).getValue();
+    }
+
+    private Locator testTableName(String name) {
+        Locator shown = results(TABLE_NAME + "[normalize-space()='" + name + "']").first();
+        WaitUtil.requireCondition(() -> shown.count() > 0, RESULTS_TIMEOUT_MS, 250,
+                "Waiting for the results to name the test table " + name);
+        return shown;
+    }
+
+    public boolean isTestTableNameALink(String name) {
+        Locator shown = testTableName(name);
+        return "a".equals(shown.evaluate("el => el.tagName.toLowerCase()").toString())
+                && shown.getAttribute("href") != null;
+    }
+
+    public void openTestTable(String name) {
+        testTableName(name).click();
+    }
+
+    private String testTableId(String name) {
+        return testTableName(name).getAttribute("data-testid").substring("test-table-".length());
+    }
+
+    public boolean isTestResultsTransposed(String name) {
+        String id = testTableId(name);
+        Locator table = results(IN_RESULTS + "//table[@data-testid='test-results-" + id + "']");
+        WaitUtil.requireCondition(() -> table.locator("xpath=./tbody/tr").count() > 0, RESULTS_TIMEOUT_MS, 250,
+                "Waiting for the results of the test table " + name + " to be drawn");
+        return table.locator("xpath=./tbody/tr/th").count() > 0;
+    }
+
+    public void transposeTestResults(String name) {
+        boolean transposed = isTestResultsTransposed(name);
+        results(IN_RESULTS + "//button[@data-testid='test-transpose-" + testTableId(name) + "']").click();
+        WaitUtil.requireCondition(() -> isTestResultsTransposed(name) != transposed, RESULTS_TIMEOUT_MS, 250,
+                "Waiting for the results of the test table " + name + " to change their layout");
     }
 
     public int countTestTables() {

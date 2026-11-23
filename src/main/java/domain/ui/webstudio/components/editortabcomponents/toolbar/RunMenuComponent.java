@@ -10,11 +10,13 @@ public class RunMenuComponent extends TableInputLauncherComponent implements IRu
 
     private final WebElement runBtn;
     private final WebElement runIntoFileBtn;
+    private final WebElement flatLayoutCheckbox;
 
     public RunMenuComponent(Page page) {
         super(page, "run-start");
         runBtn = buttonOf("run-start");
         runIntoFileBtn = buttonOf("run-into-file");
+        flatLayoutCheckbox = new WebElement(page, "xpath=//input[@data-testid='run-flattenParameters']", "flatLayoutCheckbox");
     }
 
     @Override
@@ -46,6 +48,14 @@ public class RunMenuComponent extends TableInputLauncherComponent implements IRu
     public IRunMenu clickRunIntoFile() {
         runIntoFileBtn.waitForVisible(DEFAULT_TIMEOUT_MS);
         runIntoFileBtn.click();
+        return this;
+    }
+
+    public RunMenuComponent setFlatParameterLayout(boolean flat) {
+        flatLayoutCheckbox.waitForVisible(DEFAULT_TIMEOUT_MS);
+        if (flatLayoutCheckbox.isChecked() != flat) {
+            flatLayoutCheckbox.click();
+        }
         return this;
     }
 
