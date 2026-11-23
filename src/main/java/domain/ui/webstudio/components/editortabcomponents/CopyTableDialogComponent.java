@@ -309,7 +309,12 @@ public class CopyTableDialogComponent extends BaseComponent {
 
     public void clickCopy() {
         copyButton.waitForVisible(DEFAULT_TIMEOUT_MS).click();
-        copyButton.waitForHidden(DEFAULT_TIMEOUT_MS);
+        try {
+            copyButton.waitForHidden(DEFAULT_TIMEOUT_MS);
+        } catch (RuntimeException dialogStayedOpen) {
+            throw new IllegalStateException("The copy table dialog stayed open, so the table was not copied",
+                    dialogStayedOpen);
+        }
         waitUntilSpinnerLoaded();
     }
 
