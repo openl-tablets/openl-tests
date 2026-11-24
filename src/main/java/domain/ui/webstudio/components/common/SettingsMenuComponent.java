@@ -135,7 +135,8 @@ public class SettingsMenuComponent extends BaseComponent {
         SHOW_FORMULAS("showFormulas"),
         FAILURES_ONLY("testsFailuresOnly"),
         COMPOUND_RESULT("showComplexResult"),
-        SHOW_NUMBERS_WITHOUT_FORMATTING("showRealNumbers");
+        SHOW_NUMBERS_WITHOUT_FORMATTING("showRealNumbers"),
+        SHOW_HIDDEN_FILES("showHiddenFiles");
 
         private final String key;
 

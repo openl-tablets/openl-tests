@@ -21,6 +21,7 @@ public class SystemSettingsPageComponent extends BaseComponent {
     private WebElement projectHistoryCountField;
     private WebElement detectProjectsByExcelFilesCheckbox;
     private WebElement detectProjectsByExcelFilesInfoIcon;
+    private WebElement ignoredPathsField;
     private WebElement infoTooltip;
     private WebElement formatTablesOnSaveCheckbox;
     private WebElement clearAllHistoryBtn;
@@ -53,6 +54,7 @@ public class SystemSettingsPageComponent extends BaseComponent {
         projectHistoryCountField = createScopedElement("xpath=.//*[@id='projectHistoryCount']", "projectHistoryCountField");
         detectProjectsByExcelFilesCheckbox = createScopedElement("xpath=.//*[@id='detectProjectsByExcelFiles']", "detectProjectsByExcelFilesCheckbox");
         detectProjectsByExcelFilesInfoIcon = createScopedElement("xpath=.//label[@for='detectProjectsByExcelFiles']//*[contains(@class,'ant-form-item-tooltip')]", "detectProjectsByExcelFilesInfoIcon");
+        ignoredPathsField = createScopedElement("xpath=.//*[@id='ignoredPaths']", "ignoredPathsField");
         infoTooltip = new WebElement(page, "xpath=//div[@role='tooltip'][contains(@class,'ant-tooltip-container')][not(ancestor::div[contains(@class,'ant-tooltip-hidden')])]", "infoTooltip");
         formatTablesOnSaveCheckbox = createScopedElement("xpath=.//*[@id='formatTablesOnSave']", "formatTablesOnSaveCheckbox");
         clearAllHistoryBtn = createScopedElement("xpath=.//button[./span[text()='Clear All History']]", "clearAllHistoryBtn");
@@ -96,6 +98,14 @@ public class SystemSettingsPageComponent extends BaseComponent {
 
     public void waitForTestThreadCountErrorHidden() {
         testThreadCountError.waitForHidden(FIELD_ERROR_SHOWN_MS);
+    }
+
+    public String getIgnoredPaths() {
+        return ignoredPathsField.waitForVisible(DEFAULT_TIMEOUT_MS).getAttribute("value");
+    }
+
+    public void setIgnoredPaths(String value) {
+        ignoredPathsField.fill(value);
     }
 
     public void setAuditRetention(String value) {

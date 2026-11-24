@@ -761,6 +761,11 @@ public class ProjectDetailPage extends BasePage {
         return files.isNodePresent(fileName);
     }
 
+    public List<String> getListedFilePaths() {
+        openFilesTab();
+        return files.getListedFilePaths();
+    }
+
     public ProjectDetailPage copyFile(String fileName, String copyName) {
         openFilesTab();
         files.copyFile(fileName, copyName);

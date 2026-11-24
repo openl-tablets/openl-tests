@@ -9,6 +9,7 @@ import helpers.utils.WaitUtil;
 
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -40,6 +41,8 @@ public class ProjectFilesTabComponent extends BaseComponent {
     private final WebElement firstClosedFolder;
     private final WebElement presentNodeByName;
     private final WebElement fileNodeByPath;
+    private final WebElement projectFileNodes;
+    private final WebElement treeRows;
     private final WebElement addBtn;
     private final WebElement fileActionsBtn;
     private final WebElement addMenuItem;
@@ -83,6 +86,10 @@ public class ProjectFilesTabComponent extends BaseComponent {
                 + "//span[starts-with(@data-testid,'tree-folder-%s-')])[1]", "firstClosedTreeFolder");
         presentNodeByName = new WebElement(page, "xpath=(" + NODE_BY_NAME + "[not(@data-change='deleted')])[1]", "presentTreeFileNode");
         fileNodeByPath = new WebElement(page, "xpath=(" + TREE + "//span[@data-testid=\"tree-file-%s-%s\"][not(@data-change='deleted')])[1]", "treeFileNodeByPath");
+        projectFileNodes = new WebElement(page, "xpath=" + TREE + "//span[starts-with(@data-testid,'tree-file-%s-')]"
+                + "[not(@data-change='deleted')]", "projectFileNodes");
+        treeRows = new WebElement(page, "xpath=(" + TREE + "//div[contains(@class,'ant-tree-list-holder')])[1]",
+                "projectsTreeRows");
         addBtn = new WebElement(page, "xpath=//*[@data-testid='addFiles-%s']", "addFilesBtn");
         fileActionsBtn = createScopedElement("xpath=.//*[@data-testid='file-actions']", "fileActionsBtn");
         addMenuItem = new WebElement(page, "xpath=//div[contains(@class,'ant-dropdown')][not(contains(@class,'ant-dropdown-hidden'))]//li[contains(@class,'ant-dropdown-menu-item')][.//span[@data-testid='%s']]", "filesAddMenuItem");
@@ -223,6 +230,23 @@ public class ProjectFilesTabComponent extends BaseComponent {
         WebElement firstClosed = firstClosedFolder.format(projectId);
         return WaitUtil.waitForCondition(() -> isRendered(file, firstClosed), TREE_LOAD_TIMEOUT_MS, POLL_MS,
                 "Waiting for the projects tree to list '" + filePath + "'");
+    }
+
+    public List<String> getListedFilePaths() {
+        showProjectInTree();
+        String projectId = shownProjectId();
+        WebElement files = projectFileNodes.format(projectId);
+        WebElement firstClosed = firstClosedFolder.format(projectId);
+        WaitUtil.requireCondition(() -> !unfoldFirst(firstClosed) && files.exists(), TREE_LOAD_TIMEOUT_MS, POLL_MS,
+                "Waiting for the projects tree to unfold every folder of the project");
+        if (Boolean.TRUE.equals(treeRows.getLocator().evaluate("rows => rows.scrollHeight > rows.clientHeight"))) {
+            throw new IllegalStateException("The projects tree scrolls, so it does not render every file of the project");
+        }
+        String prefix = "tree-file-" + projectId + "-";
+        return files.getLocator().all().stream()
+                .map(file -> file.getAttribute("data-testid").substring(prefix.length()))
+                .sorted()
+                .toList();
     }
 
     public boolean isNodePresent(String nodeName) {

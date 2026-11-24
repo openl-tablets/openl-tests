@@ -142,6 +142,19 @@ public class GitContainerService {
         requireStatus(response, 201, "create the branch " + newBranch + " from " + fromBranch + " in " + repoName);
     }
 
+    public String commitUpdates(String message, Map<String, String> updatedFiles) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("branch", branch);
+        body.put("message", message);
+        body.put("files", updatedFiles.entrySet().stream()
+                .map(file -> updateFileOperation(file.getKey(), file.getValue().getBytes(StandardCharsets.UTF_8)))
+                .toList());
+        Response response = ownerRequest().body(body)
+                .post(hostBaseUrl() + "/api/v1/repos/" + owner + "/" + repoName + "/contents");
+        requireStatus(response, 201, "commit '" + message + "' to " + repoName);
+        return response.jsonPath().getString("commit.sha");
+    }
+
     public String getHostUrl() {
         return hostBaseUrl() + "/" + owner + "/" + repoName + ".git";
     }
@@ -271,6 +284,20 @@ public class GitContainerService {
         operation.put("path", path);
         operation.put("content", Base64.getEncoder().encodeToString(content));
         return operation;
+    }
+
+    private Map<String, String> updateFileOperation(String path, byte[] content) {
+        Map<String, String> operation = createFileOperation(path, content);
+        operation.put("operation", "update");
+        operation.put("sha", blobIdOf(path));
+        return operation;
+    }
+
+    private String blobIdOf(String path) {
+        Response response = ownerRequest().queryParam("ref", branch)
+                .get(hostBaseUrl() + "/api/v1/repos/" + owner + "/" + repoName + "/contents/" + path);
+        requireStatus(response, 200, "read the blob id of " + path + " in " + repoName);
+        return response.jsonPath().getString("sha");
     }
 
     private byte[] readFile(String endpoint, String path) {
