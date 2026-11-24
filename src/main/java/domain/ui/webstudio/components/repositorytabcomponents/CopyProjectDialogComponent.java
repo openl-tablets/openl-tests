@@ -35,6 +35,7 @@ public class CopyProjectDialogComponent extends BaseComponent {
     private WebElement oldRevisionCheckbox;
     private WebElement revisionSelect;
     private WebElement revisionOption;
+    private WebElement discardConfirmButton;
     private List<WebElement> errors;
 
     public CopyProjectDialogComponent() {
@@ -61,6 +62,7 @@ public class CopyProjectDialogComponent extends BaseComponent {
         oldRevisionCheckbox = new WebElement(page, "xpath=//*[@data-testid='copy-project-old-revision']", "copyProjectOldRevision");
         revisionSelect = new WebElement(page, "xpath=//*[@data-testid='copy-project-revision']", "copyProjectRevision");
         revisionOption = new WebElement(page, "xpath=" + VISIBLE_DROPDOWN + OPTION_BY_TEXT, "copyProjectRevisionOption");
+        discardConfirmButton = new WebElement(page, "xpath=//*[@data-testid='copy-project-discard-confirm']", "copyProjectDiscardConfirm");
         errors = createElementList("xpath=" + MODAL_ROOT + "//div[contains(@class,'ant-form-item-explain-error')] | " + MODAL_ROOT + "//div[contains(@class,'ant-alert-error')]", "copyProjectErrors");
     }
 
@@ -123,6 +125,12 @@ public class CopyProjectDialogComponent extends BaseComponent {
 
     public void clickCancelButton() {
         cancelButton.click();
+    }
+
+    public void confirmDiscardingChanges() {
+        LOGGER.info("Confirming that the unsaved changes are discarded");
+        discardConfirmButton.click();
+        copyButton.waitForHidden(DEFAULT_TIMEOUT_MS);
     }
 
     public CopyProjectDialogComponent waitForDialogToAppear() {

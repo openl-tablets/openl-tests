@@ -227,10 +227,17 @@ public class CreateNewProjectComponent extends BaseComponent {
     }
 
     public void createProjectFromZip(String zipFileName, String projectName) {
+        createProjectFromZip(zipFileName, projectName, null);
+    }
+
+    public void createProjectFromZip(String zipFileName, String projectName, String repositoryName) {
         chooseMethod(methodArchive, archiveUpload, "From archive");
         archiveUpload.setInputFiles(TestDataUtil.getFilePathFromResources(zipFileName));
         if (projectName != null && !projectName.isEmpty()) {
             typeProjectName(projectName);
+        }
+        if (repositoryName != null) {
+            selectRepository(repositoryName);
         }
         submitAndExpectTheWizardToClose();
     }
