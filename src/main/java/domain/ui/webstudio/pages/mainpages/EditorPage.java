@@ -63,6 +63,7 @@ public class EditorPage extends BasePage {
     private WebElement dependencyGraphOptionTemplate;
     private WebElement dependencyGraphOpenInEditorBtn;
     private WebElement refreshBtn;
+    private LocalizationComponent localizationComponent;
     private SearchFilterComponent searchFilterComponent;
     private RangeEditorComponent rangeEditorComponent;
     private MultiselectArrayEditorComponent multiselectArrayEditorComponent;
@@ -115,6 +116,7 @@ public class EditorPage extends BasePage {
         dependencyGraphOptionTemplate = new WebElement(getPage(), "xpath=//div[contains(@class,'ant-select-item-option-content') and normalize-space(.)='%s']", "dependencyGraphOptionTemplate");
         dependencyGraphOpenInEditorBtn = new WebElement(getPage(), "xpath=//button[normalize-space(.)='Open in editor']", "dependencyGraphOpenInEditorBtn");
         refreshBtn = new WebElement(getPage(), "xpath=//button[@data-testid='module-refresh']", "refreshBtn");
+        localizationComponent = new LocalizationComponent();
         searchFilterComponent = new SearchFilterComponent();
         rangeEditorComponent = createScopedComponent(RangeEditorComponent.class, "xpath=//div[@data-testid='range-editor']", "rangeEditorComponent");
         multiselectArrayEditorComponent = createScopedComponent(MultiselectArrayEditorComponent.class,
@@ -313,6 +315,11 @@ public class EditorPage extends BasePage {
         refreshBtn.click(DEFAULT_TIMEOUT_MS);
         waitUntilSpinnerLoaded();
         problemsPanelComponent.waitForCompilationToComplete();
+    }
+
+    public LocalizationComponent openLocalization() {
+        getEditorToolbarPanelComponent().getBreadcrumbs().selectModuleInDropdown(LocalizationComponent.SWITCHER_ITEM);
+        return localizationComponent.waitForOpened();
     }
 
     public void clickTableInDependenciesView(String tableName) {

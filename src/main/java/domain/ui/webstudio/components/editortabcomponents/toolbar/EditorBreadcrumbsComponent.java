@@ -5,6 +5,8 @@ import configuration.core.ui.WebElement;
 import domain.ui.webstudio.components.BaseComponent;
 import helpers.utils.WaitUtil;
 
+import java.util.List;
+
 /**
  * The breadcrumb strip of the module screen: Projects / repository / project / branch / module.
  *
@@ -18,6 +20,8 @@ public class EditorBreadcrumbsComponent extends BaseComponent {
     private static final String HEADER = "xpath=(//div[@data-testid='module-header']"
             + " | //div[@data-testid='project-detail'])[1]";
     private static final String OPEN_DROPDOWN = "xpath=//div[contains(@class,'ant-dropdown')][not(contains(@class,'ant-dropdown-hidden'))]";
+    private static final String DROPDOWN_ITEMS = OPEN_DROPDOWN + "//li[contains(@class,'ant-dropdown-menu-item')]"
+            + "[not(contains(@class,'ant-dropdown-menu-item-divider'))]";
     private static final int PROBE_MS = 1000;
 
     @lombok.Getter
@@ -98,6 +102,16 @@ public class EditorBreadcrumbsComponent extends BaseComponent {
 
     public String getCurrentBranch() {
         return branchName.isVisible(PROBE_MS) ? branchName.getText().replace("Default", "").trim() : "";
+    }
+
+    public List<String> getModuleSwitcherItems() {
+        moduleTrigger.clickWhenSettled();
+        new WebElement(page, DROPDOWN_ITEMS + "[1]", "moduleSwitcherFirstItem").waitForVisible(DEFAULT_TIMEOUT_MS);
+        List<String> names = page.locator(DROPDOWN_ITEMS).allInnerTexts().stream().map(String::trim).toList();
+        page.keyboard().press("Escape");
+        WaitUtil.requireCondition(() -> page.locator(OPEN_DROPDOWN).count() == 0, DEFAULT_TIMEOUT_MS, 200,
+                "Waiting for the module switcher to close");
+        return names;
     }
 
     public void selectModuleInDropdown(String moduleName) {

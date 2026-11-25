@@ -18,6 +18,7 @@ public class TableComponent extends BaseComponent {
 
     private static final String DRAWN_ROW = "tbody[not(@aria-hidden='true')]/tr";
     private static final String CELL_USAGE = "[starts-with(@data-testid,'cell-usage-')]";
+    private static final String CELL_LINK = "*[self::button or @role='button']";
     private static final String OPEN_DROPDOWN = "//div[contains(concat(' ', normalize-space(@class), ' '), ' ant-dropdown ')]"
             + "[not(contains(@class,'ant-dropdown-hidden'))]";
     private static final String OPEN_CALENDAR = "//div[contains(concat(' ', normalize-space(@class), ' '), ' ant-picker-dropdown ')]"
@@ -409,12 +410,12 @@ public class TableComponent extends BaseComponent {
     }
 
     public WebElement getCellLink(int rowIndex, int columnIndex, String linkText) {
-        return cellUsage(rowIndex, columnIndex, "button", String.format("normalize-space(.)='%s'", linkText));
+        return cellUsage(rowIndex, columnIndex, CELL_LINK, String.format("normalize-space(.)='%s'", linkText));
     }
 
     public List<String> getCellLinkTexts(int rowIndex, int columnIndex) {
         return getCell(rowIndex, columnIndex).getLocator()
-                .locator("xpath=.//button" + CELL_USAGE)
+                .locator("xpath=.//" + CELL_LINK + CELL_USAGE)
                 .allInnerTexts().stream().map(String::trim).toList();
     }
 
