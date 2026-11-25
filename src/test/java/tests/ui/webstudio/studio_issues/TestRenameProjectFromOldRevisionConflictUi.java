@@ -5,6 +5,7 @@ import configuration.annotations.TestCaseId;
 import configuration.annotations.AppContainerConfig;
 import configuration.appcontainer.AppContainerStartParameters;
 import domain.serviceclasses.constants.User;
+import domain.ui.webstudio.components.common.SettingsMenuComponent;
 import domain.ui.webstudio.components.editortabcomponents.EditorRevisionsTabComponent;
 import domain.ui.webstudio.components.repositorytabcomponents.ResolveConflictsDialogComponent;
 import domain.ui.webstudio.components.common.TabSwitcherComponent;
@@ -33,6 +34,7 @@ public class TestRenameProjectFromOldRevisionConflictUi extends BaseTest {
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void testRenameFromOldRevisionOffersConflictResolution() throws IOException {
         String projectName = WorkflowService.loginCreateProjectFromTemplate(User.ADMIN, TEMPLATE_NAME);
+        new SettingsMenuComponent().set(SettingsMenuComponent.Setting.SHOW_HIDDEN_FILES, true);
         String renamedOnce = projectName + "2";
         String renamedTwice = projectName + "3";
         EditorPage editorPage = new EditorPage();
@@ -50,8 +52,6 @@ public class TestRenameProjectFromOldRevisionConflictUi extends BaseTest {
         revisionsTab.waitForTableToLoad();
         revisionsTab.openRevision(2);
 
-        // The working copy now carries the descriptor of the revision it was opened at, so it is listed
-        // under the name it was created with again.
         repositoryPage = editorPage.getTabSwitcherComponent().selectTab(TabSwitcherComponent.TabName.REPOSITORY);
         repositoryPage.openProjectsList().openProjectDetail(projectName)
                 .updateFile("rules.xml", descriptorNamed(renamedTwice));
@@ -62,7 +62,6 @@ public class TestRenameProjectFromOldRevisionConflictUi extends BaseTest {
                 .isTrue();
     }
 
-    /** A descriptor naming the project and nothing else, which is what a rename writes. */
     private static String descriptorNamed(String projectName) throws IOException {
         Path written = Files.createTempFile("rules-renamed", ".xml");
         Files.writeString(written, "<project>\n    <name>" + projectName + "</name>\n</project>\n",

@@ -5,6 +5,7 @@ import configuration.annotations.Description;
 import configuration.annotations.TestCaseId;
 import configuration.appcontainer.AppContainerStartParameters;
 import domain.serviceclasses.constants.User;
+import domain.ui.webstudio.components.common.SettingsMenuComponent;
 import domain.ui.webstudio.components.common.TabSwitcherComponent;
 import domain.ui.webstudio.pages.mainpages.EditorPage;
 import domain.ui.webstudio.pages.mainpages.ProjectDetailPage;
@@ -29,6 +30,7 @@ public class TestProjectWithoutDescriptorUi extends BaseTest {
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void testDeletingTheDescriptorIsRefusedAndManagementTabOpens() {
         String projectName = WorkflowService.loginCreateProjectFromTemplate(User.ADMIN, TEMPLATE);
+        new SettingsMenuComponent().set(SettingsMenuComponent.Setting.SHOW_HIDDEN_FILES, true);
         RepositoryPage repositoryPage = new EditorPage().getTabSwitcherComponent()
                 .selectTab(TabSwitcherComponent.TabName.REPOSITORY);
         ProjectDetailPage card = repositoryPage.openProjectsList().openProjectDetail(projectName);

@@ -5,6 +5,7 @@ import configuration.annotations.TestCaseId;
 import configuration.annotations.AppContainerConfig;
 import configuration.appcontainer.AppContainerStartParameters;
 import domain.serviceclasses.constants.User;
+import domain.ui.webstudio.components.common.SettingsMenuComponent;
 import domain.ui.webstudio.components.common.TabSwitcherComponent;
 import domain.ui.webstudio.pages.mainpages.EditorPage;
 import domain.ui.webstudio.pages.mainpages.ProjectDetailPage;
@@ -33,6 +34,7 @@ public class TestProjectDeleteUnsavedEditUi extends BaseTest {
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void testDeleteProjectWithUnsavedRulesEditSucceeds() throws IOException {
         String projectName = WorkflowService.loginCreateProjectFromTemplate(User.ADMIN, "Sample Project");
+        new SettingsMenuComponent().set(SettingsMenuComponent.Setting.SHOW_HIDDEN_FILES, true);
         String renamedName = projectName + "Renamed";
         EditorPage editorPage = new EditorPage();
 

@@ -6,6 +6,7 @@ import configuration.annotations.AppContainerConfig;
 import configuration.appcontainer.AppContainerStartParameters;
 import configuration.driver.DriverPool;
 import domain.serviceclasses.constants.User;
+import domain.ui.webstudio.components.common.SettingsMenuComponent;
 import domain.ui.webstudio.components.common.TableComponent;
 import domain.ui.webstudio.components.common.TabSwitcherComponent;
 import domain.ui.webstudio.components.editortabcomponents.leftmenu.EditorLeftRulesTreeComponent;
@@ -29,10 +30,10 @@ public class TestCreateProjectFromOpenApiJsonFile extends BaseTest {
     private static final String JSON_FILE = "openapi.json";
 
     @Test
-    @TestCaseId("IPBQA-30678")
+    @TestCaseId({"IPBQA-30678", "EPBDS-17310"})
     @Description("Create project from OpenAPI JSON file and verify repository tree structure and Editor module properties;"
             + " copying a module keeps the modules the descriptor already declares (EPBDS-16227) and an uploaded"
-            + " workbook does not rewrite an explicit rules.xml.")
+            + " workbook does not rewrite an explicit rules.xml; rules.xml and rules-deploy.xml are hidden in the projects tree until Show Hidden Files is on (EPBDS-17310).")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void testCreateProjectFromOpenApiJsonFile() {
         String projectName = "JsonOpenApiProject_" + System.currentTimeMillis();
@@ -46,6 +47,11 @@ public class TestCreateProjectFromOpenApiJsonFile extends BaseTest {
         repositoryPage.createProjectFromOpenApi(JSON_FILE, projectName);
 
         ProjectDetailPage projectDetail = repositoryPage.openProjectDetail(projectName).openFilesTab();
+        assertThat(projectDetail.getListedFilePaths())
+                .as("The technical files are hidden in the projects tree by default (EPBDS-17310)")
+                .contains("rules/Algorithms.xlsx", "rules/Models.xlsx", "openapi.json")
+                .doesNotContain("rules.xml", "rules-deploy.xml");
+        new SettingsMenuComponent().set(SettingsMenuComponent.Setting.SHOW_HIDDEN_FILES, true);
         assertThat(projectDetail.isFilePresent("Algorithms.xlsx"))
                 .as("Algorithms.xlsx should be present in the project files").isTrue();
         assertThat(projectDetail.isFilePresent("Models.xlsx"))

@@ -62,7 +62,7 @@ public class TestPermanentDeleteAfterRefreshUi extends BaseTest {
 
         repositoryPage.createProject(CreateNewProjectComponent.TabName.TEMPLATE, projectName, SAMPLE_TEMPLATE);
 
-        assertThat(repositoryPage.openProjectsList().openProjectDetail(projectName).isFilePresent("rules.xml"))
+        assertThat(repositoryPage.openProjectsList().openProjectDetail(projectName).isFilePresent(SAMPLE_MODULE_FILE))
                 .as("The project created under the name of the deleted project '%s' must open with its files (EPBDS-16270)", projectName)
                 .isTrue();
     }

@@ -5,6 +5,7 @@ import configuration.annotations.TestCaseId;
 import configuration.annotations.AppContainerConfig;
 import configuration.appcontainer.AppContainerStartParameters;
 import domain.serviceclasses.constants.User;
+import domain.ui.webstudio.components.common.SettingsMenuComponent;
 import domain.ui.webstudio.components.common.TabSwitcherComponent;
 import domain.ui.webstudio.pages.mainpages.EditorPage;
 import domain.ui.webstudio.pages.mainpages.ProjectDetailPage;
@@ -67,6 +68,7 @@ public class TestMigrateLegacyProjectUi extends BaseTest {
     public void testMigrateMovesRootWorkbookOfAProjectWithoutDescriptor() {
         String projectName = WorkflowService.loginCreateProjectFromZip(User.ADMIN, "MigrateXlsProject.zip");
         WorkflowService.setDetectProjectsByExcelFiles(User.ADMIN, true);
+        new SettingsMenuComponent().set(SettingsMenuComponent.Setting.SHOW_HIDDEN_FILES, true);
         ProjectDetailPage detail = new RepositoryPage().openProjectsList().openProjectDetail(projectName);
         detail.deleteFile("rules.xml");
 

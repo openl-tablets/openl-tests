@@ -4,6 +4,7 @@ import configuration.driver.DriverPool;
 import domain.serviceclasses.constants.User;
 import domain.ui.webstudio.components.admincomponents.SystemSettingsPageComponent;
 import domain.ui.webstudio.components.common.CreateNewProjectComponent;
+import domain.ui.webstudio.components.common.SettingsMenuComponent;
 import domain.ui.webstudio.components.common.TabSwitcherComponent;
 import domain.ui.webstudio.pages.mainpages.EditorPage;
 import domain.ui.webstudio.pages.mainpages.RepositoryPage;
@@ -49,6 +50,7 @@ public class WorkflowService {
     public static String loginCreateProjectWithoutDescriptor(User user, String templateName) {
         String projectName = loginCreateProjectFromTemplate(user, templateName);
         setDetectProjectsByExcelFiles(user, true);
+        new SettingsMenuComponent().set(SettingsMenuComponent.Setting.SHOW_HIDDEN_FILES, true);
         new RepositoryPage().openProjectsList().openProjectDetail(projectName).deleteFile("rules.xml");
         new RepositoryPage().openProjectsList().saveProject(projectName, "Descriptor deleted");
         setDetectProjectsByExcelFiles(user, false);
