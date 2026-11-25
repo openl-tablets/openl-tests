@@ -43,7 +43,7 @@ public class AdminPage extends BasePage {
 
     private void initializeAdminComponents() {
         adminNavigation = new WebElement(page, "xpath=//div[@id='main-menu']", "Admin Navigation Container");
-        contentContainer = new WebElement(page, "xpath=//div[@id='content']", "Content Container");
+        contentContainer = new WebElement(page, "xpath=//div[@id='main-menu']/following-sibling::div", "Content Container");
 
         adminNavigationComponent = new AdminNavigationComponent(adminNavigation);
         tabSwitcherComponent = createScopedComponent(TabSwitcherComponent.class, "xpath=//ul[@role='menu' and contains(@class,'ant-menu-horizontal')]", "tabSwitcherComponent");
