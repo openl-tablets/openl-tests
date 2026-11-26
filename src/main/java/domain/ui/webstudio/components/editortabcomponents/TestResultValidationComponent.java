@@ -25,8 +25,11 @@ public class TestResultValidationComponent extends BaseComponent {
 
     private static final String RESULTS_WINDOW_PATH = "/execution-results";
     private static final String READ_MARK = "data-aqa-read";
-    private static final String RESULTS = "//div[contains(@class,'ant-modal-container')][.//button[@data-testid='execution-close']]"
-            + " | //main[not(@" + READ_MARK + ")][.//button[@data-testid='execution-close']]";
+    private static final String RESULTS = "//main[not(@" + READ_MARK + ")][.//button[@data-testid='execution-close']]";
+    private static final String RESULTS_OVER_THE_EDITOR = "xpath=//button[@data-testid='execution-close'"
+            + " or @data-testid='execution-open-window']"
+            + " | //div[contains(@class,'ant-modal')]//*[starts-with(@data-testid,'test-results-')"
+            + " or @data-testid='run-result-table' or starts-with(@data-testid,'benchmark-')]";
     private static final String IN_RESULTS = "(" + RESULTS + ")";
     private static final String TABLE_NAME = IN_RESULTS + "//*[starts-with(@data-testid,'test-table-')]";
     private static final String TABLE_LINK = TABLE_NAME + "[self::a]";
@@ -39,6 +42,7 @@ public class TestResultValidationComponent extends BaseComponent {
     private static final String RESULT_TABLE = "(" + IN_RESULTS
             + "//table[@data-testid='run-result-table' or starts-with(@data-testid,'test-results-')])[1]";
     private static final int PROBE_MS = 500;
+    private static final long RUNNING_PROBE_MS = 5000;
     private static final long RESULTS_TIMEOUT_MS = 30000;
     private static final long LONG_RUN_TIMEOUT_MS = 90000;
     private static final Pattern TABLES_DONE = Pattern.compile("(\\d+) test tables? done");
@@ -218,8 +222,7 @@ public class TestResultValidationComponent extends BaseComponent {
 
     public String getRunSummary() {
         waitForResults();
-        return results(IN_RESULTS + "//div[contains(@class,'ant-modal-title')] | " + IN_RESULTS + "//h1").first()
-                .innerText().trim();
+        return results(IN_RESULTS + "//h1").first().innerText().trim();
     }
 
     public List<String> getTestResult(int rowIndex) {
@@ -331,31 +334,44 @@ public class TestResultValidationComponent extends BaseComponent {
 
     public void closeResults() {
         Page shown = resultsPage();
+        if (shown == page) {
+            return;
+        }
         WebElement closeBtn = closeButtonOn(shown);
         if (!closeBtn.isVisible(PROBE_MS)) {
             return;
         }
-        if (shown == page) {
-            closeResultsOverTheEditor();
-        } else {
-            shown.waitForClose(() -> {
-                try {
-                    closeBtn.click();
-                } catch (PlaywrightException e) {
-                    if (!shown.isClosed()) {
-                        throw e;
-                    }
+        shown.waitForClose(() -> {
+            try {
+                closeBtn.click();
+            } catch (PlaywrightException e) {
+                if (!shown.isClosed()) {
+                    throw e;
                 }
-            });
-        }
+            }
+        });
     }
 
-    public void closeResultsOverTheEditor() {
-        WebElement closeBtn = closeButtonOn(page);
-        if (closeBtn.isVisible(PROBE_MS)) {
-            closeBtn.click();
-            new WebElement(page, "xpath=" + RESULTS, "testResultsDialog").waitForHidden(DEFAULT_TIMEOUT_MS);
-        }
+    public boolean isShownOverTheEditor() {
+        return page.locator(RESULTS_OVER_THE_EDITOR).count() > 0;
+    }
+
+    public boolean isRunning() {
+        waitUntilResultsOpen();
+        return WaitUtil.waitForCondition(() -> stopButton().count() > 0, RUNNING_PROBE_MS, 100,
+                "Waiting for the execution shown to offer Stop while it runs");
+    }
+
+    public void stop() {
+        waitUntilResultsOpen();
+        Locator stop = stopButton();
+        WaitUtil.requireCondition(() -> stop.count() > 0, RESULTS_TIMEOUT_MS, 250,
+                "Waiting for the running execution to offer Stop");
+        stop.first().click();
+    }
+
+    private Locator stopButton() {
+        return results(IN_RESULTS + "//button[@data-testid='execution-stop']");
     }
 
     private WebElement closeButtonOn(Page shown) {

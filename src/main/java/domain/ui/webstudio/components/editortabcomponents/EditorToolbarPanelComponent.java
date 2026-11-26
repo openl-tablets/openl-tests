@@ -11,6 +11,7 @@ import domain.ui.webstudio.components.editortabcomponents.leftmenu.EditorLeftRul
 import domain.ui.webstudio.components.editortabcomponents.toolbar.EditorBreadcrumbsComponent;
 import domain.ui.webstudio.components.editortabcomponents.toolbar.IMoreMenu;
 import domain.ui.webstudio.components.editortabcomponents.toolbar.IRunMenu;
+import domain.ui.webstudio.components.editortabcomponents.toolbar.BenchmarkMenuComponent;
 import domain.ui.webstudio.components.editortabcomponents.toolbar.RunMenuComponent;
 import domain.ui.webstudio.components.editortabcomponents.toolbar.IRunTestsMenu;
 import domain.ui.webstudio.components.editortabcomponents.toolbar.ITraceMenu;
@@ -250,6 +251,10 @@ public class EditorToolbarPanelComponent extends BaseComponent {
 
     public void clickBenchmark() {
         tableToolbar.clickBenchmark();
+    }
+
+    public BenchmarkMenuComponent getBenchmarkLauncher() {
+        return new BenchmarkMenuComponent(page);
     }
 
     public void clickRunBesideOpenLauncher() {
