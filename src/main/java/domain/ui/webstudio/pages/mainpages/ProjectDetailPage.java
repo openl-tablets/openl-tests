@@ -776,6 +776,21 @@ public class ProjectDetailPage extends BasePage {
         return files.isFileListedAt(filePath);
     }
 
+    public void openFolderInLocalization(String folderName) {
+        openFilesTab();
+        files.openFolderInLocalization(folderName);
+    }
+
+    public void openFileInLocalization(String filePath) {
+        openFilesTab();
+        files.openFileInLocalization(filePath);
+    }
+
+    public String readFileText(String filePath) {
+        openFilesTab();
+        return files.readFileText(filePath);
+    }
+
     public boolean isFilePresent(String fileName) {
         openFilesTab();
         return files.isNodePresent(fileName);

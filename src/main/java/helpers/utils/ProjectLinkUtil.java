@@ -28,6 +28,10 @@ public final class ProjectLinkUtil {
         return ruleLink(projectId, moduleName, tableId) + "&errorCell=" + escape(errorCell);
     }
 
+    public static String localizationKeyLink(String projectId, String key) {
+        return projectLink(projectId) + "/localization?key=" + escape(key);
+    }
+
     public static String downloadLink(String projectId) {
         return DriverPool.getAppUrl() + "/rest" + PROJECTS_PATH + escape(projectId) + "/files/?download=true";
     }

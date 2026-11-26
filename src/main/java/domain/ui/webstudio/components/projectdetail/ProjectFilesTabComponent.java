@@ -175,6 +175,39 @@ public class ProjectFilesTabComponent extends BaseComponent {
         pickFile(fileName);
     }
 
+    public void openFolderInLocalization(String folderName) {
+        pickFile(folderName);
+        clickOpenLocalization("folder-open-localization");
+    }
+
+    public void openFileInLocalization(String filePath) {
+        pickFileAt(filePath);
+        clickOpenLocalization("file-open-localization");
+    }
+
+    public String readFileText(String filePath) {
+        WebElement text = new WebElement(page, "xpath=//*[@data-testid='file-preview']//div[contains(@class,'cm-content')]", "filePreviewText");
+        String shownBefore = text.exists() ? text.getInnerText() : null;
+        pickFileAt(filePath);
+        text.waitForVisible(DEFAULT_TIMEOUT_MS);
+        if (shownBefore != null) {
+            WaitUtil.requireCondition(() -> !text.getLocator().innerText().equals(shownBefore), DEFAULT_TIMEOUT_MS, POLL_MS,
+                    "Waiting for the file pane to show '" + filePath + "' instead of the file shown before");
+        }
+        return text.getInnerText();
+    }
+
+    private void clickOpenLocalization(String testId) {
+        new WebElement(page, "xpath=//*[@data-testid='" + testId + "']", testId).waitForVisible(DEFAULT_TIMEOUT_MS).click();
+    }
+
+    private void pickFileAt(String filePath) {
+        if (!isFileListedAt(filePath)) {
+            throw new AssertionError("The projects tree does not list '" + filePath + "'");
+        }
+        pickNode(fileNodeByPath.format(shownProjectId(), filePath), filePath);
+    }
+
     public boolean isResourceNotFoundShown() {
         return getRootLocator().getLocator()
                 .locator("xpath=.//*[not(*)][contains(normalize-space(.),'The resource is not found')]").count() > 0;
@@ -303,7 +336,11 @@ public class ProjectFilesTabComponent extends BaseComponent {
     }
 
     private void pickFile(String name) {
-        reveal(presentNodeByName, name).click();
+        pickNode(reveal(presentNodeByName, name), name);
+    }
+
+    private void pickNode(WebElement node, String name) {
+        node.click();
         WaitUtil.requireCondition(() -> isEditorShown() || isSelected(name), DEFAULT_TIMEOUT_MS, POLL_MS,
                 "Waiting for the project page to show '" + name + "'");
         if (isEditorShown()) {
