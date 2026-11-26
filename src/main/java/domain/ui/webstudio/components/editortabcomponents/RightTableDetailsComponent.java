@@ -139,7 +139,7 @@ public class RightTableDetailsComponent extends BaseComponent {
     }
 
     public String getTitle() {
-        WebElement title = new WebElement(page, PANEL + "/div[1]/span[@title]", "detailsTitle");
+        WebElement title = new WebElement(page, PANEL + "/div[not(@data-testid)]/span[not(@role)]", "detailsTitle");
         title.waitForVisible(DEFAULT_TIMEOUT_MS);
         return title.getText().trim();
     }

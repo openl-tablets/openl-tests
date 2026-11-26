@@ -1,6 +1,7 @@
 package tests.ui.webstudio.rules_editor;
 
 import configuration.annotations.Description;
+import configuration.annotations.KnownIssue;
 import configuration.annotations.TestCaseId;
 import configuration.annotations.AppContainerConfig;
 import configuration.appcontainer.AppContainerStartParameters;
@@ -26,6 +27,7 @@ public class TestDefaultProperties extends BaseTest {
     @TestCaseId("IPBQA-27254")
     @Description("Rules Editor - Check default properties (Name field) displayed in table details")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
+    @KnownIssue(value = "EPBDS-17341", failsWith = "but was: \"Table Properties\"")
     public void testDefaultProperties() {
         LoginService loginService = new LoginService(DriverPool.getPage());
         EditorPage editorPage = loginService.login(UserService.getUser(User.ADMIN));
