@@ -16,6 +16,7 @@ public class SaveProjectDialogComponent extends BaseComponent {
     private static final String CHANGES = MODAL_ROOT + "//div[@data-testid='save-project-changes']";
 
     private WebElement commentField;
+    private WebElement commentError;
     private WebElement submitBtn;
     private WebElement cancelBtn;
     private WebElement failureDescription;
@@ -28,6 +29,8 @@ public class SaveProjectDialogComponent extends BaseComponent {
     private void initializeElements() {
         commentField = new WebElement(DriverPool.getPage(),
                 "xpath=//textarea[@data-testid='save-project-comment'] | //input[@data-testid='save-project-comment']", "saveProjectComment");
+        commentError = new WebElement(DriverPool.getPage(),
+                "xpath=//*[@data-testid='save-project-comment-error']", "saveProjectCommentError");
         submitBtn = new WebElement(DriverPool.getPage(),
                 "xpath=//button[@data-testid='save-project-submit']", "saveProjectSubmit");
         cancelBtn = new WebElement(DriverPool.getPage(),
@@ -64,6 +67,18 @@ public class SaveProjectDialogComponent extends BaseComponent {
     public SaveProjectDialogComponent setComment(String comment) {
         commentField.fill(comment);
         return this;
+    }
+
+    public String getComment() {
+        return commentField.getCurrentInputValue();
+    }
+
+    public String getCommentError() {
+        return commentError.isVisible() ? commentError.getText().trim() : "";
+    }
+
+    public boolean isSubmitEnabled() {
+        return submitBtn.isEnabled();
     }
 
     public void submit() {

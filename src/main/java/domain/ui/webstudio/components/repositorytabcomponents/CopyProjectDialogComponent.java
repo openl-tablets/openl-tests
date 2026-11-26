@@ -81,6 +81,10 @@ public class CopyProjectDialogComponent extends BaseComponent {
         return this;
     }
 
+    public String getComment() {
+        return commentField.getCurrentInputValue();
+    }
+
     public CopyProjectDialogComponent selectRepository(String repositoryName) {
         LOGGER.info("Selecting copy target repository: {}", repositoryName);
         for (int attempt = 1; attempt <= SELECTION_ATTEMPTS; attempt++) {

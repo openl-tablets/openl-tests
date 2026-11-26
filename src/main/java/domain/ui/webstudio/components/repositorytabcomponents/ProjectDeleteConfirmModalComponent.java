@@ -7,6 +7,7 @@ import domain.ui.webstudio.components.BaseComponent;
 public class ProjectDeleteConfirmModalComponent extends BaseComponent {
 
     private WebElement commentInput;
+    private WebElement commentError;
     private WebElement acknowledgeCheckbox;
     private WebElement deleteBtn;
     private WebElement cancelBtn;
@@ -21,6 +22,10 @@ public class ProjectDeleteConfirmModalComponent extends BaseComponent {
         String modalRoot = "//div[contains(@class,'ant-modal') and .//textarea[@id='comment']]";
         commentInput = new WebElement(DriverPool.getPage(),
                 "xpath=" + modalRoot + "//textarea[@id='comment']", "projectDeleteCommentInput");
+        commentError = new WebElement(DriverPool.getPage(),
+                "xpath=" + modalRoot + "//textarea[@id='comment']"
+                        + "/ancestor::div[contains(concat(' ', normalize-space(@class), ' '), ' ant-form-item ')][1]"
+                        + "//div[contains(@class,'ant-form-item-explain-error')]", "projectDeleteCommentError");
         acknowledgeCheckbox = new WebElement(DriverPool.getPage(),
                 "xpath=" + modalRoot + "//input[@id='confirmed']", "projectDeleteAcknowledgeCheckbox");
         deleteBtn = new WebElement(DriverPool.getPage(),
@@ -48,6 +53,10 @@ public class ProjectDeleteConfirmModalComponent extends BaseComponent {
     public ProjectDeleteConfirmModalComponent acknowledgePermanentDeletion() {
         acknowledgeCheckbox.check();
         return this;
+    }
+
+    public String getCommentError() {
+        return commentError.isVisible() ? commentError.getText().trim() : "";
     }
 
     public boolean isDeleteEnabled() {
