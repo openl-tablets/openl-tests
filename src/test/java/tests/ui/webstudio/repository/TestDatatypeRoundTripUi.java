@@ -95,20 +95,15 @@ public class TestDatatypeRoundTripUi extends BaseTest {
         editorPage.waitUntilSpinnerLoaded();
     }
 
-    /**
-     * Whether the Type cell leads to the datatype it names. What a cell names is told by the reading of the
-     * table that follows the table itself, so the cell is plain text until that reading arrives.
-     */
     private boolean isTypeCellLinked(TableComponent table) {
         WaitUtil.waitForCondition(() -> typeCellLinkText(table).equals("Address"), LINK_TIMEOUT_MS, 250,
                 "Waiting for the Type cell to lead to the datatype it names");
         return typeCellLinkText(table).equals("Address");
     }
 
-    /** A type a cell names is drawn as something to press, which leads to the table that declares it. */
     private String typeCellLinkText(TableComponent table) {
         var link = table.getRow(LINKED_TYPE_ROW).getCells().get(TYPE_COLUMN - 1)
-                .getLocator().locator("xpath=.//button[starts-with(@data-testid,'cell-usage-')]");
+                .getLocator().locator("xpath=.//*[@role='button'][starts-with(@data-testid,'cell-usage-')]");
         return link.count() == 0 ? "" : link.first().innerText().trim();
     }
 }

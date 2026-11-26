@@ -8,12 +8,7 @@ import lombok.Getter;
 
 import java.util.List;
 
-/**
- * The details panel beside the table. A property is found by the name the panel shows for it: the test ids
- * the panel carries are spelled with the property's technical name instead.
- */
 public class RightTableDetailsComponent extends BaseComponent {
-
 
     private static final String PANEL = "xpath=//aside[@data-testid='table-details']";
     private static final String ROW_BY_LABEL = PANEL + "//tr[contains(@class,'ant-descriptions-row')][.//th[normalize-space()='%s']]";
@@ -48,7 +43,8 @@ public class RightTableDetailsComponent extends BaseComponent {
 
     private void initializeElements() {
         panel = new WebElement(page, PANEL, "tableDetailsPanel");
-        tableNameTemplate = new WebElement(page, PANEL + "//span[@title='%s']", "tableDetailsName");
+        tableNameTemplate = new WebElement(page, "xpath=//table[@data-testid='module-table']//td[@data-role='signature']"
+                + "[contains(concat(' ', translate(normalize-space(.), '(', ' '), ' '), ' %s ')]", "openTableSignature");
         editBtn = new WebElement(page, PANEL + "//button[@data-testid='table-details-edit']", "editPropertiesBtn");
         saveBtn = new WebElement(page, PANEL + "//button[@data-testid='table-details-save']", "savePropertiesBtn");
         cancelBtn = new WebElement(page, PANEL + "//button[@data-testid='table-details-cancel']", "cancelPropertiesBtn");
@@ -86,7 +82,6 @@ public class RightTableDetailsComponent extends BaseComponent {
         return this;
     }
 
-
     public RightTableDetailsComponent setProperty(String propertyName, String propertyValue) {
         startEditing();
         WebElement input = propertyInputTemplate.format(propertyName);
@@ -95,10 +90,6 @@ public class RightTableDetailsComponent extends BaseComponent {
         return this;
     }
 
-    /**
-     * Whether the panel says the table carries that value. The panel is drawn again once the table has been
-     * read back, so what it says a moment after a change is still what it said before it.
-     */
     public boolean isPropertySet(String propertyName, String propertyValue) {
         return WaitUtil.waitForCondition(() -> propertySaid(propertyName).contains(propertyValue),
                 DEFAULT_TIMEOUT_MS, SETTLE_MS, "Waiting for the panel to say '" + propertyName + "' is "
@@ -119,6 +110,8 @@ public class RightTableDetailsComponent extends BaseComponent {
 
     public RightTableDetailsComponent waitForTableLoaded(String tableName) {
         tableNameTemplate.format(tableName).waitForVisible(DEFAULT_TIMEOUT_MS);
+        new WebElement(page, PANEL + "//*[@data-testid='table-details-loading']", "detailsLoading")
+                .waitForHidden(DEFAULT_TIMEOUT_MS);
         return this;
     }
 
@@ -126,10 +119,6 @@ public class RightTableDetailsComponent extends BaseComponent {
         return propertyRowTemplate.format(propertyName);
     }
 
-    /**
-     * Whether the value shown comes from somewhere above the table. The panel says so only while it is read,
-     * so a panel left open for writing is closed first.
-     */
     public boolean isPropertyInherited(String propertyName) {
         cancelEditing();
         return inheritedSourceTemplate.format(propertyName).isVisible(PROBE_MS);
@@ -149,20 +138,17 @@ public class RightTableDetailsComponent extends BaseComponent {
         waitUntilSpinnerLoaded();
     }
 
-    /** The name of the table the panel is about, which heads it. */
     public String getTitle() {
         WebElement title = new WebElement(page, PANEL + "/div[1]/span[@title]", "detailsTitle");
         title.waitForVisible(DEFAULT_TIMEOUT_MS);
         return title.getText().trim();
     }
 
-    /** Whether the panel says in so many words that the table declares nothing. */
     public boolean saysNoProperties() {
         return new WebElement(page, PANEL + "//*[@data-testid='table-details-empty']", "detailsEmpty")
                 .isVisible(DEFAULT_TIMEOUT_MS);
     }
 
-    /** How many properties the panel lists, which may be none. */
     public int getPropertiesRowCount() {
         panel.waitForVisible(DEFAULT_TIMEOUT_MS);
         return propertyLabels.size();
@@ -198,12 +184,6 @@ public class RightTableDetailsComponent extends BaseComponent {
         pickInSelect(propertySelectTemplate.format(propertyName), value);
     }
 
-    /** Picks several values of a property that holds more than one. */
-    /**
-     * Leaves the row reading exactly those values. The control takes several and answers a press by adding or
-     * taking away what was pressed, so what it already holds is let go of first and the values are then taken
-     * one by one.
-     */
     public void editCheckboxProperty(String propertyName, String... values) {
         startEditing();
         WebElement select = propertySelectTemplate.format(propertyName);
@@ -218,11 +198,6 @@ public class RightTableDetailsComponent extends BaseComponent {
         page.keyboard().press("Escape");
     }
 
-    /**
-     * Writes a date over what the row already reads. The day is chosen in a control of its own, which keeps
-     * the day it stands on and puts it back whenever what is typed is not a day: the text is therefore taken
-     * out with the keyboard, as a reader would, rather than emptied from under it.
-     */
     public void editDateProperty(String propertyName, String dateValue) {
         startEditing();
         WebElement input = propertyInputTemplate.format(propertyName);

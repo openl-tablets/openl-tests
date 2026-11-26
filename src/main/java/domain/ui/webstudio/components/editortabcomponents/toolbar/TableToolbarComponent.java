@@ -227,7 +227,7 @@ public class TableToolbarComponent extends BaseComponent {
         WebElement openProperties = new WebElement(page,
                 "xpath=//div[@data-testid='table-details-body']", "openPropertiesPanel");
         if (openProperties.isVisible(1000)) {
-            new WebElement(page, "xpath=//button[@data-testid='table-details-toggle']", "foldPropertiesBtn").click();
+            new WebElement(page, "xpath=//button[@data-testid='table-details-collapse']", "foldPropertiesBtn").click();
             openProperties.waitForHidden(DEFAULT_TIMEOUT_MS);
         }
         WaitUtil.retryOnException(() -> {

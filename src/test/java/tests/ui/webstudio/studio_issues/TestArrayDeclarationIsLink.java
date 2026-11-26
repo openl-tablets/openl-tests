@@ -36,10 +36,10 @@ public class TestArrayDeclarationIsLink extends BaseTest {
         EditorPage editorPage = createProjectAndOpenTable("TestArrayDeclarationIsLink", DECISION, "DetermineStatusByCodeRule");
 
         List<WebElement> links = editorPage.createElementList(
-                "xpath=//td//button[starts-with(@data-testid,'cell-usage-')][normalize-space()='Procedure']");
+                "xpath=//td//*[@role='button'][starts-with(@data-testid,'cell-usage-')][normalize-space()='Procedure']");
         assertThat(links.size()).as("Should find exactly 12 procedure links").isEqualTo(12);
 
-        String plain = editorPage.createElementList("xpath=//td[not(.//button)][normalize-space()!='']")
+        String plain = editorPage.createElementList("xpath=//td[not(.//*[@role='button'])][normalize-space()!='']")
                 .get(0).getCssValue("color");
         links.forEach(link -> assertThat(link.getCssValue("color"))
                 .as("A procedure should be drawn in the colour a link is drawn in, not as plain text")

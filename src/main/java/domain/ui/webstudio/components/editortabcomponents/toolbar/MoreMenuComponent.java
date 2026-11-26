@@ -1,6 +1,5 @@
 package domain.ui.webstudio.components.editortabcomponents.toolbar;
 
-import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Response;
 import configuration.core.ui.WebElement;
@@ -14,92 +13,74 @@ import java.util.List;
 
 public class MoreMenuComponent extends BaseComponent implements IMoreMenu {
 
-    private static final int MENU_ITEM_VISIBLE_TIMEOUT_MS = 500;
-    private static final int MENU_ITEM_CLICK_TIMEOUT_MS = 2000;
-    private static final long MENU_RETRY_TIMEOUT_MS = DEFAULT_TIMEOUT_MS * 2L;
+    private static final int ACTION_VISIBLE_TIMEOUT_MS = 500;
+    private static final int ACTION_CLICK_TIMEOUT_MS = 2000;
+    private static final long ACTION_RETRY_TIMEOUT_MS = DEFAULT_TIMEOUT_MS * 2L;
     private static final int SETTLE_LOOKS = 4;
     private static final int SETTLE_LOOK_MS = 800;
 
+    private static final String ACTION_BAR = "xpath=//div[@data-testid='module-actions']";
+    private static final String OVERFLOW = "//div[@data-testid='module-actions-overflow']";
+    private static final String ACTION_BUTTON = "[starts-with(@data-testid,'module-')][not(@data-testid='module-actions-more')]";
+
     private final WebElement toggle;
-    private final WebElement changesBtn;
-    private final WebElement revisionsBtn;
-    private final WebElement compareExcelFilesBtn;
-    private final WebElement tableDependenciesBtn;
-    private final WebElement reformatExcelFilesBtn;
+    private final WebElement actionBar;
+    private final WebElement actionTemplate;
     private final WebElement reformatConfirmBtn;
-    private final WebElement allMenuLinks;
+    private final WebElement barActionLabels;
+    private final WebElement overflowPanel;
+    private final WebElement overflowActionLabels;
     private final WebElement revisionsTab;
 
-    // The menu itself is rendered into a body-level dropdown, so its items are located at page level.
-    private static final String OPEN_MENU = "xpath=//div[contains(@class,'ant-dropdown')][not(contains(@class,'ant-dropdown-hidden'))]";
-
     public MoreMenuComponent(Page page) {
-        this(new WebElement(page, "xpath=//button[@data-testid='module-more']", "moreBtn"));
+        this(new WebElement(page, "xpath=//button[@data-testid='module-actions-more']", "moreBtn"));
     }
 
     public MoreMenuComponent(WebElement rootLocator) {
         super(rootLocator);
         toggle = rootLocator;
-        changesBtn = new WebElement(page, OPEN_MENU + "//li[normalize-space()='Local Changes']", "changesBtn");
-        revisionsBtn = new WebElement(page, OPEN_MENU + "//li[normalize-space()='Revisions']", "revisionsBtn");
-        compareExcelFilesBtn = new WebElement(page, OPEN_MENU + "//li[normalize-space()='Compare Excel files']", "compareExcelFilesBtn");
-        tableDependenciesBtn = new WebElement(page, OPEN_MENU + "//li[normalize-space()='Table Dependencies']", "tableDependenciesBtn");
-        reformatExcelFilesBtn = new WebElement(page, OPEN_MENU + "//li[normalize-space()='Reformat Excel files']", "reformatExcelFilesBtn");
+        actionBar = new WebElement(page, ACTION_BAR, "moduleActionBar");
+        actionTemplate = new WebElement(page, "xpath=//button[@data-testid='module-%s']", "moduleAction");
         reformatConfirmBtn = new WebElement(page, "xpath=//button[@data-testid='reformat-ok']", "reformatConfirmBtn");
-        allMenuLinks = new WebElement(page, OPEN_MENU + "//li[contains(@class,'ant-dropdown-menu-item')]", "allMoreMenuLinks");
+        barActionLabels = new WebElement(page, ACTION_BAR + "//button" + ACTION_BUTTON, "moduleBarActions");
+        overflowPanel = new WebElement(page, "xpath=" + OVERFLOW, "moduleActionsMenu");
+        overflowActionLabels = new WebElement(page, "xpath=" + OVERFLOW + "//button" + ACTION_BUTTON, "moduleMenuActions");
         revisionsTab = new WebElement(page, "xpath=//div[@data-testid='project-tabs']//div[@data-node-key='history']", "revisionsTab");
     }
 
-    /**
-     * Opens the More menu. The project's own screen has none — what the menu holds is its tabs there — so
-     * the press is made only where the menu is, and each action finds its own way from whichever screen.
-     */
     public MoreMenuComponent open() {
         closeWindowsOverTheScreen();
-        WaitUtil.sleep(1000, "Waiting before opening the More menu");
-        if (toggle.isVisible(MENU_ITEM_VISIBLE_TIMEOUT_MS * 2)) {
-            toggle.click();
-            WaitUtil.sleep(500, "Waiting for the More menu to open");
-        }
+        WaitUtil.sleep(1000, "Waiting before using the module actions");
         return this;
     }
 
     @Override
     public ChangesDialogComponent clickChanges() {
         waitUntilSpinnerLoaded();
-        // The history of a module is behind this menu and nowhere else, so the menu is waited for rather
-        // than passed over: a module screen still settling has not drawn it yet.
-        toggle.waitForVisible(DEFAULT_TIMEOUT_MS);
+        actionBar.waitForVisible(DEFAULT_TIMEOUT_MS);
         ChangesDialogComponent changes = new ChangesDialogComponent();
         boolean opened = WaitUtil.retryAction(() -> {
-            clickMenuItem(changesBtn, "Local Changes");
+            clickAction("localChanges", "Local Changes");
             if (!changes.isViewShown(DEFAULT_TIMEOUT_MS)) {
-                throw new IllegalStateException("Local Changes view did not open after clicking the menu item");
+                throw new IllegalStateException("Local Changes view did not open after clicking the action");
             }
-            // The module screen finishes what the save left it doing and draws itself anew, which takes the
-            // history away with it. It is opened again rather than read while it is going, and it counts as
-            // open only once it has stayed so while the screen underneath settled.
             for (int look = 0; look < SETTLE_LOOKS; look++) {
                 WaitUtil.sleep(SETTLE_LOOK_MS, "Letting the module screen settle under the history");
-                if (!changes.isViewShown(MENU_ITEM_VISIBLE_TIMEOUT_MS * 2)) {
+                if (!changes.isViewShown(ACTION_VISIBLE_TIMEOUT_MS * 2)) {
                     throw new IllegalStateException("Local Changes closed again while the module screen settled");
                 }
             }
-        }, MENU_RETRY_TIMEOUT_MS + DEFAULT_TIMEOUT_MS, 500, "Opening Local Changes from the More menu");
+        }, ACTION_RETRY_TIMEOUT_MS + DEFAULT_TIMEOUT_MS, 500, "Opening Local Changes from the module actions");
         if (!opened) {
-            throw new IllegalStateException("Local Changes view did not open within " + (MENU_RETRY_TIMEOUT_MS + DEFAULT_TIMEOUT_MS) + " ms");
+            throw new IllegalStateException("Local Changes view did not open within " + (ACTION_RETRY_TIMEOUT_MS + DEFAULT_TIMEOUT_MS) + " ms");
         }
         return changes.waitForLoaded();
     }
 
     @Override
-    /**
-     * Opens what the project has been through. A module screen keeps it behind More; the project's own
-     * screen gives it a tab of its own, so which of the two is pressed depends on where the reader stands.
-     */
     public void clickRevisions() {
-        if (toggle.isVisible(MENU_ITEM_VISIBLE_TIMEOUT_MS * 2)) {
-            clickMenuItem(revisionsBtn, "Revisions");
+        if (actionBar.isVisible(ACTION_VISIBLE_TIMEOUT_MS * 2)) {
+            clickAction("revisions", "Revisions");
         } else {
             revisionsTab.waitForVisible(DEFAULT_TIMEOUT_MS);
             revisionsTab.click();
@@ -109,13 +90,13 @@ public class MoreMenuComponent extends BaseComponent implements IMoreMenu {
 
     @Override
     public void clickTableDependencies() {
-        clickMenuItem(tableDependenciesBtn, "Table Dependencies");
+        clickAction("dependencies", "Table Dependencies");
         WaitUtil.sleep(1000, "Waiting for Table Dependencies view to load");
     }
 
     @Override
     public void reformatExcelFiles() {
-        clickMenuItem(reformatExcelFilesBtn, "Reformat Excel files");
+        clickAction("reformat", "Reformat Excel files");
         reformatConfirmBtn.waitForVisible(DEFAULT_TIMEOUT_MS);
         Response reformatted = page.waitForResponse(
                 response -> "POST".equals(response.request().method()) && response.url().endsWith("/format"),
@@ -126,37 +107,42 @@ public class MoreMenuComponent extends BaseComponent implements IMoreMenu {
         }
     }
 
-    private void clickMenuItem(WebElement item, String itemName) {
+    private void clickAction(String key, String actionName) {
+        WebElement action = actionTemplate.format(key);
         boolean clicked = WaitUtil.retryAction(() -> {
-            if (!item.isVisible(MENU_ITEM_VISIBLE_TIMEOUT_MS)) {
+            if (!action.isVisible(ACTION_VISIBLE_TIMEOUT_MS)) {
                 toggle.click();
             }
-            item.click(MENU_ITEM_CLICK_TIMEOUT_MS);
-        }, MENU_RETRY_TIMEOUT_MS, 500, "Clicking '" + itemName + "' in the More menu, re-opening the menu if a toolbar refresh closed it");
+            action.click(ACTION_CLICK_TIMEOUT_MS);
+        }, ACTION_RETRY_TIMEOUT_MS, 500, "Clicking '" + actionName + "' in the module actions, opening their menu if the bar has no room for it");
         if (!clicked) {
-            throw new IllegalStateException("'" + itemName + "' in the More menu could not be clicked within " + MENU_RETRY_TIMEOUT_MS + " ms");
+            throw new IllegalStateException("'" + actionName + "' in the module actions could not be clicked within " + ACTION_RETRY_TIMEOUT_MS + " ms");
         }
     }
 
     @Override
     public CompareExcelFilesDialogComponent clickCompareExcelFiles() {
-        Page popup = page.waitForPopup(compareExcelFilesBtn::click);
+        Page popup = page.waitForPopup(() -> clickAction("compare", "Compare Excel files"));
         popup.waitForLoadState();
         return new CompareExcelFilesDialogComponent(popup);
     }
 
     public List<String> getMenuItems() {
-        List<String> items = new ArrayList<>();
-        Locator menuItems = allMenuLinks.getLocator();
-        for (int i = 0; i < menuItems.count(); i++) {
-            Locator item = menuItems.nth(i);
-            if (item.isVisible()) {
-                String text = item.textContent().trim();
-                if (!text.isEmpty()) {
-                    items.add(text);
-                }
-            }
+        actionBar.waitForVisible(DEFAULT_TIMEOUT_MS);
+        List<String> items = new ArrayList<>(labelsOf(barActionLabels));
+        if (toggle.isVisible(ACTION_VISIBLE_TIMEOUT_MS * 2)) {
+            toggle.click();
+            overflowPanel.waitForVisible(DEFAULT_TIMEOUT_MS);
+            items.addAll(labelsOf(overflowActionLabels));
+            page.keyboard().press("Escape");
         }
         return items;
+    }
+
+    private List<String> labelsOf(WebElement actions) {
+        return actions.getLocator().allInnerTexts().stream()
+                .map(text -> text.split("\n")[0].trim())
+                .filter(text -> !text.isEmpty())
+                .toList();
     }
 }

@@ -9,19 +9,10 @@ import helpers.utils.WaitUtil;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * The React projects table of the projects list (Studio 6.4.0): rows with inline actions and a row
- * overflow menu. Row elements are scoped under {@code [data-testid=projects-table]} (verified against
- * the live DOM); the overflow menu is an antd dropdown rendered into a body-level portal, so its items
- * are located at page level on purpose.
- */
 public class ProjectsTableComponent extends BaseComponent {
 
-    // aria-label of the row's overflow trigger — a menu opener, not an action of its own.
     private static final String OVERFLOW_TRIGGER_LABEL = "Actions";
-    // Inline row buttons render with the row itself, so a short probe decides inline-vs-overflow.
     private static final int PROBE_MS = DEFAULT_TIMEOUT_MS / 5;
-    // Short enough that a row lost to a re-render is retried instead of waited out.
     private static final int ACTION_CLICK_TIMEOUT_MS = DEFAULT_TIMEOUT_MS / 2;
     private static final int ROW_LISTED_TIMEOUT_MS = 90000;
 
@@ -33,9 +24,8 @@ public class ProjectsTableComponent extends BaseComponent {
     private final WebElement rowMoreBtn;
     private final WebElement actionByNameAndState;
     private final WebElement rowMoreBtnByState;
-    private final WebElement rowByNameAndState;
+    private final WebElement nameInRowByState;
     private final WebElement rowActionButtons;
-    // antd dropdown portal — rendered at body level, outside the table subtree
     private final WebElement overflowMenuItem;
     private final WebElement overflowMenuItems;
 
@@ -49,14 +39,13 @@ public class ProjectsTableComponent extends BaseComponent {
                 "xpath=//*[@data-testid='projects-home-loading'] | //*[@data-testid='projects-loading-overlay']",
                 "projectsListBeingRead");
         rowByName = createScopedElement("xpath=.//tr[starts-with(@data-testid,'project-row')][.//span[normalize-space()='%s']]", "projectRow");
-        // Click the name, not the row: a row also holds a branch switcher, and a row-wide click can hit it.
         nameInRow = createScopedElement("xpath=.//tr[starts-with(@data-testid,'project-row')]//span[normalize-space()='%s']", "projectNameInRow");
         branchInRow = createScopedElement("xpath=.//tr[starts-with(@data-testid,'project-row')][.//span[normalize-space()='%s']]//span[starts-with(@data-testid,'row-branch-')][not(contains(@data-testid,'-default'))][not(contains(@data-testid,'-trigger'))]", "projectBranchInRow");
         actionByName = createScopedElement("xpath=.//tr[starts-with(@data-testid,'project-row')][.//span[normalize-space()='%s']]//button[@aria-label='%s']", "projectRowAction");
         rowMoreBtn = createScopedElement("xpath=.//tr[starts-with(@data-testid,'project-row')][.//span[normalize-space()='%s']]//button[starts-with(@data-testid,'project-actions-')]", "projectRowMoreBtn");
         actionByNameAndState = createScopedElement("xpath=.//tr[starts-with(@data-testid,'project-row')][.//span[normalize-space()='%s']][.//button[@aria-label='%s']]//button[@aria-label='%s']", "projectRowActionByState");
         rowMoreBtnByState = createScopedElement("xpath=.//tr[starts-with(@data-testid,'project-row')][.//span[normalize-space()='%s']][.//button[@aria-label='%s']]//button[starts-with(@data-testid,'project-actions-')]", "projectRowMoreBtnByState");
-        rowByNameAndState = createScopedElement("xpath=.//tr[starts-with(@data-testid,'project-row')][.//span[normalize-space()='%s']][.//button[@aria-label='%s']]", "projectRowByState");
+        nameInRowByState = createScopedElement("xpath=.//tr[starts-with(@data-testid,'project-row')][.//button[@aria-label='%2$s']]//span[normalize-space()='%1$s']", "projectNameInRowByState");
         rowActionButtons = createScopedElement("xpath=.//tr[starts-with(@data-testid,'project-row')][.//span[normalize-space()='%s']]//button[@aria-label]", "projectRowActionButtons");
         overflowMenuItem = new WebElement(page, "xpath=//div[contains(@class,'ant-dropdown')][not(contains(@class,'ant-dropdown-hidden'))]//li[contains(@class,'ant-dropdown-menu-item')][normalize-space()='%s']", "overflowMenuItem");
         overflowMenuItems = new WebElement(page, "xpath=//div[contains(@class,'ant-dropdown')][not(contains(@class,'ant-dropdown-hidden'))]//li[contains(@class,'ant-dropdown-menu-item')]", "overflowMenuItems");
@@ -67,42 +56,24 @@ public class ProjectsTableComponent extends BaseComponent {
         return rowByName.format(projectName).isVisible(DEFAULT_TIMEOUT_MS);
     }
 
-    /**
-     * Waits for the list to hold what it is going to hold. While it is being read the screen draws the
-     * reading in place of the list, and over a list it already has it draws a veil, so a project made a
-     * moment ago — or one just deleted — is looked for once that reading has ended.
-     */
     private void waitUntilTheListIsDrawn() {
         WaitUtil.waitForCondition(() -> !listBeingRead.exists(), DEFAULT_TIMEOUT_MS, 250,
                 "Waiting for the list of projects to be drawn");
     }
 
-    /** The project row element by name — for callers that need custom row interactions. */
     public WebElement getRow(String projectName) {
         return rowByName.format(projectName);
     }
 
-    /**
-     * Whether the row shows this action as an inline button right now. Unlike
-     * {@link #getProjectActionLabels}, it neither opens the overflow menu nor waits, so it is cheap enough
-     * to poll — that is what makes it usable as a completion signal for Open/Close.
-     */
     public boolean isInlineActionPresent(String projectName, String actionLabel) {
         return actionByName.format(projectName, actionLabel).getLocator().count() > 0;
     }
 
-    /**
-     * Waits until the project is really open. The list swaps the row's Open button for Close once the
-     * workspace copy is ready; until then the project detail still renders its read-only subset (no Add
-     * menu on the Files tab), so a permission check that runs straight after the click reads the wrong
-     * state. Never throws — a caller that only needed the click is not failed by a slow open.
-     */
     public void waitUntilOpened(String projectName) {
         WaitUtil.waitForCondition(() -> isInlineActionPresent(projectName, "Close"),
                 DEFAULT_TIMEOUT_MS, 250, "Waiting for project " + projectName + " to finish opening");
     }
 
-    /** Clicks the project name to open the React project-detail view. */
     public void clickProjectName(String projectName) {
         waitUntilTheListIsDrawn();
         WebElement name = nameInRow.format(projectName);
@@ -110,21 +81,12 @@ public class ProjectsTableComponent extends BaseComponent {
         name.click();
     }
 
-    /** Clicks a same-name row picked out by its state (an opened row offers "Close", a closed one "Open"). */
     public void clickRowByState(String projectName, boolean opened) {
         String action = opened ? "Close" : "Open";
-        rowByNameAndState.format(projectName, action).getLocator().first().click();
+        nameInRowByState.format(projectName, action).click();
     }
 
-    /**
-     * Clicks a row action by its label, wherever the row keeps it. Studio 6.4.0 shows only
-     * Copy / Delete Branch / Open / Close as buttons and folds Save, Open Revision, Sync, Deploy,
-     * Compare, Export and Delete into the row's overflow menu.
-     */
     public void clickRowAction(String projectName, String actionLabel) {
-        // The row is re-rendered when the projects list refreshes, which can drop the button between the moment it
-        // is found and the moment it is pressed - and the overflow menu closes with it. So the whole
-        // open-the-menu-and-pick sequence is retried rather than waited for once.
         WaitUtil.retryOnException(() -> {
             WebElement inlineAction = actionByName.format(projectName, actionLabel);
             if (inlineAction.isVisible(PROBE_MS)) {
@@ -137,10 +99,6 @@ public class ProjectsTableComponent extends BaseComponent {
         }, DEFAULT_TIMEOUT_MS * 2, 500, "Pressing the row action '" + actionLabel + "' of project " + projectName);
     }
 
-    /**
-     * Clicks a row action on a same-name row picked out by its state (an opened row offers "Close", a
-     * closed one "Open"), looking inline first and then in that row's overflow menu.
-     */
     public void clickRowActionByState(String projectName, boolean opened, String actionLabel) {
         String stateAction = opened ? "Close" : "Open";
         WebElement inlineAction = actionByNameAndState.format(projectName, stateAction, actionLabel);
@@ -152,11 +110,6 @@ public class ProjectsTableComponent extends BaseComponent {
         overflowMenuItem.format(actionLabel).click();
     }
 
-    /**
-     * Every action a project's row offers (Open/Close/Copy/Export/Delete/Deploy/...), taking both the
-     * inline buttons and the overflow menu into account — 6.4.0 keeps most actions behind the menu, so
-     * the inline buttons alone are not the project's permission set.
-     */
     public List<String> getProjectActionLabels(String projectName) {
         List<String> labels = new ArrayList<>();
         Locator btns = rowActionButtons.format(projectName).getLocator();
@@ -178,19 +131,16 @@ public class ProjectsTableComponent extends BaseComponent {
         return labels;
     }
 
-    /** The branch a project sits on, as shown in its row (the list has a branch column again in 6.4.0). */
     public String getProjectBranch(String projectName) {
         return branchInRow.format(projectName).waitForVisible(DEFAULT_TIMEOUT_MS).getText().trim();
     }
 
-    // Rows are <tr data-testid=project-row-...> with the project name in the row's first <span>.
     public List<String> getAllVisibleProjectNames() {
         List<String> projectNames = new ArrayList<>();
         Locator rows = getRootLocator().getLocator().locator("xpath=.//tr[starts-with(@data-testid,'project-row')]");
         WaitUtil.waitForCondition(() -> rows.count() > 0, 5000, 250, "Waiting for projects to load");
         int count = rows.count();
         for (int i = 0; i < count; i++) {
-            // Only count rows that are actually visible — the React name filter hides non-matching rows.
             if (!rows.nth(i).isVisible()) {
                 continue;
             }
