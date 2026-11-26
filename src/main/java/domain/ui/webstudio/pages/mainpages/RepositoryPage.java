@@ -100,17 +100,21 @@ public class RepositoryPage extends BasePage {
         }
 
         if(finalize) {
-            fillCommitInfo();
-            waitUntilSpinnerLoaded();
-            openProjectsList();
-            String listed = projectName.trim();
-            if (!WaitUtil.waitForCondition(() -> projectsListTable.getRow(listed).isVisible(ROW_PROBE_MS),
-                    PROJECT_LISTED_TIMEOUT_MS, 500,
-                    "Waiting for '" + listed + "' to be listed among the projects")) {
-                throw new AssertionError("The project '" + listed + "' was not made: it is not listed");
-            }
-            openIfClosed(listed);
+            finishCreation(projectName);
         }
+    }
+
+    private void finishCreation(String projectName) {
+        fillCommitInfo();
+        waitUntilSpinnerLoaded();
+        openProjectsList();
+        String listed = projectName.trim();
+        if (!WaitUtil.waitForCondition(() -> projectsListTable.getRow(listed).isVisible(ROW_PROBE_MS),
+                PROJECT_LISTED_TIMEOUT_MS, 500,
+                "Waiting for '" + listed + "' to be listed among the projects")) {
+            throw new AssertionError("The project '" + listed + "' was not made: it is not listed");
+        }
+        openIfClosed(listed);
     }
 
     public void openIfClosed(String projectName) {
@@ -118,6 +122,12 @@ public class RepositoryPage extends BasePage {
             openProject(projectName);
             waitUntilSpinnerLoaded();
         }
+    }
+
+    public void createProjectFromZipWithSelectRepo(String projectName, String zipFileName, String repositoryName) {
+        createProjectLink.click();
+        createNewProjectComponent.createProjectFromZip(zipFileName, projectName, repositoryName);
+        finishCreation(projectName);
     }
 
     public void createProjectFromTemplateWithSelectRepo(String projectName, String templateName, String repositoryName) {

@@ -392,9 +392,7 @@ public class ProjectDetailPage extends BasePage {
     public ProjectDetailPage createBranch(String branchName, boolean switchAfter) {
         String sourceBranch = getCurrentBranch();
         copyIntoNewBranch(branchName);
-        waitUntilSpinnerLoaded();
-        WaitUtil.waitForCondition(() -> branchName.equals(getCurrentBranch()), DEFAULT_TIMEOUT_MS, 500,
-                "Waiting for the project to land on branch " + branchName);
+        waitUntilLandedOnBranch(branchName);
         if (!switchAfter) {
             switchBranch(sourceBranch);
         }
@@ -407,6 +405,22 @@ public class ProjectDetailPage extends BasePage {
         copyProjectDialogComponent.clickCopyButton();
         fillCommitInfoIfShown();
         return this;
+    }
+
+    public ProjectDetailPage copyIntoNewBranchDiscardingChanges(String branchName) {
+        clickHeaderAction("Copy");
+        copyProjectDialogComponent.waitForDialogToAppear().setBranchName(branchName);
+        copyProjectDialogComponent.clickCopyButton(false);
+        fillCommitInfoIfShown();
+        copyProjectDialogComponent.confirmDiscardingChanges();
+        waitUntilLandedOnBranch(branchName);
+        return this;
+    }
+
+    private void waitUntilLandedOnBranch(String branchName) {
+        waitUntilSpinnerLoaded();
+        WaitUtil.waitForCondition(() -> branchName.equals(getCurrentBranch()), DEFAULT_TIMEOUT_MS, 500,
+                "Waiting for the project to land on branch " + branchName);
     }
 
     public MessageComponent.NoticeColors copyIntoNewBranchReadingNotice(String branchName, String noticeText) {
@@ -565,6 +579,12 @@ public class ProjectDetailPage extends BasePage {
 
     public String getStatus() {
         return extractOverviewField("Status", "Repository");
+    }
+
+    public String waitForStatus(String status) {
+        WaitUtil.requireCondition(() -> status.equals(getStatus()), DEFAULT_TIMEOUT_MS, 250,
+                "Waiting for the project status " + status);
+        return getStatus();
     }
 
     private String extractOverviewField(String label, String... nextLabels) {
