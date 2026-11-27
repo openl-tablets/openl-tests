@@ -26,7 +26,8 @@ public class CompareLocalChangesDialogComponent extends BaseComponent {
     private static final String ALL_VERSIONS = "All Versions";
     private static final String CHANGED_FRAME = "rgb(250, 173, 20)";
     private static final String CONFLICT_FRAME = "rgb(255, 77, 79)";
-    private static final String FORMATTING_FRAME = "dashed";
+    private static final String RESTYLED = ANY_PANE + "//*[@data-testid='compare-restyled']";
+    private static final String ALL_DASHED = "frames => frames.length > 0 && frames.every(frame => getComputedStyle(frame).outlineStyle === 'dashed')";
     private static final List<String> ADDED_OR_REMOVED = List.of("rgb(246, 255, 237)", "rgb(255, 242, 240)");
     private static final String COUNT_MARKED = "(cells, marks) => cells.filter(cell => {"
             + " const style = getComputedStyle(cell);"
@@ -41,7 +42,6 @@ public class CompareLocalChangesDialogComponent extends BaseComponent {
     private final WebElement onlyFormattingShowBtn;
     private final WebElement showFormattingChangesCheckbox;
     private final WebElement formattingChangedTag;
-    private final WebElement restyledTable;
     private final WebElement showEqualRowsCheckbox;
     private final WebElement showEqualElementsCheckbox;
     private final WebElement conflictText;
@@ -65,8 +65,6 @@ public class CompareLocalChangesDialogComponent extends BaseComponent {
                 "xpath=//input[@data-testid='compare-show-formatting-changes']", "showFormattingChanges");
         formattingChangedTag = new WebElement(getPage(),
                 "xpath=//*[@data-testid='compare-formatting-changed']", "compareFormattingChanged");
-        restyledTable = new WebElement(getPage(),
-                "xpath=(//*[@data-testid='compare-restyled'])[1]", "compareRestyledTable");
         showEqualRowsCheckbox = new WebElement(getPage(), "xpath=//input[@data-testid='compare-show-equal-rows']", "showEqualRows");
         showEqualElementsCheckbox = new WebElement(getPage(), "xpath=//input[@data-testid='compare-show-equal-elements']", "showEqualElements");
         conflictText = new WebElement(getPage(), "xpath=//*[@data-testid='compare-conflict-text']", "compareConflictText");
@@ -203,7 +201,7 @@ public class CompareLocalChangesDialogComponent extends BaseComponent {
 
     public String getTreeItemStatus(String name) {
         return treeNodeTemplate.format(asShown(name)).waitForVisible(DEFAULT_TIMEOUT_MS)
-                .child("xpath=(.//span[contains(@class,'ant-tree-title')]//span[@title])[1]").getAttribute("title");
+                .child("xpath=.//span[contains(@class,'ant-tree-title')]//span[@role='img'][@title]").getAttribute("title");
     }
 
     public void waitForCellReading(String text) {
@@ -217,7 +215,9 @@ public class CompareLocalChangesDialogComponent extends BaseComponent {
     }
 
     public boolean isFramedAsFormattingChanged() {
-        return FORMATTING_FRAME.equals(restyledTable.waitForVisible(DEFAULT_TIMEOUT_MS).getCssValue("outline-style"));
+        Locator frames = getPage().locator("xpath=" + RESTYLED);
+        WaitUtil.requireCondition(() -> frames.count() > 0, DEFAULT_TIMEOUT_MS, 250, "Waiting for the selected table to be drawn");
+        return (Boolean) frames.evaluateAll(ALL_DASHED);
     }
 
     public String getOnlyFormattingNotice() {
