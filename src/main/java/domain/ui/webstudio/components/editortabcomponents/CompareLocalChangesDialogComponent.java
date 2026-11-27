@@ -26,6 +26,7 @@ public class CompareLocalChangesDialogComponent extends BaseComponent {
     private static final String ALL_VERSIONS = "All Versions";
     private static final String CHANGED_FRAME = "rgb(250, 173, 20)";
     private static final String CONFLICT_FRAME = "rgb(255, 77, 79)";
+    private static final String FORMATTING_FRAME = "dashed";
     private static final List<String> ADDED_OR_REMOVED = List.of("rgb(246, 255, 237)", "rgb(255, 242, 240)");
     private static final String COUNT_MARKED = "(cells, marks) => cells.filter(cell => {"
             + " const style = getComputedStyle(cell);"
@@ -36,6 +37,11 @@ public class CompareLocalChangesDialogComponent extends BaseComponent {
 
     protected final WebElement tree;
     protected final WebElement identicalNotice;
+    private final WebElement onlyFormattingNotice;
+    private final WebElement onlyFormattingShowBtn;
+    private final WebElement showFormattingChangesCheckbox;
+    private final WebElement formattingChangedTag;
+    private final WebElement restyledTable;
     private final WebElement showEqualRowsCheckbox;
     private final WebElement showEqualElementsCheckbox;
     private final WebElement conflictText;
@@ -51,6 +57,16 @@ public class CompareLocalChangesDialogComponent extends BaseComponent {
         this.comparePopup = comparePopup;
         tree = new WebElement(getPage(), "xpath=" + TREE, "compareTree");
         identicalNotice = new WebElement(getPage(), "xpath=//*[@data-testid='compare-identical']", "compareIdentical");
+        onlyFormattingNotice = new WebElement(getPage(),
+                "xpath=//*[@data-testid='compare-only-formatting']", "compareOnlyFormatting");
+        onlyFormattingShowBtn = new WebElement(getPage(),
+                "xpath=//button[@data-testid='compare-only-formatting-show']", "compareOnlyFormattingShow");
+        showFormattingChangesCheckbox = new WebElement(getPage(),
+                "xpath=//input[@data-testid='compare-show-formatting-changes']", "showFormattingChanges");
+        formattingChangedTag = new WebElement(getPage(),
+                "xpath=//*[@data-testid='compare-formatting-changed']", "compareFormattingChanged");
+        restyledTable = new WebElement(getPage(),
+                "xpath=(//*[@data-testid='compare-restyled'])[1]", "compareRestyledTable");
         showEqualRowsCheckbox = new WebElement(getPage(), "xpath=//input[@data-testid='compare-show-equal-rows']", "showEqualRows");
         showEqualElementsCheckbox = new WebElement(getPage(), "xpath=//input[@data-testid='compare-show-equal-elements']", "showEqualElements");
         conflictText = new WebElement(getPage(), "xpath=//*[@data-testid='compare-conflict-text']", "compareConflictText");
@@ -76,7 +92,8 @@ public class CompareLocalChangesDialogComponent extends BaseComponent {
         if (errorNotice.isVisible(PROBE_MS / 2)) {
             throw new AssertionError("The comparison could not be made: " + errorNotice.getText().trim());
         }
-        return identicalNotice.isVisible(PROBE_MS / 2) || !treeTitles().isEmpty();
+        return !treeTitles().isEmpty() || identicalNotice.isVisible(PROBE_MS / 2)
+                || onlyFormattingNotice.isVisible(PROBE_MS / 2);
     }
 
     public CompareLocalChangesDialogComponent waitForTextCompareToAppear() {
@@ -182,6 +199,48 @@ public class CompareLocalChangesDialogComponent extends BaseComponent {
 
     public boolean isTreeItemPresent(String name) {
         return treeNodeTemplate.format(asShown(name)).isVisible(PROBE_MS);
+    }
+
+    public String getTreeItemStatus(String name) {
+        return treeNodeTemplate.format(asShown(name)).waitForVisible(DEFAULT_TIMEOUT_MS)
+                .child("xpath=(.//span[contains(@class,'ant-tree-title')]//span[@title])[1]").getAttribute("title");
+    }
+
+    public void waitForCellReading(String text) {
+        WaitUtil.requireCondition(() -> getPage().locator("xpath=" + ANY_PANE + "//" + ADDRESSED
+                        + "[contains(normalize-space(),\"" + text + "\")]").count() > 0,
+                DEFAULT_TIMEOUT_MS, 250, "Waiting for the selected table to draw a cell reading '" + text + "'");
+    }
+
+    public boolean isMarkedAsFormattingChanged() {
+        return formattingChangedTag.isVisible(PROBE_MS);
+    }
+
+    public boolean isFramedAsFormattingChanged() {
+        return FORMATTING_FRAME.equals(restyledTable.waitForVisible(DEFAULT_TIMEOUT_MS).getCssValue("outline-style"));
+    }
+
+    public String getOnlyFormattingNotice() {
+        return onlyFormattingNotice.waitForVisible(DEFAULT_TIMEOUT_MS).getInnerText().trim();
+    }
+
+    public void clickShowOnlyFormatting() {
+        onlyFormattingShowBtn.waitForVisible(DEFAULT_TIMEOUT_MS).click();
+        onlyFormattingNotice.waitForHidden(DEFAULT_TIMEOUT_MS);
+        WaitUtil.requireCondition(() -> !treeTitles().isEmpty(),
+                DEFAULT_TIMEOUT_MS, 250, "Waiting for the tables that differ in formatting only to be listed");
+    }
+
+    public boolean isFormattingChangesOffered() {
+        return showFormattingChangesCheckbox.isVisible(PROBE_MS);
+    }
+
+    public boolean isFormattingChangesShown() {
+        return showFormattingChangesCheckbox.waitForVisible(DEFAULT_TIMEOUT_MS).isChecked();
+    }
+
+    public void setShowFormattingChanges(boolean value) {
+        setCheckbox(showFormattingChangesCheckbox, value);
     }
 
     public boolean isFirstFragmentPresent() {
@@ -341,7 +400,7 @@ public class CompareLocalChangesDialogComponent extends BaseComponent {
         }
         checkbox.click();
         WaitUtil.requireCondition(() -> checkbox.isChecked() == value, DEFAULT_TIMEOUT_MS, 200,
-                "Waiting for the comparison to be asked for what reads the same");
+                "Waiting for the check box to be " + (value ? "selected" : "cleared"));
     }
 
     public boolean isShowEqualRowsCheckboxVisible() {
