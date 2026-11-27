@@ -1,0 +1,274 @@
+2026-11-17 09:18:44.189 [main] [INFO] BaseTest - Initializing test with Playwright Docker: testContributorSeesErrorInsteadOfBypassConfirm
+2026-11-17 09:18:44.196 [main] [INFO] BaseTest - [user.mode] -> [multi]
+2026-11-17 09:18:44.196 [main] [INFO] BaseTest - [security.administrators] -> [admin]
+2026-11-17 09:18:44.196 [main] [INFO] BaseTest - [repository.design.protected-branches] -> [release-**]
+2026-11-17 09:18:44.196 [main] [INFO] BaseTest - [JAVA_OPTS] -> [-Xms32m -XX:MaxRAMPercentage=50.0]
+2026-11-17 09:18:44.197 [main] [INFO] BaseTest - [security.allow-bypass-protected-branches] -> [true]
+2026-11-17 09:18:44.219 [main] [INFO] AppContainerFactory - Starting app container: appcontainer-364685 (startup timeout: PT10M)
+2026-11-17 09:18:59.454 [main] [INFO] AppContainerFactory - App Localhost accessible url for appcontainer-364685: http://localhost:32780
+2026-11-17 09:18:59.455 [main] [INFO] AppContainerFactory - App Url accessible from the Browser container: http://appcontainer-364685:8080
+2026-11-17 09:18:59.456 [main] [INFO] WaitUtil - Sleeping for 3000ms: Wait 3 seconds for DNS propagation in Docker's embedded DNS server
+2026-11-17 09:19:02.456 [main] [INFO] WaitUtil - Waiting for condition (timeout: 10000ms, polling: 250ms): Waiting for the app container to be running before Playwright container starts
+2026-11-17 09:19:02.461 [main] [INFO] WaitUtil - Condition met after 3ms: Waiting for the app container to be running before Playwright container starts
+2026-11-17 09:19:02.461 [main] [INFO] WaitUtil - Sleeping for 1000ms: Letting Docker DNS propagate the app container hostname across the network
+2026-11-17 09:19:03.462 [main] [INFO] DockerDriverPool - Initializing Playwright Docker container with browser: chrome
+2026-11-17 09:19:03.465 [main] [INFO] DockerDriverPool - npm cache of the Playwright Server container is shared from /home/runner/work/_temp/playwright-npm-cache
+2026-11-17 09:19:03.466 [main] [INFO] DockerDriverPool - Creating Playwright Server Docker container with image: mcr.microsoft.com/playwright:v1.64.0-noble
+2026-11-17 09:19:03.466 [main] [INFO] DockerDriverPool - Volume mapping configured: src/test/resources (host) -> /test_resources (container)
+2026-11-17 09:19:03.466 [main] [INFO] DockerDriverPool - Starting container and waiting for Playwright Server (startup timeout 300 s)...
+2026-11-17 09:19:04.630 [main] [INFO] DockerDriverPool - Playwright Server container started in 1164 ms
+2026-11-17 09:19:04.630 [main] [INFO] DockerDriverPool - Container started - ID: c5911db58838d01d0e9c64f0b79504779612438822a5c9f799f211e39fc209d2
+2026-11-17 09:19:04.630 [main] [INFO] DockerDriverPool - Mapped Playwright Server port: localhost:32781 -> 3000
+2026-11-17 09:19:04.631 [main] [INFO] DockerDriverPool - Container is attached to network for service discovery
+2026-11-17 09:19:04.643 [main] [INFO] DockerDriverPool - Container startup logs:
+Listening on ws://0.0.0.0:3000/
+
+2026-11-17 09:19:04.644 [main] [INFO] DockerDriverPool - Playwright Server ready: http://localhost:32781
+2026-11-17 09:19:05.855 [main] [INFO] DockerDriverPool - Created Playwright instance for server connection
+2026-11-17 09:19:06.009 [main] [INFO] DockerDriverPool - Connected to Playwright Server via WebSocket on attempt 1: ws://localhost:32781/
+2026-11-17 09:19:06.010 [main] [INFO] DockerDriverPool - Video recording enabled for Docker container with temp directory: /tmp/playwright-videos
+2026-11-17 09:19:06.041 [main] [INFO] PlaywrightTracing - Playwright tracing started (DOM snapshots, network, console, sources)
+2026-11-17 09:19:06.083 [main] [INFO] DockerDriverPool - Browser container initialized successfully for thread: main
+2026-11-17 09:19:06.083 [main] [INFO] DriverPool - Playwright initialized in PLAYWRIGHT_DOCKER mode
+2026-11-17 09:19:06.733 [main] [WARN] RestAssuredFilter - 
+
+
+-=HTTP REQUEST=-
+GET http://localhost:32780/web/public/info/openl.json
+Header: Accept : */*
+
+2026-11-17 09:19:06.733 [main] [WARN] RestAssuredFilter - 
+
+
+-=HTTP RESPONSE=-
+200 HTTP/1.1 200 OKHeader: Server : Jetty(12.1.15)
+Header: Date : Tue, 17 Nov 2026 09:19:06 GMT
+Header: Content-Type : text/html;charset=utf-8
+Header: Cache-Control : no-store
+Header: X-Content-Type-Options : nosniff
+Header: X-XSS-Protection : 0
+Header: X-Frame-Options : DENY
+Header: Content-Length : 3134
+Body: 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>OpenL Studio</title>
+    <meta name="description" content="For creation, editing, testing and deploying of OpenL Tablets rules"/>
+    <base href="/"/>
+    <link rel="icon" href="favicon.ico?v=studio" sizes="48x48"/>
+    <link rel="icon" href="favicon.svg?v=studio" sizes="any" type="image/svg+xml"/>
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=studio"/>
+    <link rel="manifest" href="icons/site.webmanifest?v=studio"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <script>
+        // Paints the page in the remembered appearance before the bundle arrives, so a dark reader sees no
+        // white flash. The key mirrors THEME_MODE_KEY in src/utils/themeMode.ts; the bundle takes over from here.
+        (function () {
+            try {
+                var mode = localStorage.getItem('openl.theme.mode') || 'auto'
+                var dark = mode === 'dark' || (mode !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches)
+                document.documentElement.style.colorScheme = dark ? 'dark' : 'light'
+            } catch (e) {
+                // a browser that refuses storage is painted by the bundle alone
+            }
+        })()
+    </script>
+  <script type="module" crossorigin src="./assets/index-o-76wgop.js"></script>
+  <link rel="modulepreload" crossorigin href="./assets/rolldown-runtime-COiEfhsA.js">
+  <link rel="modulepreload" crossorigin href="./assets/jsx-runtime-CxtlQ2t7.js">
+  <link rel="modulepreload" crossorigin href="./assets/cached-B9AbfPq8.js">
+  <link rel="modulepreload" crossorigin href="./assets/dayjs.min-C79hm5sx.js">
+  <link rel="modulepreload" crossorigin href="./assets/dateFormat-DI3C9Uxj.js">
+  <link rel="modulepreload" crossorigin href="./assets/store-BCfGJTvT.js">
+  <link rel="modulepreload" crossorigin href="./assets/tree-B5L9rU0w.js">
+  <link rel="modulepreload" crossorigin href="./assets/functions-BHWCgGVF.js">
+  <link rel="modulepreload" crossorigin href="./assets/listPageTheme-DkMlhuma.js">
+  <link rel="modulepreload" crossorigin href="./assets/projectId-Cc5oAFDy.js">
+  <link rel="modulepreload" crossorigin href="./assets/paper-BwdL3qDI.js">
+  <link rel="modulepreload" crossorigin href="./assets/tables-Cy2qqQRf.js">
+  <link rel="modulepreload" crossorigin href="./assets/useSearchScope-DC0sJZn0.js">
+  <link rel="modulepreload" crossorigin href="./assets/users-Cdcl8SXt.js">
+  <link rel="modulepreload" crossorigin href="./assets/projectsTheme-BPtzJwWd.js">
+  <link rel="modulepreload" crossorigin href="./assets/escapeRegExp-CUtDFyBH.js">
+  <link rel="modulepreload" crossorigin href="./assets/RevisionChanges-B9f93DBa.js">
+  <link rel="modulepreload" crossorigin href="./assets/scrollTo-jUc2x3Bm.js">
+  <link rel="modulepreload" crossorigin href="./assets/useStoredSetting-ChnRZx2h.js">
+  <link rel="modulepreload" crossorigin href="./assets/preload-helper-DclECHGd.js">
+</head>
+<body>
+<div id="appRoot" style="min-height: 48.5px"></div>
+<noscript>You need to enable JavaScript to run this app.</noscript>
+</body>
+</html>
+
+
+2026-11-17 09:19:06.762 [main] [INFO] BaseTest - Application info unavailable: Failed to parse the JSON document
+2026-11-17 09:19:08.986 [main] [WARN] RestAssuredFilter - 
+
+
+-=HTTP REQUEST=-
+GET http://localhost:32780/rest/projects/7XTYENKBVGV3E/files/rules.xml
+Header: Accept : application/json
+Header: Authorization : Basic YWRtaW46YWRtaW4=
+
+2026-11-17 09:19:08.987 [main] [WARN] RestAssuredFilter - 
+
+
+-=HTTP RESPONSE=-
+200 HTTP/1.1 200 OKHeader: Server : Jetty(12.1.15)
+Header: Date : Tue, 17 Nov 2026 09:19:08 GMT
+Header: ETag : "044937b19543465cf062d9ee5ea6663eb0035210ef05ac4998364a21a94b3678"
+Header: Content-Type : application/xml
+Header: Content-Disposition : attachment; filename=rules.xml; filename*=UTF-8''rules.xml
+Header: X-Content-Type-Options : nosniff
+Header: X-XSS-Protection : 0
+Header: Cache-Control : no-cache, no-store, max-age=0, must-revalidate
+Header: Pragma : no-cache
+Header: Expires : 0
+Header: X-Frame-Options : DENY
+Header: Content-Length : 189
+Body: 
+<project>
+  <name>BypassContributorUiProject</name>
+  <modules>
+    <module>
+      <name>Bank Rating</name>
+      <rules-root path="Bank Rating.xlsx"/>
+    </module>
+  </modules>
+</project>
+2026-11-17 09:19:09.769 [main] [INFO] DriverPool - App URL (DOCKER): http://appcontainer-364685:8080
+2026-11-17 09:19:09.769 [main] [INFO] LoginService - Logging in with user: contributor_15960
+2026-11-17 09:19:09.770 [main] [INFO] WaitUtil - Sleeping for 500ms: Waiting for possible redirects to finish
+2026-11-17 09:19:10.643 [main] [INFO] LoginService - Navigated to login page: http://appcontainer-364685:8080
+2026-11-17 09:19:10.648 [main] [INFO] CorePage - domain.ui.webstudio.pages.mainpages.LoginPage was opened.
+2026-11-17 09:19:10.650 [main] [INFO] WebElement - Waiting for usernameField to be visible (timeout: 15000ms)
+2026-11-17 09:19:10.681 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-17 09:19:10.688 [main] [INFO] WaitUtil - Condition met after 7ms: Waiting for the loading overlay to disappear
+2026-11-17 09:19:10.688 [main] [INFO] WebElement - Waiting for usernameField to be visible (timeout: 250ms)
+2026-11-17 09:19:10.701 [main] [INFO] WebElement - Filling usernameField with text: 'contributor_15960'
+2026-11-17 09:19:10.739 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-17 09:19:10.747 [main] [INFO] WaitUtil - Condition met after 8ms: Waiting for the loading overlay to disappear
+2026-11-17 09:19:10.747 [main] [INFO] WebElement - Waiting for passwordField to be visible (timeout: 250ms)
+2026-11-17 09:19:10.768 [main] [INFO] WebElement - Filling passwordField with text: 'contributor_15960'
+2026-11-17 09:19:10.805 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-17 09:19:10.816 [main] [INFO] WaitUtil - Condition met after 11ms: Waiting for the loading overlay to disappear
+2026-11-17 09:19:10.816 [main] [INFO] WebElement - Waiting for loginButton to be visible (timeout: 250ms)
+2026-11-17 09:19:10.824 [main] [INFO] WebElement - Clicking loginButton 
+2026-11-17 09:19:11.401 [main] [INFO] WebElement - Waiting for completeProfileModal to be visible (timeout: 20000ms)
+2026-11-17 09:19:31.407 [main] [INFO] CorePage - domain.ui.webstudio.pages.mainpages.EditorPage was opened.
+2026-11-17 09:19:31.419 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 500ms): Going to 'Projects'
+2026-11-17 09:19:31.419 [main] [INFO] WebElement - Waiting for projectsList to be visible (timeout: 1500ms)
+2026-11-17 09:19:32.927 [main] [INFO] WebElement - Waiting for selectedTabLabel to be visible (timeout: 1500ms)
+2026-11-17 09:19:32.933 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-17 09:19:32.937 [main] [INFO] WaitUtil - Condition met after 4ms: Waiting for the loading overlay to disappear
+2026-11-17 09:19:32.937 [main] [INFO] WebElement - Waiting for selectedTabLabel to be visible (timeout: 3000ms)
+2026-11-17 09:19:32.942 [main] [INFO] WebElement - Clicking with increased timeout selectedTabLabel 
+2026-11-17 09:19:32.973 [main] [INFO] WebElement - Waiting for projectsList to be visible (timeout: 1500ms)
+2026-11-17 09:19:33.260 [main] [INFO] WaitUtil - Condition met after 1841ms: Going to 'Projects'
+2026-11-17 09:19:33.260 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-17 09:19:33.278 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-17 09:19:33.286 [main] [INFO] WaitUtil - Condition met after 8ms: Waiting for the loading overlay to disappear
+2026-11-17 09:19:33.287 [main] [INFO] CorePage - domain.ui.webstudio.pages.mainpages.RepositoryPage was opened.
+2026-11-17 09:19:33.293 [main] [INFO] WebElement - Waiting for projectRowAction to be visible (timeout: 4000ms)
+2026-11-17 09:19:33.307 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-17 09:19:33.313 [main] [INFO] WaitUtil - Condition met after 6ms: Waiting for the loading overlay to disappear
+2026-11-17 09:19:33.314 [main] [INFO] WebElement - Waiting for projectRowAction to be visible (timeout: 10000ms)
+2026-11-17 09:19:33.324 [main] [INFO] WebElement - Clicking with increased timeout projectRowAction 
+2026-11-17 09:19:33.515 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 250ms): Waiting for project BypassContributorUiProject to finish opening
+2026-11-17 09:19:33.576 [main] [INFO] WaitUtil - Condition met after 61ms: Waiting for project BypassContributorUiProject to finish opening
+2026-11-17 09:19:33.576 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-17 09:19:33.586 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-17 09:19:33.599 [main] [INFO] WaitUtil - Condition met after 13ms: Waiting for the loading overlay to disappear
+2026-11-17 09:19:33.600 [main] [INFO] CorePage - domain.ui.webstudio.pages.mainpages.EditorPage was opened.
+2026-11-17 09:19:33.600 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-17 09:19:33.611 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-17 09:19:33.623 [main] [INFO] WaitUtil - Condition met after 12ms: Waiting for the loading overlay to disappear
+2026-11-17 09:19:33.623 [main] [INFO] WebElement - Waiting for projectDetail to be visible (timeout: 1000ms)
+2026-11-17 09:19:34.638 [main] [INFO] WebElement - Waiting for projectCrumb to be visible (timeout: 1000ms)
+2026-11-17 09:19:35.641 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 500ms): Going to 'Projects'
+2026-11-17 09:19:35.642 [main] [INFO] WebElement - Waiting for projectsList to be visible (timeout: 1500ms)
+2026-11-17 09:19:35.646 [main] [INFO] WaitUtil - Condition met after 4ms: Going to 'Projects'
+2026-11-17 09:19:35.646 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-17 09:19:35.650 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-17 09:19:35.653 [main] [INFO] WaitUtil - Condition met after 3ms: Waiting for the loading overlay to disappear
+2026-11-17 09:19:35.653 [main] [INFO] CorePage - domain.ui.webstudio.pages.mainpages.RepositoryPage was opened.
+2026-11-17 09:19:35.654 [main] [INFO] WaitUtil - Waiting for condition (timeout: 20000ms, polling: 250ms): Waiting for the list of projects to be drawn
+2026-11-17 09:19:35.657 [main] [INFO] WaitUtil - Condition met after 3ms: Waiting for the list of projects to be drawn
+2026-11-17 09:19:35.657 [main] [INFO] WebElement - Waiting for projectNameInRow to be visible (timeout: 90000ms)
+2026-11-17 09:19:35.661 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-17 09:19:35.664 [main] [INFO] WaitUtil - Condition met after 3ms: Waiting for the loading overlay to disappear
+2026-11-17 09:19:35.665 [main] [INFO] WebElement - Waiting for projectNameInRow to be visible (timeout: 250ms)
+2026-11-17 09:19:35.669 [main] [INFO] WebElement - Clicking projectNameInRow 
+2026-11-17 09:19:35.686 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 250ms): Waiting for the card of project 'BypassContributorUiProject' to open
+2026-11-17 09:19:35.687 [main] [INFO] WebElement - Waiting for projectDetail to be visible (timeout: 1000ms)
+2026-11-17 09:19:36.319 [main] [INFO] WebElement - Waiting for projectCardName to be visible (timeout: 1000ms)
+2026-11-17 09:19:36.361 [main] [INFO] WebElement - Waiting for projectCardName to be visible (timeout: 250ms)
+2026-11-17 09:19:36.380 [main] [INFO] WebElement - Getting text from projectCardName: 'BypassContributorUiProject'
+2026-11-17 09:19:36.380 [main] [INFO] WaitUtil - Condition met after 693ms: Waiting for the card of project 'BypassContributorUiProject' to open
+2026-11-17 09:19:36.380 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-17 09:19:36.385 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-17 09:19:36.389 [main] [INFO] WaitUtil - Condition met after 4ms: Waiting for the loading overlay to disappear
+2026-11-17 09:19:36.410 [main] [INFO] WebElement - Waiting for moduleOpenLinks_0 to be visible (timeout: 1000ms)
+2026-11-17 09:19:36.419 [main] [INFO] WaitUtil - Waiting for condition (timeout: 15000ms, polling: 1000ms): Click Sync until the merge dialog appears
+2026-11-17 09:19:36.419 [main] [INFO] WebElement - Waiting for contentLoadingSpinner to be hidden
+2026-11-17 09:19:36.423 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-17 09:19:36.427 [main] [INFO] WaitUtil - Condition met after 4ms: Waiting for the loading overlay to disappear
+2026-11-17 09:19:36.428 [main] [INFO] WebElement - Waiting for syncBtn to be visible (timeout: 10000ms)
+2026-11-17 09:19:36.432 [main] [INFO] WebElement - Waiting for syncBtn to be visible (timeout: 20000ms)
+2026-11-17 09:19:36.436 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-17 09:19:36.440 [main] [INFO] WaitUtil - Condition met after 3ms: Waiting for the loading overlay to disappear
+2026-11-17 09:19:36.440 [main] [INFO] WebElement - Waiting for syncBtn to be visible (timeout: 250ms)
+2026-11-17 09:19:36.445 [main] [INFO] WebElement - Clicking syncBtn 
+2026-11-17 09:19:36.674 [main] [INFO] WaitUtil - Sleeping for 500ms: Waiting for Sync dialog to open
+2026-11-17 09:19:37.175 [main] [INFO] WebElement - Waiting for dialogHeader to be visible (timeout: 1000ms)
+2026-11-17 09:19:37.185 [main] [INFO] WaitUtil - Condition met after 766ms: Click Sync until the merge dialog appears
+2026-11-17 09:19:37.186 [main] [INFO] SyncChangesDialogComponent - Selecting branch: release-EPBDS-15818
+2026-11-17 09:19:37.186 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-17 09:19:37.192 [main] [INFO] WaitUtil - Condition met after 6ms: Waiting for the loading overlay to disappear
+2026-11-17 09:19:37.192 [main] [INFO] WebElement - Waiting for branchSelector to be visible (timeout: 250ms)
+2026-11-17 09:19:37.202 [main] [INFO] WebElement - Clicking branchSelector 
+2026-11-17 09:19:37.263 [main] [INFO] WaitUtil - Waiting for condition (timeout: 2000ms, polling: 100ms): Waiting for selector options to appear
+2026-11-17 09:19:37.281 [main] [INFO] WaitUtil - Condition met after 18ms: Waiting for selector options to appear
+2026-11-17 09:19:37.338 [main] [INFO] WebElement - Waiting for branchSelector_0 to be visible (timeout: 250ms)
+2026-11-17 09:19:37.373 [main] [INFO] WebElement - Getting text from branchSelector_0: 'masterDefault'
+2026-11-17 09:19:37.374 [main] [INFO] WebElement - Waiting for branchSelector_1 to be visible (timeout: 250ms)
+2026-11-17 09:19:37.390 [main] [INFO] WebElement - Getting text from branchSelector_1: 'release-EPBDS-15818'
+2026-11-17 09:19:37.391 [main] [INFO] WaitUtil - Waiting for condition (timeout: 60000ms, polling: 150ms): Waiting for the loading overlay to disappear
+2026-11-17 09:19:37.399 [main] [INFO] WaitUtil - Condition met after 8ms: Waiting for the loading overlay to disappear
+2026-11-17 09:19:37.399 [main] [INFO] WebElement - Waiting for branchSelector_1 to be visible (timeout: 250ms)
+2026-11-17 09:19:37.411 [main] [INFO] WebElement - Clicking branchSelector_1 
+2026-11-17 09:19:37.602 [main] [INFO] WaitUtil - Waiting for condition (timeout: 5000ms, polling: 200ms): Waiting for bypass warning alert
+2026-11-17 09:19:37.602 [main] [INFO] WebElement - Waiting for bypassWarningAlert to be visible (timeout: 250ms)
+2026-11-17 09:19:37.909 [main] [INFO] WaitUtil - Sleeping for 200ms: Polling for condition (attempt): Waiting for bypass warning alert
+2026-11-17 09:19:38.109 [main] [INFO] WebElement - Waiting for bypassWarningAlert to be visible (timeout: 250ms)
+2026-11-17 09:19:38.370 [main] [INFO] WaitUtil - Sleeping for 200ms: Polling for condition (attempt): Waiting for bypass warning alert
+2026-11-17 09:19:38.570 [main] [INFO] WebElement - Waiting for bypassWarningAlert to be visible (timeout: 250ms)
+2026-11-17 09:19:38.828 [main] [INFO] WaitUtil - Sleeping for 200ms: Polling for condition (attempt): Waiting for bypass warning alert
+2026-11-17 09:19:39.028 [main] [INFO] WebElement - Waiting for bypassWarningAlert to be visible (timeout: 250ms)
+2026-11-17 09:19:39.288 [main] [INFO] WaitUtil - Sleeping for 200ms: Polling for condition (attempt): Waiting for bypass warning alert
+2026-11-17 09:19:39.488 [main] [INFO] WebElement - Waiting for bypassWarningAlert to be visible (timeout: 250ms)
+2026-11-17 09:19:39.745 [main] [INFO] WaitUtil - Sleeping for 200ms: Polling for condition (attempt): Waiting for bypass warning alert
+2026-11-17 09:19:39.945 [main] [INFO] WebElement - Waiting for bypassWarningAlert to be visible (timeout: 250ms)
+2026-11-17 09:19:40.201 [main] [INFO] WaitUtil - Sleeping for 200ms: Polling for condition (attempt): Waiting for bypass warning alert
+2026-11-17 09:19:40.402 [main] [INFO] WebElement - Waiting for bypassWarningAlert to be visible (timeout: 250ms)
+2026-11-17 09:19:40.659 [main] [INFO] WaitUtil - Sleeping for 200ms: Polling for condition (attempt): Waiting for bypass warning alert
+2026-11-17 09:19:40.860 [main] [INFO] WebElement - Waiting for bypassWarningAlert to be visible (timeout: 250ms)
+2026-11-17 09:19:41.116 [main] [INFO] WaitUtil - Sleeping for 200ms: Polling for condition (attempt): Waiting for bypass warning alert
+2026-11-17 09:19:41.317 [main] [INFO] WebElement - Waiting for bypassWarningAlert to be visible (timeout: 250ms)
+2026-11-17 09:19:41.573 [main] [INFO] WaitUtil - Sleeping for 200ms: Polling for condition (attempt): Waiting for bypass warning alert
+2026-11-17 09:19:41.774 [main] [INFO] WebElement - Waiting for bypassWarningAlert to be visible (timeout: 250ms)
+2026-11-17 09:19:42.031 [main] [INFO] WaitUtil - Sleeping for 200ms: Polling for condition (attempt): Waiting for bypass warning alert
+2026-11-17 09:19:42.231 [main] [INFO] WebElement - Waiting for bypassWarningAlert to be visible (timeout: 250ms)
+2026-11-17 09:19:42.489 [main] [INFO] WaitUtil - Sleeping for 200ms: Polling for condition (attempt): Waiting for bypass warning alert
+2026-11-17 09:19:42.689 [main] [WARN] WaitUtil - Condition not met after 5000ms timeout: Waiting for bypass warning alert
+2026-11-17 09:19:42.690 [main] [INFO] WaitUtil - Waiting for condition (timeout: 10000ms, polling: 500ms): Waiting for a blocked-merge note containing: protected
+2026-11-17 09:19:42.690 [main] [INFO] WaitUtil - Sleeping for 1500ms: Waiting for the merge check to answer
+2026-11-17 09:19:44.201 [main] [INFO] WebElement - Waiting for mergeBlockedAlerts_0 to be visible (timeout: 250ms)
+2026-11-17 09:19:44.212 [main] [INFO] WebElement - Getting text from mergeBlockedAlerts_0: 'There are changes to merge, but the branch "release-EPBDS-15818" is protected and you may not merge into it.'
+2026-11-17 09:19:44.213 [main] [INFO] WaitUtil - Condition met after 1523ms: Waiting for a blocked-merge note containing: protected
+2026-11-17 09:19:44.213 [main] [INFO] WebElement - Waiting for bypassConfirmBtn to be hidden
+2026-11-17 09:19:44.253 [main] [INFO] DockerDriverPool - Closing Playwright Docker for thread: main
+2026-11-17 09:19:44.661 [main] [INFO] WaitUtil - Sleeping for 2000ms: Waiting for Docker daemon to complete resource cleanup
