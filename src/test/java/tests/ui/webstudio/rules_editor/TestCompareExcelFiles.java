@@ -5,8 +5,12 @@ import configuration.annotations.TestCaseId;
 import configuration.annotations.AppContainerConfig;
 import configuration.appcontainer.AppContainerStartParameters;
 import domain.serviceclasses.constants.User;
+import domain.ui.webstudio.components.common.TabSwitcherComponent;
 import domain.ui.webstudio.components.editortabcomponents.CompareExcelFilesDialogComponent;
+import domain.ui.webstudio.components.repositorytabcomponents.CompareGitRevisionsDialogComponent;
 import domain.ui.webstudio.pages.mainpages.EditorPage;
+import domain.ui.webstudio.pages.mainpages.ProjectDetailPage;
+import domain.ui.webstudio.pages.mainpages.RepositoryPage;
 import helpers.service.WorkflowService;
 import helpers.utils.TestDataUtil;
 import helpers.utils.WaitUtil;
@@ -22,6 +26,12 @@ public class TestCompareExcelFiles extends BaseTest {
     private static final String FILE_2 = "All_tables_type2.xlsx";
     private static final String RESIZED_FILE_1 = "Resized_table_first.xlsx";
     private static final String RESIZED_FILE_2 = "Resized_table_second.xlsx";
+    private static final String FORMATTING_BASE = "Formatting_base.xlsx";
+    private static final String FORMATTING_AND_VALUE = "Formatting_and_value.xlsx";
+    private static final String FORMATTING_ONLY = "Formatting_only.xlsx";
+    private static final String RATE = "SimpleRules Double Rate(String kind)";
+    private static final String LIMIT = "SimpleRules Integer Limit(String kind)";
+    private static final String CHANGED = "Changed";
 
     @Test
     @TestCaseId({"IPBQA-28380", "EPBDS-16578"})
@@ -160,6 +170,143 @@ public class TestCompareExcelFiles extends BaseTest {
                 .isEqualTo(7);
 
         compareDialog.close();
+    }
+
+    @Test
+    @TestCaseId({"IPBQA-33088", "EPBDS-17236"})
+    @Description("Compare: a table that differs in formatting only is left out of the comparison of two workbooks "
+            + "and of two revisions, and is listed, marked 'Formatting changed' and framed with a dashed line "
+            + "once 'Formatting changes' is selected; a comparison where only the formatting differs says so.")
+    @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
+    public void testFormattingChangesAreListedOnlyWhenAskedFor() {
+        String projectName = WorkflowService.loginCreateProjectFromExcelFile(User.ADMIN, FORMATTING_BASE);
+        EditorPage editorPage = new EditorPage();
+        editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, "Formatting_base");
+
+        CompareExcelFilesDialogComponent compareDialog = editorPage
+                .getEditorToolbarPanelComponent()
+                .clickMore()
+                .clickCompareExcelFiles();
+        assertThat(compareDialog.isFormattingChangesOffered())
+                .as("'Formatting changes' is offered next to the workbooks to compare")
+                .isTrue();
+        assertThat(compareDialog.isFormattingChangesShown())
+                .as("'Formatting changes' is not selected by default")
+                .isFalse();
+
+        compareWithBase(compareDialog, FORMATTING_AND_VALUE);
+        compareDialog.openTreeNode("Rules");
+        assertThat(compareDialog.isTreeItemPresent(LIMIT))
+                .as("The table whose value changed is listed")
+                .isTrue();
+        assertThat(compareDialog.isTreeItemPresent(RATE))
+                .as("The table that differs in formatting only is left out by default")
+                .isFalse();
+        compareDialog.clickTreeNode(LIMIT);
+        assertThat(compareDialog.isMarkedAsFormattingChanged())
+                .as("Without 'Formatting changes' a table changed in values and formatting is not marked 'Formatting changed'")
+                .isFalse();
+        assertThat(compareDialog.isFramedAsFormattingChanged())
+                .as("Without 'Formatting changes' a table changed in values and formatting is not framed with a dashed line")
+                .isFalse();
+        compareDialog.setShowEqualRows(true);
+        compareDialog.showSideBySide();
+        verifyDifferenceInCells(compareDialog, LIMIT, 3, 2, "100", "250");
+
+        compareDialog.backToFilePicking();
+        compareDialog.setShowFormattingChanges(true);
+        compareWithBase(compareDialog, FORMATTING_AND_VALUE);
+        compareDialog.openTreeNode("Rules");
+        assertThat(compareDialog.getTreeItemStatus(RATE))
+                .as("With 'Formatting changes' the table that differs in formatting only is listed as changed")
+                .isEqualTo(CHANGED);
+        compareDialog.clickTreeNode(RATE);
+        assertThat(compareDialog.isMarkedAsFormattingChanged())
+                .as("The table that differs in formatting only is marked 'Formatting changed'")
+                .isTrue();
+        assertThat(compareDialog.isFramedAsFormattingChanged())
+                .as("The table that differs in formatting only is framed with a dashed line")
+                .isTrue();
+        compareDialog.clickTreeNode(LIMIT);
+        compareDialog.waitForCellReading("250");
+        assertThat(compareDialog.isMarkedAsFormattingChanged())
+                .as("With 'Formatting changes' a table changed in values and formatting is marked 'Formatting changed'")
+                .isTrue();
+
+        compareDialog.backToFilePicking();
+        compareDialog.setShowFormattingChanges(false);
+        compareDialog.setShowEqualElements(true);
+        compareWithBase(compareDialog, FORMATTING_AND_VALUE);
+        compareDialog.openTreeNode("Rules");
+        assertThat(compareDialog.getTreeItemStatus(RATE))
+                .as("With 'Show equal elements' the table that differs in formatting only is listed as equal")
+                .isEqualTo("Equal");
+        compareDialog.clickTreeNode(RATE);
+        assertThat(compareDialog.isMarkedAsFormattingChanged())
+                .as("A table listed as equal is not marked 'Formatting changed'")
+                .isFalse();
+
+        compareDialog.backToFilePicking();
+        compareDialog.setShowEqualElements(false);
+        compareWithBase(compareDialog, FORMATTING_ONLY);
+        assertThat(compareDialog.getOnlyFormattingNotice())
+                .as("When only the formatting differs the list of elements says so")
+                .startsWith("Only the formatting differs");
+        assertThat(compareDialog.isTreeItemPresent(RATE))
+                .as("The table that differs in formatting only is not listed before it is asked for")
+                .isFalse();
+        compareDialog.clickShowOnlyFormatting();
+        compareDialog.openTreeNode("Rules");
+        assertThat(compareDialog.getTreeItemStatus(RATE))
+                .as("'Show' lists the table that differs in formatting only as changed")
+                .isEqualTo(CHANGED);
+        compareDialog.clickTreeNode(RATE);
+        assertThat(compareDialog.isMarkedAsFormattingChanged())
+                .as("The table listed by 'Show' is marked 'Formatting changed'")
+                .isTrue();
+        compareDialog.backToFilePicking();
+        assertThat(compareDialog.isFormattingChangesShown())
+                .as("'Show' selects 'Formatting changes'")
+                .isTrue();
+        compareDialog.close();
+
+        RepositoryPage repositoryPage = editorPage.getTabSwitcherComponent()
+                .selectTab(TabSwitcherComponent.TabName.REPOSITORY);
+        ProjectDetailPage projectDetail = repositoryPage.openProjectDetail(projectName);
+        projectDetail.updateFile(FORMATTING_BASE, TestDataUtil.getFilePathFromResources(FORMATTING_AND_VALUE));
+        projectDetail.waitForStatus("In Editing");
+
+        CompareGitRevisionsDialogComponent revisionsDialog = projectDetail.openRevisionCompare();
+        revisionsDialog.openChangedFile(FORMATTING_BASE);
+        assertThat(revisionsDialog.isFormattingChangesOffered())
+                .as("'Formatting changes' heads the list of elements in the comparison of revisions")
+                .isTrue();
+        revisionsDialog.openTreeNode("Rules");
+        assertThat(revisionsDialog.isTreeItemPresent(LIMIT))
+                .as("The comparison of revisions lists the table whose value changed")
+                .isTrue();
+        assertThat(revisionsDialog.isTreeItemPresent(RATE))
+                .as("The comparison of revisions leaves out the table that differs in formatting only by default")
+                .isFalse();
+        revisionsDialog.setShowFormattingChanges(true);
+        revisionsDialog.openTreeNode("Rules");
+        assertThat(revisionsDialog.getTreeItemStatus(RATE))
+                .as("With 'Formatting changes' the comparison of revisions lists the table that differs in formatting only")
+                .isEqualTo(CHANGED);
+        revisionsDialog.clickTreeNode(RATE);
+        assertThat(revisionsDialog.isMarkedAsFormattingChanged())
+                .as("The comparison of revisions marks the table 'Formatting changed'")
+                .isTrue();
+        assertThat(revisionsDialog.isFramedAsFormattingChanged())
+                .as("The comparison of revisions frames the table with a dashed line")
+                .isTrue();
+        revisionsDialog.close();
+    }
+
+    private void compareWithBase(CompareExcelFilesDialogComponent dialog, String secondFile) {
+        dialog.uploadFile(TestDataUtil.getFilePathFromResources(FORMATTING_BASE));
+        dialog.uploadFile(TestDataUtil.getFilePathFromResources(secondFile));
+        dialog.clickCompareExcel();
     }
 
     private void verifyDifferenceInCells(CompareExcelFilesDialogComponent dialog,
