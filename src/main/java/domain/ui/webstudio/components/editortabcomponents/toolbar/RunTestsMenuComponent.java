@@ -20,6 +20,7 @@ public class RunTestsMenuComponent extends BaseComponent implements IRunTestsMen
     private final WebElement runTestsBtn;
     private final WebElement testsIntoFileBtn;
     private final WebElement withinCurrentModuleOnly;
+    private final WebElement launchError;
 
     public RunTestsMenuComponent(Page page) {
         this(new WebElement(page, "xpath=//button[@data-testid='module-test']", "moduleTestBtn"));
@@ -35,6 +36,7 @@ public class RunTestsMenuComponent extends BaseComponent implements IRunTestsMen
         failuresOnlyCheckbox = new WebElement(page, LAUNCHER + "//input[@data-testid='tests-failures-only']", "failuresOnlyCheckbox");
         compoundResultCheckbox = new WebElement(page, LAUNCHER + "//input[@data-testid='tests-compound-result']", "compoundResultCheckbox");
         withinCurrentModuleOnly = new WebElement(page, LAUNCHER + "//input[@data-testid='tests-module-only']", "withinCurrentModuleOnly");
+        launchError = new WebElement(page, LAUNCHER + "//div[@data-testid='tests-launch-error']", "testsLaunchError");
     }
 
     public String getTestButtonText() {
@@ -105,6 +107,10 @@ public class RunTestsMenuComponent extends BaseComponent implements IRunTestsMen
     public void clickTestIntoFile() {
         testsIntoFileBtn.waitForVisible(DEFAULT_TIMEOUT_MS);
         testsIntoFileBtn.click();
+    }
+
+    public String waitForLaunchError() {
+        return launchError.waitForVisible(DEFAULT_TIMEOUT_MS).getText().trim();
     }
 
     public void waitForTestLauncherToClose() {

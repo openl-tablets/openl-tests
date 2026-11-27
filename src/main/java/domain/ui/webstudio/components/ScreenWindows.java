@@ -3,7 +3,6 @@ package domain.ui.webstudio.components;
 import com.microsoft.playwright.Page;
 import domain.ui.webstudio.components.editortabcomponents.ChangesDialogComponent;
 import domain.ui.webstudio.components.editortabcomponents.EditorRevisionsTabComponent;
-import domain.ui.webstudio.components.editortabcomponents.TestResultValidationComponent;
 
 public final class ScreenWindows {
 
@@ -13,12 +12,15 @@ public final class ScreenWindows {
     private ScreenWindows() {
     }
 
+    public static void blockPopupWindows(Page page) {
+        page.evaluate("() => { window.open = () => null; }");
+    }
+
     public static void closeAll(Page page) {
         if (page.locator(ANY_WINDOW).count() == 0) {
             return;
         }
         new ChangesDialogComponent().closeIfOpen();
         new EditorRevisionsTabComponent().closeIfOpen();
-        new TestResultValidationComponent().closeResultsOverTheEditor();
     }
 }

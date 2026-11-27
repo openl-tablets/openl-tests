@@ -1,17 +1,23 @@
 package tests.ui.webstudio.rules_editor;
 
+import com.microsoft.playwright.BrowserContext;
+import com.microsoft.playwright.Page;
+import com.microsoft.playwright.Request;
 import configuration.annotations.AppContainerConfig;
 import configuration.annotations.Description;
 import configuration.annotations.TestCaseId;
 import configuration.appcontainer.AppContainerStartParameters;
 import configuration.driver.DriverPool;
 import domain.serviceclasses.constants.User;
+import domain.ui.webstudio.components.ScreenWindows;
 import domain.ui.webstudio.components.common.CreateNewProjectComponent;
 import domain.ui.webstudio.components.common.TabSwitcherComponent;
 import domain.ui.webstudio.components.editortabcomponents.EditorToolbarPanelComponent;
 import domain.ui.webstudio.components.editortabcomponents.TestResultValidationComponent;
 import domain.ui.webstudio.components.editortabcomponents.leftmenu.EditorLeftRulesTreeComponent;
+import domain.ui.webstudio.components.editortabcomponents.toolbar.BenchmarkMenuComponent;
 import domain.ui.webstudio.components.editortabcomponents.toolbar.ITraceMenu;
+import domain.ui.webstudio.components.editortabcomponents.toolbar.RunMenuComponent;
 import domain.ui.webstudio.components.editortabcomponents.toolbar.RunTestsMenuComponent;
 import domain.ui.webstudio.pages.mainpages.EditorPage;
 import domain.ui.webstudio.pages.mainpages.RepositoryPage;
@@ -26,6 +32,8 @@ import tests.BaseTest;
 
 import java.io.File;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
 import static domain.ui.webstudio.components.editortabcomponents.leftmenu.TableTypeFolders.METHOD;
@@ -59,6 +67,19 @@ public class TestRunExecutionScreensUi extends BaseTest {
     private static final String DEPENDENT_PROJECT = "Sample Project";
     private static final String DEPENDENCY_MODULE = "example2";
     private static final String DEPENDENCY_TEST = "mySpr";
+    private static final int EXECUTION_TEST_CASES = 26;
+    private static final String WINDOW_BLOCKED =
+            "The results window did not open. Allow pop-up windows for this site, then try again.";
+    private static final String LONG_RUN_WORKBOOK = "LongRun.xlsx";
+    private static final String LONG_RUN_MODULE = "LongRun";
+    private static final String LONG_TEST = "spinTest";
+    private static final String EDITED_RULE = "twice";
+    private static final int RULE_BODY_ROW = 2;
+    private static final int RULE_BODY_COLUMN = 1;
+    private static final String TESTS_STOPPED = "The tests were stopped before they ended";
+    private static final String BENCHMARK_STOPPED = "The benchmark was stopped before it ended, and measured nothing";
+    private static final String PROJECT_CHANGED = "A project was changed or reloaded since the execution started, "
+            + "so its results were dropped. Start it again.";
 
     @Test
     @TestCaseId({"EPBDS-16581", "EPBDS-16582", "EPBDS-16583"})
@@ -270,6 +291,209 @@ public class TestRunExecutionScreensUi extends BaseTest {
         results.transposeTestResults(USUAL_TEST);
         assertThat(results.isTestResultsTransposed(USUAL_TEST))
                 .as("EPBDS-16960: Transpose clicked again must bring the usual layout back")
+                .isFalse();
+    }
+
+    @Test
+    @TestCaseId({"IPBQA-33086", "EPBDS-16959"})
+    @Description("EPBDS-16959: Test of the module and of a table, Run of a test table and Benchmark open their results "
+            + "straight in one separate window, with no results dialog over the editor, and Test into File and Run into "
+            + "File save their results without opening a window.")
+    @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
+    public void resultsOpenStraightInOneSeparateWindow() {
+        String projectName = WorkflowService.loginCreateProjectFromExcelFile(User.ADMIN, EXECUTION_WORKBOOK);
+        EditorPage editorPage = new EditorPage();
+        editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, EXECUTION_MODULE);
+        EditorToolbarPanelComponent toolbar = editorPage.getEditorToolbarPanelComponent();
+        TestResultValidationComponent results = editorPage.getTestResultValidationComponent();
+
+        toolbar.clickTestDropdown().runTests();
+        String everyCaseRun = "(?<!\\d)" + EXECUTION_TEST_CASES + " tests in";
+        assertThat(results.getResultsTextMatching(everyCaseRun))
+                .as("EPBDS-16959: Test of the module must show the results of every test case in the results window")
+                .containsPattern(everyCaseRun);
+        assertResultsInOneWindowOnly(results, "Test of the module");
+
+        selectTable(editorPage, METHOD, "failing");
+        toolbar.clickTableActionsTestBtn();
+        assertThat(results.countTestTables())
+                .as("EPBDS-16959: Test of a table must show the results of the tables that test it in the window")
+                .isEqualTo(2);
+        assertResultsInOneWindowOnly(results, "Test of a table");
+
+        selectTable(editorPage, TEST, "failingPosTest");
+        toolbar.clickRun().clickRunInsideMenu();
+        assertThat(results.getShownCaseIds())
+                .as("EPBDS-16959: Run of a test table must show its case in the window")
+                .containsExactly("1");
+        assertResultsInOneWindowOnly(results, "Run of a test table");
+
+        toolbar.clickBenchmarkStart();
+        assertThat(results.getResultsTextMatching("(?<!\\d)1 measurement"))
+                .as("EPBDS-16959: Benchmark must show its measurement in the window")
+                .contains("failingPosTest");
+        assertResultsInOneWindowOnly(results, "Benchmark");
+
+        results.closeResults();
+        List<Page> openedWindows = new CopyOnWriteArrayList<>();
+        Consumer<Page> windowWatcher = openedWindows::add;
+        BrowserContext browser = DriverPool.getPage().context();
+        browser.onPage(windowWatcher);
+        try {
+            selectTable(editorPage, METHOD, "failing");
+            toolbar.clickTableActionsTestDropdown();
+            File testedIntoFile = DownloadUtil.downloadFile(toolbar.getRunTestsMenu()::clickTestIntoFile, RESULTS_FILE_MS);
+            try {
+                assertThat(testedIntoFile.getName())
+                        .as("EPBDS-16959: Test into File must save the results file")
+                        .endsWith(RESULTS_FILE);
+            } finally {
+                DownloadUtil.cleanupDownloadFile(testedIntoFile);
+            }
+
+            selectTable(editorPage, TEST, "failingPosTest");
+            toolbar.clickRun();
+            File runIntoFile = DownloadUtil.downloadFile(() -> toolbar.getRunLauncher().clickRunIntoFile(), RESULTS_FILE_MS);
+            try {
+                assertThat(runIntoFile.getName())
+                        .as("EPBDS-16959: Run into File of a test table must save the results file of its cases")
+                        .endsWith(RESULTS_FILE);
+            } finally {
+                DownloadUtil.cleanupDownloadFile(runIntoFile);
+            }
+        } finally {
+            browser.offPage(windowWatcher);
+        }
+        assertThat(openedWindows)
+                .as("EPBDS-16959: Test into File and Run into File must open no results window")
+                .isEmpty();
+    }
+
+    @Test
+    @TestCaseId({"IPBQA-33086", "EPBDS-16959"})
+    @Description("EPBDS-16959: when the browser blocks pop-up windows, Test of the module and of a table, Run and "
+            + "Benchmark start nothing, and their panel says to allow pop-up windows for the site.")
+    @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
+    public void blockedResultsWindowStartsNothing() {
+        String projectName = WorkflowService.loginCreateProjectFromExcelFile(User.ADMIN, EXECUTION_WORKBOOK);
+        EditorPage editorPage = new EditorPage();
+        editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, EXECUTION_MODULE);
+        EditorToolbarPanelComponent toolbar = editorPage.getEditorToolbarPanelComponent();
+        RunTestsMenuComponent testMenu = toolbar.getRunTestsMenu();
+        Page editor = DriverPool.getPage();
+        List<String> executionsStarted = new CopyOnWriteArrayList<>();
+        Consumer<Request> executionWatcher = request -> {
+            if (!"GET".equals(request.method()) && request.url().contains("/rest/projects/")) {
+                executionsStarted.add(request.method() + " " + request.url());
+            }
+        };
+        ScreenWindows.blockPopupWindows(editor);
+        editor.onRequest(executionWatcher);
+
+        toolbar.clickTopPanelTestDropdown();
+        toolbar.clickTopPanelRunTestBtn();
+        assertThat(testMenu.waitForLaunchError())
+                .as("EPBDS-16959: Test of the module must say the results window was blocked")
+                .isEqualTo(WINDOW_BLOCKED);
+
+        selectTable(editorPage, METHOD, "failing");
+        toolbar.clickTableActionsTestDropdown();
+        testMenu.clickRunTestsButton();
+        assertThat(testMenu.waitForLaunchError())
+                .as("EPBDS-16959: Test of a table must say the results window was blocked")
+                .isEqualTo(WINDOW_BLOCKED);
+
+        selectTable(editorPage, TEST, "failingPosTest");
+        toolbar.clickRun();
+        RunMenuComponent runMenu = toolbar.getRunLauncher();
+        assertThat(runMenu.getLaunchError()).as("Precondition: the Run panel must open without an error").isEmpty();
+        runMenu.clickRunInsideMenu();
+        assertThat(runMenu.waitForLaunchError())
+                .as("EPBDS-16959: Run must say the results window was blocked")
+                .isEqualTo(WINDOW_BLOCKED);
+
+        toolbar.clickBenchmarkDropdown();
+        BenchmarkMenuComponent benchmarkMenu = toolbar.getBenchmarkLauncher();
+        assertThat(benchmarkMenu.getLaunchError())
+                .as("Precondition: the Benchmark panel must open without the error of the Run panel")
+                .isEmpty();
+        benchmarkMenu.clickBenchmarkInsideMenu();
+        assertThat(benchmarkMenu.waitForLaunchError())
+                .as("EPBDS-16959: Benchmark must say the results window was blocked")
+                .isEqualTo(WINDOW_BLOCKED);
+        editor.offRequest(executionWatcher);
+        assertThat(executionsStarted)
+                .as("EPBDS-16959: no Test, Run or Benchmark must be started while the results window is blocked")
+                .isEmpty();
+    }
+
+    @Test
+    @TestCaseId({"IPBQA-33086", "EPBDS-16959"})
+    @Description("EPBDS-16959: Stop in the results window ends running tests, a run of a test table and a benchmark, "
+            + "and the window says it was stopped; the stopped benchmark measures nothing.")
+    @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
+    public void stopEndsTestsRunAndBenchmark() {
+        String projectName = WorkflowService.loginCreateProjectFromExcelFile(User.ADMIN, LONG_RUN_WORKBOOK);
+        EditorPage editorPage = new EditorPage();
+        editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, LONG_RUN_MODULE);
+        EditorToolbarPanelComponent toolbar = editorPage.getEditorToolbarPanelComponent();
+        TestResultValidationComponent results = editorPage.getTestResultValidationComponent();
+
+        toolbar.clickTestDropdown().runTests();
+        results.stop();
+        assertThat(results.getResultsTextMatching(TESTS_STOPPED))
+                .as("EPBDS-16959: Stop must end the tests and the window must say they were stopped")
+                .contains(TESTS_STOPPED);
+
+        selectTable(editorPage, TEST, LONG_TEST);
+        toolbar.clickRun().clickRunInsideMenu();
+        results.stop();
+        assertThat(results.getResultsTextMatching(TESTS_STOPPED))
+                .as("EPBDS-16959: Stop must end the run of a test table and the window must say it was stopped")
+                .contains(TESTS_STOPPED);
+
+        toolbar.clickBenchmarkStart();
+        results.stop();
+        assertThat(results.getResultsTextMatching(BENCHMARK_STOPPED))
+                .as("EPBDS-16959: Stop must end the benchmark, which then measures nothing")
+                .contains(BENCHMARK_STOPPED)
+                .containsPattern("(?<!\\d)0 measurements");
+    }
+
+    @Test
+    @TestCaseId({"IPBQA-33086", "EPBDS-16959"})
+    @Description("EPBDS-16959: while the tests run, a table of the project opens and is edited at once, and the edit "
+            + "stops the tests and drops their results: the window says the project changed since they started.")
+    @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
+    public void editDuringTestsStopsThemAndDropsTheirResults() {
+        String projectName = WorkflowService.loginCreateProjectFromExcelFile(User.ADMIN, LONG_RUN_WORKBOOK);
+        EditorPage editorPage = new EditorPage();
+        editorPage.getEditorLeftProjectModuleSelectorComponent().selectModule(projectName, LONG_RUN_MODULE);
+        EditorToolbarPanelComponent toolbar = editorPage.getEditorToolbarPanelComponent();
+        TestResultValidationComponent results = editorPage.getTestResultValidationComponent();
+
+        toolbar.clickTestDropdown().runTests();
+        assertThat(results.isRunning()).as("Precondition: the tests of the long run must be running").isTrue();
+
+        selectTable(editorPage, METHOD, EDITED_RULE);
+        toolbar.getEditTableBtn().click();
+        editorPage.getCenterTable().editCell(RULE_BODY_ROW, RULE_BODY_COLUMN, "return n * 3;");
+        assertThat(results.isRunning())
+                .as("EPBDS-16959: a table must open and take an edit while the tests still run")
+                .isTrue();
+
+        editorPage.getEditorTableActionsPanelComponent().clickSaveChanges();
+        assertThat(results.getResultsTextMatching("changed or reloaded"))
+                .as("EPBDS-16959: the edit must stop the tests and the window must say the project changed")
+                .contains(PROJECT_CHANGED);
+    }
+
+    private void assertResultsInOneWindowOnly(TestResultValidationComponent results, String launch) {
+        assertThat(results.countResultWindows())
+                .as("EPBDS-16959: %s must show its results in the one results window", launch)
+                .isEqualTo(1);
+        assertThat(results.isShownOverTheEditor())
+                .as("EPBDS-16959: %s must show no results dialog and no Open in Window over the editor", launch)
                 .isFalse();
     }
 
