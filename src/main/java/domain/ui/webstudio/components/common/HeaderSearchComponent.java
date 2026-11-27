@@ -47,6 +47,18 @@ public class HeaderSearchComponent extends BaseComponent {
         return this;
     }
 
+    public HeaderSearchComponent typeLikeUser(String text) {
+        input.waitForVisible(DEFAULT_TIMEOUT_MS);
+        input.clear();
+        input.fillSequentially(text);
+        return this;
+    }
+
+    public HeaderSearchComponent pressEnter() {
+        input.press("Enter");
+        return this;
+    }
+
     public String getText() {
         return input.getCurrentInputValue();
     }

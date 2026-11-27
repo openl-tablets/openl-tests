@@ -49,12 +49,18 @@ public class TestRevisionsTechnicalAndSearchUi extends BaseTest {
         ProjectHistoryTabComponent history = repositoryPage.openProjectsList().openProjectDetail(project).getHistoryTab();
         assertThat(history.isSearchOffered()).as("The Revisions tab of a Git project should offer a search").isTrue();
         assertThat(history.isTechnicalRevisionsSwitchOffered()).as("The Revisions tab should offer technical revisions").isTrue();
-        assertShown(history::getShownRevisionDescriptions, List.of(created),
-                "Only the revisions of the project itself are listed by default");
+        assertShown(history::getShownRevisionDescriptions, List.of(otherCreated, created),
+                "Only the revisions of the project itself and the head of the branch are listed by default");
+        assertThat(history.getShownTechnicalRevisionDescriptions())
+                .as("The head of the branch, the commit of the neighbour project, is marked technical")
+                .containsExactly(otherCreated);
+        assertThat(history.isOpenOffered(otherCreated))
+                .as("The technical head is the revision the project stands on and cannot be opened")
+                .isFalse();
 
         history.showTechnicalRevisions(true);
         assertShown(history::getShownRevisionDescriptions, List.of(otherCreated, created),
-                "Technical revisions add the commit of the neighbour project");
+                "Technical revisions add no other commit while the neighbour project commit is the head");
         assertThat(history.getShownTechnicalRevisionDescriptions())
                 .as("The commit of the neighbour project is marked technical")
                 .containsExactly(otherCreated);
@@ -112,8 +118,12 @@ public class TestRevisionsTechnicalAndSearchUi extends BaseTest {
         repositoryPage.waitUntilSpinnerLoaded();
 
         ProjectHistoryTabComponent merged = repositoryPage.openProjectsList().openProjectDetail(project).getHistoryTab();
-        assertShown(merged::getShownRevisionDescriptions, List.of(onBranch, saved, created),
-                "After the merge master lists the revision made on the branch");
+        String mergeDescription = "Merge branch '" + BRANCH + "'";
+        assertShown(merged::getShownRevisionDescriptions, List.of(mergeDescription, onBranch, saved, created),
+                "After the merge master lists the revision made on the branch below the merge commit, which is its head");
+        assertThat(merged.getShownTechnicalRevisionDescriptions())
+                .as("Of the technical revisions only the head of the branch, the merge commit, is listed by default")
+                .containsExactly(mergeDescription);
         merged.showTechnicalRevisions(true);
         assertThat(WaitUtil.waitForCondition(() -> merged.getShownRevisionDescriptions().size() > 4, 10000, 300,
                 "Waiting for the technical revisions to be listed"))

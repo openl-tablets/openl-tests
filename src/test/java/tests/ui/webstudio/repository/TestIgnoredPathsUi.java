@@ -78,7 +78,7 @@ public class TestIgnoredPathsUi extends BaseTest {
 
     private GitContainerService gitContainer;
     private GitRemote gitRemote;
-    private String describedRevision;
+    private String headRevision;
 
     @Override
     protected void startAuxiliaryContainers() {
@@ -89,10 +89,10 @@ public class TestIgnoredPathsUi extends BaseTest {
         gitRemote = gitContainer.asRemote();
         gitContainer.commitUpdates(PIPELINE_CHANGED, Map.of(PROJECT + "/.github/workflows/build.yml", CHANGED_PIPELINE));
         gitContainer.commitUpdates(POM_BUMPED, Map.of(PROJECT + "/pom.xml", POM.formatted("1.0.1")));
-        describedRevision = gitContainer.commitUpdates(RULES_AND_POM_CHANGED, Map.of(
+        gitContainer.commitUpdates(RULES_AND_POM_CHANGED, Map.of(
                 PROJECT + "/rules.xml", DESCRIBED_RULES_XML,
                 PROJECT + "/pom.xml", POM.formatted("1.0.2")));
-        gitContainer.commitUpdates(POM_BUMPED_AGAIN, Map.of(PROJECT + "/pom.xml", POM.formatted("1.0.3")));
+        headRevision = gitContainer.commitUpdates(POM_BUMPED_AGAIN, Map.of(PROJECT + "/pom.xml", POM.formatted("1.0.3")));
     }
 
     @Override
@@ -116,7 +116,8 @@ public class TestIgnoredPathsUi extends BaseTest {
     @Test
     @TestCaseId({"IPBQA-33078", "EPBDS-16755"})
     @Description("Ignored paths keep the build, VCS and CI files of a Git project out of reach: a commit that changes only "
-            + "them or pom.xml is a technical revision the project does not stand on, the projects tree lists none of "
+            + "them or pom.xml is a technical revision the Revisions list hides unless it is the head of the branch, "
+            + "which the project stands on, the projects tree lists none of "
             + "them even with hidden files shown, the export leaves them out, and the Ignored Paths system setting "
             + "decides which of them stay ignored")
     @AppContainerConfig(startParams = AppContainerStartParameters.STUDIO_GIT)
@@ -126,13 +127,16 @@ public class TestIgnoredPathsUi extends BaseTest {
         ProjectDetailPage detail = repositoryPage.openProjectsList().openProjectDetail(PROJECT);
         String shownRevision = detail.getOverviewRevision();
         assertThat(shownRevision).as("The Overview tab shows the revision the project stands on").isNotBlank();
-        assertThat(describedRevision)
-                .as("The project stands on the latest commit that changes more than ignored files and pom.xml")
+        assertThat(headRevision)
+                .as("The project stands on the head of its branch, even when the head changes only pom.xml")
                 .startsWith(shownRevision);
 
         ProjectHistoryTabComponent history = detail.getHistoryTab();
-        assertShown(history::getShownRevisionDescriptions, List.of(RULES_AND_POM_CHANGED, INITIAL),
-                "The commits that change only ignored files or pom.xml are hidden by default");
+        assertShown(history::getShownRevisionDescriptions, List.of(POM_BUMPED_AGAIN, RULES_AND_POM_CHANGED, INITIAL),
+                "The commits that change only ignored files or pom.xml are hidden by default, except the head of the branch");
+        assertThat(history.getShownTechnicalRevisionDescriptions())
+                .as("The head of the branch that changes only pom.xml is listed as a technical revision")
+                .containsExactly(POM_BUMPED_AGAIN);
         history.showTechnicalRevisions(true);
         assertShown(history::getShownRevisionDescriptions,
                 List.of(POM_BUMPED_AGAIN, RULES_AND_POM_CHANGED, POM_BUMPED, PIPELINE_CHANGED, INITIAL),
@@ -142,11 +146,11 @@ public class TestIgnoredPathsUi extends BaseTest {
                 .containsExactly(POM_BUMPED_AGAIN, POM_BUMPED, PIPELINE_CHANGED);
         assertThat(history.isOpenOffered(INITIAL)).as("An earlier revision of the project can be opened").isTrue();
         assertThat(history.isOpenOffered(POM_BUMPED_AGAIN))
-                .as("The technical revision on top is not the one the project stands on and cannot be opened")
+                .as("The technical head is the revision the project stands on and cannot be opened")
                 .isFalse();
         assertThat(history.isOpenOffered(RULES_AND_POM_CHANGED))
-                .as("The revision the project stands on is the current one and offers no Open")
-                .isFalse();
+                .as("The latest revision that changes the project is no longer the one it stands on and can be opened")
+                .isTrue();
         assertThat(history.getChangesNote(PIPELINE_CHANGED))
                 .as("A commit that changes only the CI pipeline changes no file of the project")
                 .isEqualTo(NO_FILE_CHANGED);

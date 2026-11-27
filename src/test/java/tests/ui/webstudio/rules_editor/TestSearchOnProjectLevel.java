@@ -8,12 +8,11 @@ import configuration.driver.DriverPool;
 import domain.serviceclasses.constants.User;
 import domain.ui.webstudio.components.common.CreateNewProjectComponent;
 import domain.ui.webstudio.components.common.TabSwitcherComponent;
-import domain.ui.webstudio.components.editortabcomponents.SearchFilterComponent;
+import domain.ui.webstudio.components.editortabcomponents.ModuleSearchResultsComponent;
 import domain.ui.webstudio.pages.mainpages.EditorPage;
 import domain.ui.webstudio.pages.mainpages.RepositoryPage;
 import helpers.service.LoginService;
 import helpers.service.UserService;
-import helpers.utils.StringUtil;
 import org.testng.annotations.Test;
 import tests.BaseTest;
 
@@ -22,14 +21,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class TestSearchOnProjectLevel extends BaseTest {
 
     private static final int TICKET_TEXT_LENGTH = 33009;
-    private static final int SEARCH_TEXT_MAX_LENGTH = 1000;
     private static final String TICKET_SENTENCE = "In show dull give need so held. One order all scale sense her gay style wrote. ";
 
     @Test
     @TestCaseId({"IPBQA-32590", "EPBDS-14069"})
-    @Description("Simple search on project level. EPBDS-14069: a text of 33,009 characters put into the Text in cells "
-            + "field of the Extended search of Example 1 - Bank Rating is cut to 1,000 characters and the search "
-            + "runs, saying that nothing matched, with no error and no Oops screen.")
+    @Description("Search of the cells of the tables on module and project level. Enter in the Tables search field of the "
+            + "top bar searches every cell of the module and lists the tables found in place of the table; Enter again "
+            + "searches the whole project, including its other modules, and a third time the projects it depends on. "
+            + "EPBDS-14069: a text of 33,009 characters typed into the field ends in a message to shorten it, with no "
+            + "Oops screen.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void testSimpleSearchOnProjectLevel() {
         LoginService loginService = new LoginService(DriverPool.getPage());
@@ -42,7 +42,7 @@ public class TestSearchOnProjectLevel extends BaseTest {
         String nameProjectExample1BankRating = "Example1BankRating";
 
         repositoryPage.createProject(CreateNewProjectComponent.TabName.ZIP_ARCHIVE,
-                nameProjectSpreadsheetSalary, "RulesEditor.TestSearchOnProjectLevel.SpreadsheetSalary.zip");
+                nameProjectSpreadsheetSalary, "RulesEditor.TestSearchOnProjectLevel.SpreadsheetSalaryAndTags.zip");
         repositoryPage.createProject(CreateNewProjectComponent.TabName.ZIP_ARCHIVE,
                 nameProjectSearchingByTag, "RulesEditor.TestSearchOnProjectLevel.SearchingByTag.zip");
         repositoryPage.createProject(CreateNewProjectComponent.TabName.ZIP_ARCHIVE,
@@ -50,124 +50,145 @@ public class TestSearchOnProjectLevel extends BaseTest {
 
         new EditorPage();
         editorPage = new EditorPage();
-        SearchFilterComponent search = editorPage.getSearchFilterComponent();
+        ModuleSearchResultsComponent search = new ModuleSearchResultsComponent();
 
-        search.closeSearch();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectFirstModule(nameProjectSpreadsheetSalary);
-        search.typeSearchAndEnter("");
-        search.waitForSearchResult();
-        assertThat(search.getFoundTablesCount()).isEqualTo(2);
-        assertThat(search.isTableFound("SalaryCalc")).isTrue();
-        assertThat(search.isTableFound("SalaryInfo")).isTrue();
+        search.searchModule("median");
+        assertThat(search.getSummary())
+                .as("The band of the results tells how many tables of the module contain the text")
+                .contains("1 table contains “median”");
+        assertThat(search.getFoundTableNames()).containsExactly("SalaryCalc");
+        assertThat(search.getGroupNames())
+                .as("In a search of the module the tables are listed by the sheet they are written on")
+                .containsExactly("Sheet2");
 
-        search.closeSearch();
-        editorPage.getEditorLeftProjectModuleSelectorComponent().selectFirstModule(nameProjectSpreadsheetSalary);
-        search.typeSearchAndEnter("median");
-        search.waitForSearchResult();
-        assertThat(search.isTableFound("SalaryCalc")).isTrue();
+        search.searchModule("step1");
+        assertThat(search.getFoundTableNames())
+                .as("A cell of the table holds the text, whatever the case of the letters")
+                .containsExactly("SalaryInfo");
 
-        search.closeSearch();
-        editorPage.getEditorLeftProjectModuleSelectorComponent().selectFirstModule(nameProjectSpreadsheetSalary);
-        search.typeSearchAndEnter("step1");
-        search.waitForSearchResult();
-        assertThat(search.isTableFound("SalaryInfo")).isTrue();
+        search.searchModule("SalaryCalc");
+        assertThat(search.getFoundTableNames())
+                .as("A table is found by the cells that call it too")
+                .containsExactlyInAnyOrder("SalaryCalc", "SalaryInfo");
 
-        search.closeSearch();
-        editorPage.getEditorLeftProjectModuleSelectorComponent().selectFirstModule(nameProjectSpreadsheetSalary);
-        search.typeSearchAndEnter("SalaryCalc");
-        search.waitForSearchResult();
-        assertThat(search.isTableFound("SalaryCalc")).isTrue();
-        assertThat(search.isTableFound("SalaryInfo")).isTrue();
+        search.searchModule("Spreadsheet Double SalaryInfo ( String name, Double [] salary )");
+        assertThat(search.getFoundTableNames())
+                .as("The header of a table is searched like any other cell")
+                .containsExactly("SalaryInfo");
 
-        search.closeSearch();
-        editorPage.getEditorLeftProjectModuleSelectorComponent().selectFirstModule(nameProjectSpreadsheetSalary);
-        search.typeSearchAndEnter("Spreadsheet Double SalaryInfo ( String name, Double [] salary )");
-        search.waitForSearchResult();
-        assertThat(search.isTableFound("SalaryInfo")).isTrue();
+        search.searchModule("resul");
+        assertThat(search.getFoundTableNames()).containsExactly("SalaryCalc");
 
-        search.closeSearch();
-        editorPage.getEditorLeftProjectModuleSelectorComponent().selectFirstModule(nameProjectSpreadsheetSalary);
-        search.typeSearchAndEnter("resul");
-        search.waitForSearchResult();
-        assertThat(search.isTableFound("SalaryCalc")).isTrue();
+        search.searchModule("step1");
+        assertThat(search.getFoundTableNames()).containsExactly("SalaryInfo");
+        assertThat(search.isWiderSearchOffered())
+                .as("The band offers pressing Enter again to search the whole project")
+                .isTrue();
+        search.searchWholeProject();
+        assertThat(search.getFoundTableNames())
+                .as("Enter again lists the tables of the other module of the project too")
+                .containsExactlyInAnyOrder("SalaryInfo", "RulesName");
+        assertThat(search.getGroupNames())
+                .as("In a search of the project the tables are listed by their module")
+                .containsExactlyInAnyOrder("spreadsheet salary", "tag search");
 
-        search.closeSearch();
+        search.searchModule("balance");
+        assertThat(search.isNothingFoundShown())
+                .as("No table of this module holds the text")
+                .isTrue();
+        search.searchWholeProject();
+        assertThat(search.isNothingFoundShown())
+                .as("No table of this project holds the text")
+                .isTrue();
+        search.searchDependenciesToo();
+        assertThat(search.getFoundTableNames())
+                .as("A third Enter lists the tables of the projects it depends on")
+                .contains("BalanceDynamicIndexCalculation", "BalanceQualityIndexCalculation");
+        assertThat(search.getGroupNames())
+                .as("In a wider search the tables are listed by their project and module")
+                .contains("Example1BankRating / Bank Rating");
+        assertThat(search.isWiderSearchOffered())
+                .as("There is nothing wider than the projects it depends on")
+                .isFalse();
+
+        search.closeResults();
         editorPage.getEditorToolbarPanelComponent().navigateToProjectsInBreadcrumbs();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectFirstModule(nameProjectExample1BankRating);
-        search.typeSearchAndEnter("MONEY");
-        search.waitForSearchResult();
-        assertThat(search.getFoundTablesCount()).isEqualTo(2);
-        assertThat(search.isTableFound("BalanceQualityIndexCalculation")).isTrue();
-        assertThat(search.isTableFound("NetMoneyMarketLiabilitiesScore")).isTrue();
+        search.searchModule("MONEY");
+        assertThat(search.getFoundTableNames())
+                .containsExactlyInAnyOrder("BalanceQualityIndexCalculation", "NetMoneyMarketLiabilitiesScore");
 
-        search.closeSearch();
-        editorPage.getEditorLeftProjectModuleSelectorComponent().selectFirstModule(nameProjectExample1BankRating);
-        search.typeSearchAndEnter("Balance");
-        search.waitForSearchResult();
-        assertThat(search.isTableFound("BalanceDynamicIndexCalculation")).isTrue();
-        assertThat(search.isTableFound("BalanceQualityIndexCalculation")).isTrue();
+        search.searchModule("Balance");
+        assertThat(search.getFoundTableNames())
+                .contains("BalanceDynamicIndexCalculation", "BalanceQualityIndexCalculation");
 
         String ticketText = TICKET_SENTENCE.repeat(TICKET_TEXT_LENGTH / TICKET_SENTENCE.length() + 1)
                 .substring(0, TICKET_TEXT_LENGTH);
-        search.closeSearch();
-        editorPage.getEditorLeftProjectModuleSelectorComponent().selectFirstModule(nameProjectExample1BankRating);
-        search.typeSearchAndEnter(ticketText);
-        assertThat(search.getTextInCellsLength())
-                .as("The Text in cells field takes no more than 1,000 characters of a text of %d (EPBDS-14069)",
+        search.searchLongText(ticketText);
+        assertThat(search.isFailureShown())
+                .as("A text of %d characters must end in the message to shorten it, not in an Oops screen (EPBDS-14069)",
                         TICKET_TEXT_LENGTH)
-                .isEqualTo(SEARCH_TEXT_MAX_LENGTH);
-        assertThat(search.isOopsShown())
-                .as("A very long text in the Extended search must not end in the Oops! Something went wrong screen (EPBDS-14069)")
-                .isFalse();
-        assertThat(search.getFoundTablesCount()).isZero();
-        assertThat(search.getNoResultsMessage())
-                .as("The search of a very long text must run and say that nothing matched, not show an Oops screen")
-                .isNotEmpty();
+                .isTrue();
+        assertThat(search.getFailureText())
+                .contains("The text is too long for the server");
 
-        search.closeSearch();
+        search.closeResults();
         editorPage.getEditorToolbarPanelComponent().navigateToProjectsInBreadcrumbs();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectFirstModule(nameProjectSearchingByTag);
-        search.typeSearchAndEnter("testingFirst");
-        search.waitForSearchResult();
-        assertThat(search.isTableFound("RulesName")).isTrue();
-        search.clickViewTable("RulesName");
+        search.searchModule("testingFirst");
+        assertThat(search.getFoundTableNames()).containsExactly("RulesName");
+        search.openTable("RulesName");
         assertThat(editorPage.getEditorLeftRulesTreeComponent().getSelectedItemText())
-                .as("Viewing a table from the results must open that very table")
+                .as("Opening a table from the results must open that very table")
                 .isEqualTo("RulesName");
 
-        search.typeSearchAndEnter("money");
-        search.waitForSearchResult();
+        search.searchModule("money");
         assertThat(search.getFoundTablesCount()).isZero();
-        assertThat(search.getNoResultsMessage())
+        assertThat(search.getNothingFoundMessage())
                 .as("The search should say that nothing matched")
-                .isNotEmpty();
+                .contains("No cell holds this text");
 
-        search.closeSearch();
+        search.searchModule("''");
+        assertThat(search.getFoundTablesCount()).isZero();
+        assertThat(search.getNothingFoundMessage())
+                .as("The search should say that nothing matched")
+                .contains("No cell holds this text");
+
+        search.searchModule(" alert(\"zzz\") ");
+        assertThat(search.getFoundTablesCount()).isZero();
+        assertThat(search.getNothingFoundMessage())
+                .as("The search should say that nothing matched")
+                .contains("No cell holds this text");
+
+        search.closeResults();
         editorPage.getEditorToolbarPanelComponent().navigateToProjectsInBreadcrumbs();
-        editorPage.getEditorLeftProjectModuleSelectorComponent().selectFirstModule(nameProjectSearchingByTag);
-        search.typeSearchAndEnter("''");
-        search.waitForSearchResult();
-        assertThat(search.getFoundTablesCount()).isZero();
-        assertThat(search.getNoResultsMessage())
-                .as("The search should say that nothing matched")
-                .isNotEmpty();
-
-        search.closeSearch();
-        editorPage.getEditorLeftProjectModuleSelectorComponent().selectFirstModule(nameProjectSearchingByTag);
-        search.typeSearchAndEnter(" alert(\"zzz\") ");
-        search.waitForSearchResult();
-        assertThat(search.getFoundTablesCount()).isZero();
-        assertThat(search.getNoResultsMessage())
-                .as("The search should say that nothing matched")
-                .isNotEmpty();
+        editorPage.getEditorLeftProjectModuleSelectorComponent().selectFirstModule(nameProjectSpreadsheetSalary);
+        search.searchModule("balance");
+        search.searchWholeProject();
+        search.searchDependenciesToo();
+        search.openTable("BalanceQualityIndexCalculation");
+        assertThat(editorPage.getEditorLeftRulesTreeComponent().getSelectedItemText())
+                .as("A table of a project the searched one depends on opens in its own module")
+                .isEqualTo("BalanceQualityIndexCalculation");
+        editorPage.getCenterTable().editCell(3, 1, "Step 1");
+        editorPage.getEditorTableActionsPanelComponent().clickSaveChanges();
+        editorPage.getEditorToolbarPanelComponent().clickSave();
+        editorPage.getSaveChangesComponent().clickSave();
+        editorPage.waitUntilSpinnerLoaded();
+        assertThat(editorPage.getCenterTable().getCellText(3, 1))
+                .as("The table opened from the results keeps the edit after the project is saved")
+                .isEqualTo("Step 1");
     }
 
     @Test
     @TestCaseId({"IPBQA-32590", "EPBDS-16932", "EPBDS-1656", "EPBDS-5111"})
-    @Description("Extended search on project level. EPBDS-16932: a search that names no table type tells how many "
-            + "utility tables the type filter hides and Show them lists them. EPBDS-1656: several tags in the Tags "
-            + "property find the tables tagged with any of them. EPBDS-5111: a date typed in Text in cells finds "
-            + "the tables whose properties hold that day.")
+    @Description("Finding tables by a property value on project level. The extended search by table properties is "
+            + "removed, so a property value is searched for in the cells, since a property is written in a cell of the "
+            + "table that declares it. EPBDS-1656: the value of the Tags property finds the tables tagged with it. "
+            + "EPBDS-5111: a date typed in the field finds the tables whose properties hold that day. EPBDS-16932: a "
+            + "search matching only a utility table tells how many utility tables the type filter hides and Show them "
+            + "lists them.")
     @AppContainerConfig(startParams = AppContainerStartParameters.DEFAULT_STUDIO_PARAMS)
     public void testAdvancedSearchOnProjectLevel() {
         LoginService loginService = new LoginService(DriverPool.getPage());
@@ -175,119 +196,39 @@ public class TestSearchOnProjectLevel extends BaseTest {
         RepositoryPage repositoryPage = editorPage.getTabSwitcherComponent()
                 .selectTab(TabSwitcherComponent.TabName.REPOSITORY);
 
-        String nameProjectSpreadsheetSalary = "SpreadsheetSalary";
-        String nameProjectSearchingByTag = "SearchingByTag";
-        String nameProjectExample1BankRating = "Example1BankRating";
         String nameProjectTechnicalDateTags = "TechnicalDateTags";
 
-        repositoryPage.createProject(CreateNewProjectComponent.TabName.ZIP_ARCHIVE,
-                nameProjectSpreadsheetSalary, "RulesEditor.TestSearchOnProjectLevel.SpreadsheetSalary.zip");
-        repositoryPage.createProject(CreateNewProjectComponent.TabName.ZIP_ARCHIVE,
-                nameProjectSearchingByTag, "RulesEditor.TestSearchOnProjectLevel.SearchingByTag.zip");
-        repositoryPage.createProject(CreateNewProjectComponent.TabName.ZIP_ARCHIVE,
-                nameProjectExample1BankRating, "RulesEditor.TestSearchOnProjectLevel.Example1BankRating.zip");
         repositoryPage.createProject(CreateNewProjectComponent.TabName.ZIP_ARCHIVE,
                 nameProjectTechnicalDateTags, "RulesEditor.TestSearchOnProjectLevel.TechnicalDateTags.zip");
 
         new EditorPage();
         editorPage = new EditorPage();
-        SearchFilterComponent search = editorPage.getSearchFilterComponent();
+        ModuleSearchResultsComponent search = new ModuleSearchResultsComponent();
 
-        search.closeSearch();
-        editorPage.getEditorLeftProjectModuleSelectorComponent().selectFirstModule(nameProjectSpreadsheetSalary);
-        search.openAdvancedSearch();
-        assertThat(search.getScopeOptions()).contains("Current project");
-        assertThat(search.getScopeOptions()).contains("Everything compiled, dependencies included");
-        search.setScope("Current project");
-        search.performSearch();
-        search.waitForSearchResult();
-        assertThat(search.isTableFound("SalaryCalc")).isTrue();
-        assertThat(search.isTableFound("SalaryInfo")).isTrue();
-
-        search.closeSearch();
-        editorPage.getEditorLeftProjectModuleSelectorComponent().selectFirstModule(nameProjectSpreadsheetSalary);
-        search.openAdvancedSearch();
-        search.setScope("Everything compiled, dependencies included");
-        search.performSearch();
-        search.waitForSearchResult();
-        assertThat(search.getFoundTablesCount()).isEqualTo(62);
-        search.openAdvancedSearch();
-        search.setScope("Current project");
-        search.performSearch();
-        search.waitForSearchResult();
-        assertThat(search.getFoundTablesCount()).isEqualTo(2);
-
-        search.closeSearch();
-        editorPage.getEditorLeftProjectModuleSelectorComponent().selectFirstModule(nameProjectSpreadsheetSalary);
-        search.openAdvancedSearch();
-        search.setScope("Everything compiled, dependencies included");
-        search.searchByTableType("Spreadsheet");
-        search.performSearch();
-        search.waitForSearchResult();
-        assertThat(search.getFoundTablesCount()).isEqualTo(8);
-
-        search.closeSearch();
-        editorPage.getEditorLeftProjectModuleSelectorComponent().selectFirstModule(nameProjectSpreadsheetSalary);
-        search.openAdvancedSearch();
-        search.setScope("Current project");
-        search.searchByTableType("Spreadsheet");
-        search.setHeaderContains("balance");
-        search.performSearch();
-        search.waitForSearchResult();
-        assertThat(search.getFoundTablesCount()).isZero();
-        assertThat(search.getNoResultsMessage())
-                .as("The search should say that nothing matched")
-                .isNotEmpty();
-        search.openAdvancedSearch();
-        search.setScope("Everything compiled, dependencies included");
-        search.performSearch();
-        search.waitForSearchResult();
-        assertThat(search.isTableFound("BalanceDynamicIndexCalculation")).isTrue();
-        assertThat(search.isTableFound("BalanceQualityIndexCalculation")).isTrue();
-
-        search.closeSearch();
-        editorPage.getEditorLeftProjectModuleSelectorComponent().selectFirstModule(nameProjectSpreadsheetSalary);
-        search.openAdvancedSearch();
-        search.setScope("Everything compiled, dependencies included");
-        search.searchByTableType("Spreadsheet");
-        search.setHeaderContains(" balance");
-        search.performSearch();
-        search.waitForSearchResult();
-        assertThat(search.isTableFound("BalanceDynamicIndexCalculation")).isTrue();
-        assertThat(search.isTableFound("BalanceQualityIndexCalculation")).isTrue();
-
-        search.closeSearch();
-        editorPage.getEditorToolbarPanelComponent().navigateToProjectsInBreadcrumbs();
-        editorPage.getEditorLeftProjectModuleSelectorComponent().selectFirstModule(nameProjectSpreadsheetSalary);
-        search.openAdvancedSearch();
-        search.setScope("Current project");
-        search.setHeaderContains("spreadsheet");
-        search.performSearch();
-        search.waitForSearchResult();
-        assertThat(search.isTableFound("SalaryCalc")).isTrue();
-        assertThat(search.isTableFound("SalaryInfo")).isTrue();
-
-        search.openAdvancedSearch();
-        search.setScope("Everything compiled, dependencies included");
-        search.setHeaderContains("spreadsheet");
-        search.performSearch();
-        search.waitForSearchResult();
-        assertThat(search.getFoundTablesCount()).isEqualTo(8);
-        assertThat(search.isTableFound("IsAdequateNormativeIndexCalculation")).isTrue();
-        assertThat(search.isTableFound("SetNonZeroValues")).isTrue();
-
-        search.clickViewTable("BalanceQualityIndexCalculation");
-        editorPage.getCenterTable().editCell(3, 1, "Step 1");
-        editorPage.getEditorTableActionsPanelComponent().clickSaveChanges();
-        editorPage.getEditorToolbarPanelComponent().clickSave();
-        editorPage.getSaveChangesComponent().clickSave();
-        editorPage.waitUntilSpinnerLoaded();
-
-        search.closeSearch();
-        editorPage.getEditorToolbarPanelComponent().navigateToProjectsInBreadcrumbs();
         editorPage.getEditorLeftProjectModuleSelectorComponent().selectFirstModule(nameProjectTechnicalDateTags);
-        search.setSearchName("Technical");
-        search.performSearch();
+        search.searchModule("xxx");
+        search.searchWholeProject();
+        assertThat(search.getFoundTableNames())
+                .as("A tag value searched for in the cells at project scope must find the table tagged with it and "
+                        + "no table tagged with another value (EPBDS-1656)")
+                .containsExactly("TaggedSecond");
+        assertThat(search.isTableFound("TaggedFirst")).isFalse();
+
+        search.searchModule("xx");
+        search.searchWholeProject();
+        assertThat(search.getFoundTableNames())
+                .as("A tag value contained in the values of other tables finds those tables too (EPBDS-1656)")
+                .containsExactlyInAnyOrder("TaggedFirst", "TaggedSecond");
+        assertThat(search.isTableFound("DatedGreeting")).isFalse();
+
+        search.searchModule("3/12/2014");
+        search.searchWholeProject();
+        assertThat(search.getFoundTableNames())
+                .as("A date typed in the field must find the table whose property holds that day (EPBDS-5111)")
+                .containsExactly("DatedGreeting");
+
+        search.searchModule("Technical");
+        search.searchWholeProject();
         assertThat(search.getHiddenByTypeFilterMessage())
                 .as("The search must tell that a utility table matched but is hidden by the type filter (EPBDS-16932)")
                 .contains("1 table hidden by the type filter");
@@ -296,27 +237,8 @@ public class TestSearchOnProjectLevel extends BaseTest {
                 .isZero();
         search.clickShowHiddenTables();
         assertThat(search.getFoundTablesCount()).isEqualTo(1);
-        assertThat(search.getResultsText())
+        assertThat(search.getFoundLines())
                 .as("Show them must list the technical table in the results (EPBDS-16932)")
-                .contains("Technical Notes Of Greetings");
-
-        search.setSearchName("");
-        search.setTextInCells("3/12/2014");
-        search.performSearch();
-        assertThat(search.getFoundTablesCount()).isEqualTo(1);
-        assertThat(search.isTableFound("DatedGreeting"))
-                .as("A date typed in Text in cells must find the table whose property holds that day (EPBDS-5111)")
-                .isTrue();
-
-        search.setTextInCells("");
-        search.searchByProperty("Tags", "xx,xxx");
-        search.performSearch();
-        assertThat(search.getFoundTablesCount()).isEqualTo(2);
-        assertThat(search.isTableFound("TaggedFirst"))
-                .as("Several tags must find the table tagged with the first of them (EPBDS-1656)")
-                .isTrue();
-        assertThat(search.isTableFound("TaggedSecond"))
-                .as("Several tags must find the table tagged with the second of them (EPBDS-1656)")
-                .isTrue();
+                .anyMatch(line -> line.contains("Technical Notes Of Greetings"));
     }
 }

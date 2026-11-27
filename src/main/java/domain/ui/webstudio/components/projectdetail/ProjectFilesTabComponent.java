@@ -44,6 +44,8 @@ public class ProjectFilesTabComponent extends BaseComponent {
     private final WebElement projectFileNodes;
     private final WebElement treeRows;
     private final WebElement addBtn;
+    private final WebElement actionsMoreBtn;
+    private final WebElement overflowPanel;
     private final WebElement fileActionsBtn;
     private final WebElement addMenuItem;
     private final WebElement fileActionsMenuItem;
@@ -91,6 +93,8 @@ public class ProjectFilesTabComponent extends BaseComponent {
         treeRows = new WebElement(page, "xpath=(" + TREE + "//div[contains(@class,'ant-tree-list-holder')])[1]",
                 "projectsTreeRows");
         addBtn = new WebElement(page, "xpath=//*[@data-testid='addFiles-%s']", "addFilesBtn");
+        actionsMoreBtn = new WebElement(page, "xpath=//*[@data-testid='project-actions-more']", "projectActionsMoreBtn");
+        overflowPanel = new WebElement(page, "xpath=//div[@data-testid='project-actions-overflow']", "projectActionsMenu");
         fileActionsBtn = createScopedElement("xpath=.//*[@data-testid='file-actions']", "fileActionsBtn");
         addMenuItem = new WebElement(page, "xpath=//div[contains(@class,'ant-dropdown')][not(contains(@class,'ant-dropdown-hidden'))]//li[contains(@class,'ant-dropdown-menu-item')][.//span[@data-testid='%s']]", "filesAddMenuItem");
         fileActionsMenuItem = new WebElement(page, "xpath=//div[contains(@class,'ant-dropdown')][not(contains(@class,'ant-dropdown-hidden'))]//li[contains(@class,'ant-dropdown-menu-item')][normalize-space()='%s']", "fileActionsMenuItem");
@@ -303,7 +307,18 @@ public class ProjectFilesTabComponent extends BaseComponent {
 
     public boolean isAddMenuAvailable() {
         actionBar.waitForVisible(DEFAULT_TIMEOUT_MS);
-        return addBtn.format(shownProjectId()).isVisible(DEFAULT_TIMEOUT_MS);
+        WebElement add = addBtn.format(shownProjectId());
+        if (add.isVisible(DEFAULT_TIMEOUT_MS / 4)) {
+            return true;
+        }
+        if (!actionsMoreBtn.isVisible(DEFAULT_TIMEOUT_MS / 4) || !actionsMoreBtn.isEnabled()) {
+            return false;
+        }
+        actionsMoreBtn.click();
+        overflowPanel.waitForVisible(DEFAULT_TIMEOUT_MS);
+        boolean offered = add.isVisible(DEFAULT_TIMEOUT_MS / 4);
+        page.keyboard().press("Escape");
+        return offered;
     }
 
     public void pickUpdateFile(String fileName, String newFilePath) {
@@ -331,7 +346,13 @@ public class ProjectFilesTabComponent extends BaseComponent {
     }
 
     private void openAddMenuItem(String itemTestId) {
-        addBtn.format(shownProjectId()).hover();
+        WebElement add = addBtn.format(shownProjectId());
+        if (!add.isVisible(DEFAULT_TIMEOUT_MS / 4) && actionsMoreBtn.isVisible(DEFAULT_TIMEOUT_MS / 4)
+                && actionsMoreBtn.isEnabled()) {
+            actionsMoreBtn.click();
+            overflowPanel.waitForVisible(DEFAULT_TIMEOUT_MS);
+        }
+        add.hover();
         addMenuItem.format(itemTestId).click();
     }
 

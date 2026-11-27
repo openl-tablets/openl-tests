@@ -8,9 +8,11 @@ public class ProjectHeaderActionsComponent extends BaseComponent {
 
     private static final int PROBE_MS = DEFAULT_TIMEOUT_MS / 5;
 
+    private static final String ACTION_OF = "//button[starts-with(@data-testid,'%s-') and not(substring(@data-testid, string-length(@data-testid) - 4) = '-more')]";
+
     private final WebElement actionByLabel;
     private final WebElement moreBtn;
-    private final WebElement overflowItem;
+    private final WebElement overflowAction;
 
     public ProjectHeaderActionsComponent(Page page) {
         this(new WebElement(page, "xpath=//*[@data-testid='project-actions']", "projectHeaderActions"));
@@ -18,9 +20,9 @@ public class ProjectHeaderActionsComponent extends BaseComponent {
 
     public ProjectHeaderActionsComponent(WebElement rootLocator) {
         super(rootLocator);
-        actionByLabel = createScopedElement("xpath=.//button[starts-with(@data-testid,'%s-') and not(substring(@data-testid, string-length(@data-testid) - 4) = '-more')]", "headerAction");
+        actionByLabel = createScopedElement("xpath=." + ACTION_OF, "headerAction");
         moreBtn = createScopedElement("xpath=.//*[@data-testid='project-actions-more']", "headerMoreBtn");
-        overflowItem = new WebElement(page, "xpath=//div[contains(@class,'ant-dropdown')][not(contains(@class,'ant-dropdown-hidden'))]//button[normalize-space()='%s']", "headerOverflowItem");
+        overflowAction = new WebElement(page, "xpath=//div[@data-testid='project-actions-overflow']" + ACTION_OF, "headerOverflowAction");
     }
 
     public void clickAction(String actionLabel) {
@@ -32,12 +34,22 @@ public class ProjectHeaderActionsComponent extends BaseComponent {
         }
         LOGGER.info("Header action '{}' is not on the bar; opening the Actions menu", actionLabel);
         moreBtn.click();
-        overflowItem.format(actionLabel).click();
+        overflowAction.format(actionIdOf(actionLabel)).click();
     }
 
     public boolean isActionEnabled(String actionLabel) {
         WebElement action = actionByLabel.format(actionIdOf(actionLabel));
-        return action.isVisible(PROBE_MS) && action.isEnabled();
+        if (action.isVisible(PROBE_MS)) {
+            return action.isEnabled();
+        }
+        if (!moreBtn.isVisible(PROBE_MS) || !moreBtn.isEnabled()) {
+            return false;
+        }
+        moreBtn.click();
+        WebElement inMenu = overflowAction.format(actionIdOf(actionLabel));
+        boolean enabled = inMenu.isVisible(PROBE_MS) && inMenu.isEnabled();
+        page.keyboard().press("Escape");
+        return enabled;
     }
 
     public boolean isActionAvailable(String actionLabel) {
@@ -49,7 +61,7 @@ public class ProjectHeaderActionsComponent extends BaseComponent {
             return false;
         }
         moreBtn.click();
-        boolean inOverflow = overflowItem.format(actionLabel).isVisible(PROBE_MS);
+        boolean inOverflow = overflowAction.format(actionIdOf(actionLabel)).isVisible(PROBE_MS);
         page.keyboard().press("Escape");
         return inOverflow;
     }

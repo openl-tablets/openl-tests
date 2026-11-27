@@ -33,7 +33,6 @@ public class EditorToolbarPanelComponent extends BaseComponent {
 
     private WebElement projectActionsMoreBtn;
     private WebElement verifyBtn;
-    private WebElement createTableBtn;
     private WebElement refreshProjectBtn;
     private WebElement changedOnDiskNotice;
     private WebElement allTopToolbarLinks;
@@ -59,10 +58,9 @@ public class EditorToolbarPanelComponent extends BaseComponent {
     private void initializeElements() {
         verifyBtn = new WebElement(page, "xpath=//button[@data-testid='module-verify']", "verifyBtn");
         projectActionsMoreBtn = new WebElement(page,
-                "xpath=//button[@data-testid='project-actions-more']", "projectActionsMoreBtn");
+                "xpath=//button[@data-testid='project-actions-more' or @data-testid='module-actions-more']", "actionsMoreBtn");
         refreshProjectBtn = new WebElement(page, "xpath=//button[@data-testid='module-refresh']", "refreshProjectBtn");
         changedOnDiskNotice = new WebElement(page, "xpath=//*[@data-testid='module-changed-on-disk']", "changedOnDiskNotice");
-        createTableBtn = new WebElement(page, "xpath=//button[@data-testid='module-createTable']", "createTableBtn");
         allTopToolbarLinks = new WebElement(page, "xpath=//div[@data-testid='module-actions']//button", "allTopToolbarLinks");
         factorTextField = new WebElement(page, "xpath=//div[@data-testid='table-input-anchor']//input[@type='text']", "factorTextField");
 
@@ -88,7 +86,7 @@ public class EditorToolbarPanelComponent extends BaseComponent {
     }
 
     public void clickCreateTable() {
-        createTableBtn.click();
+        clickProjectAction("createTable");
     }
 
     private WebElement projectAction(String action) {
