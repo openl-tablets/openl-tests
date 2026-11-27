@@ -384,7 +384,10 @@ public class CompareLocalChangesDialogComponent extends BaseComponent {
     }
 
     private String revisionCard(String testId) {
-        return new WebElement(getPage(), "xpath=//*[@data-testid='" + testId + "']", testId)
-                .waitForVisible(COMPARISON_TIMEOUT_MS).getInnerText().replaceAll("\\s+", " ").trim();
+        WebElement card = new WebElement(getPage(), "xpath=//*[@data-testid='" + testId + "']", testId)
+                .waitForVisible(COMPARISON_TIMEOUT_MS);
+        card.child("xpath=.//div[contains(concat(' ', normalize-space(@class), ' '), ' ant-skeleton ')]")
+                .waitForHidden(COMPARISON_TIMEOUT_MS);
+        return card.getInnerText().replaceAll("\\s+", " ").trim();
     }
 }
